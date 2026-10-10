@@ -5,47 +5,88 @@
 **GHOULBOX** is dungeon-synth firmware for the **M-VAVE FM-1**: a fork of
 [Felucca](https://github.com/hugelton/Felucca) by Hügelton Instruments (1.0.5.2), tuned for dark ambient,
 medieval and fantasy synth music, from Old Tower and Hole Dweller to Mortiis-era dungeon synth.
-Felucca's sequencer, song mode, effects, editor and backups all work as they do there; GHOULBOX adds:
 
-- **A dungeon at power-on.** The FM-1 starts in D minor at 72 BPM: a hurdy-gurdy melody, a crypt pad,
-  chanting monks and a drone, loaded and ready to play: press PLAY. From 1.4, MENU > SYSTEM > SCENE picks
-  another: CRYPT, TAVERN, CHAPEL, or BLANK for a clean start.
+**Latest: 1.4.** [Install it](https://jasonpersinger.github.io/ghoulbox-fm1-dungeon-synth/) ·
+[hear every sound](https://jasonpersinger.github.io/ghoulbox-fm1-dungeon-synth/sounds/) ·
+[watch the demo](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases/download/ghoulbox-v1.3/ghoulbox-demo-1.3.mp4) ·
+[read the guide (PDF)](docs/guide/GHOULBOX-User-Guide-1.4.pdf)
+
+## What's new
+
+### 1.4
+
+- **Power-on scenes.** Hold HOME for the menu and pick **SYSTEM > SCENE** to choose what the FM-1 plays
+  when you switch it on:
+
+  | Scene | What plays |
+  |---|---|
+  | **DUNGEON** | The default: hurdy-gurdy, crypt pad, monks, drone. 72 BPM. |
+  | **CRYPT** | Low drone, crypt choir, cave wind, slow tomb drums. 60 BPM. |
+  | **TAVERN** | Dance gurdy, harp arpeggio, lute, a light drum kit. 96 BPM. |
+  | **CHAPEL** | Cathedral organ, monks, a recorder lament, the vielle. 66 BPM. |
+  | **BLANK** | DUNGEON's four sounds with no notes, for starting from nothing. |
+
+  The web editor's Settings tab has it too.
+- **A hurdy-gurdy icon** for the GURDY engine, with its wheel, keybox and crank.
+
+### 1.3
+
+- **The hurdy-gurdy, reworked.** The trompette's buzz now cuts through the drones, and the six GURDY
+  sounds each have their own character: HURDY GURDY, DRONE WHEEL, DANCE GURDY, TROMPETTE, VIELLE and
+  BAGPIPE.
+- **MIDI control of the effects and the LFO**: distortion send, LFO rate, vibrato, fade-in, filter and
+  tremolo depth, reverb size and damping, delay time, feedback, tone and mix, chorus rate and depth.
+  The full CC table is in the guide (chapter 20).
+- **A 48-page user guide** with dark pages, for beginners and old hands alike.
+- **A [2½-minute demo](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases/download/ghoulbox-v1.3/ghoulbox-demo-1.3.mp4)**
+  in four styles (crypt, tower, tavern, crypt again), rendered by the firmware's own sound and screen code.
+
+### 1.2
+
+- **CRYPT drums**: frame drum, rope snare, hand slap, shaker, jingles, timpani, stick and gong, with the
+  slow TOMBBEAT pattern.
+- **MIDI CC control** of level, pan, envelope, sends, the engine knobs, CRSH, TAPE and a master filter.
+- **Five new patterns**, two new sounds (LOW DRONE and SHAWM), and USB SERIAL off by default.
+
+Every release loads your saved projects, user presets and settings. Full notes are on the
+[Releases](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases) page.
+
+## What GHOULBOX adds to Felucca
+
+Felucca's sequencer, song mode, effects, editor and backups all work as they do there. On top of them:
+
+- **A dungeon at power-on.** The FM-1 starts in D minor at 72 BPM, ready to play: press PLAY. Four other
+  scenes are in MENU > SYSTEM > SCENE.
 - **HALL reverb**: a third REVERB TYPE beside ROOM and SPRING, 1.5 s stone chamber to 12 s cathedral, on at
   power-on; it borrows the delay's buffer, so it needs no extra RAM.
 - **TAPE and CRSH** (FX > TAPE): the mix through a worn cassette (wow, flutter, saturation, hiss) and a
   cheap sampler's bits and rate.
-- **GURDY**, a hurdy-gurdy engine (with its own icon from 1.4): a bowed melody string, drones you tune, and the trompette's buzzing
-  bridge struck in time. In 1.3 the buzz cuts through the drones, and its six sounds each have their own
-  character: an all-rounder, a drone wall, a dance gurdy, a snarling trompette, a clean vielle and a bagpipe.
-- **Real recordings** (1.1): a bowed psaltery, a Renaissance chamber organ, a baroque tenor recorder and a folk
+- **GURDY**, a hurdy-gurdy engine: a bowed melody string, drones you tune, and the trompette's buzzing
+  bridge struck in time, in six sounds.
+- **Real recordings**: a bowed psaltery, a Renaissance chamber organ, a baroque tenor recorder and a folk
   harp, sampled from public-domain (CC0) libraries, on the SAMPLE engine.
 - **45 dungeon sounds**: crypt pads, string machines, monk, crypt and glass choirs, a low drone voice, cathedral,
   reed and pipe organs, lute, harpsichord and virginal, a dungeon harp, tower and lo-fi flutes, recorder, French
   horn, mournful and grim brass, tuba, dark strings, cave wind, torch crackle, a bagpipe, a shawm and five
   hurdy-gurdies, two crypt drum kits, plus the four recordings; seven of them are new 6-operator FM patches.
-- **CRYPT drums** (1.2): a dungeon kit on the DRUM engine (frame drum, rope snare, hand slap, shaker,
-  jingles, timpani, stick and gong) with the TOMBBEAT pattern.
+- **CRYPT drums**: a dungeon kit on the DRUM engine with the TOMBBEAT pattern.
 - **Nine dungeon patterns** (SEQ > PHRASES), in D minor over the power-on scene's chords: DIRGE, BALLAD,
   CHANT, PEDAL, MARCH, LAMENT, ARPEGGIO, ANTIPHON and TOMBBEAT.
-- **MIDI CC control** (1.2, more in 1.3): a keyboard or DAW can turn level, pan, envelope, sends, the four
-  engine knobs, the LFO, the reverb, delay and chorus settings, CRSH, TAPE and a master low/high-pass filter.
+- **MIDI CC control**: a keyboard or DAW can turn level, pan, envelope, sends, the four engine knobs, the
+  LFO, the reverb, delay and chorus settings, CRSH, TAPE and a master low/high-pass filter.
 - **A curated list**: 59 sounds across 13 engines. The pop, techno and percussion presets and the SLICE
   engine are retired from the menus; projects and user presets that use them still load and play them.
-- **USB SERIAL off by default** (1.2): the FM-1 shows up as plain audio and MIDI; turn the developer
+- **USB SERIAL off by default**: the FM-1 shows up as plain audio and MIDI; turn the developer
   console on in the menu if you want it.
 - **An old-RPG screen**: VT323 pixel type, stone windows, a sword cursor, flickering wall torches, and the
   CRYPT palette (stone, bone, torch amber, blood red), a blackletter wordmark and a skull at boot.
 
 Version 1.4 (HOME held > ABOUT). A hobby project, tested on one FM-1: **install at your own risk.**
 
-**[Hear every sound](https://jasonpersinger.github.io/ghoulbox-fm1-dungeon-synth/sounds/)** before installing:
-all 59, rendered by the firmware's own sound code.
-
-**[User guide (PDF)](docs/guide/GHOULBOX-User-Guide-1.4.pdf):** a 48-page manual for beginners and old hands
-alike: the FM-1's hardware and installing; synth basics in plain words (oscillators, filters, envelopes, LFOs,
-effects, sequencing), each with a hands-on exercise; a full reference to every page and all 59 sounds; a first
-piece built step by step, a minor-key chord cheat sheet and dungeon recipes; recording, troubleshooting and a
-glossary. Also on the [Releases](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases) page.
+**[User guide (PDF)](docs/guide/GHOULBOX-User-Guide-1.4.pdf):** a 48-page manual: the FM-1's hardware and
+installing; synth basics in plain words (oscillators, filters, envelopes, LFOs, effects, sequencing), each
+with a hands-on exercise; a full reference to every page and all 59 sounds; a first piece built step by
+step, a minor-key chord cheat sheet and dungeon recipes; recording, troubleshooting and a glossary.
 
 ## Install
 
