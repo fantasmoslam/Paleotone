@@ -12,6 +12,8 @@ voices) works the same; the look, the names and the sounds are new.
 own risk. Holding OCT− while switching on puts the FM-1 into USB rescue mode, from which any firmware (or M-VAVE's
 own, `FM-1.fwsc`) can be installed again.
 
+**M-Vave SMK-37:** see [SMK-37 instructions](SMK37.md).
+
 ## What's different from GHOULBOX
 
 - **A 1993 park-operations terminal.** The TERMINAL palette (phosphor green on black, amber for what needs
