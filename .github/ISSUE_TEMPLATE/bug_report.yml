@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in GHOULBOX or its installer doesn't work as it should (one bug per issue)
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! GHOULBOX is a fork of [Felucca](https://github.com/hugelton/Felucca): please report GHOULBOX problems here, not to Felucca.
+  - type: input
+    id: version
+    attributes:
+      label: GHOULBOX version
+      description: Hold HOME > ABOUT on the FM-1 (if it still starts)
+      placeholder: "1.0"
+  - type: input
+    id: system
+    attributes:
+      label: Computer, OS and browser
+      description: Needed for installer, editor or USB problems
+      placeholder: "Windows 11, Chrome 141"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What you did
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened, and what you expected
+      description: A photo or short video helps.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Installer log
+      description: If the installer was involved, copy all the text from its log box (below the progress bar) and paste it here.
+      render: text
