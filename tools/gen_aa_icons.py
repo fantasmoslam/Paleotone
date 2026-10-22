@@ -94,6 +94,7 @@ EXTRA = {
     "x_eye": "db_reptile_eye",                         # (DINOBOX; Felucca: symbol_eye)
     # GHOULBOX: the GURDY engine (icons.c engine_icon; the footer's 12 px, PRESETS' 16 px)
     "x_gurdy": "db_rex_head",                          # (DINOBOX: the ROAR engine; GHOULBOX: gb_hurdy_gurdy)
+    "x_saurus": "db_sauropod",                         # DINOBOX: the SAURUS engine (icons.c engine_icon)
 }
 
 # GHOULBOX: glyphs Fukiai does not have, drawn here in em units (y up) and added to the font copy (fitted_font) at a
@@ -171,8 +172,16 @@ def _db_reptile_eye(pen, upm):
     _poly(pen, upm, _ellipse(50, 50, 7, 19))
 
 
+def _db_sauropod(pen, upm):
+    """the SAURUS engine: a sauropod from the side, facing right: the body, the long neck up to a small head, the
+    tail tapering to the left, two pairs of pillar legs"""
+    _poly(pen, upm, [(2, 62), (20, 52), (36, 44), (52, 42), (62, 44), (70, 34), (76, 20), (82, 10), (90, 6), (98, 9),
+                     (98, 15), (90, 16), (84, 24), (80, 38), (76, 52), (74, 62), (74, 96), (64, 96), (64, 70), (52, 70),
+                     (48, 96), (38, 96), (38, 70), (30, 66), (20, 64)])
+
+
 OWN = {"gb_hurdy_gurdy": (0xF8F0, _gb_hurdy_gurdy), "db_rex_head": (0xF8F1, _db_rex_head),
-       "db_reptile_eye": (0xF8F2, _db_reptile_eye)}
+       "db_reptile_eye": (0xF8F2, _db_reptile_eye), "db_sauropod": (0xF8F3, _db_sauropod)}
 
 # a glyph given as a tuple: the first one the font has (a glyph still to be drawn falls back to a stand-in;
 # a missing preferred glyph never breaks the build). WHEEL: symbol_drawbar once Fukiai has it.
@@ -187,7 +196,7 @@ FIT_TO = {"system_battery_0": "system_battery_4"}
 # new icons that are also needed at 12 px (list rows, menu values)
 SMALL_EXTRA = ["x_star", "x_lock", "x_cog", "x_usb", "x_warn", "x_folder", "x_left", "x_right",
                "x_mixer", "x_pattern", "x_song", "x_motion", "x_motion_rec", "x_motion_del",
-               "x_hpf", "x_repeat", "x_reverse", "x_tstop", "x_freeze", "x_gurdy"]
+               "x_hpf", "x_repeat", "x_reverse", "x_tstop", "x_freeze", "x_gurdy", "x_saurus"]
 # legacy names no screen draws (1.1): kept in the enum (assets/icons.json's order), not rasterised (no cell)
 NOT_DRAWN = ["tape"]
 
@@ -200,7 +209,7 @@ HUGE_DEFAULT = ["x_bat0", "x_bat1", "x_bat3", "x_bat4", "x_bat_chg", "x_usb"]   
 BIG_DEFAULT = ["x_play", "x_stop", "x_rec", "x_rec_o", "x_usb", "x_star",
                "x_cog", "x_warn", "x_speaker", "x_info", "x_eye", "midi",
                "wave", "algorithm", "phase", "bits", "sample", "mouth", "trio", "drawbar", "slice", "grain",
-               "phys", "drum", "noise", "mod", "tempo", "x_gurdy",
+               "phys", "drum", "noise", "mod", "tempo", "x_gurdy", "x_saurus",
                "x_song", "x_motion", "x_motion_del", "x_doctor", "x_knob", "rate", "x_bat0", "x_bat1", "x_bat3", "x_bat4", "x_bat_chg",
                "x_nofile"]
 

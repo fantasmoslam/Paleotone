@@ -41,6 +41,7 @@ static uint8_t eng_mem_owner[NPART];       /* engine index + 1 whose state is in
 #include "eng_slice.c"
 #endif
 #include "eng_gurdy.c"          /* GURDY (GHOULBOX): the hurdy-gurdy */
+#include "eng_saurus.c"         /* SAURUS (DINOBOX): the creature voice (after eng_formant.c: its resonators) */
 
 /* the editor protocol, user presets and projects store these indices: append, never reorder */
 static const engine_t *const ENGINES[NENGINES] = {
@@ -67,6 +68,7 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_FM4_GONE,               /* 13: reserved (FELUCCA_SLICE=0: no SLICE; never offered, eng_ok) */
 #endif
     &ENG_GURDY,                  /* 14 (ENGI_GURDY, GHOULBOX) */
+    &ENG_SAURUS,                 /* 15 (ENGI_SAURUS, DINOBOX) */
 };
 
 /* a track's engine number as an index (the audio paths: a compare, cheaper than % NENGINES; a bad number: 0) */
@@ -118,6 +120,7 @@ static const char *snd_missing(const track_t *t, uint32_t *code)
 static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
     0,                           /* ANALOG */
     12,                          /* FM6 */
+    15,                          /* SAURUS (DINOBOX) */
 #if FELUCCA_FM4
     1,                           /* DIGITAL */
 #endif

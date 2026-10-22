@@ -26,10 +26,11 @@
 #ifndef GHOULBOX_VERSION
 #define GHOULBOX_VERSION "2.3.2"   /* GHOULBOX's own: the ABOUT screen; the editor's version string ends " GB" it */
 #endif
-#define NENGINES 15u             /* SLICE 13 (reserved without FELUCCA_SLICE: never offered), GURDY 14 (GHOULBOX):
+#define NENGINES 16u             /* SLICE 13 (reserved without FELUCCA_SLICE: never offered), GURDY 14 (GHOULBOX), SAURUS 15 (DINOBOX):
                                   * every engine keeps its number in every build */
 #define ENGI_SLICE 13u
 #define ENGI_GURDY 14u
+#define ENGI_SAURUS 15u         /* DINOBOX: the creature voice (eng_saurus.c) */
 #define ENGI_DIGITAL 1u          /* reserved without FELUCCA_FM4: never selectable (eng_ok), its sounds load as FM6 */
 #define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 1u)   /* the engines one can pick: PRESETS, the EDIT layer, the editor
                                                 * (GHOULBOX: not SLICE: engines.c ENGINE_ORDER),

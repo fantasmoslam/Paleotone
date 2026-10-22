@@ -236,6 +236,7 @@ static const struct { uint8_t cc, kind, id; } MIDI_CC_MAP[] = {
 static const uint8_t MIDI_CC_RES[NENGINES] = {
     6, 0, 0, 0, 0, 7, 7, 0,                             /* ANALOG RES, -, PHASE, LOFI, SAMPLE, VOICE Q, TRIO RES, WHEEL */
     0, 0, 0, 4, 0, 0, 0,                                /* GRAIN, PHYS, DRUM, NOISE RES, FM6, SLICE, GURDY */
+    5,                                                  /* SAURUS GROWL (DINOBOX) */
 };
 static volatile uint8_t midi_cc_q[NTRK][NMIDI_CC];       /* the latest value + 1 per track and CC, 0 = none pending */
 static void midi_cc_note(uint32_t ch, uint32_t cc, uint32_t value)
