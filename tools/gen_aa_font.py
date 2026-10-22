@@ -60,9 +60,10 @@ LINE = {("SairaCondensed-Regular.ttf", "S"): (12, 3), ("SairaCondensed-Medium.tt
 
 def preset(name):
     if name == "dinobox":                      # DINOBOX: Saira Condensed (SIL OFL 1.1), smooth, on Inter Tight's rows
+        # (2 phases, not PHASES: 4 made the image 9 KB too big for the XIP region; 2 saves 11.9 KB)
         d = FONTS.parent / "assets" / "fonts"  # (12 / 15 / 30 px: the same cap heights, narrower: THROW fits its card)
-        return [("S", str(d / "SairaCondensed-Regular.ttf"), 12, (32, 126), EXTRAS, 0.0, PHASES),
-                ("M", str(d / "SairaCondensed-Medium.ttf"), 15, (32, 126), EXTRAS, -0.025, PHASES),   # (LARGE's labels)
+        return [("S", str(d / "SairaCondensed-Regular.ttf"), 12, (32, 126), EXTRAS, 0.0, 2),
+                ("M", str(d / "SairaCondensed-Medium.ttf"), 15, (32, 126), EXTRAS, -0.025, 2),   # (LARGE's labels)
                 ("L", str(d / "SairaCondensed-SemiBold.ttf"), 30, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0,
                  PHASES_L)]
     if name == "ghoulbox":                     # GHOULBOX: VT323 (SIL OFL 1.1), crisp, one phase, its capitals 1 row higher
@@ -72,8 +73,8 @@ def preset(name):
                 ("L", v, 36, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, 1)]   # (36: capitals 21 rows, as Inter's L)
     if name == "inter-tight":
         v = str(FONTS.parent / "assets" / "fonts" / "InterTight[wght].ttf")   # SIL OFL 1.1, Google Fonts
-        return [("S", v + "@400", 12, (32, 126), EXTRAS, 0.0, PHASES),
-                ("M", v + "@500", 15, (32, 126), EXTRAS, 0.0, PHASES),
+        return [("S", v + "@400", 12, (32, 126), EXTRAS, 0.0, 2),
+                ("M", v + "@500", 15, (32, 126), EXTRAS, 0.0, 2),
                 ("L", v + "@600", 28, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, PHASES_L)]
     if name == "standin":
         if os.path.exists(LOCAL_INTER):

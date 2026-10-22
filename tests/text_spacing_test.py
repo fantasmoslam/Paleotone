@@ -192,7 +192,8 @@ def main():
         e = sorted(pairs, key=lambda p: -abs(p[1]))
         mx = abs(e[0][1])
         rms = (sum(v * v for _, v in pairs) / len(pairs)) ** 0.5
-        lim = CRISP_LIMIT if f["psh"] == 0 else LIMIT[name]   # (one phase: a crisp face)
+        lim = CRISP_LIMIT if f["psh"] == 0 else 0.5 if f["psh"] == 1 else LIMIT[name]   # (one phase: a crisp face;
+        # two (DINOBOX's S and M, to fit the flash; L's always): a pen to the half pixel, as L's limit)
         over = sum(abs(v) > lim for _, v in pairs)
         ok = mx <= lim + 1e-9
         bad += not ok
