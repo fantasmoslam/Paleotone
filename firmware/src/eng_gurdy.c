@@ -23,7 +23,7 @@
  * pressure low-pass. ph[0] chanterelle, ph[1] bourdon (x2: the trompette),
  * ph[2] mouche. */
 static const char *const N_GURDY_DRN[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-static const char *const N_GURDY_COUP[] = {"HOLD", "1/4", "1/8", "1/8T", "1/16", "CRANK"};   /* (append-only) */
+static const char *const N_GURDY_COUP[] = {"HOLD", "1/4", "1/8", "1/8T", "1/16", "TURN"};   /* (TURN: GHOULBOX's CRANK)    append-only */
 static const uint8_t GURDY_COUP_DIV[5] = {0, 0, 1, 4, 2};   /* N_DIV indices (fx.c div_samples) */
 #define GURDY_CRANK 5u                                  /* COUP CRANK (GHOULBOX) */
 static uint32_t div_samples(uint32_t div);              /* fx.c */
@@ -253,15 +253,15 @@ static const param_desc_t *gurdy_desc(const track_t *t, uint32_t k)
 }
 
 static const engine_t ENG_GURDY = {
-    .name = "GURDY",
-    .page_title = {"DRONE", "WHEEL"},
+    .name = "ROAR",                                     /* DINOBOX (GHOULBOX: GURDY, its hurdy-gurdy) */
+    .page_title = {"DRONE", "CALL"},
     .edit = {
         {"DRN", F_ENUM, 0, 11, 2, N_GURDY_DRN, 0},
         {"DLVL", F_PCT, 0, 127, 90, 0, 0},
         {"5TH", F_PCT, 0, 127, 50, 0, 0},
-        {"WHL", F_PCT, 0, 127, 80, 0, 0},
-        {"BUZZ", F_PCT, 0, 127, 60, 0, 0},
-        {"COUP", F_ENUM, 0, 5, 2, N_GURDY_COUP, 0},
+        {"BRTH", F_PCT, 0, 127, 80, 0, 0},         /* (GHOULBOX: WHL, the wheel's pressure) */
+        {"RASP", F_PCT, 0, 127, 60, 0, 0},         /* (BUZZ) */
+        {"PULS", F_ENUM, 0, 5, 2, N_GURDY_COUP, 0},   /* (COUP: the wheel's strokes) */
         {"BODY", F_PCT, 0, 127, 70, 0, 0},
         {"WOBL", F_PCT, 0, 127, 40, 0, 0},
     },

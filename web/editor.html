@@ -13,9 +13,9 @@
   /* Fukiai: Hügelton Instruments' icon font (MIT, FUKIAI-LICENSE.txt). Icons are text in .ic spans;
      they stay hidden until the face has loaded (html.fk), so a missing font never shows boxes. */
   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
-  /* GHOULBOX: the dungeon, as the installer and the emulator (CRYPT's colours; the art in ../art/, make_site.py) */
+  /* GHOULBOX: the dungeon, as the installer and the emulator (DINOBOX: JUNGLE's colours (GHOULBOX: CRYPT's); the art in ../art/, make_site.py) */
   :root { --bg: #0D0C0B; --fg: #EFDFC6; --dim: #B3A58C; --line: #3A3A3E; --theme: #EF9A29;
-          --night: #080808; --edge: #6B4513; --frame: #3A3A3E; --ink: #000000; color-scheme: dark; }
+          --night: #07100a; --edge: #6B4513; --frame: #3A3A3E; --ink: #000000; color-scheme: dark; }
   h1 { color: var(--theme); }
   html { color-scheme: dark; background: var(--night); }
   body { margin: 0; color: var(--fg); min-height: 100vh; image-rendering: pixelated;
@@ -24,8 +24,8 @@
          background: radial-gradient(ellipse 75% 70% at 50% 40%, transparent 35%, rgba(0, 0, 0, .78) 100%) fixed,
                      url("../art/wall.png") 0 0 / 256px 128px var(--night); }
   .crest { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 18px 0 16px; }
-  .crest .skull { width: 72px; height: 84px; image-rendering: auto; }
-  .crest .logo { height: 78px; width: auto; image-rendering: auto; filter: drop-shadow(0 0 10px rgba(239, 154, 41, .35)); }
+  .crest .skull { width: 132px; height: 72px; image-rendering: auto; }
+  .crest .logo { height: 78px; width: auto; image-rendering: auto; filter: drop-shadow(0 0 10px rgba(168, 214, 80, .35)); }
   .crest .what { font: 700 26px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--fg);
                  text-shadow: 0 0 3px var(--ink), 0 0 6px var(--ink), 0 2px 0 var(--ink); align-self: flex-end; margin-bottom: 8px; }
   .stage { display: grid; grid-template-columns: 48px minmax(0, 1100px) 48px; gap: 32px; align-items: start; justify-content: center;
@@ -34,14 +34,14 @@
            animation: torch .48s steps(4) infinite; }
   .torch.r { animation-delay: -.24s; }
   .torch::before { content: ""; position: absolute; left: 50%; top: 18px; width: 420px; height: 420px; margin: -210px 0 0 -210px;
-                   background: radial-gradient(circle, rgba(239, 154, 41, .28), rgba(239, 77, 66, .09) 40%, transparent 68%);
+                   background: radial-gradient(circle, rgba(168, 214, 80, .28), rgba(255, 122, 48, .09) 40%, transparent 68%);
                    animation: glow 1.7s ease-in-out infinite alternate; pointer-events: none; z-index: -1; }
   .torch.r::before { animation-duration: 1.3s; }
   @keyframes torch { to { background-position: -192px 0; } }
   @keyframes glow { 0% { opacity: .75; } 40% { opacity: 1; } 55% { opacity: .82; } 100% { opacity: .95; } }
   @media (prefers-reduced-motion: reduce) { .torch, .torch::before { animation: none; } }
   @media (max-width: 1280px) { .stage { grid-template-columns: minmax(0, 1100px); } .stage .torch { display: none; } }
-  @media (max-width: 600px) { .crest .skull { width: 48px; height: 56px; } .crest .logo { height: 52px; } .crest .what { font-size: 18px; } }
+  @media (max-width: 600px) { .crest .skull { width: 88px; height: 48px; } .crest .logo { height: 52px; } .crest .what { font-size: 18px; } }
   /* the editor on a stone plaque (a window's frame, as gfx.c cv_window) */
   main { position: relative; z-index: 1;   /* (over the torches' glow) */
          max-width: 1100px; margin: 0; padding: 16px 20px; background: var(--bg);
@@ -1734,7 +1734,7 @@ function makeMockDevice(opt = {}) {
     E("MIDI", ["USB", "TRS"], 0), E("SYNC", NDASH, 0), E("ROUT", ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"], 0), D("CPU", F.INT, 0, 0, 0),
     D("SLOT", F.INT, 1, 4, 1), E("NAME", NDASH, 0), E("LOAD", NGO, 0), E("SAVE", NGO, 0),
     E("ENG", ["ANALOG", "-", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL",
-      "GRAIN", "PHYS", "DRUM", "NOISE", "FM6", "SLICE", "GURDY"], 0), E("SET", NGO, 0),
+      "GRAIN", "PHYS", "DRUM", "NOISE", "FM6", "SLICE", "ROAR"], 0), E("SET", NGO, 0),
     E("CLRSQ", NGO, 0), E("INIT", NGO, 0),
     E("TYPE", ["ROOM", "SPRING", "HALL"], 2),               /* G_RTYPE (id 24, was G_DRCH): the reverb's model */
     D("TAPE", F.PCT, 0, 127, 0), D("CRSH", F.PCT, 0, 127, 0),   /* G_TAPE, G_CRSH (ids 25, 26; GHOULBOX, tape.c) */
@@ -1845,9 +1845,9 @@ function makeMockDevice(opt = {}) {
         E("MODE", ["ONE", "GATE", "LOOP"], 0), E("REV", ["OFF", "ON"], 0), D("DCAY", F.TIME, 0, 127, 127), D("TONE", F.INT, 0, 127, 127)],
       presets: [P("CHOP", [0, 2, 0, 0, 0, 0, 127, 127], [0, 127, 127, 30], 0, 9), P("STUTTER", [0, 1, 0, 0, 1, 0, 90, 110], [0, 127, 127, 12], 0, 10)] },
     /* GURDY (engine 14, GHOULBOX: src/eng_gurdy.c) */
-    { name: "GURDY", titles: ["DRONE", "WHEEL"], edit: [E("DRN", ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], 2),
-        D("DLVL", F.PCT, 0, 127, 90), D("5TH", F.PCT, 0, 127, 50), D("WHL", F.PCT, 0, 127, 80), D("BUZZ", F.PCT, 0, 127, 60),
-        E("COUP", ["HOLD", "1/4", "1/8", "1/8T", "1/16", "CRANK"], 2), D("BODY", F.PCT, 0, 127, 70), D("WOBL", F.PCT, 0, 127, 40)],
+    { name: "ROAR", titles: ["DRONE", "CALL"], edit: [E("DRN", ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], 2),
+        D("DLVL", F.PCT, 0, 127, 90), D("5TH", F.PCT, 0, 127, 50), D("BRTH", F.PCT, 0, 127, 80), D("RASP", F.PCT, 0, 127, 60),
+        E("PULS", ["HOLD", "1/4", "1/8", "1/8T", "1/16", "TURN"], 2), D("BODY", F.PCT, 0, 127, 70), D("WOBL", F.PCT, 0, 127, 40)],
       presets: [
         /* GHOULBOX presets (tools/ghoulbox_presets.py) */ P("PRIMEVAL", [2, 110, 70, 70, 60, 2, 95, 50], [15, 64, 127, 50], 1, 15), P("EARTHQUAKE", [2, 127, 127, 40, 30, 0, 127, 90], [60, 64, 127, 110], 1, 17), P("STAMPEDE", [2, 60, 30, 110, 127, 4, 60, 15], [2, 64, 127, 25], 1, 21), P("REX GROWL", [2, 80, 20, 90, 127, 0, 90, 60], [6, 64, 127, 45], 1, 18), P("SWAMP FIDDLE", [2, 20, 0, 70, 10, 0, 110, 60], [40, 64, 120, 75], 1, 19), P("TRIBE PIPES", [2, 127, 100, 120, 20, 0, 40, 10], [6, 64, 127, 35], 1, 15) /* GHOULBOX end */] },
   ];
@@ -2010,7 +2010,7 @@ function makeMockDevice(opt = {}) {
   /* opt.parts (tests): [track, engine name, preset, PATTERNS index or -1] in place of the scene, at 1/16 and the
      global defaults (the protocol tests' fixture: Felucca's ACID, FM6 PAD, PULSE LD, DRUM KIT on BEAT) */
   const engI = (n) => ENG.findIndex((e) => e.name === n);
-  (opt.parts || [[3, "GURDY", 1, 16], [2, "VOICE", 4, 15], [1, "ANALOG", 12, 13], [0, "GURDY", 0, 14]]).forEach(([i, e, p, k]) => {
+  (opt.parts || [[3, "ROAR", 1, 16], [2, "VOICE", 4, 15], [1, "ANALOG", 12, 13], [0, "ROAR", 0, 14]]).forEach(([i, e, p, k]) => {
     st.sel = i; setEngine(engI(e)); applyPreset(p); if (k >= 0) loadPattern(k); if (!opt.parts) st.tracks[i].p[30] = 1;
   });
   if (!opt.parts) { st.g[0] = 72; st.g[24] = 2; st.g[25] = 40; }
@@ -2513,7 +2513,7 @@ function enumShown(d) {
 /* the order the device shows its engines in (src/engines.c ENGINE_ORDER): the lists here follow it, the protocol keeps
    the engine numbers. engineOrder(names): the indices of names in that order, "-" (a reserved number) left out; a name
    the list does not know (another firmware) follows in index order */
-const ENGINE_ORDER = ["ANALOG", "FM6", "DIGITAL", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN", "PHYS", "GURDY", "NOISE", "DRUM"];
+const ENGINE_ORDER = ["ANALOG", "FM6", "DIGITAL", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN", "PHYS", "ROAR", "NOISE", "DRUM"];
 /* GHOULBOX: the engines and factory presets the device no longer offers (src/engines.c ENGINE_ORDER, GB_HIDDEN; a
    stored number still loads them): left out of the lists here too. test_web.mjs: == the firmware's */
 const ENGINE_HIDDEN = ["SLICE"];
@@ -2937,7 +2937,7 @@ const LAYOUT = (pe0, gc = 27) => [
   ...(pe0 >= 61 ? [{ t: "MOD", mod: 49 }] : []),   /* the matrix: P_M1SRC 49 .. P_M4AMT 60, one row per slot */
   { t: "EDIT", engine: true, pages: [["EDIT 1", 0, [pe0, pe0 + 1, pe0 + 2, pe0 + 3]], ["EDIT 2", 0, [pe0 + 4, pe0 + 5, pe0 + 6, pe0 + 7]],
     ...(pe0 >= 91 && engName() === "DRUM" ? [["LANES", 0, P_LANES.slice(0, 4)], ["LANES 2", 0, P_LANES.slice(4)]] : []),   /* lane levels 83..90 */
-    ...(pe0 >= 105 && engName() === "GURDY" ? [["RING", 0, [P_RING]]] : [])] },   /* GHOULBOX 2.3 */
+    ...(pe0 >= 105 && engName() === "ROAR" ? [["RING", 0, [P_RING]]] : [])] },   /* GHOULBOX 2.3 */
   ...(pe0 >= 81 && engName() === "DIGITAL" ? [{ t: "OP ENV", pages: [   /* P_FM1_ATK 61: ATK DEC SUS REL LVL per operator (a
                                                     FELUCCA_FM4=1 firmware only: DIGITAL retired, its engine is "-") */
     ...[0, 1, 2, 3].map((k) => [`OP${k + 1}`, 0, [61 + 5 * k, 62 + 5 * k, 63 + 5 * k, 64 + 5 * k]]),
@@ -2950,7 +2950,7 @@ const LAYOUT = (pe0, gc = 27) => [
   { t: "SEQ PATTERN", tab: "seqgroups", pages: [["PATTERN", 0, pe0 >= 95 ? [29, 30, 31, 32, 94] : [29, 30, 31, 32]]] },   /* QNTZ 94 */
   /* 1.2: as the device shows them: HOME > CLOCK (BPM SWG; CLK not here), MENU > AUDIO TUNE, MENU > MIDI > MIDI IN (G_ROUTE) */
   { t: "GLOBAL", tab: "setgroups", pages: [["CLOCK", 1, [0, 1, 2]], ["AUDIO", 1, [3]], ["MIDI", 1, [14]],
-    ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["DREAM", 1, [33, 34, 35, 36]]] : [])] },   /* GHOULBOX */
+    ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["EPOCH", 1, [33, 34, 35, 36]]] : [])] },   /* GHOULBOX */
 ];
 /* globals that are actions or placeholders on the device: buttons instead, or hidden */
 const G_SKIP = new Set(["SLOT", "NAME", "LOAD", "SAVE", "ENG", "SET", "CLRSQ", "INIT", "MIDI", "SYNC", "CPU", "CLK"]);

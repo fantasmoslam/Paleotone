@@ -5,8 +5,8 @@
 **DINOBOX** is epic prehistoric firmware for the **M-VAVE FM-1**: roaring beasts, booming war drums, misty jungle
 pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth)
 2.3.2 by Jason Persinger, itself built on [Felucca](https://github.com/hugelton/Felucca) 1.4.1 by Leo Kuroshita,
-Hügelton Instruments. Everything GHOULBOX does (DREAM, RING, KEYS, the hall reverb, tape and crush, twelve
-voices) works the same; the theme and the sounds are new.
+Hügelton Instruments. Everything GHOULBOX does (its composer, RING, KEYS, the hall reverb, tape and crush, twelve
+voices) works the same; the look, the names and the sounds are new.
 
 **Status: DINOBOX 1.0 has not been tested on a real FM-1 yet.** The host test suite passes, but install it at your
 own risk. Holding OCT− while switching on puts the FM-1 into USB rescue mode, from which any firmware (or M-VAVE's
@@ -14,7 +14,14 @@ own, `FM-1.fwsc`) can be installed again.
 
 ## What's different from GHOULBOX
 
+- **A new interface.** The JUNGLE palette (night green, bone, fern, lava) is a new FM-1's colours, with VOLCANO
+  beside it in MENU > DISPLAY > COLOR (GHOULBOX's CRYPT is still there). The windows are rock strata with bone
+  knuckles on their corners; the cursor is a three-toed footprint; ferns sway beside HOME's scope; the type is Saira
+  Condensed (GHOULBOX: VT323). ROAR's icon is a T. rex head; MENU's DISPLAY tab is a reptile's eye.
 - **The boot screen and ABOUT page:** a T. rex skull, the DINOBOX wordmark (Cinzel Black) and "PREHISTORIC SYNTH".
+- **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
+  controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
+  HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
 - **45 sounds, renamed and mostly retuned.** GHOULBOX's dungeon sounds became prehistoric ones, in the same slots
   and engines, so projects and user presets saved with GHOULBOX still load.
 - **Four new power-on scenes** (MENU > SYSTEM > SCENE): JUNGLE (the default), VOLCANO, STAMPEDE and VALLEY, plus
@@ -33,7 +40,7 @@ own, `FM-1.fwsc`) can be installed again.
 | LOFI | FOSSIL LEAD, DINO CHOIR, BONE WHISTLE |
 | PHASE | TITAN BRASS |
 | NOISE | VOLCANO (a deep rumble with falling rocks), LAVA CRACKLE |
-| GURDY | PRIMEVAL, EARTHQUAKE, STAMPEDE (1/16 thunder), REX GROWL, SWAMP FIDDLE, TRIBE PIPES |
+| ROAR | PRIMEVAL, EARTHQUAKE, STAMPEDE (1/16 thunder), REX GROWL, SWAMP FIDDLE, TRIBE PIPES |
 | FM6 | HERO HORNS, FERN PLUCK, COMET CHOIR, DEEP STRINGS, MIST FLUTE, LAVA ORGAN, BRONTO TUBA (F9..F15) |
 | SAMPLE | AURORA BOW, REED ORGAN, CAVE FLUTE, RIVER HARP |
 | DRUM | TRIBAL KIT, WAR DRUMS |
@@ -63,7 +70,9 @@ Without the toolchain, `python3 tools/build.py --gen-only && HOST_ONLY=1 tests/r
 The prehistoric sounds are one table in `tools/ghoulbox_presets.py` (name, the engine's eight EDIT values, the
 envelope, mono, the effect sends and a suggested pattern). Edit it, run `python3 tools/ghoulbox_presets.py`, and it
 writes them into the engines and the web editor. The scenes are `GB_SCENES` in `firmware/src/engines.c`, the boot
-art `tools/gen_ghoulbox_art.py`.
+art `tools/gen_ghoulbox_art.py`, the palettes `tools/gen_ui_palettes.py`, the windows and cursor `firmware/src/gfx.c`
+(`cv_stone`, `cv_window`, `cv_sword`), the ferns `firmware/src/ui_graph.c` (`torch_draw`) and the T. rex and eye
+icons `tools/gen_aa_icons.py` (`OWN`).
 
 ## Credits and licence
 
@@ -74,5 +83,6 @@ DINOBOX is free software under the GNU GPL, version 3 only, like GHOULBOX and Fe
   is built on. Its README, with the history of all its versions, is in [docs/GHOULBOX-README.md](docs/GHOULBOX-README.md).
   To support its author: [Ko-fi](https://ko-fi.com/ghoulbox).
 - [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita, Hügelton Instruments.
-- Cinzel by The Cinzel Project Authors (SIL OFL 1.1): the wordmark.
+- Cinzel by The Cinzel Project Authors (SIL OFL 1.1): the wordmark. Saira by The Saira Project Authors (SIL OFL
+  1.1): the screen's type.
 - The other parts and their licences: [LICENSING.md](LICENSING.md).

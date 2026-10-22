@@ -91,9 +91,9 @@ EXTRA = {
     # a missing sample (the header message, the SLICES page): SAMPLE NOT FOUND
     "x_nofile": "symbol_document_disabled",
     # the MENU's tabs (ui_menu.c, 1.0.5): DISPLAY (CONTROL x_knob, AUDIO x_speaker, 1.2 MIDI midi, SYSTEM x_cog)
-    "x_eye": "symbol_eye",
+    "x_eye": "db_reptile_eye",                         # (DINOBOX; Felucca: symbol_eye)
     # GHOULBOX: the GURDY engine (icons.c engine_icon; the footer's 12 px, PRESETS' 16 px)
-    "x_gurdy": "gb_hurdy_gurdy",
+    "x_gurdy": "db_rex_head",                          # (DINOBOX: the ROAR engine; GHOULBOX: gb_hurdy_gurdy)
 }
 
 # GHOULBOX: glyphs Fukiai does not have, drawn here in em units (y up) and added to the font copy (fitted_font) at a
@@ -136,7 +136,43 @@ def _gb_hurdy_gurdy(pen, upm):
     box(93, 52, 100, 88)                               # .. the arm down
 
 
-OWN = {"gb_hurdy_gurdy": (0xF8F0, _gb_hurdy_gurdy)}
+# DINOBOX: its own glyphs, drawn the same way. The polygons are given clockwise on the y-down grid (the outside) and
+# a hole the other way round
+def _poly(pen, upm, pts, hole=False):
+    u = upm / 100.0
+    pts = list(reversed(pts)) if hole else pts
+    pen.moveTo((round(pts[0][0] * u), round((100 - pts[0][1]) * u)))
+    for x, y in pts[1:]:
+        pen.lineTo((round(x * u), round((100 - y) * u)))
+    pen.closePath()
+
+
+def _ellipse(cx, cy, rx, ry, n=20):
+    import math
+    return [(cx + rx * math.cos(2 * math.pi * k / n), cy + ry * math.sin(2 * math.pi * k / n)) for k in range(n)]
+
+
+def _db_rex_head(pen, upm):
+    """the ROAR engine: a T. rex head and neck facing right, jaws open, a round eye cut out"""
+    _poly(pen, upm, [(6, 98), (12, 62), (8, 38), (18, 20), (42, 10), (70, 12), (90, 20), (99, 31), (97, 43),
+                     (72, 47), (56, 49), (62, 55), (88, 56), (90, 64), (66, 71), (46, 73), (38, 82), (38, 98)])
+    _poly(pen, upm, _ellipse(58, 26, 6, 6), hole=True)
+
+
+def _db_reptile_eye(pen, upm):
+    """MENU's DISPLAY tab: a reptile's eye, an almond outline round a slit pupil"""
+    import math
+    outer = [(50 - 48 * math.cos(math.pi * k / 16), 50 - 32 * math.sin(math.pi * k / 16)) for k in range(17)]
+    outer += [(50 + 48 * math.cos(math.pi * k / 16), 50 + 32 * math.sin(math.pi * k / 16)) for k in range(1, 16)]
+    inner = [(50 - 36 * math.cos(math.pi * k / 16), 50 - 21 * math.sin(math.pi * k / 16)) for k in range(17)]
+    inner += [(50 + 36 * math.cos(math.pi * k / 16), 50 + 21 * math.sin(math.pi * k / 16)) for k in range(1, 16)]
+    _poly(pen, upm, outer)
+    _poly(pen, upm, inner, hole=True)
+    _poly(pen, upm, _ellipse(50, 50, 7, 19))
+
+
+OWN = {"gb_hurdy_gurdy": (0xF8F0, _gb_hurdy_gurdy), "db_rex_head": (0xF8F1, _db_rex_head),
+       "db_reptile_eye": (0xF8F2, _db_reptile_eye)}
 
 # a glyph given as a tuple: the first one the font has (a glyph still to be drawn falls back to a stand-in;
 # a missing preferred glyph never breaks the build). WHEEL: symbol_drawbar once Fukiai has it.

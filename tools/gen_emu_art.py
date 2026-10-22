@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # GHOULBOX: the browser emulator page's pixel art (web/emu/build.sh), in the CRYPT palette (build/gen/ui_palettes.h):
-#   torch.png  the wall torch, the firmware's own (src/ui_graph.c torch_draw): its 4 frames side by side, 12 x 30 each
+#   torch.png  DINOBOX: the fern (GHOULBOX: the wall torch), the firmware's own (src/ui_graph.c torch_draw): its 4 frames side by side, 12 x 30 each
 #   logo.png   "GHOULBOX" and skull.png, the boot screen's art drawn large (tools/gen_ghoulbox_art.py logo, skull: the
 #              same word and skull as GB_LOGO, GB_SKULL, at 4x their size: smooth, the page shows them at 2x) in its
 #              colours (THEME, TEXT)
@@ -28,38 +28,38 @@ def mix(a, b, pct):                                     # gfx.c ux_mix: a toward
 
 
 def crypt(gen):
-    m = re.search(r'\{"CRYPT",\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+)\}',
+    """DINOBOX: the JUNGLE palette's colours (the name kept: make_site.py, the pages' art)"""
+    m = re.search(r'\{"JUNGLE",\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+)\}',
                   (gen / "ui_palettes.h").read_text())
     bg, surf, text, theme, accent = (rgb565(int(v, 16)) for v in m.groups())
     return {"bg": bg, "surf": surf, "text": text, "theme": theme, "accent": accent,
-            "stone": mix(surf, bg, 45), "edge": mix(bg, theme, 45)}
+            "stone": mix(surf, bg, 45), "edge": mix(bg, theme, 45), "sel": mix(bg, theme, 80)}
 
 
 def torch(c):
-    """torch_draw(x = 0, y = 0, f) for f = 0..3, the frames side by side"""
-    outer = [2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 8, 6]
-    midw = [0, 0, 0, 2, 2, 4, 4, 6, 6, 6, 6, 4]
-    core = [0, 0, 0, 0, 0, 2, 2, 2, 4, 4, 2, 2]
+    """DINOBOX: the fern (src/ui_graph.c torch_draw, torch.png kept as the name) for f = 0..3, side by side"""
+    pairs = [(4, 2), (7, 3), (10, 4), (13, 5), (16, 5), (19, 5), (22, 4), (25, 3)]
     sway = [-1, 0, 1, 0]
     im = Image.new("RGBA", (48, 30), (0, 0, 0, 0))
 
-    def rect(x, y, w, h, col):
-        for j in range(h):
-            for i in range(w):
-                im.putpixel((x + i, y + j), col + (255,))
+    def put(x, y, col):
+        if 0 <= x < 48 and 0 <= y < 30:
+            im.putpixel((x, y), col + (255,))
+
+    def dx(sw, row):
+        d = sw * (16 - row) if row < 16 else 0
+        return int((d + (5 if d > 0 else -5 if d < 0 else 0)) / 10)
     for f in range(4):
-        x0 = 12 * f
-        for j in range(f & 1, 12):                      # (odd frames: one row shorter)
-            cx = x0 + 6 + (sway[f] if j < 5 else 0)
-            rect(cx - outer[j] // 2, j, outer[j], 1, c["accent"])
-            if midw[j]:
-                rect(cx - midw[j] // 2, j, midw[j], 1, c["theme"])
-            if core[j] and j + (f & 2) // 2 < 12:
-                rect(cx - core[j] // 2, j, core[j], 1, c["text"])
-        for j in range(6):                              # the cup: narrowing
-            rect(x0 + j // 2, 12 + j, 12 - (j // 2) * 2, 1, c["theme"] if j == 0 else c["edge"])
-        rect(x0 + 4, 18, 4, 12, c["edge"])              # the handle
-        rect(x0 + 5, 18, 1, 12, c["stone"])
+        x0, sw = 12 * f, sway[f]
+        for j in range(3, 30):
+            put(x0 + 6 + dx(sw, j), j, c["edge"])
+        for k, (ly, n) in enumerate(pairs):
+            col = c["sel"] if k & 1 else c["theme"]
+            for i in range(1, n + 1):
+                put(x0 + 6 + dx(sw, ly) - i, ly - i // 2, col)
+                put(x0 + 6 + dx(sw, ly) + i, ly - i // 2, col)
+        put(x0 + 6 + dx(sw, 1), 1, c["theme"])
+        put(x0 + 6 + dx(sw, 2), 2, c["theme"])
     return im
 
 
@@ -70,31 +70,29 @@ def tinted(alpha, col):
 
 
 def wall():
-    """grey blocks: 16 x 8 with a 1 px mortar line, lit from the top left (a light top and left edge, a dark
-    bottom and right), each block a shade of its own and a few specks; rows offset by half a block"""
+    """DINOBOX: rock strata, 64 x 32 and tiling: dark earth bands rising and falling gently, a lighter seam between
+    them, some grit and now and then a pebble"""
     rnd = random.Random(1137)
-    mortar = (24, 24, 26)
-    shades = [(70, 70, 74), (78, 78, 82), (64, 64, 68), (84, 83, 86)]
-    im = Image.new("RGB", (64, 32), mortar)
-    for row in range(4):
-        off = 8 if row & 1 else 0
-        for b in range(-1, 4):
-            x0, y0 = b * 16 + off, row * 8
-            base = rnd.choice(shades)
-            hi = tuple(min(255, v + 16) for v in base)
-            lo = tuple(max(0, v - 18) for v in base)
-            dark = tuple(max(0, v - 10) for v in base)
-            for y in range(7):                          # (row 7: the mortar under it)
-                for x in range(15):                     # (column 15: the mortar beside it)
-                    col = hi if (y == 0 or x == 0) else lo if (y == 6 or x == 14) else base
-                    im.putpixel(((x0 + x) % 64, y0 + y), col)
-            for _ in range(rnd.randint(3, 6)):          # specks, inside the edges
-                im.putpixel(((x0 + rnd.randint(2, 12)) % 64, y0 + rnd.randint(1, 5)),
-                            dark if rnd.random() < 0.7 else hi)
-            if rnd.random() < 0.3:                      # now and then a crack
-                x, y = rnd.randint(3, 10), rnd.randint(1, 3)
-                for k in range(rnd.randint(2, 4)):
-                    im.putpixel(((x0 + x + k) % 64, y0 + min(5, y + k // 2)), lo)
+    earth = [(26, 34, 26), (30, 38, 28), (22, 30, 23), (34, 40, 30)]
+    seam = (48, 56, 40)
+    im = Image.new("RGB", (64, 32), earth[0])
+    wave = [0, 0, 1, 1, 2, 2, 2, 1, 1, 0, 0, -1, -1, -1, -1, 0]
+    for x in range(64):
+        w = wave[(x // 4) % 16]
+        for y in range(32):
+            v = (y + w) % 32
+            band = v // 8
+            col = earth[band]
+            if v % 8 == 0:
+                col = seam
+            im.putpixel((x, y), col)
+    for _ in range(60):                                 # grit
+        x, y = rnd.randrange(64), rnd.randrange(32)
+        im.putpixel((x, y), tuple(max(0, v - 8) for v in im.getpixel((x, y))))
+    for _ in range(5):                                  # pebbles
+        x, y = rnd.randrange(64), rnd.randrange(32)
+        for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            im.putpixel(((x + dx) % 64, (y + dy) % 32), (52, 58, 44))
     return im
 
 
@@ -104,7 +102,7 @@ def main():
     c = crypt(gen)
     torch(c).save(out / "torch.png")
     tinted(logo(896, 208), c["theme"]).save(out / "logo.png")      # (GB_LOGO is logo(224, 52))
-    tinted(skull(192, 224), c["text"]).save(out / "skull.png")      # (GB_SKULL is skull(48, 56))
+    tinted(skull(440, 240), c["text"]).save(out / "skull.png")      # (GB_SKULL is skull(110, 60))
     wall().save(out / "wall.png")
 
 

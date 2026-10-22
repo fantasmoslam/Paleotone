@@ -151,7 +151,7 @@ static const icon_map_t ICON_MAP[] = {
     {"HARM", ICON_RATIO}, {"BEND", ICON_SWEEP}, {"CHRD", ICON_SCALE}, {"SYMP", ICON_MIX}, {"DECY", ICON_DECAY},
     {"SNAP", ICON_NOISE}, {"KIT", ICON_SAMPLE}, {"KICK", ICON_ATTACK},       /* PHYS: MEMB, SYMP; DRUM */
     {"VOWL", ICON_VOICE}, {"VOWL2", ICON_VOICE}, {"TALK", ICON_SWEEP}, {"SHIFT", ICON_TRANSPOSE},
-    {"BUZZ", ICON_PULSE}, {"BRTH", ICON_NOISE}, {"Q", ICON_RESO}, {"RAND", ICON_PROB},
+    {"BUZZ", ICON_PULSE}, {"RASP", ICON_PULSE}, {"BRTH", ICON_NOISE}, {"Q", ICON_RESO}, {"RAND", ICON_PROB},
     {"FREQ", ICON_CUTOFF}, {"TRK", ICON_KEYTRACK}, {"DRFT", ICON_SWEEP},   /* NOISE (COLR, DENS, CRSH: above) */
     {"MLVL", ICON_MOD}, {"MRAT", ICON_RATIO}, {"MEG", ICON_DECAY}, {"VMOD", ICON_ACCENT}, {"DTUN", ICON_DETUNE},
     {"SLOT", ICON_LOAD},                                                    /* FM6 (ALG, FB: above) */
@@ -245,7 +245,7 @@ static uint32_t engine_icon(const char *name)
         {"SLICE", ICON_SLICE},
         {"GRAIN", ICON_GRAIN},
         {"PHYS", ICON_PHYS},
-        {"GURDY", ICON_X_GURDY},              /* GHOULBOX 1.3: its own glyph (tools/gen_aa_icons.py OWN) */
+        {"ROAR", ICON_X_GURDY},               /* DINOBOX: a T. rex head (tools/gen_aa_icons.py OWN; GHOULBOX: GURDY's) */
         {"DRUM", ICON_DRUM},
         {"NOISE", ICON_NOISE},
         {"FM6", ICON_MOD},                    /* (symbol_modular: six operators patched; a glyph of its own wanted) */

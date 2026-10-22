@@ -21,7 +21,7 @@ ENGINES = {
     "LOFI": ("eng_lofi.c", "LOFI_PRESETS"),
     "PHASE": ("eng_phase.c", "PHASE_PRESETS"),
     "NOISE": ("eng_noise.c", "NOISE_PRESETS"),
-    "GURDY": ("eng_gurdy.c", "GURDY_PRESETS"),
+    "ROAR": ("eng_gurdy.c", "GURDY_PRESETS"),          # DINOBOX: GHOULBOX's GURDY engine
 }
 
 # DINOBOX: epic prehistoric sounds in GHOULBOX's slots (same order, same engines: saved projects keep
@@ -71,7 +71,7 @@ PRESETS = {
         ("VOLCANO", [0, 110, 30, 25, 0, 30, 100, 0], [90, 90, 127, 120], 0, 0, (20, 0, 10, 110), 5),     # a deep rumble, falling rocks
         ("LAVA CRACKLE", [1, 45, 80, 55, 0, 80, 40, 0], [20, 90, 127, 80], 0, 0, (0, 0, 0, 80), 5),
     ],
-    "GURDY": [  # DRN (C .. B) DLVL 5TH WHL | BUZZ COUP (HOLD 1/4 1/8 1/8T 1/16) BODY WOBL
+    "ROAR": [  # DRN (C .. B) DLVL 5TH BRTH | RASP PULS (HOLD 1/4 1/8 1/8T 1/16) BODY WOBL
         ("PRIMEVAL", [2, 110, 70, 70, 60, 2, 95, 50], [15, 64, 127, 50], 0, 1, (12, 15, 0, 100), 15),
         ("EARTHQUAKE", [2, 127, 127, 40, 30, 0, 127, 90], [60, 64, 127, 110], 0, 1, (25, 15, 0, 115), 17),   # a wall of drone
         ("STAMPEDE", [2, 60, 30, 110, 127, 4, 60, 15], [2, 64, 127, 25], 0, 1, (25, 0, 0, 75), 21),          # 1/16 thunder

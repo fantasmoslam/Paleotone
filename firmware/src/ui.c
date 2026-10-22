@@ -482,7 +482,7 @@ static void page_entered(void)
     ui.act = pg->graph == GR_USER ? 4u : 0u;     /* the save screen is ready for OCT+ */
     ui.force = 1;
     if (!ui.home && pg->scope == SC_GLOBAL && pg->id[0] == G_DREAM)
-        ui_message("A KEY: DREAM IN IT");        /* GHOULBOX 2.3: DREAM's keys */
+        ui_message("A KEY: AN EPOCH");           /* GHOULBOX 2.3: DREAM's keys (DINOBOX: EPOCH) */
 }
 
 static int step_on(const step_t *st) { return st->time == ST_NOTE && (st->n || st->hit); }

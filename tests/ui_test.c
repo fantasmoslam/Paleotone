@@ -590,20 +590,26 @@ static int test_sound_loads(void)
     bad += check("  their GM hits play as drums", gm_hits_play(&trk[3]));
     bad += check("  its old drum channel (10, in id 24) loads as REVERB TYPE ROOM", song.g[G_RTYPE] == 0);
     bad += check("  its old drum level / send (ids 25, 26) load as TAPE / CRSH off", song.g[G_TAPE] == 0 && song.g[G_CRSH] == 0);
-    {   /* GHOULBOX: a list's selected row: the sword and accent text, no THEME bar */
-        uint32_t theme = 0, accent = 0, blade = 0, i;
+    {   /* GHOULBOX: a list's selected row: the cursor (DINOBOX: a footprint) and accent text, no THEME bar. DINOBOX's
+         * text is smooth (few pixels exactly ACCENT): the selected row's text against the same row unselected */
+        static uint16_t plain[240 * 20];
+        uint32_t theme = 0, recoloured = 0, blade = 0, i;
+        cv_begin(240, 20, T_SURF);
+        list_row(2, 0, "ANLG", T_MID, "JUNGLE PAD", T_TEXT, 230);
+        memcpy(plain, cv_px, sizeof plain);
         cv_begin(240, 20, T_SURF);
         list_row(2, 1, "ANLG", T_MID, "JUNGLE PAD", T_TEXT, 230);
         for (i = 0; i < 240u * 20u; i++) {
-            uint16_t c = swap16(cv_px[i]);
-            theme += c == T_THEME;
-            accent += c == T_ACCENT;
+            if (i % 240u >= 22u) {                     /* (the text, right of the footprint) */
+                theme += swap16(cv_px[i]) == T_THEME;
+                recoloured += cv_px[i] != plain[i];
+            }
         }
         for (i = 6; i < 20u; i++)
-            blade += swap16(cv_px[(2u + 8u) * 240u + i]) == T_TEXT;   /* the blade's row */
-        bad += check("a selected list row: the sword, accent text, no THEME bar", theme < 40u && accent > 40u && blade >= 6u);
+            blade += swap16(cv_px[(2u + 8u) * 240u + i]) == T_THEME;  /* the middle toe's row */
+        bad += check("a selected list row: the footprint, accent text, no THEME bar", theme < 40u && recoloured > 40u && blade >= 6u);
     }
-    {   /* GHOULBOX: torches on HOME's stage; their flame moves; a list page has none */
+    {   /* GHOULBOX: torches on HOME's stage (DINOBOX: ferns); they sway; a list page has none */
         static uint16_t f0[12 * 30], f2[12 * 30];
         uint32_t i, diff = 0, ink = 0;
         cv_begin(12, 30, T_SURF);
@@ -614,11 +620,11 @@ static int test_sound_loads(void)
         memcpy(f2, cv_px, sizeof f2);
         for (i = 0; i < 12u * 30u; i++) {
             diff += f0[i] != f2[i];
-            ink += swap16(f0[i]) == T_ACCENT;
+            ink += swap16(f0[i]) == T_THEME;
         }
         ui_power_on();
         ui.force = 1; ui_draw();
-        bad += check("torches: the flame flickers (frames differ), it burns (accent), HOME shows them",
+        bad += check("ferns: they sway (frames differ), green (THEME), HOME shows them",
                      diff > 4u && ink > 10u && ui.torches == 1u && PANEL_X0 >= 24);
         go_title("PRESETS");
         ui.force = 1; ui_draw();
@@ -1620,11 +1626,13 @@ static int test_display_preferences(void)
                  settings.palette == 6 && T_BG == UI_PALETTES[6].bg && ux.light && ui.menu == 1 && !song.octave &&
                  memcmp(before, host_screen, sizeof before) && !memcmp(sounds, trk, sizeof sounds));
     turn(EN_K1, 1);
-    bad += check("COLOR KNOB 1 steps on to HI-CON, CRYPT (GHOULBOX, id 8), NIGHT, MONO (black and white), then wraps to GREY",
+    bad += check("COLOR KNOB 1 steps on to HI-CON, CRYPT (GHOULBOX, id 8), NIGHT, MONO, JUNGLE, VOLCANO, then wraps to GREY",
                  settings.palette == 7 && (turn(EN_K1, 1), settings.palette == UI_CRYPT_INDEX) &&
                  str_eq(UI_PALETTES[UI_CRYPT_INDEX].name, "CRYPT") && (turn(EN_K1, 1), settings.palette == 9u) &&
                  T_BG == 0u && str_eq(UI_PALETTES[9].name, "NIGHT") && (turn(EN_K1, 1), settings.palette == UI_BW_INDEX) &&
                  str_eq(UI_PALETTES[UI_BW_INDEX].name, "MONO") && T_BG == 0u && T_TEXT == 0xFFFFu &&
+                 (turn(EN_K1, 1), settings.palette == UI_JUNGLE_INDEX) && str_eq(UI_PALETTES[UI_JUNGLE_INDEX].name, "JUNGLE") &&
+                 (turn(EN_K1, 1), settings.palette == 12u) && str_eq(UI_PALETTES[12].name, "VOLCANO") &&
                  (turn(EN_K1, 1), settings.palette == UI_GREY_INDEX) && str_eq(UI_PALETTES[UI_GREY_INDEX].name, "GREY"));
     settings.lowcut = 2;
     ui.menu_sel = MI_LOWCUT;
@@ -2742,7 +2750,7 @@ static int test_page_cycles(void)
         ok &= f != FAM_SEQ || PAGES[i].graph == GR_ROLL || PAGES[i].graph == GR_EVENTS;
         ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG;   /* (1.2: GLO's only page) */
         ok &= f != FAM_TRK || PAGES[i].graph == GR_TRK || str_eq(PAGES[i].title, "CLOCK") ||
-              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "DREAM");   /* HOME's: MIXER CLOCK KEYS (2.1)
+              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "EPOCH");   /* HOME's: MIXER CLOCK KEYS (2.1)
                                                                                      * DREAM (2.3) */
         ok &= PAGES[i].graph != GR_TRK || f == FAM_TRK;
         ui_power_on(); ui.home = 0; ui.page = (uint8_t)i; page_entered();
@@ -2923,7 +2931,7 @@ static int test_product_ux(void)
     press(B_HOME);                                      /* (2.1: CLOCK > KEYS; 2.3: > DREAM > HOME) */
     ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
     press(B_HOME);
-    ok &= !ui.home && str_eq(cur_page()->title, "DREAM");
+    ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
     press(B_HOME);
     ok &= ui.home && !ui.menu;
     press(B_HOME);
@@ -2941,7 +2949,7 @@ static int test_product_ux(void)
         memcpy(song.g, g0, sizeof g0);
     }
     press(B_HOME);
-    ok &= !ui.home && str_eq(cur_page()->title, "DREAM");   /* (2.3: DREAM after KEYS) */
+    ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");   /* (2.3: DREAM after KEYS) */
     {   /* DREAM's knobs: EVOL DENS DRFT MOOD, nothing else */
         int16_t g0[G_COUNT];
         memcpy(g0, song.g, sizeof g0);
@@ -5079,8 +5087,8 @@ static int test_fm4_retired(void)
     bad += check("power-on: track 2 is FM6 PAD (TRK_DEF, was DIGITAL PAD)", trk[1].eng_req == ENGI_FM6 &&
                  str_eq(ENGINES[ENGI_FM6]->presets[trk[1].preset].name, "PAD"));
     {   /* GHOULBOX: felucca_init's scene, by name (a preset inserted before these would swap the sound) */
-        static const char *const want[NPART][3] = {{"GURDY", "PRIMEVAL", "BALLAD"}, {"ANALOG", "JUNGLE PAD", "DIRGE"},
-                                                    {"VOICE", "TRIBE CHANT", "CHANT"}, {"GURDY", "EARTHQUAKE", "PEDAL"}};
+        static const char *const want[NPART][3] = {{"ROAR", "PRIMEVAL", "BALLAD"}, {"ANALOG", "JUNGLE PAD", "DIRGE"},
+                                                    {"VOICE", "TRIBE CHANT", "CHANT"}, {"ROAR", "EARTHQUAKE", "PEDAL"}};
         int sc = 1;
         for (i = 0; i < NPART; i++) {
             const engine_t *en = ENGINES[GB_SCENE[i][0]];
@@ -5110,7 +5118,7 @@ static int test_fm4_retired(void)
                  eng_step(ENGI_FM6, -1) == 0u && eng_step(0, -1) == ENGI_DRUM);
     {   /* the display order (engines.c ENGINE_ORDER): every engine one can pick once; the PRESETS list follows it */
         static const char *const ORDER[] = {"ANALOG", "FM6", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN",
-                                            "PHYS", "GURDY", "NOISE", "DRUM"};
+                                            "PHYS", "ROAR", "NOISE", "DRUM"};
         uint32_t last = 0xFFu, r = 0, n = 0;
         ok = NENG_SHOWN == NELEM(ORDER);
         for (i = 0; ok && i < NENG_SHOWN; i++)
@@ -9200,7 +9208,7 @@ static int test_home_tracks(void)
     press(B_HOME); ok = !ui.home && cur_page()->graph == GR_TRK;
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "CLOCK");
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
-    press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "DREAM");
+    press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
     press(B_HOME); ok &= ui.home;
     frame();
     ok &= tr_px(3 + 22, tr_y(3) + 1) == T_THEME;
