@@ -60,6 +60,12 @@ git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
 FELUCCA_SPARE_MIN=2048 ./build.sh             # -> build/felucca.fwsc (the 2048: see below)
 ```
 
+`FELUCCA_SPARE_MIN=2048`: GHOULBOX's build refuses an image that leaves under 16 KB of the app slot free (room it keeps
+for fixes). DINOBOX's smooth type uses 14 KB of it; its image leaves about 3 KB.
+
+This repository also builds on GitHub: every push to `main` runs `.github/workflows/build-firmware.yml`, which puts
+`dinobox.fwsc` and the build's log on the `build-output` branch.
+
 Install `build/felucca.fwsc` with `python3 tools/fm1_install.py build/felucca.fwsc` (needs `pip3 install mido
 python-rtmidi`) or with the FM-1 Firmware Hub's installer.
 
