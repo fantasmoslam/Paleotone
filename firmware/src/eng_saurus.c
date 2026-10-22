@@ -26,18 +26,19 @@ static const char *const N_SAUR_CALL[SC_COUNT] = {"HOLD", "BELLOW", "ROAR", "BAR
                                                   "HISS", "SNORT"};   /* (stored values: append only) */
 #define SCF_UNVOICED 1u
 #define SCF_TRILL 2u
-/* pitch (in 16ths of SWOOP's depth), mouth (16 = MOUTH), loudness (16 = full), at 0, 1/4 .. 1 of LEN */
-static const struct { int8_t p[5]; uint8_t m[5], a[5], f; } SAUR_CALL[SC_COUNT] = {
-    {{0, 0, 0, 0, 0}, {16, 16, 16, 16, 16}, {16, 16, 16, 16, 16}, 0},            /* HOLD: as played (drones) */
-    {{0, 4, 2, -4, -12}, {2, 10, 16, 14, 8}, {5, 14, 16, 14, 9}, 0},             /* BELLOW: swells, rises a little, sinks */
-    {{6, 4, 0, -8, -16}, {16, 16, 14, 10, 5}, {16, 16, 14, 10, 4}, 0},           /* ROAR: wide open at once, falling */
-    {{8, 0, -8, -12, -16}, {16, 12, 6, 2, 0}, {16, 9, 3, 0, 0}, 0},              /* BARK: short; it ends by itself */
-    {{-2, 0, 0, 0, -2}, {0, 1, 1, 1, 0}, {6, 16, 16, 14, 10}, 0},                /* HOOT: a closed mouth, steady */
-    {{0, 1, 0, 1, 0}, {8, 12, 12, 12, 8}, {16, 16, 16, 16, 12}, SCF_TRILL},      /* TRILL: fluttering */
-    {{-12, 8, 12, 6, 0}, {4, 16, 16, 12, 8}, {10, 16, 12, 6, 0}, 0},             /* CHIRP: a fast rising squeal */
-    {{2, 0, -4, -8, -10}, {6, 8, 8, 6, 4}, {8, 14, 16, 14, 10}, 0},              /* MOAN: a slow falling groan */
-    {{0, 0, 0, 0, 0}, {16, 16, 14, 12, 10}, {6, 16, 14, 10, 6}, SCF_UNVOICED},   /* HISS */
-    {{0, 0, 0, 0, 0}, {6, 4, 2, 0, 0}, {16, 8, 2, 0, 0}, SCF_UNVOICED},          /* SNORT: a short burst */
+/* pitch (in 16ths of SWOOP's depth), mouth (16 = MOUTH), loudness (16 = full), at 0, 1/4 .. 1 of LEN; flags; the
+ * output gain (16 = x1: low noise loses most of its energy in the throat) */
+static const struct { int8_t p[5]; uint8_t m[5], a[5], f, g; } SAUR_CALL[SC_COUNT] = {
+    {{0, 0, 0, 0, 0}, {16, 16, 16, 16, 16}, {16, 16, 16, 16, 16}, 0, 16},            /* HOLD: as played (drones) */
+    {{0, 4, 2, -4, -12}, {2, 10, 16, 14, 8}, {5, 14, 16, 14, 9}, 0, 16},             /* BELLOW: swells, rises a little, sinks */
+    {{6, 4, 0, -8, -16}, {16, 16, 14, 10, 5}, {16, 16, 14, 10, 4}, 0, 16},           /* ROAR: wide open at once, falling */
+    {{8, 0, -8, -12, -16}, {16, 12, 6, 2, 0}, {16, 9, 3, 0, 0}, 0, 16},              /* BARK: short; it ends by itself */
+    {{-2, 0, 0, 0, -2}, {0, 1, 1, 1, 0}, {6, 16, 16, 14, 10}, 0, 16},                /* HOOT: a closed mouth, steady */
+    {{0, 1, 0, 1, 0}, {8, 12, 12, 12, 8}, {16, 16, 16, 16, 12}, SCF_TRILL, 16},      /* TRILL: fluttering */
+    {{-12, 8, 12, 6, 0}, {4, 16, 16, 12, 8}, {10, 16, 12, 6, 0}, 0, 16},             /* CHIRP: a fast rising squeal */
+    {{2, 0, -4, -8, -10}, {6, 8, 8, 6, 4}, {8, 14, 16, 14, 10}, 0, 16},              /* MOAN: a slow falling groan */
+    {{0, 0, 0, 0, 0}, {16, 16, 14, 12, 10}, {6, 16, 14, 10, 6}, SCF_UNVOICED, 16},   /* HISS */
+    {{0, 0, 0, 0, 0}, {6, 4, 2, 0, 0}, {16, 8, 2, 0, 0}, SCF_UNVOICED, 45},          /* SNORT: a short burst */
 };
 /* the throat's three formants (Hz) and bandwidths (Hz): a closed "oo", "oh", an open "ah" */
 static const uint16_t SAUR_F[3][3] = {{300, 870, 2240}, {500, 900, 2400}, {760, 1250, 2500}};
@@ -138,7 +139,8 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     sub = (growl * growl * 19) >> 4;                    /* the weak period's dip: up to 0.58 (Q15) */
     jit = (growl + wild) * 40;                          /* a period's random gain: up to 0.31 */
     jp = growl * 40 + wild * 120;                       /* a period's random length: up to +-3.8 % */
-    og = (int32_t)(((int64_t)12000 * fmt_ratio((60 * 16 - v->pitch_cur) / 4)) >> 16);   /* low notes: +1.5 dB / oct */
+    og = (int32_t)(((int64_t)(750 * SAUR_CALL[sh].g) * fmt_ratio((60 * 16 - v->pitch_cur) / 4)) >> 16);   /* low notes: +1.5 dB
+                                                                                         * an octave */
     ogk = (og >> 2) * (2 + (growl >> 5));               /* presence */
     dr = 64 + growl * 3;                                /* GROWL's drive: x1 .. x7 */
     incj = inc + (uint32_t)((int32_t)(inc >> 11) * (int32_t)(int8_t)(gs >> 16));
@@ -200,7 +202,7 @@ static const preset_t SAURUS_PRESETS[] = {
     {"PTERO SHRIEK", {6, 15, 70, 92, 70, 70, 127, 60}, {0, 80, 110, 50}, 0, 0, FX(15, 0, 30, 95), PAT(4)},
     {"HERD MOAN", {7, 95, 45, 110, 35, 40, 80, 40}, {40, 90, 120, 100}, 0, 0, FX(0, 40, 10, 110), PAT(5)},
     {"FRILL HISS", {8, 40, 0, 96, 30, 90, 110, 30}, {6, 80, 110, 60}, 0, 0, FX(0, 0, 10, 80), PAT(17)},
-    {"SAURO SNORT", {9, 125, 0, 86, 40, 100, 60, 30}, {0, 80, 127, 50}, 0, 0, FX(0, 0, 0, 90), PAT(4)},
+    {"SAURO SNORT", {9, 120, 0, 88, 40, 110, 70, 30}, {0, 80, 127, 50}, 0, 0, FX(0, 0, 0, 90), PAT(4)},
     {"DEEP RUMBLE", {0, 127, 0, 0, 60, 30, 40, 20}, {80, 90, 127, 110}, 0, 0, FX(10, 30, 0, 110), PAT(17)},
     {"TITAN APE", {2, 70, 30, 98, 100, 60, 110, 30}, {6, 90, 127, 80}, 0, 1, FX(25, 0, 10, 95), PAT(17)},
     {"NEST CHIRPS", {6, 5, 50, 84, 20, 40, 110, 90}, {0, 70, 110, 40}, 0, 0, FX(0, 20, 30, 90), PAT(4)},
