@@ -44,6 +44,20 @@ jobs:
           cp build/felucca.fwsc dinobox.fwsc
           sha256sum dinobox.fwsc | tee -a build.log
 
+      - name: Image tests (the update entry, the loader from another app, the render loops' cost)
+        shell: bash
+        run: |
+          set -eo pipefail
+          export AC79_SDK="$HOME/fw-AC79_AIoT_SDK"
+          apt-get install -y --no-install-recommends gcc libc6-dev > /dev/null
+          python3 tools/build.py --gen-only > /dev/null
+          mkdir -p build/host
+          cc -O1 -w -DOWN_PKG=1 -o build/host/ota_test tests/ota_test.c && build/host/ota_test build/felucca.fwsc | tail -1 | tee -a build.log
+          head -c 200000 build/felucca.bin > build/host/old_app.bin
+          python3 tools/fm1pkg_make.py build/host/old_app.bin build/loader/ota.bin build/host/old.fwsc > /dev/null
+          cc -O1 -w -o build/host/ldr_test tests/ldr_test.c && build/host/ldr_test build/host/old.fwsc build/felucca.fwsc | tail -1 | tee -a build.log
+          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt | tail -1 | tee -a build.log
+
       - uses: actions/upload-artifact@v4
         with:
           name: dinobox-firmware
