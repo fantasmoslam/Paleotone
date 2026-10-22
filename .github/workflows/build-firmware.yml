@@ -1,0 +1,43 @@
+# DINOBOX: build the firmware package on GitHub's machines, on every push to main and on request (Actions tab:
+# "Run workflow"). The result, dinobox.fwsc, is attached to the run as an artifact.
+# The JieLi toolchain is Linux x86-64; it runs in debian:bookworm-slim, the image tools/build.py uses on a Mac.
+name: build firmware
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    container: debian:bookworm-slim
+    timeout-minutes: 30
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pil python3-fonttools git curl xz-utils ca-certificates
+
+      - uses: actions/checkout@v4
+
+      - name: JieLi toolchain
+        run: tools/get_toolchain.sh "$HOME/.jieli"
+
+      - name: JieLi AC79 SDK
+        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+
+      - name: Build
+        run: |
+          ./build.sh
+          cp build/felucca.fwsc dinobox.fwsc
+          sha256sum dinobox.fwsc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dinobox-firmware
+          path: dinobox.fwsc
+          if-no-files-found: error

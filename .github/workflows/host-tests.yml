@@ -6,8 +6,7 @@
 name: host tests
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:     # DINOBOX: on request only (about 40 minutes; a private repository's minutes are limited)
 
 permissions:
   contents: read
