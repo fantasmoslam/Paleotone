@@ -1,5 +1,6 @@
 # DINOBOX: build the firmware package on GitHub's machines, on every push to main and on request (Actions tab:
-# "Run workflow"). The result, dinobox.fwsc, is attached to the run as an artifact.
+# "Run workflow"). The result, dinobox.fwsc, is attached to the run as an artifact, and with the build's log it is
+# also put on the branch build-output (one commit, replaced each time), where it can be fetched with git alone.
 # The JieLi toolchain is Linux x86-64; it runs in debian:bookworm-slim, the image tools/build.py uses on a Mac.
 name: build firmware
 
@@ -9,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write          # (the build-output branch)
 
 jobs:
   firmware:
@@ -31,13 +32,27 @@ jobs:
         run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
 
       - name: Build
+        shell: bash
         run: |
-          ./build.sh
+          set -o pipefail
+          ./build.sh 2>&1 | tee build.log
           cp build/felucca.fwsc dinobox.fwsc
-          sha256sum dinobox.fwsc
+          sha256sum dinobox.fwsc | tee -a build.log
 
       - uses: actions/upload-artifact@v4
         with:
           name: dinobox-firmware
           path: dinobox.fwsc
           if-no-files-found: error
+
+      - name: Put the result on the build-output branch
+        if: always()
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$PWD"
+          mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no build log" > /tmp/out/build.log
+          [ -f dinobox.fwsc ] && cp dinobox.fwsc /tmp/out/ || true
+          echo "${{ github.sha }} ${{ job.status }}" > /tmp/out/RESULT
+          cd /tmp/out && git init -q -b build-output && git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" build-output
