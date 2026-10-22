@@ -110,7 +110,7 @@ static struct {
 #define T_RAISE ux.raise         /* a raised area on a surface: stubs, guides, slots, chips, button wells */
 #define T_KEY ux.key             /* a keycap's fill (its label: T_INK; unavailable: a T_DIM fill) */
 #define T_LANE ux.lane           /* the piano roll: an in-scale row (SURF -> THEME 10 %) */
-#define T_STONE ux.stone         /* GHOULBOX (DINOBOX: the strata's layers): SURF -> BG 45 % */
+#define T_STONE ux.stone         /* GHOULBOX (DINOBOX: the glass's scanlines): SURF -> BG 45 % */
 #define T_EDGE ux.edge           /* GHOULBOX: a window's outer line (BG -> THEME 45 %) */
 #define T_GRID ux.grid           /* the piano roll: a step line (SURF -> TEXT 6 %; beats and C rows: RAISE) */
 #define NPALETTES UI_NPALETTES
@@ -251,51 +251,42 @@ static void cv_frame(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
     cv_rect(x + w - 1, y, 1, h, c);
 }
 
-/* DINOBOX: rock strata (was GHOULBOX's stone): SURF crossed by thin STONE layers that undulate gently across the
- * width, and a little grit. The pattern is a pure function of the position in the caller's coordinates plus (ox, oy),
- * so a redraw matches and a window drawn as two canvases has no seam */
+/* DINOBOX: a terminal's glass (was GHOULBOX's stone): SURF with a faint STONE scanline every third row. The pattern is
+ * a pure function of the row in the caller's coordinates plus oy, so a redraw matches and a window drawn as two canvases
+ * has no seam (ox: kept for the callers; the lines run the full width) */
 static void cv_stone(int32_t x, int32_t y, int32_t w, int32_t h, int32_t ox, int32_t oy)
 {
-    static const uint8_t WAVE[32] = {0, 0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 3, 3,   /* the layers' rise and fall */
-                                     3, 2, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0};    /* (4 px a step, 128 px a period) */
     int32_t i, j;
     uint16_t s = swap16(T_SURF), k = swap16(T_STONE);
+    (void)ox;
     for (j = 0; j < h; j++) {
         int32_t py = y + j + cv_oy;
-        uint32_t ay = (uint32_t)(y + j + oy + 64), ry = ay * 0x7F4Au;
-        uint16_t *row;
+        uint16_t c = (uint32_t)(y + j + oy + 300) % 3u == 2u ? k : s, *row;
         if (py < 0 || py >= (int32_t)cv_h)
             continue;
         row = cv_px + (uint32_t)py * cv_w;
-        for (i = 0; i < w; i++) {
-            int32_t px = x + i;
-            uint32_t ax = (uint32_t)(x + i + ox + 256), v = ay + WAVE[(ax >> 2) & 31u], b = v % 26u;
-            uint32_t r = (ax * 0x9E37u) ^ ry;
-            int stone = b == 0u || b == 9u || b == 10u || ((r >> 7) & 63u) == 0u;   /* two layers, the grit 1 in 64 */
-            if ((uint32_t)px < cv_w)
-                row[px] = stone ? k : s;
-        }
+        for (i = 0; i < w; i++)
+            if ((uint32_t)(x + i) < cv_w)
+                row[x + i] = c;
     }
     GFX_HOOK_PIXELS((uint32_t)(w * h));
 }
 
-/* DINOBOX: a window (was GHOULBOX's RPG window). border 3: a THEME line, a STONE line, an EDGE line, then the strata,
- * and a bone knuckle (TEXT) on each corner; border 1: one THEME line, then the strata. Its inner area is a lint cell */
+/* DINOBOX: a terminal window (was GHOULBOX's RPG window). border 3: a THEME rule, a STONE gap, an EDGE rule, then the
+ * glass, and amber (ACCENT) brackets 6 px along each corner over the outer rule; border 1: one THEME line, then the
+ * glass. Its inner area is a lint cell */
 static void cv_window(int32_t x, int32_t y, int32_t w, int32_t h, int32_t border)
 {
     int32_t b = border == 1 ? 1 : 3;
     cv_stone(x + b, y + b, w - 2 * b, h - 2 * b, 0, 0);
     if (b == 3) {
-        int32_t c;
         cv_frame(x, y, w, h, T_THEME);
         cv_frame(x + 1, y + 1, w - 2, h - 2, T_STONE);
         cv_frame(x + 2, y + 2, w - 4, h - 4, T_EDGE);
-        for (c = 0; c < 4; c++) {                       /* the knuckles: a bone end, 3 x 3, its corner pixel cut */
-            int32_t cx = c & 1 ? x + w - 3 : x, cy = c & 2 ? y + h - 3 : y;
-            cv_rect(cx, cy + 1, 3, 1, T_TEXT);
-            cv_rect(cx + 1, cy, 1, 3, T_TEXT);
-            cv_rect(c & 1 ? cx : cx + 2, c & 2 ? cy : cy + 2, 1, 1, T_TEXT);
-        }
+        cv_rect(x, y, 6, 1, T_ACCENT);              cv_rect(x, y, 1, 6, T_ACCENT);              /* the brackets */
+        cv_rect(x + w - 6, y, 6, 1, T_ACCENT);      cv_rect(x + w - 1, y, 1, 6, T_ACCENT);
+        cv_rect(x, y + h - 1, 6, 1, T_ACCENT);      cv_rect(x, y + h - 6, 1, 6, T_ACCENT);
+        cv_rect(x + w - 6, y + h - 1, 6, 1, T_ACCENT); cv_rect(x + w - 1, y + h - 6, 1, 6, T_ACCENT);
     } else {
         cv_frame(x, y, w, h, T_THEME);
     }
@@ -318,17 +309,17 @@ static void cv_sprite(int32_t x, int32_t y, const char *const *rows, uint32_t h,
     }
 }
 
-/* DINOBOX: the cursor (was GHOULBOX's sword), 14 x 7: a three-toed footprint walking right, the heel pad and toes
- * (THEME), the claws (ACCENT). Same size as the sword, so every layout that made room for it holds */
+/* DINOBOX: the cursor (was GHOULBOX's sword), 14 x 7: a terminal prompt, an amber chevron (ACCENT) and a block
+ * caret (THEME) after it. Same size as the sword, so every layout that made room for it holds */
 static int32_t cv_sword(int32_t x, int32_t y)
 {
-    static const char *const R[7] = {"........11....",
-                                     ".......1..2...",
-                                     ".1111.1.......",
-                                     "1111111111112.",
-                                     ".1111.1.......",
-                                     ".......1..2...",
-                                     "........11...."};
+    static const char *const R[7] = {"22...........",
+                                     ".22..........",
+                                     "..22...11111.",
+                                     "...22..11111.",
+                                     "..22...11111.",
+                                     ".22..........",
+                                     "22..........."};
     const uint16_t pal[3] = {T_TEXT, T_THEME, T_ACCENT};
     cv_sprite(x, y, R, 7u, pal);
     return 14;

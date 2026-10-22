@@ -12,7 +12,7 @@ Faces of the presets (S labels, M values/headers, L big numerals / titles):
               -2.5 % tracking: a stand-in for Inter Tight, for previews only.
   inter-tight assets/fonts/InterTight[wght].ttf (SIL OFL 1.1, Google Fonts) at weights 400 / 500 / 600.
   ghoulbox    assets/fonts/VT323-Regular.ttf (SIL OFL 1.1) at 16 / 20 / 32 px, crisp (GHOULBOX).
-  dinobox     assets/fonts/SairaCondensed-*.ttf (SIL OFL 1.1) at 12 / 15 / 30 px (DINOBOX).
+  dinobox     assets/fonts/ShareTechMono-Regular.ttf (SIL OFL 1.1) at 13 / 15 / 29 px, crisp (DINOBOX).
 
 Output (a C header; the glyph / font types live in the renderer, firmware/src/gfx.c):
   AF_<N>_DATA   4-bit alpha, trimmed to the ink box, rows back to back, each glyph a byte-aligned bit stream
@@ -52,20 +52,18 @@ HUFF = [("M", "L")]
 CRISP_DY = 1   # GHOULBOX: VT323's capitals sit 1 row lower in the line than Inter Tight's (S 4 / 3, M 5 / 4, L 8 / 7):
                # drawn 1 row higher, the layout's fixed rows (made for Inter Tight) centre them again
 L_CHARS = " #+-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXY"
-# DINOBOX: Saira's own line metrics are tall (S: baseline row 14 of 20); its faces are set on Inter Tight's lines
-# (baseline, descent; Felucca's layout is made for them, the centring by ink holds them) so the rows hold them
-LINE = {("SairaCondensed-Regular.ttf", "S"): (12, 3), ("SairaCondensed-Medium.ttf", "M"): (15, 4),
-        ("SairaCondensed-SemiBold.ttf", "L"): (28, 7)}
+# DINOBOX: Share Tech Mono drawn crisp, its faces set on VT323's lines (baseline, descent): GHOULBOX's layout is made
+# for those, and the capitals land on VT323's rows (S 3..12, M 4..14, L 7..27)
+LINE = {("ShareTechMono-Regular.ttf", "S"): (13, 5), ("ShareTechMono-Regular.ttf", "M"): (15, 5),
+        ("ShareTechMono-Regular.ttf", "L"): (28, 9)}
 
 
 def preset(name):
-    if name == "dinobox":                      # DINOBOX: Saira Condensed (SIL OFL 1.1), smooth, on Inter Tight's rows
-        # (2 phases, not PHASES: 4 made the image 9 KB too big for the XIP region; 2 saves 11.9 KB)
-        d = FONTS.parent / "assets" / "fonts"  # (12 / 15 / 30 px: the same cap heights, narrower: THROW fits its card)
-        return [("S", str(d / "SairaCondensed-Regular.ttf"), 12, (32, 126), EXTRAS, 0.0, 2),
-                ("M", str(d / "SairaCondensed-Medium.ttf"), 15, (32, 126), EXTRAS, -0.025, 2),   # (LARGE's labels)
-                ("L", str(d / "SairaCondensed-SemiBold.ttf"), 30, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0,
-                 PHASES_L)]
+    if name == "dinobox":                      # DINOBOX: Share Tech Mono (SIL OFL 1.1), a 1993 terminal, crisp, one phase
+        v = str(FONTS.parent / "assets" / "fonts" / "ShareTechMono-Regular.ttf")   # (13 / 15 / 29 px: capitals of 10,
+        return [("S", v, 13, (32, 126), EXTRAS, 0.0, 1),                           #  11 and 21 rows, as VT323's)
+                ("M", v, 15, (32, 126), EXTRAS, 0.0, 1),
+                ("L", v, 29, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, 1)]
     if name == "ghoulbox":                     # GHOULBOX: VT323 (SIL OFL 1.1), crisp, one phase, its capitals 1 row higher
         v = str(FONTS.parent / "assets" / "fonts" / "VT323-Regular.ttf")   # than drawn (CRISP_DY): on Inter Tight's rows
         return [("S", v, 17, (32, 126), EXTRAS, 0.0, 1),   # (17: at 16 FreeType's hinting loses M's middle)
@@ -185,7 +183,8 @@ def emit(face, tracking, gamma, kern_min, crisp=False):
     name, font, px, (first, last), extras, ftrack, phases = face
     chars = [chr(c) for c in range(first, last + 1)] + [chr(c) for c in extras]
     r = ar.raster_font(font, px, chars, tracking if ftrack is None else ftrack, gamma, True, kern_min, phases, crisp=crisp,
-                       crisp_dy=CRISP_DY if crisp else 0, line=LINE.get((os.path.basename(font), name)))
+                       crisp_dy=CRISP_DY if crisp and not LINE.get((os.path.basename(font), name)) else 0,
+                       line=LINE.get((os.path.basename(font), name)))
     data, table, lines = bytearray(), [], []
     for ch in chars:
         adv16, ph = r["glyphs"][ch]
@@ -263,10 +262,10 @@ def main():
     faces = ([parse_face(s) for s in a.face] if a.face else []) or (preset(a.preset) if a.preset else None)
     if not faces:
         ap.error("--preset or --face is required")
-    crisp = a.preset == "ghoulbox"
-    credit = ("VT323, SIL OFL 1.1, Copyright 2011 The VT323 Project Authors; see LICENSES/OFL-VT323.txt" if crisp else
-              "Saira Condensed, SIL OFL 1.1, Copyright 2016 The Saira Project Authors; see LICENSES/OFL-Saira.txt"
+    crisp = a.preset in ("ghoulbox", "dinobox")   # (DINOBOX: crisp too)
+    credit = ("Share Tech Mono, SIL OFL 1.1, Copyright 2012 Carrois Type Design; see LICENSES/OFL-ShareTechMono.txt"
               if a.preset == "dinobox" else
+              "VT323, SIL OFL 1.1, Copyright 2011 The VT323 Project Authors; see LICENSES/OFL-VT323.txt" if crisp else
               "Inter Tight, SIL OFL 1.1, Copyright 2022 The Inter Project Authors; see assets/fonts/OFL.txt")
     out = [f"/* generated by tools/gen_aa_font.py: 4-bit alpha glyphs ({credit}) */",
            "#pragma once", "#include <stdint.h>", ""]

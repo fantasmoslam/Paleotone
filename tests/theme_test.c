@@ -47,11 +47,11 @@ int main(int argc, char **argv)
     static const uint8_t pd[] = {0x08, 0xf0};
     const aafont_t probe = {1, 1, 'A', 'A', 0, 0, pg, pd, 0, 0, 0};
     double worst = 100;
-    assert(NPALETTES == 13u && !strcmp(UI_PALETTES[0].name, "GREY") && !strcmp(UI_PALETTES[7].name, "HI-CON") &&
+    assert(NPALETTES == 14u && !strcmp(UI_PALETTES[13].name, "TERMINAL") && UI_TERMINAL_INDEX == 13u && !strcmp(UI_PALETTES[0].name, "GREY") && !strcmp(UI_PALETTES[7].name, "HI-CON") &&
            !strcmp(UI_PALETTES[8].name, "CRYPT") && UI_CRYPT_INDEX == 8u &&
            !strcmp(UI_PALETTES[9].name, "NIGHT") && !strcmp(UI_PALETTES[10].name, "MONO") && UI_BW_INDEX == 10u &&
            !strcmp(UI_PALETTES[11].name, "JUNGLE") && UI_JUNGLE_INDEX == 11u && !strcmp(UI_PALETTES[12].name, "VOLCANO"));
-    /* (DINOBOX: JUNGLE and VOLCANO appended after MONO; every saved id keeps its palette) */
+    /* (DINOBOX: JUNGLE, VOLCANO and TERMINAL appended after MONO; every saved id keeps its palette) */
     /* (#50, 1.0.2: appended, the ids stay; GREY is the MONO of 1.0.1, id 0; GHOULBOX's CRYPT keeps its id 8) */
     for (unsigned st = ST_FLAT; st <= ST_LINE; st++) {   /* MONO: every token black or white, in FLAT and LINE */
         uint16_t *tok = &ux.bg;
@@ -144,9 +144,9 @@ int main(int argc, char **argv)
     palette_set(6);
     cv_begin(3, 1, T_BG); cv_text(0, 0, &probe, "A", T_THEME);
     assert(swap16(cv_px[1]) != green);
-    /* fonts: Saira Condensed S 12 px, M 15 px, L 30 px on Inter Tight's lines (DINOBOX; GHOULBOX: VT323 17 / 20 / 36;
+    /* fonts: Share Tech Mono S 13 px, M 15 px, L 29 px, crisp, on VT323's lines (DINOBOX; GHOULBOX: VT323 17 / 20 / 36;
      * Felucca: Inter Tight 12 / 15 / 28); tabular digits; the ellipsis; L has capitals only */
-    assert(AF_S.h == 15 && AF_S.asc == 12 && AF_M.h == 19 && AF_M.asc == 15 && AF_L.h == 35 && AF_L.asc == 28);
+    assert(AF_S.h == 18 && AF_S.asc == 13 && AF_M.h == 20 && AF_M.asc == 15 && AF_L.h == 37 && AF_L.asc == 28);
     assert(text_w(&AF_M, "0000") == text_w(&AF_M, "1111") && text_w(&AF_S, "1.25") == text_w(&AF_S, "8.75"));
     assert(glyph(&AF_S, (uint8_t)ELLIPSIS) != glyph(&AF_S, '?') && glyph(&AF_M, (uint8_t)ELLIPSIS) != glyph(&AF_M, '?'));
     assert(text_w(&AF_L, "abc") == text_w(&AF_L, "ABC"));
@@ -167,17 +167,18 @@ int main(int argc, char **argv)
         }
         fclose(f);
     }
-    {   /* GHOULBOX's primitives, DINOBOX's drawing: strata, bone knuckles */
+    {   /* GHOULBOX's primitives, DINOBOX's drawing: a terminal's glass, amber corner brackets */
         static uint16_t a[60 * 40], b[60 * 40];
-        palette_set(UI_JUNGLE_INDEX);
+        palette_set(UI_TERMINAL_INDEX);
         cv_begin(60, 40, T_BG);
         cv_window(0, 0, 60, 40, 3);
         memcpy(a, cv_px, sizeof a);
         cv_begin(60, 40, T_BG);
         cv_window(0, 0, 60, 40, 3);
         assert(!memcmp(a, cv_px, sizeof a));                           /* the same every time: no flicker */
-        assert(swap16(cv_px[1]) == T_TEXT && swap16(cv_px[60]) == T_TEXT && swap16(cv_px[2 * 60 + 2]) == T_TEXT &&
-               swap16(cv_px[58]) == T_TEXT && swap16(cv_px[60 + 59]) == T_TEXT);   /* the bone knuckles */
+        assert(swap16(cv_px[0]) == T_ACCENT && swap16(cv_px[5]) == T_ACCENT && swap16(cv_px[6]) == T_THEME &&
+               swap16(cv_px[5 * 60]) == T_ACCENT && swap16(cv_px[6 * 60]) == T_THEME &&
+               swap16(cv_px[39 * 60 + 59]) == T_ACCENT);   /* the brackets, 6 px along each corner */
         assert(swap16(cv_px[20 * 60 + 0]) == T_THEME);                 /* the outer line */
         assert(swap16(cv_px[20 * 60 + 2]) == T_EDGE);                  /* the inner line */
         {
@@ -188,7 +189,7 @@ int main(int argc, char **argv)
                     specks += c == T_STONE;
                     other += c != T_STONE && c != T_SURF;
                 }
-            assert(specks > 50 && specks < 600 && !other);             /* strata: SURF with layers and grit, nothing else */
+            assert(specks > 500 && specks < 700 && !other);            /* glass: SURF, a STONE scanline every third row */
         }
         /* drawn as two canvases (the menu's passes), the texture continues across the seam */
         cv_begin(60, 40, T_BG);
@@ -210,15 +211,15 @@ int main(int argc, char **argv)
         }
         printf("primitives: window, stone (seamless), sprite ok\n");
     }
-    {   /* DINOBOX: the UI faces are Saira Condensed, smooth (GHOULBOX's VT323 was crisp), on Inter Tight's lines:
-         * the capitals on rows 3..11 (S), 4..14 (M), 7..27 (L) */
-        unsigned soft = 0;
+    {   /* DINOBOX: the UI faces are crisp (Share Tech Mono drawn without smoothing, as GHOULBOX's VT323): S's alpha is
+         * only 0 or 15; the capitals on VT323's rows: 3..12 (S), 4..14 (M), 7..27 (L) */
+        unsigned bad_alpha = 0;
         for (unsigned i = 0; i < sizeof AF_S_DATA; i++) {
             unsigned hi = AF_S_DATA[i] >> 4, lo = AF_S_DATA[i] & 15u;
-            soft += (hi != 0u && hi != 15u) + (lo != 0u && lo != 15u);
+            bad_alpha += (hi != 0u && hi != 15u) + (lo != 0u && lo != 15u);
         }
-        printf("faces: S alpha values other than 0 / 15: %u (smooth)\n", soft);
-        assert(soft > 1000u && AF_S_CAP_Y == 3 && AF_S_CAP_H == 9 && AF_M_CAP_Y == 4 && AF_M_CAP_H == 11 &&
+        printf("faces: S alpha values other than 0 / 15: %u\n", bad_alpha);
+        assert(bad_alpha == 0u && AF_S_CAP_Y == 3 && AF_S_CAP_H == 10 && AF_M_CAP_Y == 4 && AF_M_CAP_H == 11 &&
                AF_L_CAP_Y == 7 && AF_L_CAP_H == 21);
     }
     printf("Palettes: GREY gray, MONO black and white, contrast (worst margin x%.2f), blending, ramp cache, font metrics and ellipsis passed.\n", worst);

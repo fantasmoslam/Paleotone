@@ -8,9 +8,9 @@
 <title>DINOBOX</title>
 <meta name="color-scheme" content="dark">
 <style>
-  /* GHOULBOX: the dungeon, as the emulator page (web/emu/index.html): DINOBOX: JUNGLE's colours (GHOULBOX: CRYPT's), the art from
+  /* GHOULBOX: the dungeon, as the emulator page (web/emu/index.html): DINOBOX: TERMINAL's colours (GHOULBOX: CRYPT's), the art from
    * tools/gen_emu_art.py in ../art/ (make_site.py), scaled by whole numbers */
-  :root { --bone: #eee6ce; --dim: #a9b29a; --amber: #a8d650; --ember: #ff7a30; --night: #07100a;
+  :root { --bone: #c4fac8; --dim: #7fae86; --amber: #46e874; --ember: #ffb020; --night: #040a06;
           --plaque: rgba(8, 8, 8, .88); --fg: var(--bone); color-scheme: dark; }
   html { background: var(--night); }
   body { margin: 0; color: var(--bone); min-height: 100vh; image-rendering: pixelated;
@@ -21,7 +21,7 @@
   a { color: var(--amber); }
   .crest { display: flex; justify-content: center; align-items: center; gap: 24px; margin: 4px 0 10px; }
   .crest .skull { width: 176px; height: 96px; }
-  .crest .logo { height: 104px; width: auto; filter: drop-shadow(0 0 10px rgba(168, 214, 80, .35)); }
+  .crest .logo { height: 104px; width: auto; filter: drop-shadow(0 0 10px rgba(70, 232, 116, .35)); }
   .crest img { image-rendering: auto; }   /* (drawn smooth at 2x: tools/gen_emu_art.py) */
   .tagline { margin: 0 0 22px; text-align: center; font: 700 20px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
               "Helvetica Neue", Arial, sans-serif; letter-spacing: .02em; text-shadow: 0 0 3px #000, 0 0 6px #000, 0 2px 0 #000; }
@@ -31,7 +31,7 @@
            background: url("../art/torch.png") 0 0 / 192px 120px no-repeat; animation: torch .48s steps(4) infinite; }
   .torch.r { animation-delay: -.24s; }
   .torch::before { content: ""; position: absolute; left: 50%; top: 18px; width: 420px; height: 420px; margin: -210px 0 0 -210px;
-                   background: radial-gradient(circle, rgba(168, 214, 80, .30), rgba(255, 122, 48, .10) 40%, transparent 68%);
+                   background: radial-gradient(circle, rgba(70, 232, 116, .30), rgba(255, 176, 32, .10) 40%, transparent 68%);
                    animation: glow 1.7s ease-in-out infinite alternate; pointer-events: none; z-index: -1; }
   .torch.r::before { animation-duration: 1.3s; }
   @keyframes torch { to { background-position: -192px 0; } }
@@ -49,7 +49,7 @@
   .plaque:first-child { padding-top: 30px; }
   p { margin: 0 0 14px; }
   .small { color: var(--dim); font-size: 13px; }
-  .note { border-left: 4px solid var(--amber); padding: 6px 0 6px 12px; background: rgba(168, 214, 80, .08); }
+  .note { border-left: 4px solid var(--amber); padding: 6px 0 6px 12px; background: rgba(70, 232, 116, .08); }
   /* the buttons: pixel slabs (the light top edge, the dark bottom), Install in torch amber */
   button { font: 600 16px/1 monospace; letter-spacing: .08em; cursor: pointer; border: 0; padding: 12px 24px; color: var(--night);
            background: var(--bone); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .35), inset 0 4px 0 rgba(255, 255, 255, .3), 0 0 0 2px #000; }
@@ -57,7 +57,7 @@
   button:disabled { opacity: .35; cursor: default; }
   #go { background: var(--amber); font-size: 20px; padding: 16px 40px; }
   #go:not(:disabled) { animation: ember 2.4s ease-in-out infinite; }
-  @keyframes ember { 50% { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .35), inset 0 4px 0 rgba(255, 255, 255, .3), 0 0 0 2px #000, 0 0 18px rgba(168, 214, 80, .55); } }
+  @keyframes ember { 50% { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .35), inset 0 4px 0 rgba(255, 255, 255, .3), 0 0 0 2px #000, 0 0 18px rgba(70, 232, 116, .55); } }
   @media (prefers-reduced-motion: reduce) { #go:not(:disabled) { animation: none; } }
   .go-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; margin: 18px 0 6px; }
   .try { font-weight: 700; font-size: 16px; }

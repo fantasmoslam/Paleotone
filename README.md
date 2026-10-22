@@ -14,11 +14,13 @@ own, `FM-1.fwsc`) can be installed again.
 
 ## What's different from GHOULBOX
 
-- **A new interface.** The JUNGLE palette (night green, bone, fern, lava) is a new FM-1's colours, with VOLCANO
-  beside it in MENU > DISPLAY > COLOR (GHOULBOX's CRYPT is still there). The windows are rock strata with bone
-  knuckles on their corners; the cursor is a three-toed footprint; ferns sway beside HOME's scope; the type is Saira
-  Condensed (GHOULBOX: VT323). ROAR's icon is a T. rex head; MENU's DISPLAY tab is a reptile's eye.
-- **The boot screen and ABOUT page:** a T. rex skull, the DINOBOX wordmark (Cinzel Black) and "PREHISTORIC SYNTH".
+- **A 1993 park-operations terminal.** The TERMINAL palette (phosphor green on black, amber for what needs
+  attention) is a new FM-1's colours; JUNGLE and VOLCANO are beside it in MENU > DISPLAY > COLOR (GHOULBOX's CRYPT
+  too). The windows are green-screen glass with faint scanlines and amber corner brackets; the cursor is a prompt;
+  electric fence posts with blinking warning lamps stand beside HOME's scope; the type is Share Tech Mono drawn as
+  pixels (GHOULBOX: VT323). ROAR's icon is a T. rex head; MENU's DISPLAY tab is a reptile's eye.
+- **The boot screen and ABOUT page:** a Dilophosaurus skull, the DINOBOX title in big terminal pixels and "PREHISTORIC
+  SYNTH".
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
   controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
   HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
@@ -57,11 +59,8 @@ pip3 install Pillow fonttools
 tools/get_toolchain.sh                         # JieLi's toolchain, to ~/.jieli/toolchain
 git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
     https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK
-FELUCCA_SPARE_MIN=2048 ./build.sh             # -> build/felucca.fwsc (the 2048: see below)
+./build.sh                                     # -> build/felucca.fwsc, the package to install
 ```
-
-`FELUCCA_SPARE_MIN=2048`: GHOULBOX's build refuses an image that leaves under 16 KB of the app slot free (room it keeps
-for fixes). DINOBOX's smooth type uses 14 KB of it; its image leaves about 3 KB.
 
 This repository also builds on GitHub: every push to `main` runs `.github/workflows/build-firmware.yml`, which puts
 `dinobox.fwsc` and the build's log on the `build-output` branch.
@@ -77,7 +76,7 @@ The prehistoric sounds are one table in `tools/ghoulbox_presets.py` (name, the e
 envelope, mono, the effect sends and a suggested pattern). Edit it, run `python3 tools/ghoulbox_presets.py`, and it
 writes them into the engines and the web editor. The scenes are `GB_SCENES` in `firmware/src/engines.c`, the boot
 art `tools/gen_ghoulbox_art.py`, the palettes `tools/gen_ui_palettes.py`, the windows and cursor `firmware/src/gfx.c`
-(`cv_stone`, `cv_window`, `cv_sword`), the ferns `firmware/src/ui_graph.c` (`torch_draw`) and the T. rex and eye
+(`cv_stone`, `cv_window`, `cv_sword`), the fence posts `firmware/src/ui_graph.c` (`torch_draw`) and the T. rex and eye
 icons `tools/gen_aa_icons.py` (`OWN`).
 
 ## Credits and licence
@@ -89,6 +88,5 @@ DINOBOX is free software under the GNU GPL, version 3 only, like GHOULBOX and Fe
   is built on. Its README, with the history of all its versions, is in [docs/GHOULBOX-README.md](docs/GHOULBOX-README.md).
   To support its author: [Ko-fi](https://ko-fi.com/ghoulbox).
 - [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita, Hügelton Instruments.
-- Cinzel by The Cinzel Project Authors (SIL OFL 1.1): the wordmark. Saira by The Saira Project Authors (SIL OFL
-  1.1): the screen's type.
+- Share Tech Mono by Carrois Type Design (SIL OFL 1.1): the screen's type and title.
 - The other parts and their licences: [LICENSING.md](LICENSING.md).

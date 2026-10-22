@@ -28,8 +28,8 @@ def mix(a, b, pct):                                     # gfx.c ux_mix: a toward
 
 
 def crypt(gen):
-    """DINOBOX: the JUNGLE palette's colours (the name kept: make_site.py, the pages' art)"""
-    m = re.search(r'\{"JUNGLE",\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+)\}',
+    """DINOBOX: the TERMINAL palette's colours (the name kept: make_site.py, the pages' art)"""
+    m = re.search(r'\{"TERMINAL",\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+),\s*(0x\w+)\}',
                   (gen / "ui_palettes.h").read_text())
     bg, surf, text, theme, accent = (rgb565(int(v, 16)) for v in m.groups())
     return {"bg": bg, "surf": surf, "text": text, "theme": theme, "accent": accent,
@@ -37,29 +37,30 @@ def crypt(gen):
 
 
 def torch(c):
-    """DINOBOX: the fern (src/ui_graph.c torch_draw, torch.png kept as the name) for f = 0..3, side by side"""
-    pairs = [(4, 2), (7, 3), (10, 4), (13, 5), (16, 5), (19, 5), (22, 4), (25, 3)]
-    sway = [-1, 0, 1, 0]
+    """DINOBOX: the electric fence post (src/ui_graph.c torch_draw; torch.png kept as the name), f = 0..3 side by side"""
+    ins = [11, 18, 25]
+    dim = mix(c["bg"], c["text"], 42)
     im = Image.new("RGBA", (48, 30), (0, 0, 0, 0))
 
-    def put(x, y, col):
-        if 0 <= x < 48 and 0 <= y < 30:
-            im.putpixel((x, y), col + (255,))
-
-    def dx(sw, row):
-        d = sw * (16 - row) if row < 16 else 0
-        return int((d + (5 if d > 0 else -5 if d < 0 else 0)) / 10)
+    def rect(x, y, w, h, col):
+        for j in range(h):
+            for i in range(w):
+                im.putpixel((x + i, y + j), col + (255,))
     for f in range(4):
-        x0, sw = 12 * f, sway[f]
-        for j in range(3, 30):
-            put(x0 + 6 + dx(sw, j), j, c["edge"])
-        for k, (ly, n) in enumerate(pairs):
-            col = c["sel"] if k & 1 else c["theme"]
-            for i in range(1, n + 1):
-                put(x0 + 6 + dx(sw, ly) - i, ly - i // 2, col)
-                put(x0 + 6 + dx(sw, ly) + i, ly - i // 2, col)
-        put(x0 + 6 + dx(sw, 1), 1, c["theme"])
-        put(x0 + 6 + dx(sw, 2), 2, c["theme"])
+        x0, lit = 12 * f, f < 2
+        rect(x0 + 4, 0, 4, 4, c["accent"] if lit else dim)
+        if lit:
+            rect(x0 + 5, 1, 2, 2, c["text"])
+        rect(x0 + 3, 4, 6, 2, c["theme"])
+        for j in range(6, 30):
+            for i in range(4, 8):
+                rect(x0 + i, j, 1, 1, c["accent"] if ((i + j) // 3) & 1 else c["edge"])
+        for y in ins:
+            rect(x0 + 1, y, 3, 2, c["theme"]); rect(x0 + 8, y, 3, 2, c["theme"])
+            rect(x0, y + 2, 1, 1, dim); rect(x0 + 11, y + 2, 1, 1, dim)
+        y = ins[f % 3]
+        rect(x0 + (9 if f & 1 else 1), y - 1, 1, 1, c["text"])
+        rect(x0 + (10 if f & 1 else 2), y - 2, 1, 1, c["text"])
     return im
 
 
@@ -70,29 +71,14 @@ def tinted(alpha, col):
 
 
 def wall():
-    """DINOBOX: rock strata, 64 x 32 and tiling: dark earth bands rising and falling gently, a lighter seam between
-    them, some grit and now and then a pebble"""
-    rnd = random.Random(1137)
-    earth = [(26, 34, 26), (30, 38, 28), (22, 30, 23), (34, 40, 30)]
-    seam = (48, 56, 40)
-    im = Image.new("RGB", (64, 32), earth[0])
-    wave = [0, 0, 1, 1, 2, 2, 2, 1, 1, 0, 0, -1, -1, -1, -1, 0]
-    for x in range(64):
-        w = wave[(x // 4) % 16]
-        for y in range(32):
-            v = (y + w) % 32
-            band = v // 8
-            col = earth[band]
-            if v % 8 == 0:
-                col = seam
+    """DINOBOX: a terminal's glass, 64 x 32 and tiling: near-black with a faint scanline every third row and a faint
+    grid every 32 px, as an old green screen"""
+    bg, line, grid = (5, 11, 7), (9, 20, 12), (11, 30, 16)
+    im = Image.new("RGB", (64, 32), bg)
+    for y in range(32):
+        for x in range(64):
+            col = grid if (x % 32 == 0 or y == 0) else line if y % 3 == 2 else bg
             im.putpixel((x, y), col)
-    for _ in range(60):                                 # grit
-        x, y = rnd.randrange(64), rnd.randrange(32)
-        im.putpixel((x, y), tuple(max(0, v - 8) for v in im.getpixel((x, y))))
-    for _ in range(5):                                  # pebbles
-        x, y = rnd.randrange(64), rnd.randrange(32)
-        for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
-            im.putpixel(((x + dx) % 64, (y + dy) % 32), (52, 58, 44))
     return im
 
 
@@ -101,7 +87,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     c = crypt(gen)
     torch(c).save(out / "torch.png")
-    tinted(logo(896, 208), c["theme"]).save(out / "logo.png")      # (GB_LOGO is logo(224, 52))
+    tinted(logo(896, 208, 4), c["theme"]).save(out / "logo.png")      # (GB_LOGO is logo(224, 52))
     tinted(skull(440, 240), c["text"]).save(out / "skull.png")      # (GB_SKULL is skull(110, 60))
     wall().save(out / "wall.png")
 

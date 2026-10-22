@@ -590,7 +590,7 @@ static int test_sound_loads(void)
     bad += check("  their GM hits play as drums", gm_hits_play(&trk[3]));
     bad += check("  its old drum channel (10, in id 24) loads as REVERB TYPE ROOM", song.g[G_RTYPE] == 0);
     bad += check("  its old drum level / send (ids 25, 26) load as TAPE / CRSH off", song.g[G_TAPE] == 0 && song.g[G_CRSH] == 0);
-    {   /* GHOULBOX: a list's selected row: the cursor (DINOBOX: a footprint) and accent text, no THEME bar. DINOBOX's
+    {   /* GHOULBOX: a list's selected row: the cursor (DINOBOX: a prompt) and accent text, no THEME bar. DINOBOX's
          * text is smooth (few pixels exactly ACCENT): the selected row's text against the same row unselected */
         static uint16_t plain[240 * 20];
         uint32_t theme = 0, recoloured = 0, blade = 0, i;
@@ -606,10 +606,10 @@ static int test_sound_loads(void)
             }
         }
         for (i = 6; i < 20u; i++)
-            blade += swap16(cv_px[(2u + 8u) * 240u + i]) == T_THEME;  /* the middle toe's row */
-        bad += check("a selected list row: the footprint, accent text, no THEME bar", theme < 40u && recoloured > 40u && blade >= 6u);
+            blade += swap16(cv_px[(2u + 8u) * 240u + i]) == T_THEME;  /* the caret's middle row */
+        bad += check("a selected list row: the prompt, accent text, no THEME bar", theme < 40u && recoloured > 40u && blade >= 5u);
     }
-    {   /* GHOULBOX: torches on HOME's stage (DINOBOX: ferns); they sway; a list page has none */
+    {   /* GHOULBOX: torches on HOME's stage (DINOBOX: fence posts); their lamps blink; a list page has none */
         static uint16_t f0[12 * 30], f2[12 * 30];
         uint32_t i, diff = 0, ink = 0;
         cv_begin(12, 30, T_SURF);
@@ -624,7 +624,7 @@ static int test_sound_loads(void)
         }
         ui_power_on();
         ui.force = 1; ui_draw();
-        bad += check("ferns: they sway (frames differ), green (THEME), HOME shows them",
+        bad += check("fence posts: the lamp blinks (frames differ), THEME insulators, HOME shows them",
                      diff > 4u && ink > 10u && ui.torches == 1u && PANEL_X0 >= 24);
         go_title("PRESETS");
         ui.force = 1; ui_draw();
@@ -1626,13 +1626,14 @@ static int test_display_preferences(void)
                  settings.palette == 6 && T_BG == UI_PALETTES[6].bg && ux.light && ui.menu == 1 && !song.octave &&
                  memcmp(before, host_screen, sizeof before) && !memcmp(sounds, trk, sizeof sounds));
     turn(EN_K1, 1);
-    bad += check("COLOR KNOB 1 steps on to HI-CON, CRYPT (GHOULBOX, id 8), NIGHT, MONO, JUNGLE, VOLCANO, then wraps to GREY",
+    bad += check("COLOR KNOB 1 steps on to HI-CON, CRYPT (GHOULBOX, id 8), NIGHT, MONO, JUNGLE, VOLCANO, TERMINAL, then GREY",
                  settings.palette == 7 && (turn(EN_K1, 1), settings.palette == UI_CRYPT_INDEX) &&
                  str_eq(UI_PALETTES[UI_CRYPT_INDEX].name, "CRYPT") && (turn(EN_K1, 1), settings.palette == 9u) &&
                  T_BG == 0u && str_eq(UI_PALETTES[9].name, "NIGHT") && (turn(EN_K1, 1), settings.palette == UI_BW_INDEX) &&
                  str_eq(UI_PALETTES[UI_BW_INDEX].name, "MONO") && T_BG == 0u && T_TEXT == 0xFFFFu &&
                  (turn(EN_K1, 1), settings.palette == UI_JUNGLE_INDEX) && str_eq(UI_PALETTES[UI_JUNGLE_INDEX].name, "JUNGLE") &&
                  (turn(EN_K1, 1), settings.palette == 12u) && str_eq(UI_PALETTES[12].name, "VOLCANO") &&
+                 (turn(EN_K1, 1), settings.palette == UI_TERMINAL_INDEX) && str_eq(UI_PALETTES[13].name, "TERMINAL") &&
                  (turn(EN_K1, 1), settings.palette == UI_GREY_INDEX) && str_eq(UI_PALETTES[UI_GREY_INDEX].name, "GREY"));
     settings.lowcut = 2;
     ui.menu_sel = MI_LOWCUT;
@@ -2106,7 +2107,8 @@ static int32_t roll_ink_row(const uint16_t *s, int32_t x0, int32_t x1, int32_t y
     int32_t x, y, n = 0, sum = 0;
     for (y = y0; y < y1; y++)
         for (x = x0; x < x1; x++)
-            if (s[y * 240 + x] != swap16(T_SURF)) { n++; sum += y * 16; }
+            if (s[y * 240 + x] != swap16(T_SURF) && s[y * 240 + x] != swap16(T_STONE)) { n++; sum += y * 16; }   /* (DINOBOX:
+                                                                                * not the glass's scanlines) */
     return n ? sum / n : -1;
 }
 static int roll_static_now(void)                  /* the screen is the static render (a forced redraw changes nothing) */
@@ -2177,7 +2179,8 @@ static int test_roll(void)
     turn(EN_K4, 1); frame(); frame(); frame();
     memcpy(roll_shot, host_screen, sizeof roll_shot);
     ui.force = 1; ui_draw();                       /* (snaps: the static render) */
-    ok = roll_diff(STRIP(3), 0) == 0 && roll_diff(STRIP(3), 1) > 20u && !ui.roll[3].from[0];
+    ok = roll_diff(STRIP(3), 0) == 0 && roll_diff(STRIP(3), 1) > 12u && !ui.roll[3].from[0];   /* (DINOBOX's thin
+                                                                                * terminal digits: fewer pixels) */
     bad += check("roll: a mid-roll frame differs from the static render inside the value strip only", ok);
 
     /* BPM 120 -> 121 (SELECT): the header rolls, the digits 1 and 2 stay; the BPM card too (no unit:

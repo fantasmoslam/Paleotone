@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* GHOULBOX: screenshots for the README / a release, in JUNGLE (DINOBOX), of what an owner sees: the boot splash, then the
+/* GHOULBOX: screenshots for the README / a release, in TERMINAL (DINOBOX), of what an owner sees: the boot splash, then the
  * power-on scene (main.c felucca_init: GB_SCENE, 1/8 steps, 72 BPM, HALL, TAPE 40) on HOME, PRESETS, the step roll and
  * the MENU. Drawn by the firmware's own UI code (tests/ui_render.c's host setup).
- *   build/host/ghoulbox_shots OUTDIR   -> OUTDIR/ppm/JUNGLE_<name>.ppm
+ *   build/host/ghoulbox_shots OUTDIR   -> OUTDIR/ppm/TERMINAL_<name>.ppm
  * Not a test. */
 #define UI_RENDER_NO_MAIN
 #include "ui_render.c"
@@ -35,10 +35,10 @@ static void gb_scene(void)
 static void shot(const char *dir, const char *name)
 {
     uint32_t k;
-    pal(UI_JUNGLE_INDEX);                           /* (ui_power_on put the test's palette back) */
+    pal(UI_TERMINAL_INDEX);                           /* (ui_power_on put the test's palette back) */
     ui.force = 1;
     for (k = 0; k < 8u; k++) { ui.hot_t = 0; ui.bpm_t = 0; ui_draw(); }
-    write_ppm(dir, "JUNGLE", name);
+    write_ppm(dir, "TERMINAL", name);
 }
 
 int main(int argc, char **argv)
@@ -49,12 +49,12 @@ int main(int argc, char **argv)
     if (system(cmd))
         return 1;
     rep = fopen("/dev/null", "w");                 /* (ui_render's lint hooks report here) */
-    pal(UI_JUNGLE_INDEX);
+    pal(UI_TERMINAL_INDEX);
     lcd_fill(0, 0, 240, 240, T_BG);                /* the boot splash, as main.c fm1_main draws it */
     draw_art_box(42, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);
     draw_art_box(116, GB_LOGO_W, GB_LOGO_H, GB_LOGO, T_THEME);
-    draw_text_box(0, 160, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
-    write_ppm(dir, "JUNGLE", "boot");
+    draw_text_box(0, 166, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
+    write_ppm(dir, "TERMINAL", "boot");
     gb_scene(); ui.home = 1; shot(dir, "home");
     gb_scene(); go_page(GR_BROWSE); shot(dir, "presets");
     gb_scene(); go_page(GR_ROLL); ui.cursor = 4; shot(dir, "roll");
