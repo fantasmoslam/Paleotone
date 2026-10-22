@@ -34,6 +34,10 @@ jobs:
 
       - name: Build
         shell: bash
+        env:
+          # DINOBOX: the smooth Saira faces use 14 KB of the 16 KB GHOULBOX keeps free for fixes (tools/build.py
+          # SLOT_SPARE); the image fits with about 3 KB to spare (GHOULBOX up to 2.1 had 4.5 KB)
+          FELUCCA_SPARE_MIN: "2048"
         run: |
           set -o pipefail
           ./build.sh 2>&1 | tee build.log
