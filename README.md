@@ -30,6 +30,24 @@ own, `FM-1.fwsc`) can be installed again.
   BLANK.
 - **The TRIBE drum kit** (GHOULBOX's CRYPT kit) and its STOMP pattern.
 
+### SAURUS, the creature voice
+
+An engine of its own (engine 15): one note is one call. A throat that buzzes, rasps and breathes, shaped by:
+
+| Control | What it does |
+| --- | --- |
+| CALL | The call's shape over its length: HOLD (a drone), BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN, HISS, SNORT |
+| SIZE | The animal: small (high throat) to sauropod (formants two octaves down) |
+| SWOOP | How far the call's pitch moves (up to two octaves) |
+| LEN | How long the call takes (1 ms to 10 s); the ADSR still shapes and ends the note |
+| GROWL | Roughness: a subharmonic, jitter, wider throat bands and drive |
+| BRTH | Breath noise in the voice |
+| MOUTH | Closed "oo" to open "ah"; the call opens and closes it |
+| WILD | Each note's own variation: length, pitch, roughness |
+
+16 creatures: BRACHIO CALL, TYRANT ROAR, RAPTOR BARK, RAPTOR CHAT, CREST HOOT, PTERO SHRIEK, HERD MOAN, FRILL HISS,
+SAURO SNORT, DEEP RUMBLE, TITAN APE, NEST CHIRPS, SWAMP CROAK, MONSTER ROAR, DISTANT HERD, LOW GROWL. All synthesised.
+
 ### The sounds
 
 | Engine | Sounds |
