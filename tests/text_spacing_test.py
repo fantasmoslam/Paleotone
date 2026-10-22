@@ -127,8 +127,8 @@ def centroid(cols):
     return sum((i + 0.5) * c for i, c in enumerate(cols)) / m if m else None
 
 
-def measure(f, font_hi, s):
-    """[(pair, gap error px)] of one string"""
+def measure(f, font_hi, s, track=0.0):
+    """[(pair, gap error px)] of one string (track: the face's tracking, px a glyph: DINOBOX)"""
     x0 = 4
     placed = place(f, s)
     d = []
@@ -136,7 +136,7 @@ def measure(f, font_hi, s):
         if ch == " " or not e[4]:
             d.append(None)
             continue
-        pen = (font_hi.getlength(s[:i + 1], features=NOLIGA) - font_hi.getlength(s[i])) / SS
+        pen = (font_hi.getlength(s[:i + 1], features=NOLIGA) - font_hi.getlength(s[i])) / SS + track * i
         w = int(pen + font_hi.getlength(s[i]) / SS) + 3 * f["h"]
         img = ar.render_cell(font_hi, ch, (w * SS, 3 * f["h"] * SS), round((x0 + pen) * SS), 2 * f["h"] * SS)
         a = img.reduce(SS)                               # box-filtered coverage on the pixel grid
@@ -179,15 +179,16 @@ def main():
     a = ap.parse_args()
     RULE[0] = a.rule
     faces = parse(a.header)
-    spec = {n: (font, px) for n, font, px, *_ in gf.preset("ghoulbox")}   # GHOULBOX: the build's faces (tools/build.py)
+    spec = {n: (font, px, tr or 0.0) for n, font, px, _r, _e, tr, *_ in gf.preset("dinobox")}   # DINOBOX: the build's
+                                                                                    # faces (tools/build.py), tracking
     bad = 0
     for name, f in faces.items():
-        font, px = spec[name]
+        font, px, track = spec[name]
         font_hi = ar.open_font(font, px * SS)
         words = LOWER if f["last"] >= ord("z") else UPPER
         # a sparse face (L): the words it can draw (the firmware draws no others in it)
         words = [w for w in words if all(glyph_at(f, ord(ch.upper())) is not None for ch in w)]
-        pairs = [p for s in words for p in measure(f, font_hi, s)]
+        pairs = [p for s in words for p in measure(f, font_hi, s, track * px)]
         e = sorted(pairs, key=lambda p: -abs(p[1]))
         mx = abs(e[0][1])
         rms = (sum(v * v for _, v in pairs) / len(pairs)) ** 0.5

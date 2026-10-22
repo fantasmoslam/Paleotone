@@ -7,17 +7,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>GHOULBOX</title>
+<title>DINOBOX</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22/%3E%3Crect x=%224%22 y=%224%22 width=%228%22 height=%228%22 fill=%22%23fff%22/%3E%3C/svg%3E">
-<meta name="description" content="GHOULBOX, the dungeon synth firmware for the FM-1, running in your browser: the same code the instrument runs.">
+<meta name="description" content="DINOBOX, the prehistoric synth firmware for the FM-1, running in your browser: the same code the instrument runs.">
 <style>
 /* DotGothic16 (SIL OFL 1.1, fonts/OFL.txt), cut to printable ASCII, for the knob labels */
 @font-face { font-family: "DotGothic16"; src: url("fonts/DotGothic16-subset.woff") format("woff"); font-display: swap; }
 :root { --bg: #8e8e93; --fg: #111; --dim: #2c2c2e; --rule: #5a5a5e;
         --body: #1d1d1f; --tray: #141415; --part: #2a2a2d; --edge: #3a3a3e; --label: #d6d6d8;
         --lit: #fff4d6; --green: #5fe08a;
-        /* GHOULBOX: the dungeon around it, in CRYPT's colours (build/gen/ui_palettes.h; the art: tools/gen_emu_art.py) */
-        --bone: #efdfc6; --amber: #ef9a29; --ember: #ef4d42; --night: #080808; --plaque: rgba(8, 8, 8, .86);
+        /* the jungle around it (GHOULBOX: the dungeon), in JUNGLE's colours (GHOULBOX: CRYPT's) (build/gen/ui_palettes.h; the art: tools/gen_emu_art.py) */
+        --bone: #eee6ce; --amber: #a8d650; --ember: #ff7a30; --night: #07100a; --plaque: rgba(8, 8, 8, .86);
         color-scheme: dark; }   /* (dark: Chrome's forced dark leaves the page be) */
 html { background: var(--night); }
 body { margin: 0; color: var(--bone); font: 13px/1.6 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -27,8 +27,8 @@ body { margin: 0; color: var(--bone); font: 13px/1.6 -apple-system, BlinkMacSyst
 main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 32px; }
 /* the crest: the boot screen's skull and name, x2 */
 .crest { display: flex; justify-content: center; align-items: center; gap: 24px; margin: 4px 0 18px; }
-.crest .skull { width: 96px; height: 112px; }
-.crest .logo { height: 104px; width: auto; filter: drop-shadow(0 0 10px rgba(239, 154, 41, .35)); }
+.crest .skull { width: 176px; height: 96px; }
+.crest .logo { height: 104px; width: auto; filter: drop-shadow(0 0 10px rgba(168, 214, 80, .35)); }
 .crest img { image-rendering: auto; }   /* (drawn smooth at 2x: tools/gen_emu_art.py) */
 .tagline { margin: -8px 0 18px; text-align: center; font: 700 19px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
            "Helvetica Neue", Arial, sans-serif; color: var(--bone); letter-spacing: .02em; text-shadow: 0 0 3px #000, 0 0 6px #000, 0 2px 0 #000; }
@@ -48,14 +48,14 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 32px; }
          animation: torch .48s steps(4) infinite; }
 .torch.r { animation-delay: -.24s; }
 .torch::before { content: ""; position: absolute; left: 50%; top: 18px; width: 420px; height: 420px; margin: -210px 0 0 -210px;
-                 background: radial-gradient(circle, rgba(239, 154, 41, .30), rgba(239, 77, 66, .10) 40%, transparent 68%);
+                 background: radial-gradient(circle, rgba(168, 214, 80, .30), rgba(255, 122, 48, .10) 40%, transparent 68%);
                  animation: glow 1.7s ease-in-out infinite alternate; pointer-events: none; z-index: -1; }
 .torch.r::before { animation-duration: 1.3s; }
 @keyframes torch { to { background-position: -192px 0; } }
 @keyframes glow { 0% { opacity: .75; } 40% { opacity: 1; } 55% { opacity: .82; } 100% { opacity: .95; } }
 @media (prefers-reduced-motion: reduce) { .torch, .torch::before { animation: none; } }
 @media (max-width: 1100px) { .stage { grid-template-columns: minmax(0, 1040px); } .stage .torch { display: none; } }
-@media (max-width: 600px) { .crest .skull { width: 48px; height: 56px; } .crest .logo { height: 52px; width: auto; }
+@media (max-width: 600px) { .crest .skull { width: 88px; height: 48px; } .crest .logo { height: 52px; width: auto; }
                             .crest { gap: 12px; } .tagline { font-size: 15px; }
                             p.keys span, p.keys label { display: block; white-space: normal; margin: 4px 0; } }
 /* the text on stone plaques (a window's frame: EDGE outside, STONE inside, as gfx.c cv_window) */
@@ -145,7 +145,7 @@ footer small { font-size: 11px; opacity: .8; }
 .recorder.recording .rec-dot { animation: rec-pulse 1.1s steps(2, end) infinite; }
 .rec-dot { display: inline-block; width: .62em; height: .62em; margin-right: 6px; border-radius: 50%; background: #e54b3d; }
 .rec-clock { min-width: 4.6em; color: var(--bone); font: 700 14px/1 ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
-.rec-meter { display: inline-block; width: 70px; height: 7px; padding: 1px; border: 1px solid #5c4a34; background: #080808; }
+.rec-meter { display: inline-block; width: 70px; height: 7px; padding: 1px; border: 1px solid #5c4a34; background: #07100a; }
 .rec-meter::after { content: ""; display: block; width: var(--peak, 0%); height: 100%; max-width: 100%;
                     background: var(--amber); }
 .recorder.clipped .rec-meter::after { background: #ff4f42; }
@@ -177,9 +177,9 @@ body.focus-mode .audio-recovery { position: fixed; top: max(16px, env(safe-area-
 <main>
 <header class="crest">
   <img class="skull" src="art/skull.png" alt="">
-  <img class="logo" src="art/logo.png" alt="GHOULBOX">
+  <img class="logo" src="art/logo.png" alt="DINOBOX">
 </header>
-<p class="tagline">Dungeon synth for the FM-1 · play it here, in your browser</p>
+<p class="tagline">Prehistoric synth for the FM-1 · play it here, in your browser</p>
 <nav class="calls"><a class="slab" href="../installer/">Install on your FM-1</a>
   <a class="slab bone" href="https://ko-fi.com/ghoulbox" target="_blank" rel="noopener">Support on Ko-fi</a>
   <a class="slab bone" href="https://ghoulbox-shop.fourthwall.com/" target="_blank" rel="noopener">Merch</a>
@@ -230,16 +230,16 @@ body.focus-mode .audio-recovery { position: fixed; top: max(16px, env(safe-area-
   <p class="tool-status" id="tool-status" role="status" aria-live="polite"></p>
   <details class="midi-map"><summary>Panel MIDI CC list</summary>
     <table><thead><tr><th>CC</th><th>Control</th><th>Message</th></tr></thead><tbody id="midi-map"></tbody></table>
-    <p>Buttons must send 127 when pressed and 0 when released. Panel CC messages are consumed by the emulator; GHOULBOX’s direct sound CC map remains available for every other CC.</p>
+    <p>Buttons must send 127 when pressed and 0 when released. Panel CC messages are consumed by the emulator; DINOBOX’s direct sound CC map remains available for every other CC.</p>
   </details>
   <p class="tools-manual-link"><a href="tools.html" target="_blank" rel="noopener">Open the Web Synth Tools manual ↗</a></p>
 </details>
 
 <footer>
-  <small class="version">GHOULBOX @GBVERSION@@PREVIEW@ · on Felucca @VERSION@</small><br>
-  GHOULBOX by Jason Persinger · on <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments · <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · browser build after charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> · DotGothic16 font, <a href="fonts/OFL.txt">SIL OFL 1.1</a> · the name in Pirata One (SIL OFL 1.1)<br>
+  <small class="version">DINOBOX · on GHOULBOX @GBVERSION@@PREVIEW@ and Felucca @VERSION@</small><br>
+  DINOBOX, a fork of GHOULBOX by Jason Persinger · on <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments · <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · browser build after charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> · DotGothic16 font, <a href="fonts/OFL.txt">SIL OFL 1.1</a> · the name in Pirata One (SIL OFL 1.1)<br>
   <nav><a href="../installer/">Install</a><a href="../editor/">Editor</a><a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth">Source</a><a href="../../firmwares/">All FM-1 firmwares</a></nav>
-  <small>M-VAVE and FM-1 are trademarks of their respective owners. GHOULBOX and Felucca are not affiliated with or endorsed by them.</small>
+  <small>M-VAVE and FM-1 are trademarks of their respective owners. DINOBOX, GHOULBOX and Felucca are not affiliated with or endorsed by them.</small>
 </footer>
 </main>
 
@@ -716,7 +716,7 @@ async function toolOp(fn) {
   finally { toolBusy = false; toolsReady(); }
 }
 function workletRequest(type, data = {}) {
-  if (!node) return Promise.reject(new Error("Switch on GHOULBOX first"));
+  if (!node) return Promise.reject(new Error("Switch on DINOBOX first"));
   const id = ++requestId;
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => { requests.delete(id); reject(new Error("The emulator did not answer")); }, 5000);
@@ -746,7 +746,7 @@ function installState(archive) {
 stateExport.addEventListener("click", () => toolOp(async () => {
   toolSay("Capturing the live instrument…");
   const s = await snapshot(), file = makeEmulatorState(s.sectors, s.runtime, FIRMWARE);
-  download(`GHOULBOX-emulator-state-${new Date().toISOString().slice(0, 10)}.json`, file);
+  download(`DINOBOX-emulator-state-${new Date().toISOString().slice(0, 10)}.json`, file);
   toolSay("State exported: live music, projects, sounds, samples and settings.");
 }));
 stateImport.addEventListener("click", () => stateFile.click());
@@ -759,7 +759,7 @@ stateFile.addEventListener("change", () => {
     const archive = readEmulatorState(await file.text());
     const valid = await workletRequest("validate-project", { runtime: archive.runtime });
     if (!valid.ok) throw new Error("The live project failed firmware validation");
-    if (!confirm("Import this GHOULBOX emulator state? Current browser music, projects, sounds, samples and settings will be replaced.")) {
+    if (!confirm("Import this DINOBOX emulator state? Current browser music, projects, sounds, samples and settings will be replaced.")) {
       toolSay("Import cancelled."); return;
     }
     const old = await snapshot(), recovery = makeEmulatorState(old.sectors, old.runtime, FIRMWARE);
@@ -812,7 +812,7 @@ async function completeRecording(take, message) {
       fallback = take.requested !== "wav" ? ` WAV fallback saved: ${take.encodingFailed || "compressed encoding was unavailable"}.` : "";
     }
     const info = AUDIO_FORMATS[take.format], stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadBlob(`GHOULBOX-recording-${stamp}.${info.extension}`, blob);
+    downloadBlob(`DINOBOX-recording-${stamp}.${info.extension}`, blob);
     const clipped = take.clipped ? ` Warning: ${take.clipped} sample${take.clipped === 1 ? "" : "s"} clipped.` : "";
     const limit = message.reason === "limit" ? `${Math.round(take.maxSeconds / 60)}-minute limit reached. ` : "";
     toolSay(`${limit}${info.label} saved: ${recordingTime(take.frames, take.rate)}, ${(blob.size / 1048576).toFixed(1)} MB.${fallback}${clipped}`);
@@ -915,7 +915,7 @@ for (const x of [...PANEL_KNOBS, ...PANEL_BUTTONS]) {
 }
 
 function focusMode(on) {
-  if (on && !node) { document.getElementById("utility").open = true; toolSay("Switch on GHOULBOX before entering Focus Mode."); return; }
+  if (on && !node) { document.getElementById("utility").open = true; toolSay("Switch on DINOBOX before entering Focus Mode."); return; }
   document.body.classList.toggle("focus-mode", on);
   canvas.setAttribute("aria-label", on ? "Screen; exit Focus Mode" : "Screen; enter Focus Mode");
   focusButton.textContent = on ? "Exit focus" : "Focus screen";

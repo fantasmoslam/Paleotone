@@ -107,7 +107,8 @@ FIXED = "0123456789."       # one phase, at the rounded pen: src/ui_draw.c roll_
 WHOLE = "0123456789."       # with tabular, their advance in whole pixels too: a number keeps an even pitch
 
 
-def raster_font(spec, px, chars, tracking=0.0, gamma=1.0, tabular=True, kern_min=1, phases=1, crisp=False, crisp_dy=0):
+def raster_font(spec, px, chars, tracking=0.0, gamma=1.0, tabular=True, kern_min=1, phases=1, crisp=False, crisp_dy=0,
+                line=None):
     """-> dict(h, asc, phases, glyphs{ch: (adv16, [(bx, by, bw, bh, bytes) per phase, or one])}, kern{(a,b): d16})
 
     Advances, kerning and the outlines come from the instanced weight at 16 x the size (unhinted): advances in
@@ -125,6 +126,8 @@ def raster_font(spec, px, chars, tracking=0.0, gamma=1.0, tabular=True, kern_min
     font's capitals on the rows another face's sit on, where the layout was made for that face).
     """
     assert phases in (1, 2, 4, 8)
+    # line (DINOBOX): (ascent, descent) in pixels to set the line box to instead of the font's own (a font with tall
+    # line metrics put on another face's rows: the baseline at row `ascent`, the line at least ascent + descent)
     font = open_font(spec, px)                 # the line metrics only (ascent / descent rounded to pixels)
     font_hi = open_font(spec, px * SS)
     asc, desc = font.getmetrics()
@@ -161,9 +164,12 @@ def raster_font(spec, px, chars, tracking=0.0, gamma=1.0, tabular=True, kern_min
                 ph.append((0, 0, 0, 0, b""))
                 continue
             x0, y0, x1, y1 = bb
-            ph.append((x0 - pad, y0 - pad, x1 - x0, y1 - y0, pack(list(nib.crop(bb).tobytes()))))
-            bot_max = max(bot_max, y1 - pad)
+            dy = asc - line[0] if line else 0          # (DINOBOX: the line's top moved down by the extra ascent)
+            ph.append((x0 - pad, y0 - pad - dy, x1 - x0, y1 - y0, pack(list(nib.crop(bb).tobytes()))))
+            bot_max = max(bot_max, y1 - pad - dy)
         glyphs[ch] = (a16, ph)
+    if line:
+        asc, desc = line
     h = max(asc + desc, bot_max)
     kern = {}
     lens = {c: font_hi.getlength(c, features=feats) for c in chars if c != " "}

@@ -387,7 +387,7 @@ static void dream_go(uint32_t root)
     str_cpy(b, N_GURDY_DRN[root % 12u], 4);               /* (the note names: GURDY's DRN's) */
     str_cpy(b + str_len(b), " ", 2);
     str_cpy(b + str_len(b), N_DMOOD[clamp(song.g[G_DMOOD], 0, 5)], 6);
-    ui_say("DREAMING ", b);
+    ui_say("EVOLVING ", b);                     /* (DINOBOX: EPOCH; GHOULBOX: DREAMING) */
 }
 
 /* DREAM's keys (song.grid 4, silent): a press composes in its key; the first time, over steps that are there, after

@@ -52,7 +52,7 @@ async function editorMock() {
   inp.onmidimessage = (e) => link.receive(e.data);
   const rq = async (r, o) => link.request(r, o);
   const info = E.parse[E.CMD.INFO](await rq(E.req.info()));
-  ok(info.nengines === 15 && info.engines[1] === "-" && info.engines[12] === "FM6" && info.engines[13] === "SLICE" && info.engines[14] === "GURDY"
+  ok(info.nengines === 15 && info.engines[1] === "-" && info.engines[12] === "FM6" && info.engines[13] === "SLICE" && info.engines[14] === "ROAR"
  && info.engines[5] === "VOICE" && info.engines[6] === "TRIO" && info.engines[7] === "WHEEL" && info.engines[8] === "GRAIN" && info.engines[9] === "PHYS" && info.engines[10] === "DRUM" && info.engines[11] === "NOISE" && info.pcount === 113 && info.pe0 === 105 && info.engines[4] === "SAMPLE",
     "editor: INFO");
   let descs = 0;
@@ -157,7 +157,7 @@ async function editorMock() {
   ok(!prefs.favorites[info.nengines][31] && !E.devicePresetRows(info, names, prefs).some((r) => r.user), "editor: erased slot disappears and loses star");
   {   /* the lists in the device's order (engines.c ENGINE_ORDER): FM6 second, DRUM last, "-" never; the numbers stay */
     const shown = E.engineOrder(info.engines).map((i) => info.engines[i]);
-    ok(shown.join() === "ANALOG,FM6,PHASE,LOFI,SAMPLE,VOICE,TRIO,WHEEL,GRAIN,PHYS,GURDY,NOISE,DRUM" &&
+    ok(shown.join() === "ANALOG,FM6,PHASE,LOFI,SAMPLE,VOICE,TRIO,WHEEL,GRAIN,PHYS,ROAR,NOISE,DRUM" &&
        E.engineOrder(info.engines)[1] === 12 && E.engineOrder(info.engines)[10] === 14 && E.engineOrder(info.engines)[12] === 10,
        "editor: engines listed FM6 second, DRUM last; SLICE not offered (indices kept)");
     ok(E.engineOrder(["ANALOG", "X", "-", "NOISE", "FM6"]).join() === "0,4,3,1", "editor: an unknown engine follows the known ones");
@@ -1366,7 +1366,7 @@ function fm6TabNoBank() {
 ({ knownLayout, LAYOUT, setEng: (e) => { ENG = e; } })`, { console, TextEncoder, TextDecoder, setTimeout, clearTimeout });
   const ids = (pe0, gc, s) => {
     const out = new Set();
-    for (const eng of ["ANALOG", "DRUM", "GURDY"]) {
+    for (const eng of ["ANALOG", "DRUM", "ROAR"]) {
       L.setEng(eng);
       for (const g of L.LAYOUT(pe0, gc)) {
         if (g.mod != null && !s) for (let k = 0; k < 12; k++) out.add(g.mod + k);
@@ -1388,7 +1388,7 @@ function fm6TabNoBank() {
   }
   ok(!L.knownLayout({ pcount: 111, pe0: 103, gcount: 27 }) && L.knownLayout({ pcount: 99, pe0: 91, gcount: 27 }),
     "editor groups: Felucca 1.5 (111: its INSERT) keeps the id-order list; 1.1 the groups as before");
-  L.setEng("GURDY");
+  L.setEng("ROAR");
   const ring = L.LAYOUT(105, 37).find((g) => g.engine).pages.find((x) => x[0] === "RING");
   L.setEng("ANALOG");
   ok(ring && ring[2][0] === 104 && !L.LAYOUT(105, 37).find((g) => g.engine).pages.find((x) => x[0] === "RING"),

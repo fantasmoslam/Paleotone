@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # DINOBOX (from GHOULBOX): the boot / ABOUT artwork as 4-bit alpha bitmaps (run by tools/build.py generate()):
-#   GB_LOGO     "DINOBOX" in Cinzel Black (assets/fonts/Cinzel-Black.ttf, SIL OFL 1.1), boot size
+#   GB_LOGO     "DINOBOX" in Cinzel at weight 900 (assets/fonts/Cinzel[wght].ttf, SIL OFL 1.1), boot size
 #   GB_LOGO_S   the same, ABOUT size (the height of the large UI face's line)
 #   GB_SKULL    a T. rex skull, drawn here at 4x and scaled down (smooth edges)
 # Format as the icons: alpha 0..15, rows back to back, Huffman-coded with one code for the three (GB_HC,
@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gen_aa_font import huff_pack, huff_unpack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-FONT = ROOT / "assets/fonts/Cinzel-Black.ttf"
+FONT = ROOT / "assets/fonts/Cinzel[wght].ttf"
 WORD = "DINOBOX"
 SS = 4                                                  # supersampling of the drawn art
 
@@ -27,6 +27,7 @@ def logo(max_w, max_h):
     size = max_h * 2
     while True:
         f = ImageFont.truetype(str(FONT), size)
+        f.set_variation_by_axes([900])                 # Cinzel Black
         x0, y0, x1, y1 = f.getbbox(WORD)
         if x1 - x0 <= max_w and y1 - y0 <= max_h:
             break

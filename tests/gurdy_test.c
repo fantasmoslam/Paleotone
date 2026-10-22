@@ -290,11 +290,11 @@ int main(void)
         crank_run(150, 40, &off);                       /* (150 ms on: the burst gone) */
         snprintf(what, sizeof what, "  a stroke: the buzz > 2 kHz %.1f dB over the wheel's alone, after it", 20 * log10(on / off));
         check(what, on > off * 2);
-        ok = str_eq(track_desc(&trk[0], P_E3)->label, "GEAR") && str_eq(track_desc(&trk[0], P_E5)->names[5], "CRANK") &&
+        ok = str_eq(track_desc(&trk[0], P_E3)->label, "GEAR") && str_eq(track_desc(&trk[0], P_E5)->names[5], "TURN") &&
              track_desc(&trk[0], P_E5)->max == 5;
         trk[0].p[P_E5] = 2;
         check("  COUP's sixth value CRANK (append-only); WHL shown as GEAR at CRANK, WHL at 1/8",
-              ok && str_eq(track_desc(&trk[0], P_E3)->label, "WHL"));
+              ok && str_eq(track_desc(&trk[0], P_E3)->label, "BRTH"));
         crank_reset();
     }
     printf("%s\n", bad ? "GURDY TEST FAILED" : "gurdy test passed");

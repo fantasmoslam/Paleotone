@@ -369,7 +369,7 @@ static void draw_head(void)
         GFX_HOOK_ALIGN(0, 0, 0, H_HEAD, AL_V, "header text on its middle");
         rx = cv_text(HEAD_SLOT_X, HEAD_MY, &AF_M, l, sl[0] == '-' ? T_MID : T_THEME);
         if (sl[1])                                     /* edited since: the mark, up by the letter's top */
-            rx = cv_text(rx, HEAD_MY, &AF_M, "*", T_MID);
+            rx = cv_text(rx + 1, HEAD_MY, &AF_M, "*", T_MID);   /* (DINOBOX: Saira's A reaches its edge) */
         rx += 1;                                       /* (the REC mark's cell after it, its ink 3 px on) */
     }
     draw_rec_mark(rx, T_SURF);
@@ -620,12 +620,12 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     if (strip) {                                        /* rolling: the value strip only */
         cv_begin(COL_W, ROLL_H, T_SURF);
         cv_stone(3, 0, COL_W - 6, ROLL_H, 0, ROLL_Y);   /* GHOULBOX: the window's stone and side borders, as drawn */
-        cv_rect(0, 0, 1, ROLL_H, T_EDGE);
+        cv_rect(0, 0, 1, ROLL_H, T_THEME);              /* (DINOBOX: gfx.c cv_window's lines, THEME outside, EDGE in) */
         cv_rect(1, 0, 1, ROLL_H, T_STONE);
-        cv_rect(2, 0, 1, ROLL_H, T_THEME);
-        cv_rect(COL_W - 3, 0, 1, ROLL_H, T_THEME);
+        cv_rect(2, 0, 1, ROLL_H, T_EDGE);
+        cv_rect(COL_W - 3, 0, 1, ROLL_H, T_EDGE);
         cv_rect(COL_W - 2, 0, 1, ROLL_H, T_STONE);
-        cv_rect(COL_W - 1, 0, 1, ROLL_H, T_EDGE);
+        cv_rect(COL_W - 1, 0, 1, ROLL_H, T_THEME);
         cv_oy = -ROLL_Y;
     } else {
         char ov[16];                                    /* the value drawn before (in the cache key) */
@@ -1296,7 +1296,7 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "CLEAR SONG ORDER?", 24);
         break;
     case CF_DREAM:                                   /* GHOULBOX 2.3: "DREAM IN D DOR?" */
-        str_cpy(a, "DREAM IN ", 24);
+        str_cpy(a, "EPOCH IN ", 24);              /* (DINOBOX: EPOCH, GHOULBOX: DREAM) */
         str_cpy(a + str_len(a), N_GURDY_DRN[k % 12u], 4);
         str_cpy(a + str_len(a), " ", 2);
         str_cpy(a + str_len(a), N_DMOOD[clamp(song.g[G_DMOOD], 0, 5)], 6);

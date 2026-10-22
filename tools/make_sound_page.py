@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CC = ["gcc", "-O2", "-w", f"-I{ROOT}/build/gen", f"-I{ROOT}/firmware/src", f"-I{ROOT}/tests"]
 WHAT = {"ANALOG": "virtual analog", "FM6": "6-operator FM", "PHASE": "phase distortion", "LOFI": "chiptune",
         "SAMPLE": "real recordings (CC0)", "VOICE": "sung vowels", "TRIO": "three oscillators",
-        "WHEEL": "tonewheel organ", "GRAIN": "granular", "PHYS": "physical models", "GURDY": "hurdy-gurdy",
+        "WHEEL": "tonewheel organ", "GRAIN": "granular", "PHYS": "physical models", "ROAR": "roaring drones (GHOULBOX's hurdy-gurdy)",
         "NOISE": "noise and ambience", "DRUM": "drum kits"}
 
 

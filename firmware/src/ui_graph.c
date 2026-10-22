@@ -1166,7 +1166,7 @@ static const char *eng_abbr(const char *name)
                                        {"SAMPLE", "SMPL"}, {"VOICE", "VOCL"}, {"TRIO", "TRIO"}, {"WHEEL", "WHEL"},
                                        {"GRAIN", "GRAN"}, {"PHYS", "PHYS"}, {"DRUM", "DRUM"},
                                        {"NOISE", "NOIS"}, {"FM6", "FM6"}, {"SLICE", "SLCE"},
-                                       {"GURDY", "GRDY"}};
+                                       {"ROAR", "ROAR"}};
     uint32_t i;
     for (i = 0; i < sizeof A / sizeof A[0]; i++)
         if (str_eq(name, A[i][0]))
@@ -2117,32 +2117,39 @@ static void graph_song(void)
     } else {                                           /* + ADD: how */
         for (i = 0; i < 4u && !graph_project_used(i); i++)
             ;
-        cv_free_hint(SG_X0, ly + AF_M_CAP_Y + AF_M_CAP_H - AF_S_CAP_Y - AF_S_CAP_H,   /* (a key hint: S) */
+        cv_free_hint(SG_X0, ly + AF_M_CAP_Y + AF_M_CAP_H - AF_S_CAP_Y - AF_S_CAP_H - 1,   /* (a key hint: S; DINOBOX:
+                                                                                * a row up, its keycap inside the window) */
                      i < 4u ? "[K3] ADD SECTION" : "[SAVE] PROJECT A-D", T_MID, T_SURF, x0 - 10 - SG_X0);
     }
 }
-/* GHOULBOX: a wall torch, 12 x 30: the flame (rows 0..11, frame f 0..3: its tip sways and the core rises), the
- * cup (12..17), the handle (18..29). Colours: ACCENT outer flame, THEME middle, TEXT core, EDGE wood */
+/* DINOBOX: a fern frond (in GHOULBOX's torch place, 12 x 30): a stem rising from the ground (EDGE), its leaflets
+ * in pairs swept up and out (THEME, every other pair SEL), shorter towards the tip; frame f 0..3 sways the upper
+ * half a pixel either way. The lint: nothing may overlap it */
 #define TORCH_LX 8
 #define TORCH_RX 220
 #define TORCH_Y 10
+static int32_t fern_dx(int32_t sw, int32_t row)          /* the sway at a row: above row 16, more towards the tip */
+{
+    int32_t d = row < 16 ? sw * (16 - row) : 0;
+    return (d + (d > 0 ? 5 : d < 0 ? -5 : 0)) / 10;
+}
 static void torch_draw(int32_t x, int32_t y, uint32_t f)
 {
-    static const uint8_t OUTER[12] = {2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 8, 6};
-    static const uint8_t MIDW[12] = {0, 0, 0, 2, 2, 4, 4, 6, 6, 6, 6, 4};
-    static const uint8_t CORE[12] = {0, 0, 0, 0, 0, 2, 2, 2, 4, 4, 2, 2};
+    static const uint8_t PAIR[8][2] = {{4, 2}, {7, 3}, {10, 4}, {13, 5}, {16, 5}, {19, 5}, {22, 4}, {25, 3}};   /* row, length */
     static const int8_t SWAY[4] = {-1, 0, 1, 0};
-    int32_t j;
-    for (j = (int32_t)(f & 1u); j < 12; j++) {        /* (odd frames: one row shorter) */
-        int32_t dx = j < 5 ? SWAY[f & 3u] : 0, cx = x + 6 + dx;
-        cv_rect(cx - OUTER[j] / 2, y + j, OUTER[j], 1, T_ACCENT);
-        if (MIDW[j]) cv_rect(cx - MIDW[j] / 2, y + j, MIDW[j], 1, T_THEME);
-        if (CORE[j] && j + (int32_t)(f & 2u) / 2 < 12) cv_rect(cx - CORE[j] / 2, y + j, CORE[j], 1, T_TEXT);
+    int32_t sw = SWAY[f & 3u], j, k, i;
+    for (j = 3; j < 30; j++)                           /* the stem */
+        cv_rect(x + 6 + fern_dx(sw, j), y + j, 1, 1, T_EDGE);
+    for (k = 0; k < 8; k++) {                          /* the leaflets, up and out: a row up every 2 px */
+        int32_t ly = PAIR[k][0], cx = x + 6 + fern_dx(sw, ly);
+        uint16_t c = k & 1 ? T_SEL : T_THEME;
+        for (i = 1; i <= PAIR[k][1]; i++) {
+            cv_rect(cx - i, y + ly - i / 2, 1, 1, c);
+            cv_rect(cx + i, y + ly - i / 2, 1, 1, c);
+        }
     }
-    for (j = 0; j < 6; j++)                            /* the cup: narrowing */
-        cv_rect(x + j / 2, y + 12 + j, 12 - (j / 2) * 2, 1, j == 0 ? T_THEME : T_EDGE);
-    cv_rect(x + 4, y + 18, 4, 12, T_EDGE);             /* the handle */
-    cv_rect(x + 5, y + 18, 1, 12, T_STONE);
+    cv_rect(x + 6 + fern_dx(sw, 1), y + 1, 1, 1, T_THEME);   /* the tip */
+    cv_rect(x + 6 + fern_dx(sw, 2), y + 2, 1, 1, T_THEME);
     GFX_HOOK_TEXT(x, y + cv_oy, x + 12, y + cv_oy + 30, "torch", 4u);   /* the lint: nothing may overlap it */
 }
 /* the pages whose stage has room for the torches: HOME's scope, the envelope, the LFO, FX, and an engine page
@@ -2166,9 +2173,9 @@ static int torch_page(void)
         return 0;
     }
 }
-static void torch_tick(void)                          /* only the two torch rectangles, every 8 UI frames */
+static void torch_tick(void)                          /* only the two fern rectangles, every 16 UI frames */
 {
-    uint32_t f = (ui.frame >> 3) & 3u;
+    uint32_t f = (ui.frame >> 4) & 3u;              /* (DINOBOX: the ferns sway slower than a flame) */
     if (!ui.torches || f == ui.torch_f)
         return;
     ui.torch_f = (uint8_t)f;
@@ -2209,7 +2216,7 @@ static void draw_graph(void)
     panel_x0 = ui.torches ? 24 : 10;
     panel_w = ui.torches ? 192 : 220;
     if (ui.torches) {
-        ui.torch_f = (uint8_t)((ui.frame >> 3) & 3u);
+        ui.torch_f = (uint8_t)((ui.frame >> 4) & 3u);
         torch_draw(TORCH_LX, TORCH_Y, ui.torch_f);
         torch_draw(TORCH_RX, TORCH_Y, ui.torch_f ^ 2u);
     }

@@ -69,10 +69,10 @@ static const menu_credit_t MENU_CREDITS[] = {
     {"Emilie Gillet / MIT", MC_TEXT},
     {"https://github.com/pichenettes/eurorack", MC_URL},
     {"", MC_TEXT},
-    {"INTER TIGHT", MC_TITLE},
-    {"The Inter Project Authors", MC_TEXT},
+    {"SAIRA", MC_TITLE},                      /* DINOBOX: the UI's type (Felucca: Inter Tight, GHOULBOX: VT323) */
+    {"The Saira Project Authors", MC_TEXT},
     {"SIL Open Font License 1.1", MC_TEXT},
-    {"https://github.com/rsms/inter-tight", MC_URL},
+    {"https://github.com/Omnibus-Type/Saira", MC_URL},
     {"", MC_TEXT},
     {"VSCO-2 CE + VCSL", MC_TITLE},
     {"Versilian Studios / CC0 1.0", MC_TEXT},

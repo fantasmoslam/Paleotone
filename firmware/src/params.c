@@ -53,7 +53,7 @@ static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN",
                                      "VIB", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "DEPTH"};
 static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN", "PHYS",
                                              "DRUM", "NOISE", "FM6",
-                                             FELUCCA_SLICE ? "SLICE" : "-", "GURDY",
+                                             FELUCCA_SLICE ? "SLICE" : "-", "ROAR",
 };
 
 #define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0, 0}
@@ -472,7 +472,7 @@ static const page_t PAGES[] = {
     {"MIXER", FAM_TRK, SC_TRK, GR_TRK, {0, 1, 2, 3}},
     {"CLOCK", FAM_TRK, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, 0xFF}},
     {"KEYS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_KMODE, G_KTRK, G_KSPLIT, G_KOCT}},   /* GHOULBOX 2.1: CLOCK tapped again */
-    {"DREAM", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DREAM, G_DDENS, G_DDRFT, G_DMOOD}},   /* GHOULBOX 2.3: KEYS tapped again;
+    {"EPOCH", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DREAM, G_DDENS, G_DDRFT, G_DMOOD}},   /* GHOULBOX 2.3: KEYS tapped again;
                                                                                     * a key composes (dream.c) */
 };
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
