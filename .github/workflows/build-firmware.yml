@@ -57,6 +57,7 @@ jobs:
           git config --global --add safe.directory "$PWD"
           mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no build log" > /tmp/out/build.log
           [ -f dinobox.fwsc ] && cp dinobox.fwsc /tmp/out/ || true
+          for f in felucca.bin loader/ota.bin felucca.dis; do [ -f "build/$f" ] && cp "build/$f" /tmp/out/ || true; done   # (the image tests)
           echo "${{ github.sha }} ${{ job.status }}" > /tmp/out/RESULT
           cd /tmp/out && git init -q -b build-output && git add -A
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }}"
