@@ -68,7 +68,7 @@ ENG_MEM_FITS("DRUM", sizeof(drum_lane_t) * DV_NLANE);
 static uint8_t drum_mute[NPART];
 
 /* 1..3 named as the kit they play: aliases, never shown or offered (EDITOR_PROTOCOL.md: retired values) */
-static const char *const N_DRUM_KIT[] = {"STD", "66", "10", "77", "80", "10", "66", "55", "77", "CRYPT"};
+static const char *const N_DRUM_KIT[] = {"STD", "66", "10", "77", "80", "10", "66", "55", "77", "TRIBE"};
 static const char *const N_DRUM_KICK[] = {"PUNCH", "ROUND"};
 
 /* General MIDI notes 35..81 -> the drum (DVT_*; DVT_PUNCH: the kick KICK picks) and semitones from its
@@ -322,9 +322,9 @@ static int32_t drum_keys(const track_t *t, uint32_t k)
 /* {KIT, TUNE, TONE, DECY, SNAP, ACC, KICK, DRV}; every kit suggests the BEAT pattern (GM notes) */
 static const preset_t DRUM_PRESETS[] = {
     {"DRUM KIT", DRUM_KIT_E, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
-    /* GHOULBOX 1.2: the CRYPT kit as designed, and lower / longer */
-    {"CRYPT KIT", {DK_CRYPT, 64, 64, 64, 64, 100, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 70), PAT(22)},
-    {"TOMB DRUMS", {DK_CRYPT, 48, 50, 68, 64, 100, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 90), PAT(22)},
+    /* GHOULBOX 1.2's CRYPT kit (DINOBOX: TRIBE): TRIBAL KIT a little longer, WAR DRUMS lower, longer, driven */
+    {"TRIBAL KIT", {DK_CRYPT, 60, 64, 70, 70, 100, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 70), PAT(22)},
+    {"WAR DRUMS", {DK_CRYPT, 40, 46, 70, 72, 110, 0, 20}, {0, 100, 127, 100}, 0, 0, FX(15, 0, 0, 100), PAT(22)},
 };
 
 static const engine_t ENG_DRUM = {

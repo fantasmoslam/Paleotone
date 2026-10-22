@@ -313,7 +313,7 @@ async function editorSamplePresets() {
   const names = E.parse[C.NAMES](await rq(E.req.names(4)));
   await rq(E.req.preset(4, 0));
   const set = E.parse[C.DESC](await rq(E.req.desc(0, info.pe0)));
-  ok(eq(names.names, ["PIANO", "PIANO", "FLUTE", "SAX", "PIANO", "BOWED PSALT", "REN ORGAN", "TENOR RECORD", "FOLK HARP"])
+  ok(eq(names.names, ["PIANO", "PIANO", "FLUTE", "SAX", "PIANO", "AURORA BOW", "REED ORGAN", "CAVE FLUTE", "RIVER HARP"])
     && eq(set.names.slice(0, 4), ["PIANO", "PIANO", "FLUTE", "SAX"]) && set.names[4] === "PIANO"
     && eq(set.names.slice(5, 8), ["USR1", "USR2", "USR3"]) && eq(set.names.slice(8), ["PSALTERY", "RENORGAN", "RECORDER", "FOLKHARP"]),
     "SAMPLE: TRANH and PERC removed, SET 1 and 4 kept as PIANO aliases, USR1..3 at 5..7; GHOULBOX 1.1's sets after them");
@@ -328,9 +328,9 @@ async function editorSamplePresets() {
   const kitD = E.parse[C.DESC](await rq(E.req.desc(0, info.pe0)));
   const kitSet = [];
   for (const v of [1, 2, 3]) kitSet.push(E.parse[C.SET](await rq(E.req.set(0, info.pe0, v))).value);
-  ok(eq(kitD.names, ["STD", "66", "10", "77", "80", "10", "66", "55", "77", "CRYPT"]) &&   /* (CRYPT: GHOULBOX 1.2) */
+  ok(eq(kitD.names, ["STD", "66", "10", "77", "80", "10", "66", "55", "77", "TRIBE"]) &&   /* (TRIBE: GHOULBOX 1.2's CRYPT) */
      eq([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((v) => E.aliasOf(kitD.names, v)), [0, 6, 5, 8, 4, 5, 6, 7, 8, 9]) &&
-     eq(E.enumShown(kitD).filter((v) => E.aliasOf(kitD.names, v) === v).map((v) => kitD.names[v]), ["STD", "80", "10", "66", "55", "77", "CRYPT"]) &&
+     eq(E.enumShown(kitD).filter((v) => E.aliasOf(kitD.names, v) === v).map((v) => kitD.names[v]), ["STD", "80", "10", "66", "55", "77", "TRIBE"]) &&
      eq(kitSet, [6, 5, 8]),
     "DRUM: KIT 1..3 (once HAND CYM H+CYM) named 66 10 77, aliases of 6 5 8: hidden, a SET lands there");
   const removed = E.parse[C.PRESET](await rq(E.req.preset(4, 4)));

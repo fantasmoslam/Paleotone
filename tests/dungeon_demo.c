@@ -45,8 +45,8 @@ static uint32_t preset_of(uint32_t e, const char *name)
 /* the four parts' sounds: engine, preset (by name) */
 typedef struct { uint32_t e; const char *name; } snd_t;
 static const snd_t STOCK[4] = {{0, "STRINGS"}, {5, "CHOIR AAH"}, {4, "FLUTE"}, {7, "FULL ORGAN"}};
-static const snd_t GHOUL[4] = {{0, "CRYPT PAD"}, {5, "MONKS"}, {7, "TOWER FLUTE"}, {ENGI_GURDY, "DRONE WHEEL"}};
-static const snd_t GURDY[4] = {{0, "CRYPT PAD"}, {5, "MONKS"}, {ENGI_GURDY, "HURDY GURDY"}, {7, "CATHEDRAL"}};
+static const snd_t GHOUL[4] = {{0, "JUNGLE PAD"}, {5, "TRIBE CHANT"}, {7, "MOSS FLUTE"}, {ENGI_GURDY, "EARTHQUAKE"}};
+static const snd_t GURDY[4] = {{0, "JUNGLE PAD"}, {5, "TRIBE CHANT"}, {ENGI_GURDY, "PRIMEVAL"}, {7, "CANOPY"}};
 
 static void render(const char *dir, const char *name, int rtype, int tape, int crsh, const snd_t *snd)
 {
@@ -200,20 +200,20 @@ static void audition(const char *dir, uint32_t n, uint32_t e, const char *name, 
 int main(int argc, char **argv)
 {
     static const struct { uint32_t e; const char *name; uint32_t kind; } GALLERY[] = {
-        {0, "CRYPT PAD", K_CHORDS}, {0, "FROST STR", K_CHORDS}, {0, "WAR HORN", K_MELODY}, {0, "DIRGE BASS", K_BASS},
-        {5, "MONKS", K_CHORDS}, {5, "CRYPT CHOIR", K_CHORDS}, {5, "WRAITH", K_HOLD},
-        {7, "CRYPT ORGAN", K_CHORDS}, {7, "CATHEDRAL", K_CHORDS}, {7, "HARMONIUM", K_CHORDS}, {7, "TOWER FLUTE", K_MELODY},
-        {9, "LUTE", K_ARP}, {9, "HARPSICHORD", K_ARP}, {9, "DUNGEON HARP", K_ARP}, {9, "GURDY DRONE", K_HOLD},
-        {6, "FANTASY PAD", K_CHORDS}, {6, "MOURN HORN", K_MELODY}, {6, "STRING MACH", K_CHORDS},
-        {3, "TOWER LEAD", K_MELODY}, {3, "CASIO CHOIR", K_CHORDS}, {3, "RECORDER", K_MELODY},
-        {2, "GRIM BRASS", K_MELODY}, {11, "CAVE WIND", K_HOLD}, {11, "TORCH", K_HOLD},
-        {ENGI_GURDY, "HURDY GURDY", K_MELODY}, {ENGI_GURDY, "DRONE WHEEL", K_MELODY}, {ENGI_GURDY, "DANCE GURDY", K_MELODY},
-        {ENGI_GURDY, "TROMPETTE", K_MELODY}, {ENGI_GURDY, "VIELLE", K_MELODY},
-        {ENGI_FM6, "FRENCH HORN", K_MELODY}, {ENGI_FM6, "VIRGINAL", K_ARP}, {ENGI_FM6, "GLASS CHOIR", K_CHORDS},
-        {ENGI_FM6, "DARK STRINGS", K_CHORDS}, {ENGI_FM6, "LOFI FLUTE", K_MELODY}, {ENGI_FM6, "PIPE ORGAN", K_CHORDS},
-        {ENGI_FM6, "TUBA", K_BASS},
-        {ENGI_SAMPLE, "BOWED PSALT", K_CHORDS}, {ENGI_SAMPLE, "REN ORGAN", K_CHORDS}, {ENGI_SAMPLE, "TENOR RECORD", K_MELODY},
-        {ENGI_SAMPLE, "FOLK HARP", K_ARP}, {ENGI_GURDY, "BAGPIPE", K_MELODY},
+        {0, "JUNGLE PAD", K_CHORDS}, {0, "EPIC STRINGS", K_CHORDS}, {0, "CANYON HORN", K_MELODY}, {0, "STOMP BASS", K_BASS},
+        {5, "TRIBE CHANT", K_CHORDS}, {5, "EPIC CHOIR", K_CHORDS}, {5, "RAPTOR CALL", K_HOLD},
+        {7, "AMBER ORGAN", K_CHORDS}, {7, "CANOPY", K_CHORDS}, {7, "SWAMP REED", K_CHORDS}, {7, "MOSS FLUTE", K_MELODY},
+        {9, "LOG MARIMBA", K_ARP}, {9, "GEODE BELLS", K_ARP}, {9, "VALLEY HARP", K_ARP}, {9, "TARPIT DRONE", K_HOLD},
+        {6, "PANGAEA PAD", K_CHORDS}, {6, "BRONTO HORN", K_MELODY}, {6, "SKY STRINGS", K_CHORDS},
+        {3, "FOSSIL LEAD", K_MELODY}, {3, "DINO CHOIR", K_CHORDS}, {3, "BONE WHISTLE", K_MELODY},
+        {2, "TITAN BRASS", K_MELODY}, {11, "VOLCANO", K_HOLD}, {11, "LAVA CRACKLE", K_HOLD},
+        {ENGI_GURDY, "PRIMEVAL", K_MELODY}, {ENGI_GURDY, "EARTHQUAKE", K_MELODY}, {ENGI_GURDY, "STAMPEDE", K_MELODY},
+        {ENGI_GURDY, "REX GROWL", K_MELODY}, {ENGI_GURDY, "SWAMP FIDDLE", K_MELODY},
+        {ENGI_FM6, "HERO HORNS", K_MELODY}, {ENGI_FM6, "FERN PLUCK", K_ARP}, {ENGI_FM6, "COMET CHOIR", K_CHORDS},
+        {ENGI_FM6, "DEEP STRINGS", K_CHORDS}, {ENGI_FM6, "MIST FLUTE", K_MELODY}, {ENGI_FM6, "LAVA ORGAN", K_CHORDS},
+        {ENGI_FM6, "BRONTO TUBA", K_BASS},
+        {ENGI_SAMPLE, "AURORA BOW", K_CHORDS}, {ENGI_SAMPLE, "REED ORGAN", K_CHORDS}, {ENGI_SAMPLE, "CAVE FLUTE", K_MELODY},
+        {ENGI_SAMPLE, "RIVER HARP", K_ARP}, {ENGI_GURDY, "TRIBE PIPES", K_MELODY},
     };
     const char *dir = argc > 1 ? argv[1] : "build/dungeon_demo";
     char sub[512];

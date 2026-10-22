@@ -50,7 +50,7 @@ static void part(uint32_t k, uint32_t eng, const char *name, uint32_t div, uint3
             put_step(t, i, n, s, n ? ST_NOTE : ST_REST, 0);
     }
 }
-static void silence(uint32_t k) { part(k, 0, "CRYPT PAD", 0, 1, 0, 0, 0); }
+static void silence(uint32_t k) { part(k, 0, "JUNGLE PAD", 0, 1, 0, 0, 0); }
 static void show_page(const char *title)
 {
     uint32_t i;
@@ -185,24 +185,24 @@ int main(int argc, char **argv)
             transport_req = 2;
             switch (s) {
             case S_LATCH:
-                part(3, 7, "CATHEDRAL", 7, 1, 100, 70, 0);
+                part(3, 7, "CANOPY", 7, 1, 100, 70, 0);
                 trk[3].p[P_VOICE] = V_POLY;
-                part(0, ENGI_GURDY, "HURDY GURDY", 0, 32, 75, 92, &II_GURDY);
-                part(1, 0, "CRYPT PAD", 7, 8, 100, 70, &II_PAD);
+                part(0, ENGI_GURDY, "PRIMEVAL", 0, 32, 75, 92, &II_GURDY);
+                part(1, 0, "JUNGLE PAD", 7, 8, 100, 70, &II_PAD);
                 lt[3].on = 1;                          /* GLO + OP6: T4 latched (the map shows it) */
                 song.sel = 3;
                 ui.layer = ui.ly = LAYER_GLO;
                 break;
             case S_CRANK:
-                part(0, ENGI_GURDY, "HURDY GURDY", 0, 32, 80, 100, &III_GURDY);
+                part(0, ENGI_GURDY, "PRIMEVAL", 0, 32, 80, 100, &III_GURDY);
                 trk[0].p[P_E5] = (int16_t)GURDY_CRANK;
-                part(1, 0, "CRYPT PAD", 7, 8, 100, 56, &III_PAD);
+                part(1, 0, "JUNGLE PAD", 7, 8, 100, 56, &III_PAD);
                 song.sel = 0;
                 show_page("EDIT 2");                   /* E5: COUP CRANK on screen */
                 break;
             case S_TEMP:
                 silence(0);
-                part(1, 12, "PIPE ORGAN", 7, 8, 110, 80, &IV_ORGAN);
+                part(1, 12, "LAVA ORGAN", 7, 8, 110, 80, &IV_ORGAN);
                 trk[1].p[P_ROOT] = 2;                  /* D: TEMP tunes from the root */
                 trk[3].p[P_ROOT] = 2;
                 trk[1].p[P_TEMP] = trk[3].p[P_TEMP] = 0;   /* EQUAL */
@@ -210,11 +210,11 @@ int main(int argc, char **argv)
                 show_page("CHORD");
                 break;
             case S_SCALE:
-                part(0, ENGI_GURDY, "VIELLE", 0, 48, 80, 96, &V_VIELLE);
+                part(0, ENGI_GURDY, "SWAMP FIDDLE", 0, 48, 80, 96, &V_VIELLE);
                 trk[0].p[P_ROOT] = 2;
                 trk[0].p[P_SCALE] = 17;                /* HUNG */
-                part(1, 5, "MONKS", 7, 12, 110, 74, &V_MONKS);
-                part(2, ENGI_DRUM, "TOMB DRUMS", 1, 64, 95, 90, &V_DRUM);
+                part(1, 5, "TRIBE CHANT", 7, 12, 110, 74, &V_MONKS);
+                part(2, ENGI_DRUM, "WAR DRUMS", 1, 64, 95, 90, &V_DRUM);
                 trk[1].p[P_TEMP] = trk[3].p[P_TEMP] = 0;
                 song.sel = 0;
                 show_page("SCL");

@@ -103,25 +103,25 @@ static const steps_t RT_DRUM = {{AT(13, 36), AT(43, 45), AT(56, 56, 36, 45)}};  
 
 static section_t SEC[4] = {
     {"I  THE CRYPT", 54, 8, 120, 70, 30, {
-        {11, "CAVE WIND", 7, 8, 110, 70, &CR_WIND},
-        {5, "LOW DRONE", 7, 8, 100, 84, &CR_DRONE},
-        {5, "CRYPT CHOIR", 6, 16, 115, 74, &CR_CHOIR},
-        {ENGI_DRUM, "TOMB DRUMS", 1, 64, 100, 92, &CR_DRUM}}, {1, 1, 2, 2, 3, 2, 0, 1}},
+        {11, "VOLCANO", 7, 8, 110, 70, &CR_WIND},
+        {5, "REX ROAR", 7, 8, 100, 84, &CR_DRONE},
+        {5, "EPIC CHOIR", 6, 16, 115, 74, &CR_CHOIR},
+        {ENGI_DRUM, "WAR DRUMS", 1, 64, 100, 92, &CR_DRUM}}, {1, 1, 2, 2, 3, 2, 0, 1}},
     {"II  THE TOWER", 66, 12, 105, 60, 20, {
-        {ENGI_GURDY, "HURDY GURDY", 0, 48, 70, 96, &TW_GURDY},
-        {0, "CRYPT PAD", 7, 12, 100, 72, &TW_PAD},
-        {5, "MONKS", 7, 12, 110, 70, &TW_MONKS},
-        {ENGI_DRUM, "TOMB DRUMS", 6, 24, 95, 88, &TW_DRUM}}, {0, 0, 1, 0, 2, 0, 0, 0}},
+        {ENGI_GURDY, "PRIMEVAL", 0, 48, 70, 96, &TW_GURDY},
+        {0, "JUNGLE PAD", 7, 12, 100, 72, &TW_PAD},
+        {5, "TRIBE CHANT", 7, 12, 110, 70, &TW_MONKS},
+        {ENGI_DRUM, "WAR DRUMS", 6, 24, 95, 88, &TW_DRUM}}, {0, 0, 1, 0, 2, 0, 0, 0}},
     {"III  THE TAVERN", 100, 16, 70, 45, 10, {
-        {ENGI_GURDY, "DANCE GURDY", 1, 64, 55, 102, &TV_GURDY},
-        {ENGI_PHYS, "DUNGEON HARP", 1, 64, 70, 92, &TV_HARP},
-        {ENGI_PHYS, "LUTE", 6, 16, 50, 92, &TV_LUTE},
-        {ENGI_DRUM, "CRYPT KIT", 1, 64, 60, 96, &TV_DRUM}}, {0, 0, 1, 1, 0, 3, 2, 0}},
+        {ENGI_GURDY, "STAMPEDE", 1, 64, 55, 102, &TV_GURDY},
+        {ENGI_PHYS, "VALLEY HARP", 1, 64, 70, 92, &TV_HARP},
+        {ENGI_PHYS, "LOG MARIMBA", 6, 16, 50, 92, &TV_LUTE},
+        {ENGI_DRUM, "TRIBAL KIT", 1, 64, 60, 96, &TV_DRUM}}, {0, 0, 1, 1, 0, 3, 2, 0}},
     {"IV  RETURN TO THE CRYPT", 60, 8, 127, 75, 35, {
-        {ENGI_GURDY, "VIELLE", 0, 32, 90, 90, &RT_VIELLE},
-        {7, "CATHEDRAL", 7, 8, 105, 70, &RT_ORGAN},
-        {5, "MONKS", 7, 8, 115, 72, &RT_MONKS},
-        {ENGI_DRUM, "TOMB DRUMS", 1, 64, 100, 92, &RT_DRUM}}, {1, 0, 0, 2, 0, 3, 0, 0}},
+        {ENGI_GURDY, "SWAMP FIDDLE", 0, 32, 90, 90, &RT_VIELLE},
+        {7, "CANOPY", 7, 8, 105, 70, &RT_ORGAN},
+        {5, "TRIBE CHANT", 7, 8, 115, 72, &RT_MONKS},
+        {ENGI_DRUM, "WAR DRUMS", 1, 64, 100, 92, &RT_DRUM}}, {1, 0, 0, 2, 0, 3, 0, 0}},
 };
 
 /* the tavern harp: each bar's chord broken in eighths (root, fifth, octave, tenth, twelfth, tenth, octave, fifth) */

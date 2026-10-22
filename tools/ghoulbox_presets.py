@@ -24,60 +24,60 @@ ENGINES = {
     "GURDY": ("eng_gurdy.c", "GURDY_PRESETS"),
 }
 
-# name, EDIT 1..8, {A D S R}, filter env, mono, FX(dist, chorus, delay, reverb), suggested pattern
+# DINOBOX: epic prehistoric sounds in GHOULBOX's slots (same order, same engines: saved projects keep
+# pointing at a sound of the same kind). name, EDIT 1..8, {A D S R}, filter env, mono, FX(dist, chorus, delay, reverb), suggested pattern
 # (the reverb sends are high: GHOULBOX's HALL; TAPE / CRSH on the master do the rest of the age)
 PRESETS = {
-    "ANALOG": [  # WAVE (SAW SQR TRI SIN PWM) DTN MIX NOIS | CUT RES DRV KTR
-        ("CRYPT PAD", [0, 14, 64, 6, 42, 8, 6, 40], [95, 90, 120, 105], 6, 0, (0, 60, 10, 100), 5),
-        ("FROST STR", [4, 9, 50, 0, 58, 5, 0, 48], [70, 90, 115, 95], 4, 0, (0, 90, 10, 95), 5),
-        ("WAR HORN", [0, 6, 64, 0, 30, 18, 12, 64], [45, 80, 105, 70], 40, 0, (5, 20, 15, 85), 4),
-        ("DIRGE BASS", [1, 0, 0, 0, 34, 10, 20, 32], [10, 80, 110, 60], 15, 1, (10, 0, 0, 40), 8),
+    "ANALOG": [  # WAVE (SAW SQR TRI SIN PWM SYNC SUB) DTN MIX NOIS | CUT RES DRV KTR
+        ("JUNGLE PAD", [0, 20, 64, 8, 52, 12, 4, 44], [80, 90, 120, 100], 10, 0, (0, 85, 15, 100), 5),     # lush, wide
+        ("EPIC STRINGS", [4, 12, 50, 0, 64, 6, 0, 52], [60, 90, 120, 95], 6, 0, (0, 100, 10, 95), 5),    # a big section
+        ("CANYON HORN", [0, 8, 64, 0, 34, 20, 28, 64], [35, 80, 110, 70], 55, 0, (12, 25, 15, 90), 4),  # brassy swell
+        ("STOMP BASS", [6, 0, 0, 0, 30, 14, 45, 32], [4, 85, 105, 55], 30, 1, (18, 0, 0, 35), 8),       # a sub with bite
     ],
     "VOICE": [  # VOWL (A 0, E 32, I 64, O 95, U 127) VOWL2 TALK SHIFT | BUZZ BRTH Q RAND
-        ("MONKS", [105, 120, 0, -5, 75, 18, 70, 6], [70, 90, 120, 100], 0, 0, (0, 60, 0, 110), 5),
-        ("CRYPT CHOIR", [95, 0, 100, -2, 45, 30, 55, 10], [100, 90, 120, 110], 0, 0, (0, 80, 10, 115), 5),
-        ("WRAITH", [127, 64, 110, 0, 20, 100, 40, 30], [110, 90, 110, 115], 0, 0, (0, 50, 30, 115), 5),
-        ("LOW DRONE", [127, 95, 0, -8, 95, 15, 85, 4], [90, 90, 127, 110], 0, 1, (0, 40, 0, 115), 17),   # 1.2
+        ("TRIBE CHANT", [95, 127, 40, -7, 85, 22, 75, 10], [60, 90, 120, 100], 0, 0, (0, 50, 0, 105), 5),
+        ("EPIC CHOIR", [0, 32, 90, 0, 60, 20, 60, 12], [90, 90, 120, 110], 0, 0, (0, 90, 15, 115), 5),   # open "ah"
+        ("RAPTOR CALL", [40, 80, 25, 12, 110, 90, 95, 50], [2, 70, 90, 45], 0, 1, (15, 20, 30, 95), 4),  # a hissing screech
+        ("REX ROAR", [127, 0, 45, -12, 127, 75, 70, 25], [18, 90, 115, 85], 0, 1, (45, 10, 0, 105), 17),  # "oo" opening to "ah", low
     ],
     "WHEEL": [  # REG (FLUTE MELLO HOLLW SMOOT 3BAR BLUES GOSPL ROCK TOPS CLARI REED STRNG CHAPL BRITE BASS FULL)
                 # SUB BODY TOP | PERC CLICK DRV ROTR (OFF SLOW FAST)
-        ("CRYPT ORGAN", [12, 2, 0, -3, 0, 5, 15, 1], [20, 64, 127, 70], 0, 0, (0, 10, 0, 100), 5),
-        ("CATHEDRAL", [15, 3, 0, -2, 0, 0, 10, 0], [30, 64, 127, 90], 0, 0, (0, 0, 0, 115), 5),
-        ("HARMONIUM", [10, 0, 1, -4, 0, 10, 25, 1], [15, 64, 127, 50], 0, 0, (5, 20, 0, 85), 6),
-        ("TOWER FLUTE", [0, 0, -3, -6, 0, 0, 30, 1], [25, 64, 127, 60], 0, 1, (0, 30, 20, 95), 4),
+        ("AMBER ORGAN", [15, 3, 1, 0, 0, 5, 20, 1], [20, 64, 127, 70], 0, 0, (0, 10, 0, 100), 5),
+        ("CANOPY", [11, 2, 0, 2, 0, 0, 10, 2], [30, 64, 127, 90], 0, 0, (0, 20, 0, 110), 5),       # shimmering strings
+        ("SWAMP REED", [10, 0, 2, -4, 0, 10, 40, 1], [15, 64, 127, 50], 0, 0, (5, 20, 0, 85), 6),
+        ("MOSS FLUTE", [0, 0, -2, -6, 3, 20, 25, 1], [25, 64, 127, 60], 0, 1, (0, 30, 20, 95), 4),
     ],
-    "PHYS": [  # STRNG: MODEL STRC BRIT DAMP POS ACC BOW EXC; SYMP: MODEL CHRD BRIT DAMP SYMP ACC BUZZ EXC
-        ("LUTE", [1, 48, 55, 70, 30, 127, 0, 0], [0, 100, 127, 70], 0, 0, (0, 15, 20, 80), 3),
-        ("HARPSICHORD", [1, 80, 110, 78, 12, 127, 0, 0], [0, 100, 127, 50], 0, 0, (0, 10, 10, 75), 3),
-        ("DUNGEON HARP", [3, 4, 50, 80, 70, 127, 0, 0], [0, 100, 127, 90], 0, 0, (0, 20, 20, 95), 3),
-        ("GURDY DRONE", [3, 1, 70, 95, 80, 127, 110, 0], [30, 100, 127, 90], 0, 0, (5, 10, 0, 90), 5),
+    "PHYS": [  # MODAL: MODEL STRC BRIT DAMP POS ACC -; STRNG: MODEL STRC BRIT DAMP POS ACC BOW EXC; SYMP: .. SYMP ACC BUZZ EXC
+        ("LOG MARIMBA", [0, 116, 30, 52, 30, 100, 0, 40], [0, 95, 127, 60], 0, 0, (0, 15, 20, 80), 3),   # hollow wood
+        ("GEODE BELLS", [0, 70, 105, 108, 14, 100, 0, 8], [0, 100, 127, 90], 0, 0, (0, 20, 15, 100), 3),
+        ("VALLEY HARP", [3, 4, 70, 85, 70, 127, 0, 0], [0, 100, 127, 95], 0, 0, (0, 25, 20, 105), 3),
+        ("TARPIT DRONE", [3, 1, 45, 100, 80, 127, 120, 0], [30, 100, 127, 90], 0, 0, (8, 10, 0, 95), 5),
     ],
     "TRIO": [  # WAVE INT2 INT3 DTN | MODE CUT RES PW
-        ("FANTASY PAD", [0, 12, 7, 14, 0, 55, 20, 64], [90, 90, 115, 100], 10, 0, (0, 90, 25, 110), 5),
-        ("MOURN HORN", [1, 0, -12, 5, 0, 40, 25, 50], [40, 85, 105, 70], 35, 0, (5, 20, 10, 90), 4),
-        ("STRING MACH", [0, 12, 0, 18, 0, 70, 5, 64], [60, 90, 120, 95], 0, 0, (0, 110, 0, 100), 5),
-        ("SHAWM", [1, 12, 19, 4, 1, 85, 70, 25], [6, 70, 115, 45], 10, 1, (20, 0, 10, 85), 19),   # 1.2: a nasal reed
+        ("PANGAEA PAD", [0, 7, -12, 18, 0, 62, 15, 64], [100, 90, 120, 110], 12, 0, (0, 100, 25, 115), 5),
+        ("BRONTO HORN", [1, -12, -24, 6, 0, 34, 25, 50], [45, 85, 110, 75], 40, 0, (10, 20, 10, 90), 4),   # vast and low
+        ("SKY STRINGS", [0, 12, 0, 22, 0, 80, 5, 64], [60, 90, 120, 95], 0, 0, (0, 110, 0, 100), 5),
+        ("PTERO CRY", [1, 12, 19, 8, 1, 80, 70, 30], [3, 70, 110, 40], 20, 1, (25, 0, 25, 85), 19),     # a band-pass shriek
     ],
     "LOFI": [  # CHIP (4BIT 4B/2 8BIT 1BIT STEP) WAVE (PLS TRI SAW NOIS WRAM) DUTY CRSH | SWP VIB ARP TONE
-        ("TOWER LEAD", [0, 1, 64, 0, 0, 30, 0, 70], [5, 70, 110, 60], 0, 1, (0, 20, 35, 90), 4),
-        ("CASIO CHOIR", [0, 4, 92, 0, 0, 20, 0, 80], [60, 90, 115, 90], 0, 0, (0, 70, 20, 100), 5),
-        ("RECORDER", [2, 1, 64, 0, 0, 24, 0, 60], [12, 70, 115, 50], 0, 1, (0, 20, 25, 90), 4),
+        ("FOSSIL LEAD", [0, 1, 50, 10, 0, 40, 0, 80], [5, 70, 110, 60], 0, 1, (0, 20, 35, 90), 4),
+        ("DINO CHOIR", [0, 4, 92, 0, 0, 25, 0, 90], [60, 90, 115, 90], 0, 0, (0, 70, 20, 100), 5),
+        ("BONE WHISTLE", [2, 1, 64, 0, 10, 30, 0, 50], [12, 70, 115, 50], 0, 1, (0, 20, 25, 90), 4),
     ],
     "PHASE": [  # WAVE WAVE2 DCW ENV | DTN LINE SUB -
-        ("GRIM BRASS", [0, 0, 25, 70, 6, 0, 30, 0], [50, 80, 100, 70], 0, 0, (0, 20, 15, 90), 4),
+        ("TITAN BRASS", [0, 0, 55, 85, 10, 0, 45, 0], [40, 80, 105, 70], 0, 0, (10, 25, 15, 95), 4),
     ],
     "NOISE": [  # MODE (ANLG DUST LFSR META) COLR FREQ RES | TRK DENS DRFT CRSH
-        ("CAVE WIND", [0, 40, 50, 90, 0, 0, 90, 0], [110, 90, 120, 120], 0, 0, (0, 40, 20, 120), 5),
-        ("TORCH", [1, 30, 100, 60, 0, 60, 30, 0], [20, 90, 127, 80], 0, 0, (0, 0, 0, 70), 5),
+        ("VOLCANO", [0, 110, 30, 25, 0, 30, 100, 0], [90, 90, 127, 120], 0, 0, (20, 0, 10, 110), 5),     # a deep rumble, falling rocks
+        ("LAVA CRACKLE", [1, 45, 80, 55, 0, 80, 40, 0], [20, 90, 127, 80], 0, 0, (0, 0, 0, 80), 5),
     ],
     "GURDY": [  # DRN (C .. B) DLVL 5TH WHL | BUZZ COUP (HOLD 1/4 1/8 1/8T 1/16) BODY WOBL
-        # 1.3: pushed apart (each one character), the trompette louder in the engine; dungeon patterns
-        ("HURDY GURDY", [2, 90, 50, 80, 85, 2, 70, 40], [8, 64, 127, 40], 0, 1, (5, 10, 0, 90), 15),      # the all-rounder
-        ("DRONE WHEEL", [2, 127, 110, 45, 0, 0, 105, 70], [50, 64, 127, 100], 0, 1, (0, 20, 0, 110), 17),  # a wall of drone
-        ("DANCE GURDY", [2, 45, 0, 120, 127, 4, 35, 20], [2, 64, 127, 25], 0, 1, (12, 0, 0, 70), 21),    # 1/16 rattle
-        ("TROMPETTE", [2, 60, 0, 95, 110, 0, 60, 30], [4, 64, 127, 40], 0, 1, (15, 0, 0, 85), 18),        # a constant snarl
-        ("VIELLE", [2, 0, 0, 70, 0, 0, 100, 45], [35, 64, 120, 70], 0, 1, (0, 25, 10, 100), 19),          # a bowed fiddle
-        ("BAGPIPE", [2, 127, 90, 127, 0, 0, 25, 0], [4, 64, 127, 30], 0, 1, (18, 0, 0, 80), 15),   # 1.1: a chanter over its drones
+        ("PRIMEVAL", [2, 110, 70, 70, 60, 2, 95, 50], [15, 64, 127, 50], 0, 1, (12, 15, 0, 100), 15),
+        ("EARTHQUAKE", [2, 127, 127, 40, 30, 0, 127, 90], [60, 64, 127, 110], 0, 1, (25, 15, 0, 115), 17),   # a wall of drone
+        ("STAMPEDE", [2, 60, 30, 110, 127, 4, 60, 15], [2, 64, 127, 25], 0, 1, (25, 0, 0, 75), 21),          # 1/16 thunder
+        ("REX GROWL", [2, 80, 20, 90, 127, 0, 90, 60], [6, 64, 127, 45], 0, 1, (35, 0, 0, 90), 18),          # a constant snarl
+        ("SWAMP FIDDLE", [2, 20, 0, 70, 10, 0, 110, 60], [40, 64, 120, 75], 0, 1, (5, 25, 10, 105), 19),
+        ("TRIBE PIPES", [2, 127, 100, 120, 20, 0, 40, 10], [6, 64, 127, 35], 0, 1, (22, 0, 0, 85), 15),
     ],
 }
 

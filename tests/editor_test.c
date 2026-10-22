@@ -869,7 +869,7 @@ static int menu_protocol(void)
     static const char *const WANT[26][2] = {
         {"COLOR", 0}, {"STYLE", "FLAT,LINE"}, {"LARGE", "OFF,ON"}, {"ANIM", "ON,OFF,IDLE"}, {"LEDS", "OFF,DIM LO,DIM HI,INV"},
         {"HOLD", "0.3 s,0.4 s,0.5 s,0.6 s"}, {"KNOB ACCEL", "OFF,ON"}, {"FX LATCH", "OFF,ON"}, {"BPM LOCK", "OFF,ON"},
-        {"SPEAKER EQ", "FLAT,LOWCUT,BASS+"}, {"USB LEVEL", "MASTER,FIXED"}, {"SCENE", "DUNGEON,CRYPT,TAVERN,CHAPEL,BLANK"},
+        {"SPEAKER EQ", "FLAT,LOWCUT,BASS+"}, {"USB LEVEL", "MASTER,FIXED"}, {"SCENE", "JUNGLE,VOLCANO,STAMPEDE,VALLEY,BLANK"},
         {"USB SERIAL", "ON,OFF"},
         {"CLICK", "OFF,REC,ON"}, {"CLICK LEVEL", "LOW,MID,HIGH"}, {"COUNT-IN", "OFF,1 BAR,2 BARS"},   /* (1.1: appended) */
         {"RESTORE LAST", "ON,OFF"}, {"SCALE LEDS", "OFF,ON"},                                        /* (1.2) */
@@ -956,7 +956,7 @@ static int menu_protocol(void)
     ok &= menu_set(8, 1) == 3 && (ui_prefs & PREF_BPM_LOCK);
     ok &= menu_set(9, 2) == 3 && settings.lowcut == 2u && fx_lowcut == 2u;
     ok &= menu_set(10, 1) == 3 && (ui_prefs & PREF_USB_FIXED) && fx_usb_fixed;
-    ok &= menu_set(12, 2) == 3 && ui_scene == 2u;     /* GHOULBOX 1.3: SCENE TAVERN (at the next power-on) */
+    ok &= menu_set(12, 2) == 3 && ui_scene == 2u;     /* GHOULBOX 1.3: SCENE STAMPEDE, TAVERN's slot (at the next power-on) */
     ok &= menu_set(13, 1) == 3 && click_mode == CLICK_REC && menu_set(13, 2) == 3 && click_mode == CLICK_ON;
     ok &= menu_set(14, 0) == 3 && click_lvl == 0u;
     ok &= menu_set(15, 2) == 3 && cin_bars == 2u;

@@ -224,7 +224,7 @@ static const struct {
     {"ANTIPHON", {62, 0, 65, 64, 62, 0, 0, 0, 50, 0, 53, 52, 50, 0, 0, 0},          /* 21 a call, answered an octave down */
      {1, T_, 0, 0, 0, T_, T_, 0, 1, T_, 0, 0, 0, T_, T_, 0}},
     /* GHOULBOX 1.2: for the DRUM engine's CRYPT kit (GM notes: its FRAME, SHAKR, TIMP, ROPE, SLAP lanes) */
-    {"TOMBBEAT", {36, 42, 0, 42, 45, 42, 36, 42, 36, 42, 45, 45, 38, 42, 39, 42},       /* 22 a procession */
+    {"STOMP", {36, 42, 0, 42, 45, 42, 36, 42, 36, 42, 45, 45, 38, 42, 39, 42},       /* 22 a procession */
      {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}},
 };
 #undef T_
@@ -235,16 +235,16 @@ static const uint8_t TRK_DEF[NPART][3] = {{0, 4, 0}, {ENGI_FM6, 4, 0}, {3, 0, 0}
                                                                        * FM6 PAD (was DIGITAL PAD), LOFI PULSE LD, DRUM KIT */
 /* GHOULBOX: what felucca_init plays instead (TRK_DEF stays Felucca's: an old project's missing parts are those), in D
  * minor, 1/8 steps, HALL (ui.c gb_scene_load). 1.3: MENU > SYSTEM > SCENE picks one (ui_scene; append-only: a saved
- * value keeps its scene, an unknown one plays DUNGEON). The patterns are the dungeon nine (PATTERNS[n - 1]) */
+ * value keeps its scene, an unknown one plays JUNGLE, DINOBOX's DUNGEON). The patterns are GHOULBOX's nine (PATTERNS[n - 1]) */
 #define GB_NSCENE 5u
 static const struct { const char *name; uint8_t bpm, tape, part[NPART][3]; } GB_SCENES[GB_NSCENE] = {
-    {"DUNGEON", 72, 40, {{ENGI_GURDY, 0, 15}, {0, 12, 14}, {5, 4, 16}, {ENGI_GURDY, 1, 17}}},   /* HURDY GURDY BALLAD,
+    {"JUNGLE", 72, 40, {{ENGI_GURDY, 0, 15}, {0, 12, 14}, {5, 4, 16}, {ENGI_GURDY, 1, 17}}},   /* HURDY GURDY BALLAD,
                                     * CRYPT PAD DIRGE, MONKS CHANT, DRONE WHEEL PEDAL: the scene up to 1.2 */
-    {"CRYPT", 60, 55, {{5, 7, 17}, {5, 5, 14}, {11, 4, 17}, {ENGI_DRUM, 2, 22}}},              /* LOW DRONE PEDAL,
+    {"VOLCANO", 60, 55, {{5, 7, 17}, {5, 5, 14}, {11, 4, 17}, {ENGI_DRUM, 2, 22}}},              /* LOW DRONE PEDAL,
                                     * CRYPT CHOIR DIRGE, CAVE WIND PEDAL, TOMB DRUMS TOMBBEAT */
-    {"TAVERN", 96, 30, {{ENGI_GURDY, 2, 15}, {ENGI_PHYS, 11, 20}, {ENGI_PHYS, 9, 18}, {ENGI_DRUM, 1, 22}}},   /* DANCE
+    {"STAMPEDE", 104, 30, {{ENGI_GURDY, 2, 15}, {ENGI_PHYS, 11, 20}, {ENGI_PHYS, 9, 18}, {ENGI_DRUM, 1, 22}}},   /* DANCE
                                     * GURDY BALLAD, DUNGEON HARP ARPEGGIO, LUTE MARCH, CRYPT KIT TOMBBEAT */
-    {"CHAPEL", 66, 40, {{7, 6, 14}, {5, 4, 16}, {ENGI_SAMPLE, 7, 19}, {ENGI_GURDY, 4, 21}}},     /* CATHEDRAL DIRGE,
+    {"VALLEY", 66, 40, {{7, 6, 14}, {5, 4, 16}, {ENGI_SAMPLE, 7, 19}, {ENGI_GURDY, 4, 21}}},     /* CATHEDRAL DIRGE,
                                     * MONKS CHANT, TENOR RECORD LAMENT, VIELLE ANTIPHON */
     {"BLANK", 72, 40, {{ENGI_GURDY, 0, 0}, {0, 12, 0}, {5, 4, 0}, {ENGI_GURDY, 1, 0}}},         /* DUNGEON's sounds, no
                                     * notes: a clean start */

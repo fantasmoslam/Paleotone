@@ -12,19 +12,19 @@
 #define T_ 255                                     /* a tie */
 enum { PH_LEAD, PH_CHORD, PH_PLUCK, PH_BASS, PH_HOLD, PH_DRUM };
 static const char *const PH_NAME[] = {"a lament", "slow chords", "broken chords", "a low line", "a held note",
-                                      "TOMBBEAT"};
+                                      "STOMP"};
 static const struct { const char *name; uint8_t ph; } KIND[] = {
-    {"SOFT PAD", PH_CHORD}, {"PWM STR", PH_CHORD}, {"STRINGS", PH_CHORD}, {"CRYPT PAD", PH_CHORD},
-    {"FROST STR", PH_CHORD}, {"STRING", PH_CHORD}, {"CASIO CHOIR", PH_CHORD}, {"CHOIR AAH", PH_CHORD},
-    {"MONKS", PH_CHORD}, {"CRYPT CHOIR", PH_CHORD}, {"WRAITH", PH_CHORD}, {"CHIP CHOIR", PH_CHORD},
-    {"FANTASY PAD", PH_CHORD}, {"STRING MACH", PH_CHORD}, {"FULL ORGAN", PH_CHORD}, {"CRYPT ORGAN", PH_CHORD},
-    {"CATHEDRAL", PH_CHORD}, {"HARMONIUM", PH_CHORD}, {"CLOUD PAD", PH_CHORD}, {"FROZEN", PH_CHORD},
-    {"PAD", PH_CHORD}, {"GLASS CHOIR", PH_CHORD}, {"DARK STRINGS", PH_CHORD}, {"PIPE ORGAN", PH_CHORD},
-    {"REN ORGAN", PH_CHORD},
-    {"FOLK HARP", PH_PLUCK}, {"LUTE", PH_PLUCK}, {"HARPSICHORD", PH_PLUCK}, {"DUNGEON HARP", PH_PLUCK},
-    {"VIRGINAL", PH_PLUCK}, {"BELL", PH_PLUCK},
-    {"SUB BASS", PH_BASS}, {"DIRGE BASS", PH_BASS}, {"TUBA", PH_BASS}, {"LOW DRONE", PH_BASS},
-    {"WIND", PH_HOLD}, {"CAVE WIND", PH_HOLD}, {"TORCH", PH_HOLD}, {"GURDY DRONE", PH_HOLD},
+    {"SOFT PAD", PH_CHORD}, {"PWM STR", PH_CHORD}, {"STRINGS", PH_CHORD}, {"JUNGLE PAD", PH_CHORD},
+    {"EPIC STRINGS", PH_CHORD}, {"STRING", PH_CHORD}, {"DINO CHOIR", PH_CHORD}, {"CHOIR AAH", PH_CHORD},
+    {"TRIBE CHANT", PH_CHORD}, {"EPIC CHOIR", PH_CHORD}, {"RAPTOR CALL", PH_CHORD}, {"CHIP CHOIR", PH_CHORD},
+    {"PANGAEA PAD", PH_CHORD}, {"SKY STRINGS", PH_CHORD}, {"FULL ORGAN", PH_CHORD}, {"AMBER ORGAN", PH_CHORD},
+    {"CANOPY", PH_CHORD}, {"SWAMP REED", PH_CHORD}, {"CLOUD PAD", PH_CHORD}, {"FROZEN", PH_CHORD},
+    {"PAD", PH_CHORD}, {"COMET CHOIR", PH_CHORD}, {"DEEP STRINGS", PH_CHORD}, {"LAVA ORGAN", PH_CHORD},
+    {"REED ORGAN", PH_CHORD},
+    {"RIVER HARP", PH_PLUCK}, {"LOG MARIMBA", PH_PLUCK}, {"GEODE BELLS", PH_PLUCK}, {"VALLEY HARP", PH_PLUCK},
+    {"FERN PLUCK", PH_PLUCK}, {"BELL", PH_PLUCK},
+    {"SUB BASS", PH_BASS}, {"STOMP BASS", PH_BASS}, {"BRONTO TUBA", PH_BASS}, {"REX ROAR", PH_BASS},
+    {"WIND", PH_HOLD}, {"VOLCANO", PH_HOLD}, {"LAVA CRACKLE", PH_HOLD}, {"TARPIT DRONE", PH_HOLD},
 };
 /* 16 steps of up to 3 notes; {T_} holds the step before, {0} rests */
 static const uint8_t PHRASE[5][16][3] = {

@@ -5,7 +5,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GHOULBOX</title>
+<title>DINOBOX</title>
 <meta name="color-scheme" content="dark">
 <style>
   /* GHOULBOX: the dungeon, as the emulator page (web/emu/index.html): CRYPT's colours, the art from
@@ -76,7 +76,7 @@
 <main>
   <header class="crest">
     <img class="skull" src="../art/skull.png" alt="">
-    <img class="logo" src="../art/logo.png" alt="GHOULBOX">
+    <img class="logo" src="../art/logo.png" alt="DINOBOX">
   </header>
   <p class="tagline" data-t="tagline"></p>
   <div class="stage">
@@ -112,7 +112,7 @@
     <a class="kofi" href="https://ghoulbox-shop.fourthwall.com/" target="_blank" rel="noopener" data-t="merch"></a> <span class="small" data-t="supportWhy"></span></p>
   </section>
   <section class="plaque">
-  <p class="small">GHOULBOX by Jason Persinger: <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth" target="_blank" rel="noopener">source</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/issues" target="_blank" rel="noopener">problems</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases" target="_blank" rel="noopener">user guide</a>. The name is set in Pirata One (SIL OFL 1.1).<br>
+  <p class="small">DINOBOX, a fork of GHOULBOX by Jason Persinger: <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth" target="_blank" rel="noopener">source</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/issues" target="_blank" rel="noopener">problems</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases" target="_blank" rel="noopener">user guide</a>. The name is set in Pirata One (SIL OFL 1.1).<br>
     On Felucca by Leo Kuroshita (@kurogedelic), <a href="https://hugelton.com" target="_blank" rel="noopener">Hügelton Instruments</a>, with its CrispyZebra waveforms, drum voices, Sample Pack and Fukiai icons (MIT).<br>
     Font: Inter Tight (The Inter Project Authors, SIL OFL 1.1). Samples: Versilian Studios VSCO-2 Community Edition and VCSL (CC0 1.0).<br>
     FM6 engine: msfa from Dexed (Google Inc., Pascal Gauthier, Apache-2.0). The package also holds three JieLi AC79 SDK files, uboot.boot, cfg_tool.bin and eq_cfg_hw.bin (JieLi Technology, Apache-2.0). <a href="../../firmware/LICENSING.md">Licences</a>: <a href="../../firmware/LICENSE">GPL-3.0</a>, <a href="../../firmware/LICENSES/Apache-2.0.txt">Apache-2.0</a>, <a href="../../firmware/LICENSES/">all</a>.<br>
@@ -128,17 +128,17 @@
 const $ = (id) => document.getElementById(id);
 const TEXT = {
   ja: {
-    tagline: "FM-1 に GHOULBOX {v} をインストール",
+    tagline: "FM-1 に DINOBOX {v} をインストール",
     backupFirst: "先にバックアップを保存してください（インストーラーは自動で作りません）。エディタを開いて FM-1 を接続し、Settings タブの Save backup を押します。",
     tryit: "まずブラウザで試す →", lessons: "はじめてのダンジョンシンセ? ビデオレッスン (YouTube, 英語)", allfw: "FM-1 のほかの無料ファームウェア",
-    support: "Ko-fi で支援", merch: "グッズ", supportWhy: "GHOULBOX は無料です。チップは新しい音色・レッスン・更新に使われます。",
+    support: "Ko-fi で支援", merch: "グッズ", supportWhy: "DINOBOX は GHOULBOX をもとにしています。GHOULBOX の作者を支援できます。",
     intro: "FM-1 を USB で接続してください。（Chrome か Edge で使えます）",
     warn: "書き込み中は USB を抜かないでください。",
     install: "インストール", other: "English",
     editor: "エディタ（インストール後、パソコンから音色やシーケンスを編集）",
     direct: "USB ケーブルはパソコンに直接つないでください。Probe や Transporter などの機材は不要です。",
     brick: "万一インストールに失敗して起動しなくなった場合は、復旧に Transporter が必要です:",
-    beta: "GHOULBOX は 1 台の FM-1 でテストしています。不具合は GitHub で知らせてください。このカスタムファームウェアを使ったことで FM-1 が壊れたり不具合が起きたりしても、作者は一切の責任を負いません。自己責任でお使いください。",
+    beta: "DINOBOX は GHOULBOX の趣味のフォークで、まだ実機の FM-1 でテストしていません。不具合は GitHub で知らせてください。このカスタムファームウェアを使ったことで FM-1 が壊れたり不具合が起きたりしても、作者は一切の責任を負いません。自己責任でお使いください。",
     back: "M-VAVEから公式FM-1 V15を取得し、未変更のFM-1.fwscを選んでください。ファイルはこのブラウザ内で検証し、サーバーへ送りません。",
     stockTitle: "公式V15に戻す", stockFile: "公式FM-1.fwsc", stockGo: "バックアップして公式V15へ戻す",
     stockBackup: "現在の曲・保存曲・音色バンク・サンプル・設定を先に保存します。全体バックアップ非対応版は、Feluccaを更新してから行ってください。復元はFeluccaを再インストールしてエディタから行います。",
@@ -165,17 +165,17 @@ const TEXT = {
     license: "GPL-3.0、無保証。ソース:",
   },
   en: {
-    tagline: "Install GHOULBOX {v} on your FM-1",
+    tagline: "Install DINOBOX {v} on your FM-1",
     backupFirst: "First save a backup: the installer doesn't make one. Open the Editor (below), connect the FM-1, and on the Settings tab press Save backup.",
     tryit: "Try it in your browser first →", allfw: "Every other free FM-1 firmware", lessons: "New to dungeon synth? Watch the five video lessons (YouTube)",
-    support: "Support on Ko-fi", merch: "Merch", supportWhy: "GHOULBOX is free. Tips fund new sounds, lessons and updates.",
+    support: "Support on Ko-fi", merch: "Merch", supportWhy: "DINOBOX is built on GHOULBOX: these support its author.",
     intro: "Connect the FM-1 by USB. (Works in Chrome or Edge.)",
     warn: "Do not unplug the USB cable while writing.",
     install: "Install", other: "日本語",
     editor: "Editor (after installing: edit sounds and sequences from the computer)",
     direct: "Connect the USB cable directly to the computer. No probe or Transporter is needed.",
     brick: "If an install fails and the FM-1 no longer starts, recovering it needs a Transporter:",
-    beta: "GHOULBOX is tested on one FM-1; please report problems on GitHub. The authors accept no responsibility if your FM-1 is damaged or misbehaves because of this custom firmware. Use it at your own risk.",
+    beta: "DINOBOX is a hobby fork of GHOULBOX and has not been tested on a real FM-1 yet; please report problems on GitHub. The authors accept no responsibility if your FM-1 is damaged or misbehaves because of this custom firmware. Use it at your own risk.",
     back: "Get official FM-1 V15 from M-VAVE and select the unmodified FM-1.fwsc. The browser validates it locally; it is not sent to a server.",
     stockTitle: "Return to official V15", stockFile: "Official FM-1.fwsc", stockGo: "Back up and return to official V15",
     stockBackup: "Current music, saved music, sound banks, samples and settings are saved first. Older firmware needs a Felucca update for complete backups. To restore an archive later, reinstall Felucca and use the editor.",
@@ -232,7 +232,7 @@ window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault
     const pkg = new Uint8Array(await r.arrayBuffer());
     if (productOf(pkg) !== meta.product) { sayK("badpkg"); return; }
     image = logicalImage(pkg);
-    say(`GHOULBOX ${VER}`);
+    say(`DINOBOX ${VER}`);
     $("go").disabled = false;
     let resume = null;
     try { resume = sessionStorage.getItem("ghoulbox-resume"); sessionStorage.removeItem("ghoulbox-resume"); } catch (_) {}
@@ -309,7 +309,7 @@ $("stock-file").addEventListener("change", async () => {
 });
 function saveArchive(archive) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(archive)], {type:"application/json"}));
-  const a = document.createElement("a"); a.href = url; a.download = `GHOULBOX-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const a = document.createElement("a"); a.href = url; a.download = `DINOBOX-backup-${new Date().toISOString().slice(0,10)}.json`;
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function archiveInfo(a) {

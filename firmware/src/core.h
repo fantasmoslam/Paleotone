@@ -20,6 +20,9 @@
 #define FELUCCA_FM4 0            /* the DIGITAL engine (eng_digital.c, four-operator FM): kept in the tree, not built
                                   * by default; replaced by FM6, its sounds convert (fm4_convert.c) */
 #endif
+#ifndef DINOBOX_VERSION
+#define DINOBOX_VERSION "1.0"    /* DINOBOX: the boot / ABOUT screens; GHOULBOX_VERSION stays the base for the editor */
+#endif
 #ifndef GHOULBOX_VERSION
 #define GHOULBOX_VERSION "2.3.2"   /* GHOULBOX's own: the ABOUT screen; the editor's version string ends " GB" it */
 #endif

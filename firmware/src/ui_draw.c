@@ -1183,15 +1183,15 @@ static void draw_columns(void)
 }
 
 
-/* The power-on splash (main.c fm1_main, web/emu felucca_web.c): GHOULBOX's skull in bone, the blackletter wordmark in
- * the theme's colour, "DUNGEON SYNTH" under them (gfx.c draw_art_box: ghoulbox_art.h). In the saved palette
+/* The power-on splash (main.c fm1_main, web/emu felucca_web.c): DINOBOX's T. rex skull in bone, the wordmark in
+ * the theme's colour, "PREHISTORIC SYNTH" under them (gfx.c draw_art_box: ghoulbox_art.h). In the saved palette
  * (settings_init before it) */
 static void draw_splash(void)
 {
     lcd_fill(0, 0, 240, 240, T_BG);
-    draw_art_box(34, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);    /* GHOULBOX: bone */
-    draw_art_box(100, GB_LOGO_W, GB_LOGO_H, GB_LOGO, T_THEME);
-    draw_text_box(0, 166, 240, &AF_S, "DUNGEON SYNTH", T_MID, 1);
+    draw_art_box(42, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);    /* DINOBOX: a T. rex skull in bone */
+    draw_art_box(116, GB_LOGO_W, GB_LOGO_H, GB_LOGO, T_THEME);
+    draw_text_box(0, 160, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
     lcd_sync();
 }
 

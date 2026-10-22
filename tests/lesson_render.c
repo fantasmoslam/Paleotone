@@ -99,7 +99,7 @@ static const act_t L1_HALL[] = {
     SAY(C_NONE, "The drone fills the hall", 6), END};
 static const act_t L1_VOICE[] = {
     TURN_TO(C_ALGO, U_TRACK, 2, 0, "Turn ALGORITHM to 3"),
-    TURN_TO(C_PRESETS, U_SOUND, 0, "LOW DRONE", "Turn PRESETS to LOW DRONE"),
+    TURN_TO(C_PRESETS, U_SOUND, 0, "REX ROAR", "Turn PRESETS to LOW DRONE"),
     TAPS(C_HOME, "MIXER", "Tap HOME until the MIXER"),
     TURN_TO(C_K1, U_VALUE, 0, 0, "Turn KNOB 1 (LEVEL) all the way down"),
     TAPS(C_SAVE, "PHRASES", "Tap SAVE until PHRASES"),
@@ -110,7 +110,7 @@ static const act_t L1_VOICE[] = {
     SAY(C_NONE, "Two drones", 5), END};
 static const act_t L1_CAVE[] = {
     TURN_TO(C_ALGO, U_TRACK, 1, 0, "Turn ALGORITHM to 2"),
-    TURN_TO(C_PRESETS, U_SOUND, 0, "CAVE WIND", "Turn PRESETS to CAVE WIND"),
+    TURN_TO(C_PRESETS, U_SOUND, 0, "VOLCANO", "Turn PRESETS to CAVE WIND"),
     TAPS(C_HOME, "MIXER", "Tap HOME until the MIXER"),
     TURN_TO(C_K1, U_VALUE, 0, 0, "Turn KNOB 1 (LEVEL) all the way down"),
     TAPS(C_SAVE, "PHRASES", "Tap SAVE until PHRASES"),
@@ -359,7 +359,7 @@ static const lstep_t L6T_STEPS[] = {
 static const act_t L7_HARP[] = {
     TURN_TO(C_ALGO, U_TRACK, 0, 0, "Turn ALGORITHM to 1"),
     TAP(C_SCL, "Tap SCL: as in Lesson 2"),
-    TURN_TO(C_PRESETS, U_SOUND, 0, "FOLK HARP", "Turn PRESETS to FOLK HARP"),
+    TURN_TO(C_PRESETS, U_SOUND, 0, "RIVER HARP", "Turn PRESETS to FOLK HARP"),
     TURN_TO(C_K1, U_VALUE, 2, 0, "KNOB 1 (ROOT) to D"),
     TURN_TO(C_K2, U_VALUE, 2, 0, "KNOB 2 (SCL) to MIN"),
     TURN_TO(C_K3, U_VALUE, 2, 0, "KNOB 3 (QNT) to WHITE: no wrong notes"),
@@ -411,7 +411,7 @@ static const lstep_t L7_STEPS[] = {
 static const act_t L8_KIT[] = {
     TURN_TO(C_ALGO, U_TRACK, 2, 0, "Turn ALGORITHM to 3"),
     TAPS(C_HOME, "MIXER", "Tap HOME until the MIXER"),
-    TURN_TO(C_PRESETS, U_SOUND, 0, "TOMB DRUMS", "Turn PRESETS to TOMB DRUMS"),
+    TURN_TO(C_PRESETS, U_SOUND, 0, "WAR DRUMS", "Turn PRESETS to TOMB DRUMS"),
     SAY(C_NONE, "Low, slow drums, far back in the hall", 4), END};
 static const act_t L8_GRID[] = {
     TAP(C_SEQ, "Tap SEQ: on a drum track, a drum grid"),
