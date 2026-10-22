@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# GHOULBOX: the boot / ABOUT artwork as 4-bit alpha bitmaps (run by tools/build.py generate()):
-#   GB_LOGO     "GHOULBOX" in Pirata One (assets/fonts/PirataOne-Regular.ttf, SIL OFL 1.1), boot size
+# DINOBOX (from GHOULBOX): the boot / ABOUT artwork as 4-bit alpha bitmaps (run by tools/build.py generate()):
+#   GB_LOGO     "DINOBOX" in Cinzel Black (assets/fonts/Cinzel-Black.ttf, SIL OFL 1.1), boot size
 #   GB_LOGO_S   the same, ABOUT size (the height of the large UI face's line)
-#   GB_SKULL    a skull, drawn here at 4x and scaled down (smooth edges)
+#   GB_SKULL    a T. rex skull, drawn here at 4x and scaled down (smooth edges)
 # Format as the icons: alpha 0..15, rows back to back, Huffman-coded with one code for the three (GB_HC,
 # gen_aa_font.py huff_pack); the firmware draws them with cv_alpha_hc in any colour.
 #   gen_ghoulbox_art.py OUT.h
+import math
 import sys
 from pathlib import Path
 
@@ -16,7 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gen_aa_font import huff_pack, huff_unpack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-FONT = ROOT / "assets/fonts/PirataOne-Regular.ttf"
+FONT = ROOT / "assets/fonts/Cinzel-Black.ttf"
+WORD = "DINOBOX"
 SS = 4                                                  # supersampling of the drawn art
 
 
@@ -25,40 +27,55 @@ def logo(max_w, max_h):
     size = max_h * 2
     while True:
         f = ImageFont.truetype(str(FONT), size)
-        x0, y0, x1, y1 = f.getbbox("GHOULBOX")
+        x0, y0, x1, y1 = f.getbbox(WORD)
         if x1 - x0 <= max_w and y1 - y0 <= max_h:
             break
         size -= 1
     im = Image.new("L", (x1 - x0 + 2, y1 - y0 + 2), 0)
-    ImageDraw.Draw(im).text((1 - x0, 1 - y0), "GHOULBOX", font=f, fill=255)
+    ImageDraw.Draw(im).text((1 - x0, 1 - y0), WORD, font=f, fill=255)
     return im.crop(im.getbbox())
 
 
 def skull(w, h):
-    """a skull in w x h px: cranium, cheeks, jaw and teeth in ink; sockets, nose and a crack cut out"""
+    """a T. rex skull in side view, facing left, the jaw dropped open: skull, jaw and the big teeth in ink; the
+    nostril, the window before the eye, the eye socket, the window behind it and the jaw's in the bone cut out"""
     W, H = w * SS, h * SS
     im = Image.new("L", (W, H), 0)
     d = ImageDraw.Draw(im)
-    u = W / 56.0                                        # drawn on a 56-unit grid
-    def box(x0, y0, x1, y1):
-        return [x0 * u, y0 * u, x1 * u, y1 * u]
-    d.ellipse(box(4, 2, 52, 44), fill=255)              # the cranium
-    d.rounded_rectangle(box(12, 30, 44, 50), radius=6 * u, fill=255)   # cheeks
-    for k in range(5):                                  # the teeth
-        d.rounded_rectangle(box(15 + k * 5.4, 49, 19 + k * 5.4, 57), radius=1.4 * u, fill=255)
-    d.ellipse(box(11, 22, 25, 36), fill=0)              # the sockets
-    d.ellipse(box(31, 22, 45, 36), fill=0)
-    d.polygon([(28 * u, 36 * u), (24.5 * u, 43 * u), (31.5 * u, 43 * u)], fill=0)   # the nose
-    d.line([(36 * u, 4 * u), (33 * u, 10 * u), (37 * u, 14 * u), (34 * u, 19 * u)], fill=0, width=int(1.6 * u))
+    ux, uy = W / 120.0, H / 64.0                         # drawn on a 120 x 64 grid
+    P = lambda pts: [(x * ux, y * uy) for x, y in pts]
+    # the skull: a deep blunt snout, the brow horn over the eye, the high squared back, down to the jaw joint
+    d.polygon(P([(3, 21), (8, 14), (22, 10), (42, 7), (58, 4), (64, 1), (70, 3), (78, 3), (94, 2), (108, 4),
+                 (116, 10), (119, 20), (117, 30), (110, 36), (98, 34), (76, 32), (52, 31), (30, 31), (14, 31),
+                 (5, 30)]), fill=255)
+    # the jaw, hinged at the back (113, 37) and dropped 9 degrees
+    jaw = [(10, 39), (30, 38), (52, 38), (76, 39), (98, 39), (110, 36), (116, 40), (113, 48), (102, 54), (82, 53),
+           (56, 49), (32, 46), (14, 45)]
+    upper = [(14 + k * 12.5, 31, 9.5 - k * 0.8) for k in range(7)]   # (x, edge, length): banana teeth
+    lower = [(20 + k * 13, 38, 7.0 - k * 0.6) for k in range(6)]
+    a = math.radians(-9)
+    def rot(x, y, cx=113.0, cy=37.0):
+        return (cx + (x - cx) * math.cos(a) - (y - cy) * math.sin(a), cy + (x - cx) * math.sin(a) + (y - cy) * math.cos(a))
+    d.polygon(P([rot(x, y) for x, y in jaw]), fill=255)
+    for x, y, L in upper:
+        d.polygon(P([(x, y - 1), (x + 6, y - 1), (x + 4.2, y + L * 0.7), (x + 2.2, y + L)]), fill=255)
+    for x, y, L in lower:
+        d.polygon(P([rot(*q) for q in ((x, y + 1), (x + 5.4, y + 1), (x + 4.0, y - L * 0.7), (x + 2.0, y - L))]), fill=255)
+    d.ellipse(P([(7, 15), (17, 21)]), fill=0)            # the nostril
+    d.polygon(P([(28, 18), (50, 11), (58, 13), (59, 25), (34, 26)]), fill=0)   # the window before the eye
+    d.ellipse(P([(66, 8), (77, 18)]), fill=0)            # the eye socket, a keyhole
+    d.polygon(P([(68.5, 15), (74.5, 15), (73, 26), (70, 26)]), fill=0)
+    d.polygon(P([(84, 9), (104, 8), (110, 24), (88, 27)]), fill=0)   # the window behind the eye
+    d.polygon(P([rot(x, y) for x, y in ((84, 44), (100, 43), (104, 47), (90, 49))]), fill=0)   # the jaw's window
     return im.resize((w, h), Image.LANCZOS)
 
 
 def main():
     out = Path(sys.argv[1])
-    arts = (("GB_LOGO", logo(224, 52)), ("GB_LOGO_S", logo(180, 34)), ("GB_SKULL", skull(48, 56)))
+    arts = (("GB_LOGO", logo(224, 52)), ("GB_LOGO_S", logo(180, 34)), ("GB_SKULL", skull(110, 60)))
     vals = [[min(15, (v + 8) // 17) for v in im.tobytes()] for _, im in arts]
     hc, packed = huff_pack(vals)
-    L = ["/* generated by tools/gen_ghoulbox_art.py: GHOULBOX's boot / ABOUT art, 4-bit alpha, Huffman-coded "
+    L = ["/* generated by tools/gen_ghoulbox_art.py: DINOBOX's boot / ABOUT art, 4-bit alpha, Huffman-coded "
          "(cv_alpha_hc) */"]
     data = bytearray()
     for (name, im), v, b in zip(arts, vals, packed):

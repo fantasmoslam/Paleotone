@@ -56,7 +56,7 @@ int main(void)
     int bad = 0, ok;
     uint32_t i, k;
     track_t *t;
-    static const char *const GURDY[6] = {"HURDY GURDY", "DRONE WHEEL", "DANCE GURDY", "TROMPETTE", "VIELLE", "BAGPIPE"};
+    static const char *const GURDY[6] = {"PRIMEVAL", "EARTHQUAKE", "STAMPEDE", "REX GROWL", "SWAMP FIDDLE", "TRIBE PIPES"};
 
     /* 1 */
     bad += check("RING: OFF / ON, OFF by default, after TEMP (104), P_E0 105",

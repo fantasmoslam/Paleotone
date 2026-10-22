@@ -36,6 +36,15 @@ static void draw_about_qr(int32_t x, int32_t y)
 enum { MC_TEXT, MC_TITLE, MC_URL };
 typedef struct { const char *text; uint8_t kind; } menu_credit_t;
 static const menu_credit_t MENU_CREDITS[] = {
+    {"GHOULBOX", MC_TITLE},                   /* DINOBOX is a fork of it */
+    {"Jason Persinger: DINOBOX is built on GHOULBOX " GHOULBOX_VERSION ", GPL-3.0", MC_TEXT},
+    {"https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth", MC_URL},
+    {"", MC_TEXT},
+    {"CINZEL", MC_TITLE},
+    {"The Cinzel Project Authors", MC_TEXT},
+    {"SIL Open Font License 1.1", MC_TEXT},
+    {"https://github.com/NDISCOVER/Cinzel", MC_URL},
+    {"", MC_TEXT},
     {"H\xFCgelton Instruments", MC_TITLE},  /* Felucca's own: above; these are ours too */
     {"Leo Kuroshita", MC_TEXT},
     {"CrispyZebra (PHASE waveforms), the DRUM voices, the Sample Pack: GPL-3.0", MC_TEXT},
@@ -111,9 +120,9 @@ static int32_t menu_document(int32_t y, int draw)
 {
     uint32_t i;
     if (draw) {
-        cv_alpha_hc(6, y + 2, GB_LOGO_S_W, GB_LOGO_S_H, GB_LOGO_S, GB_HC, ramp(T_THEME, T_BG));   /* GHOULBOX's wordmark */
-        cv_text(6, y + 38, &AF_S, "Dungeon synth firmware", T_TEXT);
-        cv_text(6, y + 58, &AF_M, GHOULBOX_VERSION, T_THEME);
+        cv_alpha_hc(6, y + 2, GB_LOGO_S_W, GB_LOGO_S_H, GB_LOGO_S, GB_HC, ramp(T_THEME, T_BG));   /* DINOBOX's wordmark */
+        cv_text(6, y + 34, &AF_S, "Prehistoric synth firmware", T_TEXT);
+        cv_text(6, y + 58, &AF_M, DINOBOX_VERSION, T_THEME);
         cv_text_r(232, y + 61, &AF_S, __DATE__, T_MID, T_BG);
         cv_text(6, y + 82, &AF_S, "on Felucca " FELUCCA_VERSION " (C) 2026", T_TEXT);
         cv_text(6, y + 100, &AF_S, "Leo Kuroshita, H\xFCgelton", T_TEXT);

@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     /* the music: CHAPEL, then a GURDY, an FM6 on a GHOULBOX patch and a recording, every GHOULBOX global set */
     gb_scene_load(3);
     set_engine_of(&trk[0], ENGI_GURDY);
-    apply_preset_to(&trk[0], preset_named(&ENG_GURDY, "DRONE WHEEL"));
+    apply_preset_to(&trk[0], preset_named(&ENG_GURDY, "EARTHQUAKE"));
     trk[0].engine = trk[0].eng_req;
     trk[0].p[P_E3] = 99;                                 /* WHL */
     trk[0].p[P_E7] = 77;                                 /* WOBL */
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     trk[1].p[P_E7] = 11;                                 /* SLOT F12: GHOULBOX's (F9..F15) */
     fm6_poll();
     set_engine_of(&trk[2], ENGI_SAMPLE);
-    apply_preset_to(&trk[2], preset_named(&ENG_SAMPLE, "BOWED PSALT"));
+    apply_preset_to(&trk[2], preset_named(&ENG_SAMPLE, "AURORA BOW"));
     trk[2].engine = trk[2].eng_req;
     song.g[G_RTYPE] = 2;                                 /* HALL */
     song.g[G_TAPE] = 40;

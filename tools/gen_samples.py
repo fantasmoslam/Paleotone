@@ -75,7 +75,7 @@ CC0_SETS = [("PIANO", "oneshot"), ("PIANO", "alias"), ("FLUTE", "sus"), ("SAX", 
             ("PSALTERY", "sus"), ("RENORGAN", "sus"), ("RECORDER", "sus"), ("FOLKHARP", "oneshot")]
 USR_V0 = 5                                   # eng_sample.c SMP_USR_V0: the SET value of USR1 (1.0's, fixed)
 NUSR = 3                                     # the user slots USR1..3
-PRESET_NAME = {"PSALTERY": "BOWED PSALT", "RENORGAN": "REN ORGAN", "RECORDER": "TENOR RECORD", "FOLKHARP": "FOLK HARP"}
+PRESET_NAME = {"PSALTERY": "AURORA BOW", "RENORGAN": "REED ORGAN", "RECORDER": "CAVE FLUTE", "FOLKHARP": "RIVER HARP"}   # DINOBOX
 GB_FX = "FX(0, 20, 15, 95)"                  # GHOULBOX presets' sends (the HALL)
 PERC_SLOT = 4                                # core.h SMP_SET_PERC: SAMPLE's factory presets end before it
 MEASURED_TUNING = ()                         # sets whose recordings are not at A440 (was TRANH, ~+35 ct)

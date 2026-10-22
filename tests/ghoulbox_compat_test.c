@@ -115,7 +115,7 @@ int main(int argc, char **argv)
     }
     settings_init();
 
-    bad += check("settings: SCENE CHAPEL (favorites.factory[15][27])", ui_scene == 3u && str_eq(GB_SCENES[ui_scene].name, "CHAPEL"));
+    bad += check("settings: SCENE CHAPEL, now VALLEY (favorites.factory[15][27])", ui_scene == 3u && str_eq(GB_SCENES[ui_scene].name, "VALLEY"));   /* DINOBOX: CHAPEL's slot */
     bad += check("settings: USB SERIAL OFF as saved", (ui_prefs & PREF_SERIAL_OFF) != 0u);
     bad += check("settings: GURDY's starred sounds (favorites.factory[14]) kept", favorites.factory[ENGI_GURDY][0] == 0x05u);
     bad += check("settings: the CRYPT palette", str_eq(UI_PALETTES[settings.palette].name, "CRYPT"));

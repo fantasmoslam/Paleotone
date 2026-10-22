@@ -70,10 +70,10 @@ int main(int argc, char **argv)
     song.g[G_CRSH] = 35;                               /* and the cheap sampler */
     rev_clear();
     hall_clear();
-    part(&trk[0], ENGI_FM6, "DARK STRINGS", 7, 6, 100, CH, CHN);
-    part(&trk[1], ENGI_FM6, "FRENCH HORN", 6, 10, 85, HO, HON);
-    part(&trk[2], 5, "MONKS", 7, 6, 105, MO, MON);
-    part(&trk[3], ENGI_GURDY, "HURDY GURDY", 1, 40, 65, GU, GUN);
+    part(&trk[0], ENGI_FM6, "DEEP STRINGS", 7, 6, 100, CH, CHN);
+    part(&trk[1], ENGI_FM6, "HERO HORNS", 6, 10, 85, HO, HON);
+    part(&trk[2], 5, "TRIBE CHANT", 7, 6, 105, MO, MON);
+    part(&trk[3], ENGI_GURDY, "PRIMEVAL", 1, 40, 65, GU, GUN);
     trk[0].p[P_LEVEL] = 92;
     trk[1].p[P_LEVEL] = 84;
     trk[2].p[P_LEVEL] = 80;

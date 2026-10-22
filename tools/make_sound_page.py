@@ -29,8 +29,8 @@ WHAT = {"ANALOG": "virtual analog", "FM6": "6-operator FM", "PHASE": "phase dist
 def ghoulbox_names():
     """GHOULBOX's own presets: tools/ghoulbox_presets.py, FM6's F9.., SAMPLE's CC0 sets"""
     names = set(re.findall(r'\("([A-Z0-9 ]+)", \[', (ROOT / "tools/ghoulbox_presets.py").read_text()))
-    return names | {"FRENCH HORN", "VIRGINAL", "GLASS CHOIR", "DARK STRINGS", "LOFI FLUTE", "PIPE ORGAN", "TUBA",
-                    "BOWED PSALT", "REN ORGAN", "TENOR RECORD", "FOLK HARP", "CRYPT KIT", "TOMB DRUMS"}
+    return names | {"HERO HORNS", "FERN PLUCK", "COMET CHOIR", "DEEP STRINGS", "MIST FLUTE", "LAVA ORGAN", "BRONTO TUBA",
+                    "AURORA BOW", "REED ORGAN", "CAVE FLUTE", "RIVER HARP", "TRIBAL KIT", "WAR DRUMS"}
 
 
 def main(site):
