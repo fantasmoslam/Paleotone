@@ -155,6 +155,8 @@ static const icon_map_t ICON_MAP[] = {
     {"FREQ", ICON_CUTOFF}, {"TRK", ICON_KEYTRACK}, {"DRFT", ICON_SWEEP},   /* NOISE (COLR, DENS, CRSH: above) */
     {"MLVL", ICON_MOD}, {"MRAT", ICON_RATIO}, {"MEG", ICON_DECAY}, {"VMOD", ICON_ACCENT}, {"DTUN", ICON_DETUNE},
     {"SLOT", ICON_LOAD},                                                    /* FM6 (ALG, FB: above) */
+    {"CALL", ICON_VOICE}, {"SIZE", ICON_SIZE}, {"SWOOP", ICON_SWEEP}, {"GROWL", ICON_DRIVE}, {"MOUTH", ICON_MOUTH},
+    {"WILD", ICON_PROB},                                                    /* SAURUS (LEN, BRTH: above) */
     /* fixed columns drawn by ui_draw.c (STEP page, preset browser) */
     {"NOTE", ICON_PITCH}, {"STEP", ICON_STEPS}, {"FLAG", ICON_ACCENT}, {"ACC", ICON_ACCENT}, {"LANE", ICON_DRUM}, {"HIT", ICON_GATE}, {"SLD", ICON_SLIDE},
     {"TRACK", ICON_MIX},                  /* TRACKS page (LEVEL, LEN, PAN: above) */
@@ -245,6 +247,7 @@ static uint32_t engine_icon(const char *name)
         {"SLICE", ICON_SLICE},
         {"GRAIN", ICON_GRAIN},
         {"PHYS", ICON_PHYS},
+        {"SAURUS", ICON_X_SAURUS},            /* DINOBOX: a sauropod (tools/gen_aa_icons.py OWN) */
         {"ROAR", ICON_X_GURDY},               /* DINOBOX: a T. rex head (tools/gen_aa_icons.py OWN; GHOULBOX: GURDY's) */
         {"DRUM", ICON_DRUM},
         {"NOISE", ICON_NOISE},

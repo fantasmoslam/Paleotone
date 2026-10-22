@@ -5117,11 +5117,12 @@ static int test_fm4_retired(void)
         seen |= 1u << TSEL->eng_req;
     }
     bad += check("PRESETS KNOB 2: the engines in order, DIGITAL skipped, back to the first",
-                 seen == all && TSEL->eng_req == 0u && eng_step(0, 1) == ENGI_FM6 && eng_step(ENGI_FM6, 1) == 2u &&
+                 seen == all && TSEL->eng_req == 0u && eng_step(0, 1) == ENGI_FM6 && eng_step(ENGI_FM6, 1) == ENGI_SAURUS &&
+                 eng_step(ENGI_SAURUS, 1) == 2u &&
                  eng_step(ENGI_FM6, -1) == 0u && eng_step(0, -1) == ENGI_DRUM);
     {   /* the display order (engines.c ENGINE_ORDER): every engine one can pick once; the PRESETS list follows it */
-        static const char *const ORDER[] = {"ANALOG", "FM6", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN",
-                                            "PHYS", "ROAR", "NOISE", "DRUM"};
+        static const char *const ORDER[] = {"ANALOG", "FM6", "SAURUS", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL",
+                                            "GRAIN", "PHYS", "ROAR", "NOISE", "DRUM"};
         uint32_t last = 0xFFu, r = 0, n = 0;
         ok = NENG_SHOWN == NELEM(ORDER);
         for (i = 0; ok && i < NENG_SHOWN; i++)
@@ -5136,7 +5137,7 @@ static int test_fm4_retired(void)
             last = e;
             r++;
         }
-        bad += check("engines shown ANALOG FM6 PHASE ... GURDY NOISE (ENGINE_ORDER); PRESETS lists them so",
+        bad += check("engines shown ANALOG FM6 SAURUS PHASE ... ROAR NOISE DRUM (ENGINE_ORDER); PRESETS lists them so",
                      ok && r == NENG_SHOWN);
     }
     /* a user preset stored with engine 1: kept as it is, it loads as FM6 with the converted patch */
@@ -9517,20 +9518,21 @@ static int test_hidden_presets(void)
     bad += check("hidden presets: 54 names (PIANO covers SAMPLE's two), each one a real preset",
                  ok && NELEM(GB_HIDDEN) == 54u);
     preset_all_pos(&total);
-    ok = total == 59u + (FELUCCA_FM4 ? ENGINES[ENGI_DIGITAL]->npresets : 0u);   /* (+ DIGITAL's, built in; 1.1: + 4 CC0, BAGPIPE) */
+    ok = total == 59u + ENG_SAURUS.npresets + (FELUCCA_FM4 ? ENGINES[ENGI_DIGITAL]->npresets : 0u);   /* (+ DIGITAL's, built in;
+                                                                 * 1.1: + 4 CC0, BAGPIPE; DINOBOX: + SAURUS's) */
     for (i = 0; i < total; i++) {
         e = preset_all_at(i, &k);
         ok &= e < NENGINES && !preset_hidden(ENGINES[e], k);
         for (uint32_t j = 0; j < NELEM(KEEP); j++)
             shown += str_eq(ENGINES[e]->presets[k].name, KEEP[j]);
     }
-    bad += check("hidden presets: the PRESETS list holds the 59 kept, none hidden", ok && shown >= NELEM(KEEP));
-    ok = NENG_SHOWN == 13u + FELUCCA_FM4 && eng_ok(ENGI_SLICE);
+    bad += check("hidden presets: the PRESETS list holds the 59 kept and SAURUS's, none hidden", ok && shown >= NELEM(KEEP));
+    ok = NENG_SHOWN == 14u + FELUCCA_FM4 && eng_ok(ENGI_SLICE) && eng_ok(ENGI_SAURUS);
     for (i = 0, k = 0; i < NENG_SHOWN; i++) {
         ok &= eng_vis(i) != ENGI_SLICE;
         k |= eng_vis(i) == ENGI_SAMPLE;
     }
-    bad += check("hidden engines: SLICE not offered, still playable; SAMPLE (1.1) and DRUM (1.2) offered again (13 engines)", ok && k);
+    bad += check("hidden engines: SLICE not offered, still playable; SAMPLE, DRUM and SAURUS offered (14 engines)", ok && k);
     select_engine(ENGI_SAMPLE);
     bad += check("1.1: picking SAMPLE loads BOWED PSALT (its first kept preset), SET 8",
                  str_eq(ENGINES[ENGI_SAMPLE]->presets[TSEL->preset].name, "AURORA BOW") && TSEL->p[P_E0] == 8);

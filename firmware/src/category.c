@@ -40,6 +40,8 @@ static const char *const PRESET_CAT[16] = {   /* GHOULBOX: its sounds after Felu
                                   * VIRGINAL, GLASS CHOIR, DARK STRINGS, LOFI FLUTE, PIPE ORGAN, TUBA */
     "DD",                        /* 13 SLICE: CHOP, STUTTER */
     "LPLLLL",                    /* 14 GURDY: HURDY GURDY, DRONE WHEEL, DANCE GURDY, TROMPETTE, VIELLE, BAGPIPE */
+    "FFFFLFFFFPFFFFPB",          /* 15 SAURUS (DINOBOX): the calls FX, CREST HOOT a lead, DEEP RUMBLE and DISTANT HERD
+                                  * pads, LOW GROWL a bass */
 };
 static uint32_t preset_cat(uint32_t e, uint32_t k)    /* factory preset k of engine e */
 {

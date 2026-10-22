@@ -1734,7 +1734,7 @@ function makeMockDevice(opt = {}) {
     E("MIDI", ["USB", "TRS"], 0), E("SYNC", NDASH, 0), E("ROUT", ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"], 0), D("CPU", F.INT, 0, 0, 0),
     D("SLOT", F.INT, 1, 4, 1), E("NAME", NDASH, 0), E("LOAD", NGO, 0), E("SAVE", NGO, 0),
     E("ENG", ["ANALOG", "-", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL",
-      "GRAIN", "PHYS", "DRUM", "NOISE", "FM6", "SLICE", "ROAR"], 0), E("SET", NGO, 0),
+      "GRAIN", "PHYS", "DRUM", "NOISE", "FM6", "SLICE", "ROAR", "SAURUS"], 0), E("SET", NGO, 0),
     E("CLRSQ", NGO, 0), E("INIT", NGO, 0),
     E("TYPE", ["ROOM", "SPRING", "HALL"], 2),               /* G_RTYPE (id 24, was G_DRCH): the reverb's model */
     D("TAPE", F.PCT, 0, 127, 0), D("CRSH", F.PCT, 0, 127, 0),   /* G_TAPE, G_CRSH (ids 25, 26; GHOULBOX, tape.c) */
@@ -1850,6 +1850,11 @@ function makeMockDevice(opt = {}) {
         E("PULS", ["HOLD", "1/4", "1/8", "1/8T", "1/16", "TURN"], 2), D("BODY", F.PCT, 0, 127, 70), D("WOBL", F.PCT, 0, 127, 40)],
       presets: [
         /* GHOULBOX presets (tools/ghoulbox_presets.py) */ P("PRIMEVAL", [2, 110, 70, 70, 60, 2, 95, 50], [15, 64, 127, 50], 1, 15), P("EARTHQUAKE", [2, 127, 127, 40, 30, 0, 127, 90], [60, 64, 127, 110], 1, 17), P("STAMPEDE", [2, 60, 30, 110, 127, 4, 60, 15], [2, 64, 127, 25], 1, 21), P("REX GROWL", [2, 80, 20, 90, 127, 0, 90, 60], [6, 64, 127, 45], 1, 18), P("SWAMP FIDDLE", [2, 20, 0, 70, 10, 0, 110, 60], [40, 64, 120, 75], 1, 19), P("TRIBE PIPES", [2, 127, 100, 120, 20, 0, 40, 10], [6, 64, 127, 35], 1, 15) /* GHOULBOX end */] },
+    { name: "SAURUS", titles: ["CALL", "THROAT"], edit: [E("CALL", ["HOLD", "BELLOW", "ROAR", "BARK", "HOOT", "TRILL", "CHIRP",
+        "MOAN", "HISS", "SNORT"], 1), D("SIZE", F.INT, 0, 127, 80), D("SWOOP", F.INT, 0, 127, 40), D("LEN", F.TIME, 0, 127, 100),
+        D("GROWL", F.PCT, 0, 127, 40), D("BRTH", F.PCT, 0, 127, 30), D("MOUTH", F.INT, 0, 127, 100), D("WILD", F.PCT, 0, 127, 30)],
+      presets: [
+        /* GHOULBOX presets (tools/ghoulbox_presets.py) */ P("BRACHIO CALL", [1, 120, 42, 108, 20, 35, 90, 25], [40, 90, 127, 90], 0, 17), P("TYRANT ROAR", [2, 105, 58, 102, 100, 45, 127, 30], [4, 90, 127, 80], 1, 17), P("RAPTOR BARK", [3, 35, 55, 82, 80, 60, 120, 50], [0, 70, 127, 40], 0, 4), P("RAPTOR CHAT", [5, 30, 20, 96, 50, 50, 90, 70], [2, 80, 110, 40], 0, 4), P("CREST HOOT", [4, 85, 10, 104, 10, 25, 40, 15], [50, 90, 127, 100], 0, 17), P("PTERO SHRIEK", [6, 15, 70, 92, 70, 70, 127, 60], [0, 80, 110, 50], 0, 4), P("HERD MOAN", [7, 95, 45, 110, 35, 40, 80, 40], [40, 90, 120, 100], 0, 5), P("FRILL HISS", [8, 40, 0, 96, 30, 90, 110, 30], [6, 80, 110, 60], 0, 17), P("SAURO SNORT", [9, 125, 0, 86, 40, 100, 60, 30], [0, 80, 127, 50], 0, 4), P("DEEP RUMBLE", [0, 127, 0, 0, 60, 30, 40, 20], [80, 90, 127, 110], 0, 17), P("TITAN APE", [2, 70, 30, 98, 100, 60, 110, 30], [6, 90, 127, 80], 1, 17), P("NEST CHIRPS", [6, 5, 50, 84, 20, 40, 110, 90], [0, 70, 110, 40], 0, 4), P("SWAMP CROAK", [5, 75, 8, 100, 60, 30, 20, 40], [10, 80, 120, 60], 0, 8), P("MONSTER ROAR", [2, 90, 66, 100, 127, 70, 127, 45], [2, 90, 127, 70], 1, 17), P("DISTANT HERD", [1, 110, 36, 112, 15, 30, 70, 50], [90, 90, 120, 120], 0, 5), P("LOW GROWL", [0, 95, 0, 0, 127, 80, 50, 40], [30, 90, 127, 80], 1, 17) /* GHOULBOX end */] },
   ];
   const FM6_E = ENG.findIndex((e) => e.name === "FM6"), FM6_OWN = FM6.FACTORY_PK.length, DRUM_E = ENG.findIndex((e) => e.name === "DRUM");
   /* factory PATTERNS[] (engines.c; the device loads them from SAVE > PHRASES, presets only suggest one): absolute
@@ -2513,7 +2518,7 @@ function enumShown(d) {
 /* the order the device shows its engines in (src/engines.c ENGINE_ORDER): the lists here follow it, the protocol keeps
    the engine numbers. engineOrder(names): the indices of names in that order, "-" (a reserved number) left out; a name
    the list does not know (another firmware) follows in index order */
-const ENGINE_ORDER = ["ANALOG", "FM6", "DIGITAL", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN", "PHYS", "ROAR", "NOISE", "DRUM"];
+const ENGINE_ORDER = ["ANALOG", "FM6", "SAURUS", "DIGITAL", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN", "PHYS", "ROAR", "NOISE", "DRUM"];
 /* GHOULBOX: the engines and factory presets the device no longer offers (src/engines.c ENGINE_ORDER, GB_HIDDEN; a
    stored number still loads them): left out of the lists here too. test_web.mjs: == the firmware's */
 const ENGINE_HIDDEN = ["SLICE"];

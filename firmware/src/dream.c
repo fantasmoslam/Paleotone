@@ -49,7 +49,7 @@ static int dr_has(const char *s, const char *w)            /* the word w (up to 
  * in the parts of the GHOULBOX sounds they replace), else by its engine (and a user preset by its engine) */
 static uint32_t dr_role(const track_t *t)
 {
-    static const char KW[] = "0DRONE 0ROAR 0QUAKE 1BASS 1TUBA 6TOMS 6DRUM 4LEAD 4FLUTE 2PAD 2STR 2CHOIR 2ORGAN 2BOWED 2AURORA "
+    static const char KW[] = "0DRONE 0ROAR 0QUAKE 0RUMBLE 1BASS 1TUBA 6TOMS 6DRUM 4LEAD 4FLUTE 2PAD 2STR 2CHOIR 2ORGAN 2BOWED 2AURORA "
                              "3ARP 3LUTE 3VIRGINAL 3BELL 3PLUCK 3MARIMBA 3PIANO 3KEY 3EP";
     const engine_t *e = ENGINES[t->eng_req % NENGINES];
     uint32_t ei = t->eng_req % NENGINES;

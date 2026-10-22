@@ -10,9 +10,9 @@
 #undef main
 
 #define T_ 255                                     /* a tie */
-enum { PH_LEAD, PH_CHORD, PH_PLUCK, PH_BASS, PH_HOLD, PH_DRUM };
+enum { PH_LEAD, PH_CHORD, PH_PLUCK, PH_BASS, PH_HOLD, PH_CALL, PH_CALLHI, PH_DRUM };
 static const char *const PH_NAME[] = {"a lament", "slow chords", "broken chords", "a low line", "a held note",
-                                      "STOMP"};
+                                      "two calls", "two calls, high", "STOMP"};
 static const struct { const char *name; uint8_t ph; } KIND[] = {
     {"SOFT PAD", PH_CHORD}, {"PWM STR", PH_CHORD}, {"STRINGS", PH_CHORD}, {"JUNGLE PAD", PH_CHORD},
     {"EPIC STRINGS", PH_CHORD}, {"STRING", PH_CHORD}, {"DINO CHOIR", PH_CHORD}, {"CHOIR AAH", PH_CHORD},
@@ -27,13 +27,15 @@ static const struct { const char *name; uint8_t ph; } KIND[] = {
     {"WIND", PH_HOLD}, {"VOLCANO", PH_HOLD}, {"LAVA CRACKLE", PH_HOLD}, {"TARPIT DRONE", PH_HOLD},
 };
 /* 16 steps of up to 3 notes; {T_} holds the step before, {0} rests */
-static const uint8_t PHRASE[5][16][3] = {
+static const uint8_t PHRASE[7][16][3] = {
     [PH_LEAD] = {{62}, {T_}, {65}, {T_}, {64}, {T_}, {62}, {T_}, {61}, {T_}, {62}, {T_}, {T_}, {T_}, {T_}, {T_}},
     [PH_CHORD] = {{50, 53, 57}, {T_}, {T_}, {T_}, {50, 53, 58}, {T_}, {T_}, {T_},
                   {50, 55, 58}, {T_}, {T_}, {T_}, {49, 52, 57}, {T_}, {T_}, {T_}},
     [PH_PLUCK] = {{50}, {53}, {57}, {62}, {46}, {50}, {53}, {58}, {43}, {46}, {50}, {55}, {45}, {49}, {52}, {57}},
     [PH_BASS] = {{38}, {T_}, {T_}, {T_}, {T_}, {T_}, {34}, {T_}, {T_}, {T_}, {T_}, {33}, {T_}, {T_}, {T_}, {T_}},
     [PH_HOLD] = {{50}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}},
+    [PH_CALL] = {{50}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}, {45}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}},   /* DINOBOX: */
+    [PH_CALLHI] = {{62}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}, {57}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}},  /* SAURUS */
 };
 
 static uint32_t phrase_of(uint32_t e, const preset_t *p)
@@ -41,6 +43,8 @@ static uint32_t phrase_of(uint32_t e, const preset_t *p)
     uint32_t i;
     if (e == ENGI_DRUM)
         return PH_DRUM;
+    if (e == ENGI_SAURUS)                          /* DINOBOX: a creature: two calls (a small one higher), a drone held */
+        return p->e[0] == 0 ? PH_HOLD : p->e[1] < 50 ? PH_CALLHI : PH_CALL;
     for (i = 0; i < sizeof KIND / sizeof KIND[0]; i++)
         if (!strcmp(KIND[i].name, p->name))
             return KIND[i].ph;
