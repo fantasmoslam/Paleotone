@@ -55,6 +55,9 @@ PALETTES = [
     # magma, sulphur
     ("JUNGLE", (10, 22, 15),    (28, 48, 30),    (238, 230, 206), (168, 214, 80),  (255, 122, 48)),
     ("VOLCANO", (22, 12, 12),   (54, 28, 24),    (246, 232, 214), (255, 100, 56),  (255, 214, 80)),
+    # DINOBOX 1.0 (appended): TERMINAL, a fresh device's palette: a 1993 park operations console, phosphor green on
+    # black, amber for what needs attention
+    ("TERMINAL", (4, 10, 6),    (12, 26, 16),    (196, 250, 200), (70, 232, 116),  (255, 176, 32)),
 ]
 BW = "MONO"
 BW_GREY = (82, 82, 82)             # MONO's one mid grey (RGB565 10/20/10): DIM LINE RAISE LANE
@@ -193,7 +196,8 @@ def main():
         crypt = [p[0] for p in PALETTES].index("CRYPT")
         out += ["};", f"#define UI_NPALETTES {len(PALETTES)}u", "#define UI_GREY_INDEX 0u",
                 f"#define UI_CRYPT_INDEX {crypt}u   /* GHOULBOX's palette (a fresh GHOULBOX device's) */",
-                f"#define UI_JUNGLE_INDEX {names.index('JUNGLE')}u   /* DINOBOX: a fresh device's palette */",
+                f"#define UI_JUNGLE_INDEX {names.index('JUNGLE')}u",
+                f"#define UI_TERMINAL_INDEX {names.index('TERMINAL')}u   /* DINOBOX: a fresh device's palette */",
                 f"#define UI_BW_INDEX {names.index(BW)}u          /* MONO: black and white (src/gfx.c palette_set) */",
                 f"#define UI_BW_GREY 0x{to565(BW_GREY):04x}u          /* MONO's one grey: DIM LINE RAISE LANE */",
                 f"#define UI_PAL_TAG {PAL_TAG}u          /* stored id = UI_PAL_TAG + index; below 20: an old id */"]

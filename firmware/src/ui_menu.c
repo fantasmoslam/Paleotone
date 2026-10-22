@@ -40,11 +40,6 @@ static const menu_credit_t MENU_CREDITS[] = {
     {"Jason Persinger: DINOBOX is built on GHOULBOX " GHOULBOX_VERSION ", GPL-3.0", MC_TEXT},
     {"https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth", MC_URL},
     {"", MC_TEXT},
-    {"CINZEL", MC_TITLE},
-    {"The Cinzel Project Authors", MC_TEXT},
-    {"SIL Open Font License 1.1", MC_TEXT},
-    {"https://github.com/NDISCOVER/Cinzel", MC_URL},
-    {"", MC_TEXT},
     {"H\xFCgelton Instruments", MC_TITLE},  /* Felucca's own: above; these are ours too */
     {"Leo Kuroshita", MC_TEXT},
     {"CrispyZebra (PHASE waveforms), the DRUM voices, the Sample Pack: GPL-3.0", MC_TEXT},
@@ -69,10 +64,10 @@ static const menu_credit_t MENU_CREDITS[] = {
     {"Emilie Gillet / MIT", MC_TEXT},
     {"https://github.com/pichenettes/eurorack", MC_URL},
     {"", MC_TEXT},
-    {"SAIRA", MC_TITLE},                      /* DINOBOX: the UI's type (Felucca: Inter Tight, GHOULBOX: VT323) */
-    {"The Saira Project Authors", MC_TEXT},
+    {"SHARE TECH MONO", MC_TITLE},            /* DINOBOX: the UI's type (Felucca: Inter Tight, GHOULBOX: VT323) */
+    {"Carrois Type Design, Ralph du Carrois", MC_TEXT},
     {"SIL Open Font License 1.1", MC_TEXT},
-    {"https://github.com/Omnibus-Type/Saira", MC_URL},
+    {"https://fonts.google.com/specimen/Share+Tech+Mono", MC_URL},
     {"", MC_TEXT},
     {"VSCO-2 CE + VCSL", MC_TITLE},
     {"Versilian Studios / CC0 1.0", MC_TEXT},
@@ -121,7 +116,7 @@ static int32_t menu_document(int32_t y, int draw)
     uint32_t i;
     if (draw) {
         cv_alpha_hc(6, y + 2, GB_LOGO_S_W, GB_LOGO_S_H, GB_LOGO_S, GB_HC, ramp(T_THEME, T_BG));   /* DINOBOX's wordmark */
-        cv_text(6, y + 34, &AF_S, "Prehistoric synth firmware", T_TEXT);
+        cv_text(6, y + 38, &AF_S, "Prehistoric synth firmware", T_TEXT);
         cv_text(6, y + 58, &AF_M, DINOBOX_VERSION, T_THEME);
         cv_text_r(232, y + 61, &AF_S, __DATE__, T_MID, T_BG);
         cv_text(6, y + 82, &AF_S, "on Felucca " FELUCCA_VERSION " (C) 2026", T_TEXT);

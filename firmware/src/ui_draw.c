@@ -369,7 +369,7 @@ static void draw_head(void)
         GFX_HOOK_ALIGN(0, 0, 0, H_HEAD, AL_V, "header text on its middle");
         rx = cv_text(HEAD_SLOT_X, HEAD_MY, &AF_M, l, sl[0] == '-' ? T_MID : T_THEME);
         if (sl[1])                                     /* edited since: the mark, up by the letter's top */
-            rx = cv_text(rx + 1, HEAD_MY, &AF_M, "*", T_MID);   /* (DINOBOX: Saira's A reaches its edge) */
+            rx = cv_text(rx, HEAD_MY, &AF_M, "*", T_MID);
         rx += 1;                                       /* (the REC mark's cell after it, its ink 3 px on) */
     }
     draw_rec_mark(rx, T_SURF);
@@ -1183,15 +1183,15 @@ static void draw_columns(void)
 }
 
 
-/* The power-on splash (main.c fm1_main, web/emu felucca_web.c): DINOBOX's T. rex skull in bone, the wordmark in
- * the theme's colour, "PREHISTORIC SYNTH" under them (gfx.c draw_art_box: ghoulbox_art.h). In the saved palette
+/* The power-on splash (main.c fm1_main, web/emu felucca_web.c): DINOBOX's Dilophosaurus skull in bone, the pixel
+ * title in the theme's colour, "PREHISTORIC SYNTH" under them (gfx.c draw_art_box: ghoulbox_art.h). In the saved palette
  * (settings_init before it) */
 static void draw_splash(void)
 {
     lcd_fill(0, 0, 240, 240, T_BG);
-    draw_art_box(42, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);    /* DINOBOX: a T. rex skull in bone */
+    draw_art_box(42, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);    /* DINOBOX: a Dilophosaurus skull in bone */
     draw_art_box(116, GB_LOGO_W, GB_LOGO_H, GB_LOGO, T_THEME);
-    draw_text_box(0, 160, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
+    draw_text_box(0, 166, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
     lcd_sync();
 }
 

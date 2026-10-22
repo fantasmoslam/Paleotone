@@ -121,7 +121,7 @@ static void settings_init(void)
     }
     if (settings.magic != SETTINGS_MAGIC || settings.palette >= NPALETTES) {
         settings.magic = SETTINGS_MAGIC;
-        settings.palette = UI_JUNGLE_INDEX;    /* DINOBOX: JUNGLE (GHOULBOX: CRYPT; Felucca's default: GREY) */
+        settings.palette = UI_TERMINAL_INDEX;  /* DINOBOX: TERMINAL (GHOULBOX: CRYPT; Felucca's default: GREY) */
         settings.lowcut = 0;
         settings.zoom = 0;                     /* (retired: the LEDS setting, settings_persist.c) */
     }

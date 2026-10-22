@@ -2117,39 +2117,37 @@ static void graph_song(void)
     } else {                                           /* + ADD: how */
         for (i = 0; i < 4u && !graph_project_used(i); i++)
             ;
-        cv_free_hint(SG_X0, ly + AF_M_CAP_Y + AF_M_CAP_H - AF_S_CAP_Y - AF_S_CAP_H - 1,   /* (a key hint: S; DINOBOX:
-                                                                                * a row up, its keycap inside the window) */
+        cv_free_hint(SG_X0, ly + AF_M_CAP_Y + AF_M_CAP_H - AF_S_CAP_Y - AF_S_CAP_H,   /* (a key hint: S) */
                      i < 4u ? "[K3] ADD SECTION" : "[SAVE] PROJECT A-D", T_MID, T_SURF, x0 - 10 - SG_X0);
     }
 }
-/* DINOBOX: a fern frond (in GHOULBOX's torch place, 12 x 30): a stem rising from the ground (EDGE), its leaflets
- * in pairs swept up and out (THEME, every other pair SEL), shorter towards the tip; frame f 0..3 sways the upper
- * half a pixel either way. The lint: nothing may overlap it */
+/* DINOBOX: an electric fence post (in GHOULBOX's torch place, 12 x 30): a warning lamp on top (frames 0, 1 lit
+ * ACCENT with a TEXT core, 2, 3 dark), a THEME cap, the post in hazard stripes (ACCENT and EDGE, diagonal), three THEME
+ * insulators either side with their wire stubs (DIM), and a spark (TEXT) jumping from insulator to insulator frame by
+ * frame. The lint: nothing may overlap it */
 #define TORCH_LX 8
 #define TORCH_RX 220
 #define TORCH_Y 10
-static int32_t fern_dx(int32_t sw, int32_t row)          /* the sway at a row: above row 16, more towards the tip */
-{
-    int32_t d = row < 16 ? sw * (16 - row) : 0;
-    return (d + (d > 0 ? 5 : d < 0 ? -5 : 0)) / 10;
-}
 static void torch_draw(int32_t x, int32_t y, uint32_t f)
 {
-    static const uint8_t PAIR[8][2] = {{4, 2}, {7, 3}, {10, 4}, {13, 5}, {16, 5}, {19, 5}, {22, 4}, {25, 3}};   /* row, length */
-    static const int8_t SWAY[4] = {-1, 0, 1, 0};
-    int32_t sw = SWAY[f & 3u], j, k, i;
-    for (j = 3; j < 30; j++)                           /* the stem */
-        cv_rect(x + 6 + fern_dx(sw, j), y + j, 1, 1, T_EDGE);
-    for (k = 0; k < 8; k++) {                          /* the leaflets, up and out: a row up every 2 px */
-        int32_t ly = PAIR[k][0], cx = x + 6 + fern_dx(sw, ly);
-        uint16_t c = k & 1 ? T_SEL : T_THEME;
-        for (i = 1; i <= PAIR[k][1]; i++) {
-            cv_rect(cx - i, y + ly - i / 2, 1, 1, c);
-            cv_rect(cx + i, y + ly - i / 2, 1, 1, c);
-        }
+    static const uint8_t INS[3] = {11, 18, 25};        /* the insulators' rows */
+    int32_t i, j, lit = (f & 3u) < 2u;
+    cv_rect(x + 4, y, 4, 4, lit ? T_ACCENT : T_DIM);    /* the lamp */
+    if (lit)
+        cv_rect(x + 5, y + 1, 2, 2, T_TEXT);
+    cv_rect(x + 3, y + 4, 6, 2, T_THEME);              /* the cap */
+    for (j = 6; j < 30; j++)                           /* the post, striped */
+        for (i = 4; i < 8; i++)
+            cv_rect(x + i, y + j, 1, 1, ((i + j) / 3) & 1 ? T_ACCENT : T_EDGE);
+    for (j = 0; j < 3; j++) {                          /* insulators and wire stubs */
+        cv_rect(x + 1, y + INS[j], 3, 2, T_THEME);
+        cv_rect(x + 8, y + INS[j], 3, 2, T_THEME);
+        cv_rect(x, y + INS[j] + 2, 1, 1, T_DIM);
+        cv_rect(x + 11, y + INS[j] + 2, 1, 1, T_DIM);
     }
-    cv_rect(x + 6 + fern_dx(sw, 1), y + 1, 1, 1, T_THEME);   /* the tip */
-    cv_rect(x + 6 + fern_dx(sw, 2), y + 2, 1, 1, T_THEME);
+    j = INS[f % 3u];                                   /* the spark */
+    cv_rect(x + (f & 1u ? 9 : 1), y + j - 1, 1, 1, T_TEXT);
+    cv_rect(x + (f & 1u ? 10 : 2), y + j - 2, 1, 1, T_TEXT);
     GFX_HOOK_TEXT(x, y + cv_oy, x + 12, y + cv_oy + 30, "torch", 4u);   /* the lint: nothing may overlap it */
 }
 /* the pages whose stage has room for the torches: HOME's scope, the envelope, the LFO, FX, and an engine page
@@ -2173,9 +2171,9 @@ static int torch_page(void)
         return 0;
     }
 }
-static void torch_tick(void)                          /* only the two fern rectangles, every 16 UI frames */
+static void torch_tick(void)                          /* only the two fence posts, every 16 UI frames */
 {
-    uint32_t f = (ui.frame >> 4) & 3u;              /* (DINOBOX: the ferns sway slower than a flame) */
+    uint32_t f = (ui.frame >> 4) & 3u;              /* (DINOBOX: the lamps blink slower than a flame flickers) */
     if (!ui.torches || f == ui.torch_f)
         return;
     ui.torch_f = (uint8_t)f;

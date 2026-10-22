@@ -13,9 +13,9 @@
   /* Fukiai: Hügelton Instruments' icon font (MIT, FUKIAI-LICENSE.txt). Icons are text in .ic spans;
      they stay hidden until the face has loaded (html.fk), so a missing font never shows boxes. */
   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
-  /* GHOULBOX: the dungeon, as the installer and the emulator (DINOBOX: JUNGLE's colours (GHOULBOX: CRYPT's); the art in ../art/, make_site.py) */
+  /* GHOULBOX: the dungeon, as the installer and the emulator (DINOBOX: TERMINAL's colours (GHOULBOX: CRYPT's); the art in ../art/, make_site.py) */
   :root { --bg: #0D0C0B; --fg: #EFDFC6; --dim: #B3A58C; --line: #3A3A3E; --theme: #EF9A29;
-          --night: #07100a; --edge: #6B4513; --frame: #3A3A3E; --ink: #000000; color-scheme: dark; }
+          --night: #040a06; --edge: #6B4513; --frame: #3A3A3E; --ink: #000000; color-scheme: dark; }
   h1 { color: var(--theme); }
   html { color-scheme: dark; background: var(--night); }
   body { margin: 0; color: var(--fg); min-height: 100vh; image-rendering: pixelated;
@@ -25,7 +25,7 @@
                      url("../art/wall.png") 0 0 / 256px 128px var(--night); }
   .crest { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 18px 0 16px; }
   .crest .skull { width: 132px; height: 72px; image-rendering: auto; }
-  .crest .logo { height: 78px; width: auto; image-rendering: auto; filter: drop-shadow(0 0 10px rgba(168, 214, 80, .35)); }
+  .crest .logo { height: 78px; width: auto; image-rendering: auto; filter: drop-shadow(0 0 10px rgba(70, 232, 116, .35)); }
   .crest .what { font: 700 26px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--fg);
                  text-shadow: 0 0 3px var(--ink), 0 0 6px var(--ink), 0 2px 0 var(--ink); align-self: flex-end; margin-bottom: 8px; }
   .stage { display: grid; grid-template-columns: 48px minmax(0, 1100px) 48px; gap: 32px; align-items: start; justify-content: center;
@@ -34,7 +34,7 @@
            animation: torch .48s steps(4) infinite; }
   .torch.r { animation-delay: -.24s; }
   .torch::before { content: ""; position: absolute; left: 50%; top: 18px; width: 420px; height: 420px; margin: -210px 0 0 -210px;
-                   background: radial-gradient(circle, rgba(168, 214, 80, .28), rgba(255, 122, 48, .09) 40%, transparent 68%);
+                   background: radial-gradient(circle, rgba(70, 232, 116, .28), rgba(255, 176, 32, .09) 40%, transparent 68%);
                    animation: glow 1.7s ease-in-out infinite alternate; pointer-events: none; z-index: -1; }
   .torch.r::before { animation-duration: 1.3s; }
   @keyframes torch { to { background-position: -192px 0; } }
