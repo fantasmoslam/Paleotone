@@ -115,7 +115,7 @@ ENV = {"wave":(5, 80, 100, 50), "kit": (0, 127, 127, 60), "multi": (0, 85, 0, 75
 # PIANO's notes cut to 0.75 s (saves flash), faded out over the last SET_FADE s (the 5-zone PIANO of 1.0 .. 1.1.5:
 # SLICE's PIANO, the PIANO HD user slot)
 SET_KEEP = {"PIANO": 0.75,
-            "PSALTERY": 0.80, "RENORGAN": 0.70, "RECORDER": 0.60, "FOLKHARP": 1.10}   # GHOULBOX: <= 130 KB, the four
+            "PSALTERY": 0.80, "RENORGAN": 0.70, "RECORDER": 0.60, "FOLKHARP": 0.90}   # GHOULBOX: <= 130 KB, the four
 SET_FADE = {"PIANO": 0.15, "FOLKHARP": 0.50}
 
 _wavs = {}
