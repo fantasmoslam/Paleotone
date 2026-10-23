@@ -291,7 +291,8 @@ int main(void)
         snprintf(what, sizeof what, "  a stroke: the buzz > 2 kHz %.1f dB over the wheel's alone, after it", 20 * log10(on / off));
         check(what, on > off * 2);
         ok = str_eq(track_desc(&trk[0], P_E3)->label, "GEAR") && str_eq(track_desc(&trk[0], P_E5)->names[5], "TURN") &&
-             track_desc(&trk[0], P_E5)->max == 5;
+             track_desc(&trk[0], P_E5)->max == 18 && str_eq(track_desc(&trk[0], P_E5)->names[18], "CHAOS");   /* (DINOBOX:
+                                                         * the drums and rhythms after it) */
         trk[0].p[P_E5] = 2;
         check("  COUP's sixth value CRANK (append-only); WHL shown as GEAR at CRANK, WHL at 1/8",
               ok && str_eq(track_desc(&trk[0], P_E3)->label, "BRTH"));
