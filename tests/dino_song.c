@@ -104,10 +104,15 @@ static void sounds(void)
     host_preset(&trk[1], 5, preset_of(5, "EPIC CHOIR"));
     host_preset(&trk[2], 0, preset_of(0, "CANYON HORN"));
     host_preset(&trk[3], ENGI_DRUM, preset_of(ENGI_DRUM, "TRIBAL KIT"));
-    trk[0].p[P_LEVEL] = 112; trk[0].p[P_PAN] = 0;
-    trk[1].p[P_LEVEL] = 84;  trk[1].p[P_PAN] = -18;
-    trk[2].p[P_LEVEL] = 92;  trk[2].p[P_PAN] = 14;  trk[2].p[P_GLIDE] = 18;   /* the horn glides: Vangelis */
-    trk[3].p[P_LEVEL] = 118;
+    trk[0].p[P_LEVEL] = 117; trk[0].p[P_PAN] = 0;           /* (balanced by ear and meter: the riff and the drums lead, the hook over them, the choir a bed) */
+    trk[1].p[P_LEVEL] = 64;  trk[1].p[P_PAN] = -18;
+    trk[2].p[P_LEVEL] = 86;  trk[2].p[P_PAN] = 14;  trk[2].p[P_GLIDE] = 18;   /* the horn glides: Vangelis */
+    trk[3].p[P_LEVEL] = 113;
+#ifdef DS_SOLO
+    for (uint32_t k = 0; k < NTRK; k++)
+        if (k != DS_SOLO)
+            trk[k].p[P_LEVEL] = 0;
+#endif
     trk[2].p[P_REV] = 70; trk[1].p[P_REV] = 90; trk[0].p[P_REV] = 45; trk[3].p[P_REV] = 55;
 }
 static void slot(uint32_t s, const steps_t *r, const steps_t *c, const steps_t *h, uint32_t hl, const steps_t *d)
