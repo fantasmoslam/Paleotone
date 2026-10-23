@@ -145,7 +145,13 @@ Things that broke before and what fixes them:
    - **feedback to honour:** the previews were far too loud and busy: it is meant to be *ambient*: quiet by
      default, sparse, wind ~8 dB lower than the previews; every layer's level adjustable;
    - flash: ~18 KB above the floor, so procedural synthesis, not new samples; voices: shares the 12 with the tracks.
-3. **Easier track selection** (original step 4): a button combination for tracks 1..4, a colour per track.
+3. **Easier track selection** (original step 4): built on the branch `track-select`, previews sent, waiting for
+   the owner's OK. HOME held + F3 G3 A3 B3 (the first four white keys, GLO's SOLO keys): track 1..4 at once, the key
+   silent, HOME then neither changes the page nor opens the menu (`ui_input.c` `home_keys`, `ui_layer.c`
+   `layer_masks`). Each track its colour: the selected track's is ACCENT (badge, corners, cursor, playhead, lamps;
+   `gfx.c` `ux_track`), the MIXER and HOME TRACKS show each track's; T1 keeps the palette's ACCENT, T2..T4 three
+   hues per palette checked for contrast as ACCENT (`tools/gen_ui_palettes.py` `track_colours`, `UI_TRK_ACCENT`);
+   GREY and MONO one colour. Tests: `tests/ui_test.c` `test_home_track_keys`.
 4. **MIDI** (original step 5): a MIDI channel per track (or off), the sequencer's notes out over USB MIDI, MIDI clock
    out.
 5. **Each step:** previews to the owner first, then the full host suite, the GitHub build, the firmware sent with

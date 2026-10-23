@@ -1390,6 +1390,8 @@ static void ui_draw(void)
         counting = (uint8_t)seq_counting();
         ui.force = 1;
     }
+    if (ux_track(song.sel))                             /* DINOBOX: each track its colour (gfx.c ux_track) */
+        ui.force = 1;
     if (!scr_frame())                                   /* MENU > SCREEN OFF: dark (or waking), nothing drawn */
         return;
     ui_draw_page(counting);

@@ -134,7 +134,8 @@ static void layer_masks(void)
 {
     uint32_t m = !layer_allowed() || (ui.ly && (ui.ly_t0 & LY_DEAD)) ? 0u
                : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~fm1_in.buttons;
-    kb_mask = m;
+    kb_mask = m | (!ui.ly && layer_allowed() ? 1u << panel.btn[B_HOME] : 0u);   /* DINOBOX: HOME + a key (ui_input.c
+                                                         * home_keys): the keys are HOME's, silent */
     perf_mask = m & ly_bit(LAYER_FX);
     kb_lock = (uint8_t)(m && ui.lock ? 1u | (ui.lock == LAYER_FX ? 2u : 0u) : 0u);   /* (no button held: the ISR's) */
 }
