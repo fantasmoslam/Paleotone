@@ -13,7 +13,7 @@ static uint32_t riders_preset(uint32_t e, const char *name)     /* a raw preset 
 {
     uint32_t i;
     for (i = 0; i < ENGINES[e]->npresets; i++)
-        if (!strcmp(ENGINES[e]->presets[i].name, name))
+        if (str_eq(ENGINES[e]->presets[i].name, name))
             return i;
     return 0xFFFFu;
 }
