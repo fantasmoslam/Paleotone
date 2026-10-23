@@ -9519,15 +9519,15 @@ static int test_hidden_presets(void)
     bad += check("hidden presets: 68 names (PIANO covers SAMPLE's two; DINOBOX: + Felucca's 14 GHOULBOX kept), each one "
                  "a real preset", ok && NELEM(GB_HIDDEN) == 68u);
     preset_all_pos(&total);
-    ok = total == 87u + ENG_SAURUS.npresets + (FELUCCA_FM4 ? ENGINES[ENGI_DIGITAL]->npresets : 0u);   /* (+ DIGITAL's, built in;
-                                                                 * DINOBOX: its own 87, SAURUS's) */
+    ok = total == 99u + ENG_SAURUS.npresets + (FELUCCA_FM4 ? ENGINES[ENGI_DIGITAL]->npresets : 0u);   /* (+ DIGITAL's, built in;
+                                                                 * DINOBOX: its own 99, SAURUS's) */
     for (i = 0; i < total; i++) {
         e = preset_all_at(i, &k);
         ok &= e < NENGINES && !preset_hidden(ENGINES[e], k);
         for (uint32_t j = 0; j < NELEM(KEEP); j++)
             shown += str_eq(ENGINES[e]->presets[k].name, KEEP[j]);
     }
-    bad += check("hidden presets: the PRESETS list holds DINOBOX's 87 and SAURUS's, none hidden", ok && shown >= NELEM(KEEP));
+    bad += check("hidden presets: the PRESETS list holds DINOBOX's 99 and SAURUS's, none hidden", ok && shown >= NELEM(KEEP));
     ok = NENG_SHOWN == 14u + FELUCCA_FM4 && eng_ok(ENGI_SLICE) && eng_ok(ENGI_SAURUS);
     for (i = 0, k = 0; i < NENG_SHOWN; i++) {
         ok &= eng_vis(i) != ENGI_SLICE;
