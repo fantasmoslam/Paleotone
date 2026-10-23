@@ -87,6 +87,7 @@ static struct {
     uint16_t stone, edge;        /* GHOULBOX: the stone's specks, a window's outer line */
     uint8_t light, mono;
     uint8_t style;               /* MENU > STYLE (ui.c style_apply): ST_FLAT, ST_LINE */
+    uint8_t pal, trk;            /* DINOBOX: the palette, the track whose colour ACCENT is (ux_track) */
     uint32_t gen;                /* bumped by palette_set (the text ramps follow) */
 } ux;
 /* STYLE: FLAT, the filled SURF cards and panels; LINE, no SURF (it is BG) and 1 px T_RULE dividers between the
@@ -141,7 +142,9 @@ static void palette_set(uint32_t i)
     const ui_pal_t *p = &UI_PALETTES[i % NPALETTES];
     i %= NPALETTES;
     ux.mono = i == UI_GREY_INDEX;
-    ux.bg = p->bg; ux.surf = ux.style ? p->bg : p->surf; ux.text = p->text; ux.theme = p->theme; ux.accent = p->accent;
+    ux.pal = (uint8_t)i;
+    ux.bg = p->bg; ux.surf = ux.style ? p->bg : p->surf; ux.text = p->text; ux.theme = p->theme;
+    ux.accent = UI_TRK_ACCENT[i][ux.trk & 3u];   /* DINOBOX: the selected track's colour (T1: the palette's ACCENT) */
     ux.mid = ux_mix(p->bg, p->text, UI_MID_PCT);
     ux.dim = ux_mix(p->bg, p->text, UI_DIM_PCT);
     ux.line = ux_mix(p->bg, p->text, UI_LINE_PCT);
@@ -165,6 +168,21 @@ static void palette_set(uint32_t i)
     }
     ux.gen++;                                    /* the text ramps change with the coverage curve */
 }
+
+/* DINOBOX: the selected track t's colour as ACCENT (the badge, the windows' corners, the cursor, the playhead: the
+ * one active thing). 1 when it changed (the screen is drawn again) */
+static int ux_track(uint32_t t)
+{
+    t &= 3u;
+    if (t == ux.trk)
+        return 0;
+    ux.trk = (uint8_t)t;
+    ux.accent = UI_TRK_ACCENT[ux.pal][t];
+    ux.gen++;
+    return 1;
+}
+
+static uint16_t ux_trk_col(uint32_t t) { return UI_TRK_ACCENT[ux.pal][t & 3u]; }   /* DINOBOX: track t's colour */
 
 /* settings store a tagged id; ids below 20 are the palettes of earlier firmware */
 static uint32_t palette_from_stored(uint32_t v)

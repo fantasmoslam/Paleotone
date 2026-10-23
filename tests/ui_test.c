@@ -9701,6 +9701,64 @@ static int test_scenes(void)
     return bad;
 }
 
+/* DINOBOX: HOME held + F3 G3 A3 B3: track 1..4 at once, the key silent, HOME neither changes the page nor opens the
+ * menu; each track's colour is ACCENT (gfx.c ux_track) */
+static int test_home_track_keys(void)
+{
+    int bad = 0, ok;
+    uint32_t t, page, home;
+    ui_power_on();
+    ui.home = 1;
+    frames(100);
+    page = ui.page;
+    home = ui.home;
+    ok = 1;
+    for (t = 0; t < NTRK; t++) {
+        uint32_t k = (3u - t) * 2u;                       /* B3 A3 G3 F3: 4, 3, 2, 1 */
+        btn_down(B_HOME); frame();
+        key_down(k); frame();
+        ok &= song.sel == 3u - t && !gates();
+        key_up(k); frame();
+        btn_up(B_HOME); frames(100);
+        ok &= !ui.menu && ui.page == page && ui.home == home;
+        ok &= T_ACCENT == UI_TRK_ACCENT[ux.pal][3u - t];
+    }
+    bad += check("HOME + B3 A3 G3 F3: tracks 4 3 2 1, the keys silent, no page change, no menu, the track's colour", ok);
+    btn_down(B_HOME); frame();
+    key_down(1); frame();                                 /* F#3: a black key: nothing */
+    ok = song.sel == 0u && !gates();
+    key_up(1); frame();
+    key_down(8); frame();                                 /* C4: the fifth white key: nothing */
+    ok &= song.sel == 0u && !gates();
+    key_up(8); frame();
+    btn_up(B_HOME); frames(100);
+    bad += check("HOME + a black key or the fifth white key: nothing (no track, no note)", ok && !ui.menu);
+    btn_down(B_HOME); frame();
+    key_down(2); frames(900);                             /* held past the menu's hold with the key */
+    ok = song.sel == 1u && !ui.menu;
+    key_up(2); frame();
+    btn_up(B_HOME); frames(100);
+    bad += check("HOME + G3 held long: track 2, the menu does not open", ok && !ui.menu);
+    key_down(4); frame();
+    ok = gates() != 0;                                    /* without HOME the key plays */
+    key_up(4); frames(100);
+    bad += check("the same key without HOME plays a note as ever", ok);
+    hold(B_HOME); frames(100);
+    bad += check("HOME held alone still opens the menu", ui.menu != 0);
+    ui.menu = 0; frames(100);
+    ok = 1;
+    for (t = 0; t < UI_NPALETTES; t++) {                  /* GREY and MONO: one colour (gray / white) for every track */
+        if (t != UI_GREY_INDEX && t != UI_BW_INDEX)
+            continue;
+        ok &= UI_TRK_ACCENT[t][0] == UI_TRK_ACCENT[t][1] && UI_TRK_ACCENT[t][1] == UI_TRK_ACCENT[t][2] &&
+              UI_TRK_ACCENT[t][2] == UI_TRK_ACCENT[t][3] && UI_TRK_ACCENT[t][0] == UI_PALETTES[t].accent;
+    }
+    for (t = 0; t < UI_NPALETTES; t++)                    /* T1: the palette's own ACCENT */
+        ok &= UI_TRK_ACCENT[t][0] == UI_PALETTES[t].accent;
+    bad += check("track colours: T1 is each palette's ACCENT; GREY and MONO one colour for all", ok);
+    return bad;
+}
+
 static int test_midi_cc(void)
 {
     int bad = 0, ok;
@@ -9863,6 +9921,7 @@ int main(void)
     bad += test_fm6_charts();
     bad += test_fm6_ops();
     bad += test_home_tracks();
+    bad += test_home_track_keys();
     bad += test_no_flash();
 #if FELUCCA_FM4
     bad += test_fm_charts();                        /* (DIGITAL's charts: built with FELUCCA_FM4=1 only) */

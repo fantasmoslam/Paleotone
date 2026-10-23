@@ -71,6 +71,11 @@ OLD_TO_NEW = {"GREEN": "GREEN", "AMBER": "AMBER", "CYAN": "ICE", "RED": "ROSE", 
 PAL_TAG = 64                       # stored id = PAL_TAG + index; below 20: an old id
 REC_DARK, REC_LIGHT = (255, 72, 72), (190, 24, 40)
 QR_LIGHT, QR_DARK, CRASH_BG, CRASH_INK = (255, 255, 255), (0, 0, 0), (160, 0, 0), (255, 255, 255)
+# DINOBOX: a colour per track (the selected track's is ACCENT: src/gfx.c ux_track). T1 keeps the palette's ACCENT;
+# T2..T4 are the three of these hues furthest from THEME, ACCENT and each other, darkened on a light palette (or
+# lightened on a dark one) until they pass ACCENT's checks. GREY and MONO: ACCENT for all four (gray, black and white)
+TRACK_HUES = [(80, 210, 240), (250, 120, 200), (170, 150, 255), (190, 235, 80), (255, 224, 80), (255, 150, 60),
+              (110, 170, 255), (100, 230, 180)]
 PCT = {"MID": 70, "DIM": 42, "LINE": 18, "SEL": 80, "TINT": 12, "KEY": 78}
 RAISE_PCT = 12                     # SURF -> TEXT
 
@@ -142,6 +147,46 @@ def derive(p):
     return name, d
 
 
+def hue(c):
+    import colorsys
+    r, g, b = (v / 255.0 for v in c)
+    h, s_, v = colorsys.rgb_to_hsv(r, g, b)
+    return h * 360.0, s_
+
+
+def hue_dist(a, b):
+    (ha, sa), (hb, sb) = hue(a), hue(b)
+    if sa < 0.15 or sb < 0.15:                         # a gray: far from every hue
+        return 180.0
+    d = abs(ha - hb) % 360.0
+    return min(d, 360.0 - d)
+
+
+def track_colours(p):
+    """the four tracks' colours (8-bit RGB) of palette p"""
+    name, bg, surf, text, theme, accent = p
+    if name in ("GREY", BW):
+        return [accent] * 4
+    left, picked = list(TRACK_HUES), []
+    for _ in range(3):
+        best = max(left, key=lambda c: min(hue_dist(c, o) for o in [theme, accent] + picked))
+        left.remove(best)
+        picked.append(best)
+    picked.sort(key=TRACK_HUES.index)                 # (the same order on every palette: cyan before pink ..)
+    _, d = derive(p)
+    out = [accent]
+    for c in picked:
+        for k in range(40):                           # toward black (a light palette) or white (a dark one)
+            f = k / 40.0
+            t = (0, 0, 0) if d["light"] else (255, 255, 255)
+            cc = tuple(int(round(v + (w - v) * f)) for v, w in zip(c, t))
+            a = to565(cc)
+            if contrast(a, d["bg"]) >= 4.5 and contrast(a, d["surf"]) >= 4.5 and contrast(d["ink"], a) >= 4.5:
+                break
+        out.append(cc)
+    return out
+
+
 # (foreground, background, minimum contrast, why)
 CHECKS = [("text", "bg", 12.0, "body text"), ("text", "surf", 9.0, "body text on a surface"),
           ("mid", "bg", 5.0, "labels"), ("mid", "surf", 4.0, "labels on a surface"),
@@ -179,6 +224,12 @@ def main():
             c = contrast(d[f], d[b])
             if c < lim:
                 fails.append(f"{name}: {f}/{b} {c:.2f} < {lim} ({why})")
+        for k, tc in enumerate(track_colours(next(q for q in PALETTES if q[0] == name))):   # DINOBOX: as ACCENT
+            tv = to565(tc, name == BW)
+            for f, b in (("t", "bg"), ("t", "surf"), ("ink", "t")):
+                c = contrast(tv if f == "t" else d[f], tv if b == "t" else d[b])
+                if c < 4.5:
+                    fails.append(f"{name}: track {k + 1} {f}/{b} {c:.2f} < 4.5 (a track's ACCENT)")
     if a.report:
         print(f"{'palette':8s} " + " ".join(f"{f}/{b}".ljust(12) for f, b, _, _ in CHECKS))
         for name, d in rows:
@@ -208,6 +259,11 @@ def main():
                 "/* the 20 palettes of earlier firmware: " + " ".join(OLD) + " */",
                 "static const uint8_t UI_PALETTE_MIGRATE[20] = {" +
                 ", ".join(str(names.index(OLD_TO_NEW[n])) for n in OLD) + "};", ""]
+        out += ["/* DINOBOX: each palette's four track colours (the selected track's is ACCENT: src/gfx.c ux_track) */",
+                "static const uint16_t UI_TRK_ACCENT[][4] = {"]
+        for p in PALETTES:
+            out.append(f"    {{" + ", ".join(f"0x{to565(c, p[0] == BW):04x}" for c in track_colours(p)) + f"}},   /* {p[0]} */")
+        out += ["};", ""]
         Path(a.out).write_text("\n".join(out))
     for f in fails:
         print("FAIL", f)

@@ -1151,6 +1151,24 @@ static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok
     return tap ? BT_TAP : BT_NONE;
 }
 
+/* DINOBOX: HOME held + one of the first four white keys (F3 G3 A3 B3, GLO's SOLO keys): track 1..4 at once. The keys
+ * pressed with HOME down are HOME's (ui_layer.c layer_masks: silent, not recorded); HOME then neither opens its
+ * page nor the menu. Any other key with HOME: nothing */
+static void home_keys(uint32_t lay)
+{
+    static uint32_t seen;
+    uint32_t k, hk = 0;
+    if (!lay && ((fm1_in.buttons >> panel.btn[B_HOME]) & 1u))
+        hk = kb_layer & ~seen;
+    seen = kb_layer;
+    for (k = 0; hk && k < 27u; k++)
+        if ((hk >> k) & 1u) {
+            ui.home_t0 |= 2u;                           /* (no HOME tap, no menu) */
+            if (!key_black(k) && key_place(k) < NTRK)
+                track_select(key_place(k));
+        }
+}
+
 /* the quick layers: ui_layer.c (included after this file) */
 static void layer_masks(void);
 static void layer_arm(uint32_t pressed, uint32_t now);
@@ -1465,6 +1483,7 @@ static void ui_input(void)
     if (lay)
         lkeys |= notes & ~fm1_in.notes;                 /* (tapped and let go already) */
     notes &= ~kb_layer;
+    home_keys(lay);                                     /* DINOBOX: HOME + F3 G3 A3 B3: track 1..4 */
     if (lay) {                                          /* a layer's button held: keys, knobs and buttons are combos */
         combo |= (pressed & ~ly_bit(ui.ly) &            /* (REC + PLAY: PLAY plays and REC let go soon is still */
                   ~(ui.ly == LAYER_REC ? 1u << panel.btn[B_PLAY] : 0u)) != 0u;   /* a tap, it arms: as before) */
