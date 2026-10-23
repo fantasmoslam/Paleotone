@@ -23,12 +23,12 @@ ghoulbox art: GB_LOGO_S 159 x 21, 271 B (1670 B as nibbles)
 ghoulbox art: GB_SKULL 80 x 96, 380 B (3840 B as nibbles)
 ghoulbox art: 1027 B -> /__w/dinobox-fm1/dinobox-fm1/build/gen/ghoulbox_art.h
   ok    .ram_text: 916 insns, no calls
-  ok    image 564696 B; RAM .data+.bss 90148 B of 98304; pool 302280 B of 344064
+  ok    image 564792 B; RAM .data+.bss 90148 B of 98304; pool 302280 B of 344064
   ok    register access: hal/ only (src/, loader/ clean)
-app      /__w/dinobox-fm1/dinobox-fm1/build/felucca.bin  564696 B
+app      /__w/dinobox-fm1/dinobox-fm1/build/felucca.bin  564792 B
 loader   /__w/dinobox-fm1/dinobox-fm1/build/loader/ota.bin  7031 B
 package  /__w/dinobox-fm1/dinobox-fm1/build/felucca.fwsc  610187 B, identity FM-1_900
-5cc58c82c8c3ea9ff93177c78359d3ba876c556026e66fc49f37058c5f6aec73  dinobox.fwsc
+21e32d98ece010b67602a12fff83ad65d1a6085c0b58bd44d14cb939244ed94e  dinobox.fwsc
 ota test passed
 loader test passed
 target: saurus_render     633 instructions,  311 in loops, 2 divides,  0 calls there: cost   327 (budget 334) ok
