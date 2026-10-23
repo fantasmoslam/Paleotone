@@ -63,6 +63,7 @@ static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 
 static void shed_voice(void)
 {
+    if (scape_reduce()) return; /* Shed ambience before any music voice. */
     uint32_t p, i;
     voice_t *best = 0;
     for (p = 0; p < NPART; p++)
