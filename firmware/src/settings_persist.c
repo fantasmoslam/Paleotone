@@ -115,7 +115,7 @@ static int settings_import(persist_t *p, int n)
 #endif
 #endif
     if (p->panel.magic == PANEL_MAGIC) panel = p->panel;
-#ifdef FELUCCA_FAVORITES
+#ifdef MO_BYTES                                        /* (menu_items.c: not in every host test) */
     midi_out_load();                                   /* DINOBOX: MIDI OUT's channels and clock (seq.c) */
 #endif
     return current ? 1 : 2;
