@@ -419,6 +419,10 @@ static void sc_voice_run(sc_voice_t *v, int32_t *l, int32_t *r, int32_t *rev, ui
         for (i = 0; i < (int32_t)n; i++) {
             int32_t z = (int32_t)(noise32(&v->rng) >> 17) - 16384;
             xb[i] = (sine_i(v->ph) >> 1) + tsvf_lp(&v->f, z, &v->f1, &v->f2);
+            if (v->mode == 3u) {                         /* heavy foot: short ground impact above the sub body */
+                xb[i] += (sine_i(v->ph * 2u) >> 3) + mulq15(z, (int32_t)v->aph) / 3;
+                v->aph -= v->aph >> 8;                  /* about 6 ms: impact, not continuous hiss */
+            }
             v->ph += inc;
         }
         break;
@@ -690,9 +694,12 @@ static void sc_encounter(void)
             v->glide = 65536;
             v->lo = v->hi = (int16_t)(big == 2u ? 38 : 55);
             tsvf_coef(&v->f, sc_cut(big == 2u ? 140 : 220), 0);
-            sc_env(v, 2, big == 2u ? 380 : 220, 32767);
-            sc_place(v, sc.enc_side ? -x : x, near, big == 2u ? 15000 : 9000);
+            sc_env(v, big == 2u ? 5 : 2, big == 2u ? 650 : 220, 32767);
+            /* Heavy steps emerge from the distance, rise steeply close by, then recede. */
+            sc_place(v, sc.enc_side ? -x : x, near,
+                     big == 2u ? 1800 + (127 - near) * (127 - near) * 25000 / (110 * 110) : 9000);
             sc_note(v);
+            if (big == 2u) { v->mode = 3u; v->aph = 32767u; }
         } else if (v) {
             memset(v, 0, sizeof *v);
             v->rng = (int32_t)(sc_rnd() | 1u);

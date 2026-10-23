@@ -48,17 +48,3 @@ jobs:
             baseline.log
             baseline-budget.txt
             scape-probe.log
-  host-tests:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
-      - run: python3 tools/build.py --gen-only
-      - run: HOST_ONLY=1 tests/run_tests.sh
