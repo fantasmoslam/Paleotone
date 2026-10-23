@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* DINOBOX demo song, "TITAN RISING": composed in the synth itself through the firmware's own code. Four project slots
  * (A..D) hold the sections' sequences; the SONG chains them, each track on its own slot per section (lanes), with
- * repeats; the sounds stay the current ones, as on the FM-1. 70 BPM, D minor: a stomping low brass riff, a choir, a
- * soaring horn, the TRIBE kit driving under it (accents, ratchets).
- *   T1 FM6 MAMMOTH      the riff                   T2 VOICE EPIC CHOIR  the chords
- *   T3 ANALOG CANYON HORN the hook (glides)        T4 DRUM TRIBAL KIT   the beat (1/16)
+ * repeats; the sounds stay the current ones, as on the FM-1. 70 BPM, D minor: a stomping low brass riff, a choir
+ * singing the hook, brachiosaurs, raptors and a tyrant on one SAURUS track, the TRIBE kit in half time.
+ *   T1 FM6 MAMMOTH      the riff                   T2 VOICE EPIC CHOIR  the hook, sung in chords
+ *   T3 SAURUS           the creatures (automation)  T4 DRUM WAR DRUMS    the beat, half time
  *   build/host/dino_song OUT.wav [FRAMES.rgb]   (the screen at 30 fps, 240x240 RGB24) Not a test. */
 #define UI_RENDER_NO_MAIN
 #include "ui_render.c"
@@ -52,75 +52,142 @@ static void steps(uint32_t k, uint32_t div, uint32_t len, const steps_t *st)
 }
 
 /* ---------------------------------------------------------------- the music, D minor */
-#define DM {50, 53, 57}
-#define BB {50, 53, 58}
-#define CC {48, 52, 55}
-#define AM {49, 52, 57}                                /* A major: the harmonic minor's dominant */
-#define GM {50, 55, 58}
 #define TIE {T_}
-/* T1 MAMMOTH, 1/8, 16 steps (2 bars) */
+/* T1 MAMMOTH, 1/8, 16 steps (2 bars): the stomping riff */
 static const steps_t R_A = {{{38 | ACC}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, {34 | ACC}, TIE, TIE, TIE, {33 | ACC}, TIE, TIE, TIE}};
 static const steps_t R_B = {{{38 | ACC}, {0}, {38}, {38}, {41 | ACC}, {0}, {40}, {0},
                              {38 | ACC}, {0}, {38}, {38}, {33 | ACC}, {0}, {36}, {34}}};
 static const steps_t R_C = {{{38 | ACC, 45}, {0}, {38, 45}, {38, 45}, {41 | ACC, 48}, {0}, {40, 47}, {0},
                              {38 | ACC, 45}, {0}, {38, 45}, {38, 45}, {36 | ACC, 43}, {36, 43}, {34, 41}, {33, 40}}};
 static const steps_t R_D = {{{38}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE}};
-/* T2 EPIC CHOIR, 1/8, 16 steps */
-static const steps_t C_A = {{DM, TIE, TIE, TIE, TIE, TIE, TIE, TIE, BB, TIE, TIE, TIE, AM, TIE, TIE, TIE}};
-static const steps_t C_B = {{DM, TIE, TIE, TIE, BB, TIE, TIE, TIE, CC, TIE, TIE, TIE, AM, TIE, TIE, TIE}};
-static const steps_t C_C = {{DM, TIE, TIE, GM, TIE, TIE, BB, TIE, TIE, TIE, CC, TIE, AM, TIE, TIE, TIE}};
-static const steps_t C_D = {{{50, 57, 62}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, {50, 57, 61}, TIE, TIE, TIE, TIE, TIE, TIE, TIE}};
-/* T3 CANYON HORN, 1/8, 32 steps (4 bars): the hook; C an octave's urgency higher; D a lone call */
-static const steps_t H_B = {{{69 | ACC}, TIE, TIE, {74}, TIE, {72}, TIE, {69},
-                             {70 | ACC}, TIE, {69}, {67}, TIE, {65}, TIE, TIE,
-                             {69 | ACC}, TIE, TIE, {74}, TIE, {76}, TIE, {77},
-                             {76 | ACC}, TIE, {74}, {73}, TIE, {74}, TIE, TIE}};
-static const steps_t H_C = {{{74 | ACC}, TIE, {72}, {74}, TIE, {77}, TIE, {76},
-                             {74 | ACC}, TIE, {72}, {70}, TIE, {69}, TIE, TIE,
-                             {74 | ACC}, TIE, {77}, TIE, {79}, TIE, {81}, TIE,
-                             {79 | ACC}, TIE, {77}, {76}, TIE, {74}, TIE, TIE}};
-static const steps_t H_D = {{{69}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0},
-                             {73}, TIE, TIE, TIE, {74}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, {0}, {0}, {0}, {0}}};
-/* T4 TRIBAL KIT, 1/16, 32 steps (2 bars). GM notes: 36 BOOM, 38 SKIN, 39 CLAP, 42 SEEDS, 46 RATTL, 45 LOG, 37 BONE,
- * 56 ROCK */
+/* T4 TRIBAL KIT, 1/8, 16 steps (2 bars), half time: the boom on 1 and the "and" of 2, the skin on 3, the log drum
+ * answering; GM notes: 36 BOOM, 38 SKIN, 39 CLAP, 42 SEEDS, 46 RATTL, 45 LOG, 37 BONE, 56 ROCK */
 #define AT(i, ...) [i] = {__VA_ARGS__}
-static const steps_t D_A = {{AT(0, 36 | ACC), AT(3, 36), AT(12, 45), AT(16, 36 | ACC), AT(19, 36), AT(28, 45), AT(30, 45)}};
-static const steps_t D_B = {{AT(0, 36 | ACC, 42), AT(2, 42), AT(4, 38 | ACC, 42), AT(6, 36, 42), AT(8, 36 | ACC, 42), AT(10, 42),
-                             AT(11, 36), AT(12, 38 | ACC, 42), AT(14, 45 | R2), AT(15, 45),
-                             AT(16, 36 | ACC, 42), AT(18, 42), AT(20, 38 | ACC, 42), AT(22, 36, 42), AT(24, 36 | ACC, 42),
-                             AT(26, 42), AT(27, 36), AT(28, 38 | ACC, 39), AT(30, 46), AT(31, 45 | R3)}};
-static const steps_t D_C = {{AT(0, 36 | ACC, 56), AT(1, 42), AT(2, 42), AT(3, 36), AT(4, 38 | ACC, 39), AT(5, 42), AT(6, 36, 42),
-                             AT(7, 42), AT(8, 36 | ACC, 42), AT(9, 42), AT(10, 36, 42), AT(11, 36), AT(12, 38 | ACC, 39),
-                             AT(13, 45), AT(14, 45 | R2), AT(15, 45 | R3),
-                             AT(16, 36 | ACC, 46), AT(17, 42), AT(18, 42), AT(19, 36), AT(20, 38 | ACC, 39), AT(21, 42),
-                             AT(22, 36, 42), AT(23, 42), AT(24, 36 | ACC, 42), AT(25, 37), AT(26, 36, 42), AT(27, 37),
-                             AT(28, 38 | ACC | R2, 39), AT(29, 45 | R2), AT(30, 45 | R3), AT(31, 36 | ACC, 56)}};
-static const steps_t D_D = {{AT(0, 36 | ACC, 56), AT(16, 36, 46), AT(24, 45), AT(28, 45 | R2)}};
+static const steps_t D_A = {{AT(0, 36 | ACC), AT(8, 36), AT(12, 45), AT(14, 45)}};
+static const steps_t D_B = {{AT(0, 36 | ACC, 56), AT(3, 36), AT(4, 38 | ACC), AT(6, 45), AT(8, 36 | ACC), AT(11, 36),
+                             AT(12, 38 | ACC), AT(14, 45), AT(15, 45 | R2)}};
+static const steps_t D_C = {{AT(0, 36 | ACC, 56), AT(2, 46), AT(3, 36), AT(4, 38 | ACC, 39), AT(6, 45, 46), AT(8, 36 | ACC),
+                             AT(10, 46), AT(11, 36), AT(12, 38 | ACC, 39), AT(13, 45), AT(14, 45 | R2), AT(15, 38 | ACC | R3)}};
+static const steps_t D_D = {{AT(0, 36 | ACC, 56), AT(12, 45), AT(14, 45 | R2)}};
 
-/* the sounds (one set for the whole song) and the four slots */
+/* T2 EPIC CHOIR: the hook sung, chords under its top voice (the two chord tones just below the melody), 1/8, 32 steps
+ * (4 bars), a chord a bar; A and D sustained chords */
+static const uint8_t CH_DM[3] = {2, 5, 9}, CH_BB[3] = {10, 2, 5}, CH_C[3] = {0, 4, 7}, CH_A[3] = {9, 1, 4}, CH_GM[3] = {7, 10, 2};
+static const uint8_t *const BAR_B[4] = {CH_DM, CH_BB, CH_C, CH_A}, *const BAR_C[4] = {CH_DM, CH_GM, CH_BB, CH_A};
+static const uint8_t HOOK_B[32] = {69, T_, T_, 74, T_, 72, T_, 69,   70, T_, 69, 67, T_, 65, T_, T_,
+                                   69, T_, T_, 74, T_, 76, T_, 77,   76, T_, 74, 73, T_, 74, T_, T_};
+static const uint8_t HOOK_C[32] = {74, T_, 72, 74, T_, 77, T_, 76,   74, T_, 72, 70, T_, 69, T_, T_,
+                                   74, T_, 77, T_, 79, T_, 81, T_,   79, T_, 77, 76, T_, 74, T_, T_};
+static void choir_hook(const uint8_t *mel, const uint8_t *const *bar)
+{
+    track_t *t = &trk[1];
+    uint32_t i, j, c;
+    memset(t->step, 0, sizeof t->step);
+    for (i = 0; i < NSTEP; i++)
+        t->step[i].time = ST_REST;
+    t->p[P_SDIV] = 1;
+    t->p[P_SLEN] = 32;
+    t->p[P_SGATE] = 127;
+    for (i = 0; i < 32u; i++) {
+        uint8_t nt[3];
+        if (mel[i] == T_) {
+            put_step(t, i, 0, nt, ST_TIE, 0);
+            continue;
+        }
+        nt[0] = mel[i];
+        for (j = 1, c = mel[i] - 1u; j < 3u && c > 40u; c--) {   /* the next chord tones down */
+            const uint8_t *ch = bar[i / 8u];
+            if (c % 12u == ch[0] || c % 12u == ch[1] || c % 12u == ch[2])
+                nt[j++] = (uint8_t)c;
+        }
+        put_step(t, i, 3, nt, ST_NOTE, i % 8u ? 0u : SF_ACCENT);
+    }
+}
+#define DM {50, 53, 57}
+#define BB {50, 53, 58}
+#define AM {49, 52, 57}
+static const steps_t C_A = {{DM, TIE, TIE, TIE, TIE, TIE, TIE, TIE, BB, TIE, TIE, TIE, AM, TIE, TIE, TIE}};
+static const steps_t C_D = {{{50, 57, 62}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE,
+                             {49, 57, 64}, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE, TIE}};
+
+/* T3 SAURUS: the creatures. One track, its call changed by automation on the step it sounds (CALL SIZE SWOOP LEN GROWL
+ * BRTH MOUTH WILD and the envelope, from the factory creatures): the brachiosaur's bellow, the raptors' barks
+ * answering the riff, the tyrant's roar */
+enum { BRACHIO, RAPTOR, TYRANT };
+static const int8_t CREATURE[3][12] = {
+    {1, 120, 42, 108, 20, 35, 90, 25, 40, 90, 55, 90},     /* BRACHIO CALL (held softer: far off) */
+    {3, 35, 55, 82, 80, 60, 120, 50, 0, 70, 127, 40},      /* RAPTOR BARK */
+    {2, 105, 58, 102, 100, 45, 127, 30, 4, 90, 90, 80},    /* TYRANT ROAR (its body under the raptors' level) */
+};
+typedef struct { uint8_t step, who, note, len; } cry_t;
+static void creatures(const cry_t *c, uint32_t n)
+{
+    track_t *t = &trk[2];
+    uint32_t i, j;
+    memset(t->step, 0, sizeof t->step);
+    for (i = 0; i < NSTEP; i++)
+        t->step[i].time = ST_REST;
+    t->p[P_SDIV] = 1;
+    t->p[P_SLEN] = 32;
+    t->p[P_SGATE] = 127;
+    motion_clear(t);
+    for (i = 0; i < n; i++) {
+        uint8_t nt = c[i].note;
+        put_step(t, c[i].step, 1, &nt, ST_NOTE, SF_ACCENT);
+        t->step[c[i].step].vel = 127;
+        for (j = 1; j < c[i].len; j++)
+            put_step(t, c[i].step + j, 0, &nt, ST_TIE, 0);
+        for (j = 0; j < 8u; j++)
+            motion_set_event(t, c[i].step, P_E0 + j, CREATURE[c[i].who][j]);
+        for (j = 0; j < 4u; j++)
+            motion_set_event(t, c[i].step, P_ATK + j, CREATURE[c[i].who][8 + j]);
+    }
+}
+/* A: two brachiosaurs far across the valley; B: raptors bark in the riff's gaps; C: the tyrant roars at the top,
+ * raptors after it; D: a brachiosaur, then the tyrant roars into the return */
+static const cry_t K_A[] = {{0, BRACHIO, 45, 12}, {18, BRACHIO, 41, 12}};
+static const cry_t K_B[] = {{7, RAPTOR, 64, 1}, {15, RAPTOR, 62, 1}, {23, RAPTOR, 65, 1}, {30, RAPTOR, 64, 1}, {31, RAPTOR, 67, 1}};
+static const cry_t K_C[] = {{0, TYRANT, 45, 10}, {13, RAPTOR, 66, 1}, {14, RAPTOR, 64, 1}, {27, RAPTOR, 67, 1},
+                            {29, RAPTOR, 65, 1}, {30, RAPTOR, 64, 1}};
+static const cry_t K_D[] = {{0, BRACHIO, 45, 14}, {22, TYRANT, 43, 10}};
+
+/* the sounds (one set for the whole song), their mix and effects: a giant's valley */
 static void sounds(void)
 {
     host_preset(&trk[0], ENGI_FM6, preset_of(ENGI_FM6, "MAMMOTH"));
     host_preset(&trk[1], 5, preset_of(5, "EPIC CHOIR"));
-    host_preset(&trk[2], 0, preset_of(0, "CANYON HORN"));
-    host_preset(&trk[3], ENGI_DRUM, preset_of(ENGI_DRUM, "TRIBAL KIT"));
-    trk[0].p[P_LEVEL] = 117; trk[0].p[P_PAN] = 0;           /* (balanced by ear and meter: the riff and the drums lead, the hook over them, the choir a bed) */
-    trk[1].p[P_LEVEL] = 64;  trk[1].p[P_PAN] = -18;
-    trk[2].p[P_LEVEL] = 86;  trk[2].p[P_PAN] = 14;  trk[2].p[P_GLIDE] = 18;   /* the horn glides: Vangelis */
-    trk[3].p[P_LEVEL] = 113;
+    host_preset(&trk[2], ENGI_SAURUS, preset_of(ENGI_SAURUS, "RAPTOR BARK"));
+    host_preset(&trk[3], ENGI_DRUM, preset_of(ENGI_DRUM, "WAR DRUMS"));
+    trk[1].p[P_ATK] = 45;                                   /* the choir sings the hook: a quicker attack */
+    trk[1].p[P_REL] = 90;
+    trk[2].p[P_VOICE] = V_POLY;                             /* (a call rings on under the next) */
+    /* levels (balanced by meter: the riff and the choir lead, the drums under them, the creatures on top), pan */
+    trk[0].p[P_LEVEL] = 116; trk[0].p[P_PAN] = 0;
+    trk[1].p[P_LEVEL] = 79;  trk[1].p[P_PAN] = 0;   trk[1].p[P_SPRD] = 90;
+    trk[2].p[P_LEVEL] = 102; trk[2].p[P_PAN] = 10;
+    trk[3].p[P_LEVEL] = 96;  trk[3].p[P_PAN] = 0;
+    /* sends: DIST CHORUS DELAY REVERB */
+    trk[0].p[P_DIST] = 18; trk[0].p[P_CHOR] = 0;  trk[0].p[P_DLY] = 0;  trk[0].p[P_REV] = 55;
+    trk[1].p[P_DIST] = 0;  trk[1].p[P_CHOR] = 70; trk[1].p[P_DLY] = 18; trk[1].p[P_REV] = 72;
+    trk[2].p[P_DIST] = 10; trk[2].p[P_CHOR] = 0;  trk[2].p[P_DLY] = 45; trk[2].p[P_REV] = 110;
+    trk[3].p[P_DIST] = 12; trk[3].p[P_CHOR] = 0;  trk[3].p[P_DLY] = 0;  trk[3].p[P_REV] = 80;
 #ifdef DS_SOLO
+    song.master_q12 = 1024;                                 /* (under the limiter: a track's own level) */
     for (uint32_t k = 0; k < NTRK; k++)
         if (k != DS_SOLO)
             trk[k].p[P_LEVEL] = 0;
 #endif
-    trk[2].p[P_REV] = 70; trk[1].p[P_REV] = 90; trk[0].p[P_REV] = 45; trk[3].p[P_REV] = 55;
 }
-static void slot(uint32_t s, const steps_t *r, const steps_t *c, const steps_t *h, uint32_t hl, const steps_t *d)
+static void slot(uint32_t s, const steps_t *r, const steps_t *c, const uint8_t *hook, const uint8_t *const *bars,
+                 const cry_t *k, uint32_t nk, const steps_t *d)
 {
     steps(0, 1, 16, r);
-    steps(1, 1, 16, c);
-    steps(2, 1, hl, h);
-    steps(3, 2, 32, d);
+    if (hook)
+        choir_hook(hook, bars);
+    else
+        steps(1, 1, c == &C_A ? 16u : 32u, c);
+    creatures(k, nk);
+    steps(3, 1, 16, d);
     if (project_save(s))
         fprintf(stderr, "slot %u not saved\n", s);
 }
@@ -133,14 +200,14 @@ int main(int argc, char **argv)
     int32_t o[2 * CTL];
     /* the song: {T1 T2 T3 T4 slots (4: silent)}, repeats */
     static const struct { uint8_t s[4], rep; } ROW[] = {
-        {{0, 0, 4, 0}, 2},                             /* awakening: the riff's long notes, the choir, a heartbeat */
-        {{1, 0, 4, 1}, 2},                             /* the riff stomps in with the beat */
-        {{1, 1, 1, 1}, 2},                             /* the theme */
-        {{2, 2, 2, 2}, 2},                             /* rampage: power fifths, the hook high, the drums wild */
-        {{3, 3, 3, 3}, 1},                             /* breakdown: a held note, the choir alone, a lone call */
-        {{1, 1, 2, 1}, 2},                             /* the theme under the high hook */
+        {{0, 0, 0, 0}, 2},                             /* awakening: long riff notes, the choir, brachiosaurs, a heartbeat */
+        {{1, 0, 4, 1}, 2},                             /* the riff stomps in with the drums */
+        {{1, 1, 1, 1}, 2},                             /* the theme: the choir sings the hook, raptors answer */
+        {{2, 2, 2, 2}, 2},                             /* rampage: the tyrant roars, power fifths, the hook higher */
+        {{3, 3, 3, 3}, 1},                             /* breakdown: a held note, a brachiosaur; the tyrant roars into .. */
+        {{1, 2, 1, 1}, 2},                             /* .. the theme with the high hook */
         {{2, 2, 2, 2}, 2},                             /* rampage */
-        {{0, 3, 4, 3}, 1},                             /* the titan walks away */
+        {{0, 3, 0, 3}, 1},                             /* the giants walk away */
     };
     rep = fopen("/dev/null", "w");
     ui_power_on();
@@ -149,18 +216,22 @@ int main(int argc, char **argv)
     song.g[G_BPM] = 70;
     song.g[G_RTYPE] = 2;                               /* HALL */
     fx.rtype = 2;
-    song.g[G_RSIZE] = 110;
-    song.g[G_RDAMP] = 60;
+    song.g[G_RSIZE] = 127;                             /* the biggest hall: a valley */
+    song.g[G_RDAMP] = 55;
+    song.g[G_DTIME] = 0;                               /* echoes a quarter apart, off the cliffs */
+    song.g[G_DFDBK] = 50;
+    song.g[G_DCOLOR] = 45;
     song.g[G_TAPE] = 25;
+    song.master_q12 = 1300;                            /* (MASTER at ~3/4: the mix under the limiter, its dynamics kept) */
     song.batt_raw = 600;
     usb.config = 0;
     rev_clear();
     hall_clear();
     sounds();
-    slot(0, &R_A, &C_A, 0, 16, &D_A);
-    slot(1, &R_B, &C_B, &H_B, 32, &D_B);
-    slot(2, &R_C, &C_C, &H_C, 32, &D_C);
-    slot(3, &R_D, &C_D, &H_D, 32, &D_D);
+    slot(0, &R_A, &C_A, 0, 0, K_A, 2, &D_A);
+    slot(1, &R_B, 0, HOOK_B, BAR_B, K_B, 5, &D_B);
+    slot(2, &R_C, 0, HOOK_C, BAR_C, K_C, 6, &D_C);
+    slot(3, &R_D, &C_D, 0, 0, K_D, 2, &D_D);
     rows = sizeof ROW / sizeof ROW[0];
     chain_defaults(&chain_config);
     chain_config.count = (uint8_t)rows;
