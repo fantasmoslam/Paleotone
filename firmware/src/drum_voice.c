@@ -279,17 +279,17 @@ static const dv_kit_t DV_KIT[DV_NKIT][DV_NLANE] = {
         /* SKIN: a hide drum struck with the palm: one shell 196 Hz, a dark short rattle (band ~1 kHz) */
         {DVT_SNARE, 40, 880, 300, 4400, {0, 60, 120, 90, 0, 12000, 1344, 8192, 30, 0, 20000, 0, 1828}},
         /* CLAP: many hands: four claps ~14 ms apart, band ~1 kHz, a dry tail */
-        {DVT_CLAP, 48, 1331, 160, 15000, {0, 3000, 1678, 0, 2000, 30000, 30, 600, 4, 0, 0, 0, 0}},
+        {DVT_CLAP, 48, 1331, 160, 10600, {0, 3000, 1678, 0, 2000, 30000, 30, 600, 4, 0, 0, 0, 0}},
         /* SEEDS: a seed-pod shaker, noise only through a band near 3.7 kHz, a longer swish in */
-        {DVT_HATC, 45, 1700, 200, 4300, {1700, 2048, 1650, 2042, 0, 0, 22000, 50, 6, 0, 0, 0, 0}},
+        {DVT_HATC, 45, 1700, 200, 3290, {1700, 2048, 1650, 2042, 0, 0, 22000, 50, 6, 0, 0, 0, 0}},
         /* RATTL: a bone rattle: noise and a little dull metal, lower, ~0.4 s */
-        {DVT_HATO, 63, 1750, 400, 3000, {1750, 4096, 1700, 2042, 0, 6000, 20000, 20, 3, 0, 0, 0, 0}},
+        {DVT_HATO, 63, 1750, 400, 3900, {1750, 4096, 1700, 2042, 0, 6000, 20000, 20, 3, 0, 0, 0, 0}},
         /* LOG: a hollow log drum, 220 Hz, a short woody ring, a stick's knock */
-        {DVT_TOM, 53, 912, 250, 2600, {10, 200, 1300, 6000, 2000, 0, 0, 0, 0, 0, 0, 0, 0}},
+        {DVT_TOM, 53, 912, 250, 3470, {10, 200, 1300, 6000, 2000, 0, 0, 0, 0, 0, 0, 0, 0}},
         /* BONE: two bones knocked, 1.2 kHz and a 5th above, dry */
         {DVT_RIM, 32, 1376, 40, 5600, {112, 22000, 9000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-        /* ROCK: a ringing stone slab: the four-square metal's low bands, a hard strike, a shorter ring */
-        {DVT_CYM, 53, 820, 1500, 9500, {1300, 3413, 1100, 3413, 8000, 16000, 60, 19661, 0, 2, 0, 0, 0}},
+        /* ROCK: a ringing stone slab: the four-square metal's low bands, a short ring */
+        {DVT_CYM, 53, 900, 1500, 13400, {1500, 3413, 1300, 3413, 12000, 9000, 60, 19661, 0, 2, 0, 0, 0}},
     },
 };
 
