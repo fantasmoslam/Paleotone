@@ -22,6 +22,8 @@ The soundscape maker needs biomes, and sounds to support them, water most of all
 - Globals: time of day, danger, weather, density; a biome picker.
 - A layer can be sent to a track (a SCAPE choice on a track) to sequence it.
 - Voices: shares the 12; the quietest layers give way first.
+- Biomes (previewed 2026-10-23, scratchpad work/biomes.py): WATER, JUNGLE, TUNDRA, FOREST, PLAINS, MOUNTAINS, CANYONS,
+  CALDERA. Feedback: wind too loud everywhere: start wind layers ~8 dB lower by default; every layer's level adjustable.
 
 ## The growl (agreed from growl_preview_3)
 
