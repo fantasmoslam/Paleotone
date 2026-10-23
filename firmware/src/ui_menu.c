@@ -37,7 +37,7 @@ enum { MC_TEXT, MC_TITLE, MC_URL };
 typedef struct { const char *text; uint8_t kind; } menu_credit_t;
 static const menu_credit_t MENU_CREDITS[] = {
     {"GHOULBOX", MC_TITLE},                   /* DINOBOX is a fork of it */
-    {"Jason Persinger: DINOBOX is built on GHOULBOX " GHOULBOX_VERSION ", GPL-3.0", MC_TEXT},
+    {"Jason Persinger: PALEOTONE is built on GHOULBOX " GHOULBOX_VERSION ", GPL-3.0", MC_TEXT},
     {"https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth", MC_URL},
     {"", MC_TEXT},
     {"H\xFCgelton Instruments", MC_TITLE},  /* Felucca's own: above; these are ours too */

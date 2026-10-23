@@ -166,6 +166,7 @@ static uint32_t sc_wait(uint32_t per_min, uint32_t k)
 static sc_voice_t *sc_voice(void)                       /* a free one, else none (the scape never steals its own) */
 {
     uint32_t i;
+    if (voices_busy() >= NVOICE) return 0;
     for (i = 0; i < SC_NV; i++)
         if (sc.v[i].type == MV_FREE)
             return &sc.v[i];
@@ -666,8 +667,7 @@ static void sc_encounter(void)
 {
     const sc_biome_t *b = &SC_BIOMES[sc.biome];
     uint32_t big = sc.danger < 43u ? 0u : sc.danger < 86u ? 1u : 2u, t, step, half;
-    if (!sc.danger)
-        return;
+    if (!sc.danger) { sc.enc_len=0; sc.hush_to=32767; return; }
     if (!sc.enc_len) {                                  /* waiting for the next */
         if (sc.enc_wait > 1u) {
             sc.enc_wait--;
@@ -770,6 +770,7 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
     uint32_t k, i;
     int32_t g;
 #ifndef SCAPE_AUDITION
+    if (!song.g[G_SC_LEVEL] && !sc.level && !sc_animal.v[0].active && !sc_biome_req) return;
     scape_sync();
     if (sc_cooldown) {
         sc_cooldown--;
@@ -800,6 +801,7 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
             continue;
         if (y->kind < SK_BEDS)
             sc_bed_run(k, bl, br, bv, n);
+        if (!y->dens || !sc.dens) continue;
         per = SK_INFO[y->kind].per_min;
         if (!per)
             continue;

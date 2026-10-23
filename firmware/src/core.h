@@ -120,6 +120,7 @@ static uint32_t scape_busy(void);
 static void scape_yield(void);
 static int scape_reduce(void);
 static void scape_select(uint32_t b);
+static void scape_restart(void);
 
 
 /* stored parameters of an older layout -> today's P_* order. A store keeps np = the P_COUNT it was

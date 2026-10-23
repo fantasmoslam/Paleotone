@@ -1078,6 +1078,7 @@ static int project_restore_runtime(const project_t *input)
     seq_stop();
     transport_req = 0;
     dream_forget();                                     /* GHOULBOX 2.3.1: EVOL rebuilds from this project's tracks */
+    scape_restart();
     chain_config = p->chain;
     motion = p->motion;
     memset(motion_active, 0, sizeof motion_active);

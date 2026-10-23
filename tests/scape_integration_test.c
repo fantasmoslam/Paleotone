@@ -48,6 +48,15 @@ int main(void)
     CHECK(sc_cooldown>0);
     for(k=0;k<4;k++) scape_block(out,out+CTL,out,CTL);
     CHECK(sc_work_gain==0);
+    scape_restart();
+    for(i=0;i<NTRK;i++) memset(trk[i].v,0,sizeof trk[i].v);
+    song.g[G_SC_LEVEL]=112; song.g[G_SC_DENS]=0;
+    song.g[G_SC_DANGER]=0; song.g[G_SC_WEATHER]=0; song.g[G_SC_DTYPE]=0;
+    for(k=0;k<20000;k++) mix_block(out,CTL);
+    CHECK(sc.nspawn==0);
+    sc.danger=110; sc.enc_len=100; sc.hush_to=4000; sc.danger=0;
+    sc_encounter(); CHECK(!sc.enc_len && sc.hush_to==32767);
+    for(i=0;i<NPAGES;i++) if(PAGES[i].fam==FAM_GLO) { CHECK(PAGES[i].graph==GR_SONG); break; }
     printf("SCAPE integration: %s\n",failures?"FAIL":"PASS");
     return failures ? 1 : 0;
 }
