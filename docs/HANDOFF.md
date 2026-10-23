@@ -152,8 +152,14 @@ Things that broke before and what fixes them:
    `gfx.c` `ux_track`), the MIXER and HOME TRACKS show each track's; T1 keeps the palette's ACCENT, T2..T4 three
    hues per palette checked for contrast as ACCENT (`tools/gen_ui_palettes.py` `track_colours`, `UI_TRK_ACCENT`);
    GREY and MONO one colour. Tests: `tests/ui_test.c` `test_home_track_keys`.
-4. **MIDI** (original step 5): a MIDI channel per track (or off), the sequencer's notes out over USB MIDI, MIDI clock
-   out.
+4. **MIDI** (original step 5): built on the branch `midi-out`. MENU > MIDI: T1..T4 OUT (OFF, AUTO = the channel in
+   MIDI IN's block as the keys always had, CH 1..16) and CLOCK OUT (OFF / ON). Device settings, not the project's (the
+   project format has 2 bytes left): bytes 1..5 of the retired DIGITAL engine's favourites (`menu_items.c` `MO_BYTES`).
+   The keys and now the sequencer's notes (steps, chords, ratchets, DRUM lanes as GM notes) go out on each track's
+   channel, USB only (the TRS jack is an input); every note gets its note-off (STOP, panic, mute, a channel change:
+   CC123 on the old one). CLOCK OUT: 24 a quarter with CLK INT, always; START with PLAY, STOP with STOP; none on an
+   external clock. Code: `seq.c` `mo_*`, `seq_on` / `seq_off`; editor ids 26..30. Tests: `tests/midi_control_test.c`
+   `midi_out_test`.
 5. **Each step:** previews to the owner first, then the full host suite, the GitHub build, the firmware sent with
    short Windows install notes.
 
