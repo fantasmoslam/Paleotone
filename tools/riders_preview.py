@@ -126,11 +126,28 @@ def clips(s, outdir):
               f" / {db(band(ld, lo, hi)) - db(band(bk, lo, hi)):+5.1f} dB")
 
 
+# ------------------------------------------------------------------ approved balance (owner chose option B, 2026-10-23)
+LEAD_DB = -12.0
+
+
+def full(s, outdir):
+    y = mix(s, LEAD_DB)
+    y = y[: at(plan.BARS) + int(4 * SR)]
+    y[-int(3 * SR):] *= np.linspace(1, 0, int(3 * SR))
+    write(outdir / "3_full_song_lead_-12dB.wav", y)
+    bk = sum(s[k] for k in ("roar", "bass", "drums"))
+    ld = s["lead"] * 10 ** (LEAD_DB / 20)
+    print("section  lead-minus-backing 500-2500 Hz")
+    for a, b in ((10, 16), (16, 24), (32, 40), (40, 44), (44, 48)):
+        print(f"  {a:2d}-{b:2d}  {db(band(ld[at(a):at(b)], 500, 2500)) - db(band(bk[at(a):at(b)], 500, 2500)):+5.1f} dB")
+
+
 if __name__ == "__main__":
     outdir = Path(sys.argv[1] if len(sys.argv) > 1 else "build/riders_preview")
     outdir.mkdir(parents=True, exist_ok=True)
     s = stems()
     np.savez_compressed(outdir / "stems.npz", **s)
     clips(s, outdir)
+    full(s, outdir)
     for k, v in s.items():
         print(f"{k:6s} " + " ".join(f"{db(v[at(a):at(b)]):6.1f}" for a, b in ((0, 8), (10, 16), (16, 24), (32, 40))))
