@@ -1,0 +1,18 @@
+name: SCAPE storage foundation
+on:
+  push:
+    branches: [codex/scape-storage-foundation]
+permissions:
+  contents: read
+jobs:
+  codec:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Independent layout and corruption checks
+        run: |
+          mkdir -p build/host
+          cc -std=c99 -O2 -Wall -Wextra -Werror tests/patch7_test.c -o build/host/patch7_test
+          build/host/patch7_test
+          cc -std=c99 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all tests/patch7_test.c -o build/host/patch7_sanitized
+          build/host/patch7_sanitized
