@@ -420,8 +420,11 @@ static void sc_voice_run(sc_voice_t *v, int32_t *l, int32_t *r, int32_t *rev, ui
             int32_t z = (int32_t)(noise32(&v->rng) >> 17) - 16384;
             xb[i] = (sine_i(v->ph) >> 1) + tsvf_lp(&v->f, z, &v->f1, &v->f2);
             if (v->mode == 3u) {                         /* heavy foot: short ground impact above the sub body */
-                xb[i] += (sine_i(v->ph * 2u) >> 3) + mulq15(z, (int32_t)v->aph) / 3;
-                v->aph -= v->aph >> 8;                  /* about 6 ms: impact, not continuous hiss */
+                xb[i] += (sine_i(v->ph) >> 2) + (sine_i(v->ph * 2u) >> 2)
+                         + mulq15(z, (int32_t)v->aph) / 2;
+                if (++v->ainc == FS * 45u / 1000u)
+                    v->aph = 14000u;                   /* ground settling after the initial strike */
+                v->aph -= v->aph >> 9;                  /* short gritty impact, below the long low body */
             }
             v->ph += inc;
         }
@@ -439,7 +442,7 @@ static void sc_voice_run(sc_voice_t *v, int32_t *l, int32_t *r, int32_t *rev, ui
     if (v->glide != 65536)                              /* the glide: per block */
         v->inc = (uint32_t)(((uint64_t)v->inc * (uint32_t)v->glide) >> 16);
     if (v->type == MV_THUMP && v->inc > v->inc_lo)
-        v->inc -= (v->inc - v->inc_lo) >> 4;            /* (to the note in ~20 ms) */
+        v->inc -= (v->inc - v->inc_lo) >> (v->mode == 3u ? 6 : 4);
     if (v->stage == 1 && v->env < 40) {                 /* the note is over */
         if (v->reps) {
             v->reps--;
@@ -692,12 +695,14 @@ static void sc_encounter(void)
             v->rng = (int32_t)(sc_rnd() | 1u);
             v->type = MV_THUMP;
             v->glide = 65536;
-            v->lo = v->hi = (int16_t)(big == 2u ? 38 : 55);
+            v->lo = v->hi = (int16_t)(big == 2u ? 32 : 55);
             tsvf_coef(&v->f, sc_cut(big == 2u ? 140 : 220), 0);
-            sc_env(v, big == 2u ? 5 : 2, big == 2u ? 650 : 220, 32767);
+            sc_env(v, big == 2u ? 5 : 2, big == 2u ? 900 : 220, 32767);
             /* Heavy steps emerge from the distance, rise steeply close by, then recede. */
+            if (big == 2u)
+                x = x * (x < 0 ? -x : x) / 32767;      /* linger near the centre at the closest pass */
             sc_place(v, sc.enc_side ? -x : x, near,
-                     big == 2u ? 1800 + (127 - near) * (127 - near) * 25000 / (110 * 110) : 9000);
+                     big == 2u ? 1800 + (127 - near) * (127 - near) * 30000 / (110 * 110) : 9000);
             sc_note(v);
             if (big == 2u) { v->mode = 3u; v->aph = 32767u; }
         } else if (v) {
