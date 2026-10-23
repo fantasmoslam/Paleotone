@@ -28,6 +28,8 @@ jobs:
       - name: Full regression suite
         run: HOST_ONLY=1 tests/run_tests.sh
   firmware:
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     container: debian:bookworm-slim
     timeout-minutes: 30
@@ -76,3 +78,67 @@ jobs:
             build.log
             build/felucca.dis
           if-no-files-found: error
+
+
+
+
+
+      - name: Preserve candidate download separately from installed firmware
+        shell: bash
+        run: |
+          mkdir -p /tmp/paleo-package
+          cp dinobox.fwsc build.log /tmp/paleo-package/
+          printf '%s success\n' "$GITHUB_SHA" > /tmp/paleo-package/RESULT
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if git ls-remote --exit-code --heads origin paleotone-candidate-output >/dev/null; then
+            git fetch origin paleotone-candidate-output
+            git checkout -B paleotone-candidate-output FETCH_HEAD
+          else
+            git checkout --orphan paleotone-candidate-output
+          fi
+          git rm -rf .
+          cp /tmp/paleo-package/* .
+          git add .
+          git commit -m "PALEOTONE candidate $GITHUB_SHA"
+          git push origin HEAD:refs/heads/paleotone-candidate-output
+  audio:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3 imageio-ffmpeg==0.6.0
+      - run: python3 tools/build.py --gen-only
+      - name: Render real integrated generator and all four tracks
+        run: |
+          mkdir -p build/host
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/paleotone_preview.c -lm -o build/host/paleotone_preview
+          python3 tools/paleotone_preview.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paleotone-integrated-audio
+          path: build/paleotone-audio
+      - name: Preserve audition for connected download
+        run: |
+          mkdir -p /tmp/paleo-audio
+          cp build/paleotone-audio/*.b64 build/paleotone-audio/*.mp3 build/paleotone-audio/cues.txt /tmp/paleo-audio/
+          printf '%s\n' "$GITHUB_SHA" > /tmp/paleo-audio/SOURCE
+          sha256sum build/paleotone-audio/paleotone-integrated.mp3 > /tmp/paleo-audio/SHA256
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if git ls-remote --exit-code --heads origin paleotone-audio-output >/dev/null; then
+            git fetch origin paleotone-audio-output
+            git checkout -B paleotone-audio-output FETCH_HEAD
+          else
+            git checkout --orphan paleotone-audio-output
+          fi
+          git rm -rf .
+          cp /tmp/paleo-audio/* .
+          git add .
+          git commit -m "PALEOTONE integrated audition $GITHUB_SHA"
+          git push origin HEAD:refs/heads/paleotone-audio-output
