@@ -6,6 +6,7 @@ permissions:
   contents: read
 jobs:
   host-tests:
+    if: "!contains(github.event.head_commit.message, '[package-only]')"
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -89,19 +90,21 @@ jobs:
           mkdir -p /tmp/paleo-package
           cp dinobox.fwsc build.log /tmp/paleo-package/
           printf '%s success\n' "$GITHUB_SHA" > /tmp/paleo-package/RESULT
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          if git ls-remote --exit-code --heads origin paleotone-candidate-output >/dev/null; then
+          if git ls-remote --exit-code --heads origin paleotone-candidate-output >/dev/null 2>&1; then
             git fetch origin paleotone-candidate-output
-            git checkout -B paleotone-candidate-output FETCH_HEAD
+            git worktree add --detach /tmp/paleo-publish FETCH_HEAD
           else
-            git checkout --orphan paleotone-candidate-output
+            git worktree add --detach /tmp/paleo-publish HEAD
+            git -C /tmp/paleo-publish checkout --orphan paleo-publish
           fi
-          git rm -rf .
-          cp /tmp/paleo-package/* .
-          git add .
-          git commit -m "PALEOTONE candidate $GITHUB_SHA"
-          git push origin HEAD:refs/heads/paleotone-candidate-output
+          git -C /tmp/paleo-publish rm -rf --ignore-unmatch .
+          cp /tmp/paleo-package/* /tmp/paleo-publish/
+          git -C /tmp/paleo-publish add -- dinobox.fwsc build.log RESULT
+          git -C /tmp/paleo-publish commit -m "PALEOTONE candidate $GITHUB_SHA"
+          git -C /tmp/paleo-publish push origin HEAD:refs/heads/paleotone-candidate-output
   audio:
     runs-on: ubuntu-24.04
     permissions:
@@ -131,14 +134,15 @@ jobs:
           sha256sum build/paleotone-audio/paleotone-integrated.mp3 > /tmp/paleo-audio/SHA256
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          if git ls-remote --exit-code --heads origin paleotone-audio-output >/dev/null; then
+          if git ls-remote --exit-code --heads origin paleotone-audio-output >/dev/null 2>&1; then
             git fetch origin paleotone-audio-output
-            git checkout -B paleotone-audio-output FETCH_HEAD
+            git worktree add --detach /tmp/paleo-audio-publish FETCH_HEAD
           else
-            git checkout --orphan paleotone-audio-output
+            git worktree add --detach /tmp/paleo-audio-publish HEAD
+            git -C /tmp/paleo-audio-publish checkout --orphan paleo-audio-publish
           fi
-          git rm -rf .
-          cp /tmp/paleo-audio/* .
-          git add .
-          git commit -m "PALEOTONE integrated audition $GITHUB_SHA"
-          git push origin HEAD:refs/heads/paleotone-audio-output
+          git -C /tmp/paleo-audio-publish rm -rf --ignore-unmatch .
+          cp /tmp/paleo-audio/* /tmp/paleo-audio-publish/
+          git -C /tmp/paleo-audio-publish add -- SOURCE SHA256 cues.txt paleotone-integrated.mp3 'audio-*.b64'
+          git -C /tmp/paleo-audio-publish commit -m "PALEOTONE integrated audition $GITHUB_SHA"
+          git -C /tmp/paleo-audio-publish push origin HEAD:refs/heads/paleotone-audio-output
