@@ -1,4 +1,0 @@
-0:00 Music alone: four tracks: integrated: rms -15.0 dBFS, peak -5.9 dBFS, music voice kills 0
-0:11 Four tracks with integrated JUNGLE: integrated: rms -14.0 dBFS, peak -5.6 dBFS, music voice kills 0
-0:44 Integrated JUNGLE encounter alone: integrated: rms -18.9 dBFS, peak -5.6 dBFS, music voice kills 0
-1:18 Integrated WATER alone: integrated: rms -31.9 dBFS, peak -15.5 dBFS, music voice kills 0
