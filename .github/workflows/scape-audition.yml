@@ -1,0 +1,50 @@
+name: Biome generator audition
+on:
+  push:
+    branches: [codex/scape-resource-audition]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3 imageio-ffmpeg==0.6.0
+      - run: python3 tools/build.py --gen-only
+      - name: Render the experimental generator through the current firmware mixer
+        run: |
+          mkdir -p build/host build/scape
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/scape_preview.c -lm -o build/host/scape_preview
+          python3 tools/scape_preview.py
+          for biome in 0 1 2 3 4 5 6 7; do
+            echo "Biome $biome host cost (relative timing, not target CPU)"
+            SCAPE_COST=1 build/host/scape_preview /dev/null 30 "$biome" 2 3 127
+          done | tee build/scape/host-cost.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: biome-generator-audition
+          path: |
+            build/scape/dinobox_scape_preview.mp3
+            build/scape/cues.txt
+            build/scape/host-cost.txt
+      - name: Save audition for connected download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/scape-output
+          cp build/scape/dinobox_scape_preview.mp3 build/scape/cues.txt build/scape/host-cost.txt /tmp/scape-output/
+          printf '%s\n' "$GITHUB_SHA" > /tmp/scape-output/SOURCE
+          sha256sum /tmp/scape-output/dinobox_scape_preview.mp3 > /tmp/scape-output/SHA256
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git checkout --orphan scape-audition-output
+          git rm -rf .
+          cp /tmp/scape-output/* .
+          git add .
+          git commit -m "Biome audition from $GITHUB_SHA"
+          git push origin HEAD:refs/heads/scape-audition-output
