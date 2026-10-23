@@ -30,6 +30,8 @@ static const uint8_t ED_MENU[][2] = {
     {MI_TUNE, 23},                                     /* 1.2: the project's G_TUNE (was GLO > GLOBAL), AUDIO */
     {MI_HOME, 24},                                     /* 1.3 (Discussions #112, #134): HOME SCOPE / TRACKS, DISPLAY */
     {MI_NAMES, 25},                                    /* GHOULBOX 2.1: NOTE NAMES ON / OFF, CONTROL */
+    {MI_OUT1, 26}, {MI_OUT2, 27}, {MI_OUT3, 28}, {MI_OUT4, 29},   /* DINOBOX: T1..T4 OUT, MIDI */
+    {MI_CLKOUT, 30},                                   /* DINOBOX: CLOCK OUT, MIDI */
 };
 #define ED_MENU_N NELEM(ED_MENU)
 

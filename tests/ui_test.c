@@ -1697,11 +1697,11 @@ static int test_menu_tabs(void)
             }
     }
     ui_prefs = 0;
-    bad += check("MENU tabs: DISPLAY CONTROL AUDIO MIDI SYSTEM (8 8 6 1 6 rows: GHOULBOX's SCENE, NOTE NAMES), 1..8 each in a run, fit the page; tab gaps "
+    bad += check("MENU tabs: DISPLAY CONTROL AUDIO MIDI SYSTEM (8 8 6 6 6 rows: GHOULBOX's SCENE, NOTE NAMES), 1..8 each in a run, fit the page; tab gaps "
                  "constant (S, LARGE)",
                  ok && MTAB_COUNT == 5u && str_eq(MTAB_NAME[0], "DISPLAY") && str_eq(MTAB_NAME[MTAB_MIDI], "MIDI") &&
                  mtab_rows(MTAB_DISPLAY) == 8u && MI_TAB[MI_HOME] == MTAB_DISPLAY && mtab_rows(MTAB_CONTROL) == 8u && MI_TAB[MI_NAMES] == MTAB_CONTROL && mtab_rows(MTAB_AUDIO) == 6u &&
-                 mtab_rows(MTAB_MIDI) == 1u && mtab_rows(MTAB_SYSTEM) == 6u && MI_TAB[MI_SCENE] == MTAB_SYSTEM && MI_TAB[MI_TUNE] == MTAB_AUDIO &&
+                 mtab_rows(MTAB_MIDI) == 6u && mtab_rows(MTAB_SYSTEM) == 6u && MI_TAB[MI_SCENE] == MTAB_SYSTEM && MI_TAB[MI_TUNE] == MTAB_AUDIO &&
                  MI_TAB[MI_MIDIIN] == MTAB_MIDI && MI_TAB[MI_INFO] == MTAB_SYSTEM && MI_INFO >= MI_VALUES);
 
     ui_power_on();
@@ -1717,7 +1717,7 @@ static int test_menu_tabs(void)
     turn(EN_PRESET, 1); turn(EN_PRESET, 1); ok &= ui.menu_sel == MI_LATCH;
     turn(EN_ALGO, 1); ok &= ui.menu_sel == MI_LOWCUT && menu_tab() == MTAB_AUDIO;
     turn(EN_ALGO, 1); ok &= ui.menu_sel == MI_MIDIIN && menu_tab() == MTAB_MIDI;   /* (1.2) */
-    turn(EN_PRESET, 1); ok &= ui.menu_sel == MI_MIDIIN;  /* (its only row) */
+    turn(EN_PRESET, 1); ok &= ui.menu_sel == MI_OUT1;    /* (DINOBOX: then T1..T4 OUT, CLOCK OUT) */
     turn(EN_ALGO, 1); ok &= ui.menu_sel == MI_SCENE && menu_tab() == MTAB_SYSTEM;   /* (GHOULBOX: SCENE its first row) */
     turn(EN_ALGO, -1); turn(EN_ALGO, -1); ok &= ui.menu_sel == MI_LOWCUT;
     turn(EN_ALGO, -1); ok &= ui.menu_sel == MI_LATCH;   /* (back at the row left there) */
@@ -3255,6 +3255,11 @@ static int test_layer(void)
     ui_power_on();
     usb.config = 1; mo = mo_w;
     go_page(GR_ROLL); my_steps(TSEL); song.rec = 1; song.playing = 1;
+    for (i = 0; i < NTRK; i++) mo_ch[i] = MO_OFF;       /* (DINOBOX: the sequencer's own MIDI OUT quiet; the keys' */
+    events_block(CTL); mo = mo_w;                       /* is checked: a key never sends with its channel) */
+    for (i = 0; i < NTRK; i++) mo_ch[i] = MO_AUTO;
+    for (i = 0; i < NTRK; i++) trk[i].p[P_MUTE] = 1;    /* (the steps playing send nothing; the key would) */
+    events_block(CTL); mo = mo_w;
     {
         step_t before[NSTEP];
         uint32_t cur = ui.cursor;
@@ -3267,6 +3272,7 @@ static int test_layer(void)
         bad += check("FX + a key: the map at once; no voice, no MIDI, no recording, no step written", ok);
         key_up(white(2)); frame();
         bad += check("  the key let go: its effect off, no note-off sent", !perf_held && !kb_layer && mo_w == mo);
+        for (i = 0; i < NTRK; i++) trk[i].p[P_MUTE] = 0;   /* (DINOBOX: the mutes above, put back) */
         btn_up(B_FX); frame();
         bad += check("  FX let go after a combo: no tap, the map gone", !ui.layer && cur_page()->graph == GR_ROLL);
     }

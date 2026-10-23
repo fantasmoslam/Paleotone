@@ -952,6 +952,8 @@ before MIDI IN the first 21, 1.2 the first 23):
 | 21 | 21 | MIDI IN | 0 | 0 CH1-4, 1 SEL, 2 CH5-8, 3 CH9-12, 4 CH13-16 (1.2: the project's `G_ROUTE`, global 14) | CH1-4 | 3 MIDI |
 | 22 | 22 | TUNE | 1 | -50..50, unit "ct" (1.2: the project's `G_TUNE`, global 3, cents) | 0 | 2 AUDIO |
 | 23 | 23 | HOME | 0 | 0 SCOPE, 1 TRACKS (1.3) | SCOPE | 0 DISPLAY |
+| 26 | 26 | T1 OUT | 0 | 0 OFF, 1 AUTO (its channel in MIDI IN's block, as before), 2..17 CH 1 .. CH 16 (DINOBOX; T2..T4 OUT: ids 27..29, the same values) | AUTO | 3 MIDI |
+| 30 | 30 | CLOCK OUT | 0 | 0 OFF, 1 ON (DINOBOX: 24 pulses a quarter, START / STOP, with CLK INT only) | OFF | 3 MIDI |
 
 The device's AUDIO tab shows SPEAKER EQ, USB LEVEL, CLICK, CLICK LEVEL, COUNT-IN and (1.2) TUNE (index 9, 10, 12, 13,
 14, 22).

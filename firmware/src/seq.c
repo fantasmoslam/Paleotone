@@ -63,6 +63,64 @@ static int32_t midi_base(void)
 /* MIDI channel 0..15 of track i (keys -> MIDI out): its channel in ROUT's block (SEL, CH1-4: 1..4) */
 static uint32_t trk_midi_ch(uint32_t i) { return (midi_base() > 0 ? (uint32_t)midi_base() : 0u) + i % NTRK; }
 
+/* DINOBOX: MIDI OUT (MENU > MIDI: T1..T4 OUT, CLOCK OUT; settings, settings_persist.c). Each track's channel: AUTO (as
+ * before: its channel in ROUT's block, trk_midi_ch), 1..16, or OFF (nothing of it goes out). The keys' notes and,
+ * new, the sequencer's (its steps, chords, ratchets, the DRUM lanes as their GM notes) go out on it, USB only (the TRS
+ * jack is an input). mo_on keeps the sequencer's notes on at the far end, so every one gets its note-off: a step's
+ * end, STOP, a panic, a mute; a track's channel changing (or ROUT under AUTO) first ends what it played there (CC123,
+ * the keys' notes too). CLOCK OUT: with CLK INT, 24 pulses a quarter note always, START with PLAY, STOP with STOP;
+ * with CLK USB or TRS none (the FM-1 follows; sending it on would loop) */
+#define MO_AUTO 0u
+#define MO_OFF 17u
+static volatile uint8_t mo_ch[NTRK];               /* (the settings' bytes, menu_items.c midi_out_load) */
+static volatile uint8_t mo_clk;
+static uint8_t mo_cur[NTRK];                       /* channel + 1 the sequencer's notes went out on (0 none) */
+static uint8_t mo_last[NTRK] = {0xFEu, 0xFEu, 0xFEu, 0xFEu};   /* each track's channel the last block (0xFE: none yet) */
+static uint32_t mo_on[NTRK][4];
+static uint32_t mo_cpos;                           /* CLOCK OUT: samples x 24 into the pulse */
+typedef char mo_ntrk4[NTRK == 4 ? 1 : -1];
+static uint32_t trk_out_ch(uint32_t i)             /* 0..15, or 0xFF: OFF */
+{
+    uint32_t c = mo_ch[i % NTRK];
+    return c == MO_AUTO ? trk_midi_ch(i) : c <= 16u ? c - 1u : 0xFFu;
+}
+static void mo_note(uint32_t ch, uint32_t on, uint32_t note, uint32_t vel)
+{
+    if (ch < 16u)
+        midi_out_event(on ? 0x09u | (0x90u | ch) << 8 | note << 16 | vel << 24 : 0x08u | (0x80u | ch) << 8 | note << 16);
+}
+static void mo_seq_flush(uint32_t i)               /* the sequencer's notes of track i off at the far end */
+{
+    uint32_t n;
+    for (n = 0; n < 128u; n++)
+        if ((mo_on[i][n >> 5] >> (n & 31u)) & 1u)
+            mo_note(mo_cur[i] - 1u, 0, n, 0);
+    memset(mo_on[i], 0, sizeof mo_on[i]);
+}
+static void seq_on(track_t *t, uint32_t note, uint32_t vel)   /* a sequencer's note on: the sound, then MIDI OUT */
+{
+    uint32_t i = trk_index(t), c, b = 1u << (note & 31u);
+    trk_note_on(t, note, vel);
+    if (t->p[P_MUTE] || note > 127u || (c = trk_out_ch(i)) > 15u)
+        return;
+    if (mo_cur[i] && mo_cur[i] != c + 1u)
+        mo_seq_flush(i);
+    if (mo_on[i][note >> 5] & b)
+        mo_note(c, 0, note, 0);                    /* (a retrigger: its own note-off first) */
+    mo_note(c, 1, note, vel ? vel : 1u);
+    mo_on[i][note >> 5] |= b;
+    mo_cur[i] = (uint8_t)(c + 1u);
+}
+static void seq_off(track_t *t, uint32_t note)
+{
+    uint32_t i = trk_index(t), b = 1u << (note & 31u);
+    trk_note_off(t, note);
+    if (note < 128u && (mo_on[i][note >> 5] & b)) {
+        mo_note(mo_cur[i] - 1u, 0, note, 0);
+        mo_on[i][note >> 5] &= ~b;
+    }
+}
+
 static int drum_track(const track_t *t) { return ENGINES[eng_idx(t->eng_req)] == &ENG_DRUM; }
 
 /* the 27 keys from F: black or white, and the key's place among the keys of its colour (white 0..15, black
@@ -551,7 +609,7 @@ static int latch_on(const track_t *t) { return lt[trk_index(t)].on && !t->p[P_AM
 static void latch_end(track_t *t)                   /* the drone lets go */
 {
     latch_t *l = &lt[trk_index(t)];
-    uint32_t n, mc = trk_midi_ch(trk_index(t));
+    uint32_t n, mc = trk_out_ch(trk_index(t));
     if (!(l->m[0] | l->m[1] | l->m[2] | l->m[3]))
         return;
     for (n = 0; n < 128u; n++) {
@@ -560,7 +618,7 @@ static void latch_end(track_t *t)                   /* the drone lets go */
         l->m[n >> 5] &= ~(1u << (n & 31u));
         trk_note_off(t, n);
         if (lt_has(l->out, n))
-            midi_out_event(0x08u | (0x80u | mc) << 8 | n << 16);
+            mo_note(mc, 0, n, 0);
     }
     memset(l->out, 0, sizeof l->out);
 }
@@ -670,7 +728,7 @@ static __attribute__((noinline)) void perf_key_remap(void)
  * own, or KEYS LAYER's second sound) */
 static void key_on_to(track_t *t, uint32_t note, uint8_t *chord, uint8_t *chn)
 {
-    uint32_t n = chord_build(t, note, chord), i, mc = trk_midi_ch(trk_index(t));
+    uint32_t n = chord_build(t, note, chord), i, mc = trk_out_ch(trk_index(t));
     *chn = 0;
     for (i = 0; i < n; i++) {
         uint32_t x = chord[i];
@@ -678,7 +736,7 @@ static void key_on_to(track_t *t, uint32_t note, uint8_t *chord, uint8_t *chn)
             continue;
         input_on(t, x, 100);
         if (!lt[trk_index(t)].stop)                 /* (a press that ended the drone: silent, MIDI OUT too) */
-            midi_out_event(0x09u | (0x90u | mc) << 8 | x << 16 | 100u << 24);
+            mo_note(mc, 1, x, 100);
     }
     *chn = (uint8_t)n;
 }
@@ -691,7 +749,7 @@ static void key_on(uint32_t k, track_t *t)
 /* key k is up: the notes it started end, but those another key still holds */
 static void key_off_from(track_t *t, const uint8_t *chord, uint8_t *chn)
 {
-    uint32_t n = *chn, i, mc = trk_midi_ch(trk_index(t)), quiet;
+    uint32_t n = *chn, i, mc = trk_out_ch(trk_index(t)), quiet;
     *chn = 0;
     for (i = 0; i < n; i++) {
         uint32_t x = chord[i];
@@ -702,7 +760,7 @@ static void key_off_from(track_t *t, const uint8_t *chord, uint8_t *chn)
         if (lt_has(lt[trk_index(t)].m, x))          /* latched: its note-off with the drone's end (latch_end) */
             lt[trk_index(t)].out[x >> 5] |= 1u << (x & 31u);
         else if (!quiet)
-            midi_out_event(0x08u | (0x80u | mc) << 8 | x << 16);
+            mo_note(mc, 0, x, 0);
     }
 }
 static void key_off(uint32_t k, track_t *t) { key_off_from(t, kb_chord[k], &kb_chn[k]); }
@@ -822,6 +880,10 @@ static void keyboard_block(void)
 static void seq_start(void)
 {
     uint32_t i;
+    if (mo_clk && !song.g[G_CLOCK]) {              /* DINOBOX: CLOCK OUT: START, the first pulse with step 0 */
+        midi_out_event(0x0Fu | 0xFAu << 8);
+        mo_cpos = 0xFFFFFFFFu;
+    }
     motion_begin();
     chain_start();
     for (i = 0; i < NTRK; i++) {                   /* every track from its step 0, together */
@@ -848,7 +910,7 @@ static void seq_release(track_t *t)
 {
     uint32_t i;
     for (i = 0; i < t->seq_n; i++)
-        trk_note_off(t, t->seq_notes[i]);
+        seq_off(t, t->seq_notes[i]);
     t->seq_n = 0;
     t->seq_hold = 0;
     t->slide_glide = 0;                             /* live MONO / LEG keys must not glide after it */
@@ -857,6 +919,8 @@ static void seq_release(track_t *t)
 static void seq_stop(void)
 {
     uint32_t i;
+    if (mo_clk && !song.g[G_CLOCK] && song.playing)   /* DINOBOX: CLOCK OUT: STOP */
+        midi_out_event(0x0Fu | 0xFCu << 8);
     song.playing = 0;
     cin_left = 0;                                  /* (a count-in: cancelled, nothing recorded) */
     cin_flush = 0;
@@ -951,13 +1015,13 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
         seq_release(t);
     for (i = 0; i < m; i++)
         if (!((sk >> i) & 1u))
-            trk_note_on(t, nn[i], vv[i]);
+            seq_on(t, nn[i], vv[i]);
     if (slide_in)                                   /* release what is not held over */
         for (i = 0; i < t->seq_n; i++) {
             for (j = 0; j < m && nn[j] != t->seq_notes[i]; j++)
                 ;
             if (j == m)
-                trk_note_off(t, t->seq_notes[i]);
+                seq_off(t, t->seq_notes[i]);
         }
     t->seq_n = 0;
     for (i = 0; i < m; i++)
@@ -1260,6 +1324,7 @@ static void events_block(uint32_t n)
         for (i = 0; i < NTRK; i++) {
             trk[i].rh_n = trk[i].rskip_n = 0;
             trk[i].seq_n = trk[i].seq_hold = trk[i].slide_glide = trk[i].rat_left = 0;
+            mo_seq_flush(i);                        /* (DINOBOX: their MIDI OUT notes too) */
         }
         pr |= (1u << NTRK) - 1u;
         RING_PUBLISH();
@@ -1275,6 +1340,7 @@ static void events_block(uint32_t n)
         if ((pr >> i) & 1u) {
             midi_forget_track(i);
             trk_all_off(t);
+            mo_seq_flush(i);                          /* (DINOBOX: the sequencer's MIDI OUT notes end too) */
             t->nheld = 0;
             t->arp_phys = 0;
             arp_forget(t);
@@ -1328,6 +1394,26 @@ static void events_block(uint32_t n)
             ext = 0;
         if (!song.playing && !midi_clock.heard)
             ext = 0;                                /* stopped, a source that never spoke: the ARP on INT */
+    }
+    for (i = 0; i < NTRK; i++) {                      /* DINOBOX: a track's MIDI OUT channel changed: its notes there end */
+        uint32_t c = trk_out_ch(i);
+        if (c != mo_last[i]) {
+            if (mo_last[i] < 16u)
+                midi_out_event(0x0Bu | (0xB0u | mo_last[i]) << 8 | 123u << 16);   /* (CC123: the keys' too) */
+            if (mo_cur[i])
+                mo_seq_flush(i);
+            mo_cur[i] = 0;
+            mo_last[i] = (uint8_t)c;
+        }
+    }
+    if (mo_clk && !clock_mode) {                      /* DINOBOX: CLOCK OUT, 24 pulses a quarter note */
+        uint32_t q = beat_samples();
+        if (mo_cpos == 0xFFFFFFFFu) {                 /* (PLAY: the first pulse now) */
+            midi_out_event(0x0Fu | 0xF8u << 8);
+            mo_cpos = 0;
+        }
+        for (mo_cpos += n * 24u; mo_cpos >= q; mo_cpos -= q)
+            midi_out_event(0x0Fu | 0xF8u << 8);
     }
     if (aud_req)
         seq_audition();                               /* (STEP PREVIEW: a step sounds, stopped) */
