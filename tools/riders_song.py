@@ -36,7 +36,8 @@ def score(option):
     events = {LEAD: tracks[2]["events"], BASS: tracks[3]["events"], DRUMS: tracks[4]["events"]}
     out = [f"# RIDERS OF THE VALLEY, native, option {option}", f"bpm {plan.BPM}"]
     out += [f"sound {LEAD} {GURDY} PRIMEVAL", f"sound {ROAR} {GURDY} STAMPEDE",
-            f"sound {BASS} {FM6} TAR PIT BASS", f"sound {DRUMS} {DRUM} WAR DRUMS", f"param {DRUMS} E1 14"]
+            f"sound {BASS} {FM6} TAR PIT BASS", f"sound {DRUMS} {DRUM} WAR DRUMS", f"param {DRUMS} E1 14",
+            f"param {LEAD} RING 0"]                                    # (as approved: no drone through the rests)
     out += [f"level {k} {v}" for k, v in LEVEL.items()]
     for s, b0 in SLOT_BARS.items():
         out.append(f"slot {s}")
