@@ -619,9 +619,90 @@ static int midi_out_test(void)
     return bad;
 }
 
+/* Model a receiving synth, including sustain-independent CC120 recovery. */
+static int mo_receiver_held(uint32_t ch, uint32_t note)
+{
+    int held = 0;
+    for (uint32_t i = 0; i < mo_nev; i++) {
+        uint32_t e = mo_ev[i], st = (e >> 8) & 255u, d1 = (e >> 16) & 127u, d2 = e >> 24;
+        if ((st & 15u) != ch) continue;
+        if (st == (0xB0u | ch) && d1 == 120u) held = 0;
+        else if (d1 == note && st == (0x90u | ch)) held = d2 != 0;
+        else if (d1 == note && st == (0x80u | ch)) held = 0;
+    }
+    return held;
+}
+static void mo_fill(void)
+{
+    for (uint32_t i = 0; i < MQ; i++) midi_out_event(0xF80Fu);
+}
+static int midi_out_backpressure_test(void)
+{
+    int bad = 0;
+    uint32_t at;
+    mo_setup();
+    midi_out_event(0x643C9909u);                    /* CH10 note 60 on, received */
+    mo_drain();
+    mo_fill();
+    midi_out_event(0x003C8908u);                    /* its note-off cannot fit */
+    bad += check("MIDI congestion: the full ring remains bounded", mo_w - mo_r == MQ);
+    mo_drain();
+    mo_run(2);                                    /* stopped, clock out off, no more notes */
+    bad += check("MIDI congestion: a lost note-off recovers while stopped", !mo_receiver_held(9, 60) &&
+                 mo_count(0xB0u, 9, 120) == 1u && !mo_count(0xB0u, 0, 120));
+
+    mo_setup();
+    mo_fill();
+    midi_out_event(0x003C8908u);
+    mo_drain();
+    at = mo_nev;
+    midi_out_event(0x643D9909u);                    /* fresh note after the stall */
+    mo_drain();
+    bad += check("MIDI congestion: recovery precedes fresh notes on the wire", mo_nev == at + 2u &&
+                 ((mo_ev[at] >> 8) & 0xFFFFu) == 0x78B9u && mo_receiver_held(9, 61));
+    midi_out_event(0x003D8908u); mo_drain();
+
+    mo_setup();
+    mo_fill();
+    midi_out_event(0x003C8208u); midi_out_event(0x003C8F08u);
+    mo_r++;                                       /* exactly one slot becomes available */
+    mo_run(1);
+    mo_drain(); mo_run(2);
+    bad += check("MIDI congestion: recovery survives partial drains across channels", mo_count(0xB0u, 2, 120) == 1u &&
+                 mo_count(0xB0u, 15, 120) == 1u && !mo_count(0xB0u, 1, 120));
+
+    mo_setup();
+    mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0; mo_fill();
+    seq_stop();                                   /* STOP also has to wait for room */
+    mo_drain(); mo_clk = 0; mo_run(2);
+    bad += check("MIDI congestion: STOP is retried even after CLOCK OUT is disabled", mo_count(0xFCu, 0, -1) == 1u);
+
+    mo_setup();
+    mo_fill();
+    midi_out_event(0xFA0Fu); midi_out_event(0xFC0Fu);
+    mo_drain(); mo_run(2);
+    bad += check("MIDI congestion: only the latest blocked transport command is retried", mo_count(0xFAu, 0, -1) == 0u &&
+                 mo_count(0xFCu, 0, -1) == 1u);
+    mo_nev = 0; mo_run(2);
+    bad += check("MIDI congestion: stale clocks are never replayed in a burst", mo_nev == 0u);
+
+    mo_setup();
+    mo_r = mo_w = 0xFFFFFFF0u;
+    mo_fill(); midi_out_event(0x003C8F08u); mo_drain(); mo_run(2);
+    bad += check("MIDI congestion: output index wrap preserves recovery", mo_count(0xB0u, 15, 120) == 1u && mo_w == mo_r);
+
+    mo_setup();
+    mo_fill(); midi_out_event(0x003C8908u); midi_out_event(0xFC0Fu);
+    mo_drain(); usb.config = 0; mo_run(1); usb.config = 1; mo_nev = 0; mo_run(2);
+    bad += check("MIDI congestion: disconnected-host recovery never leaks to a new connection", mo_nev == 0u);
+    return bad;
+}
+
 int main(void)
 {
     int bad = controls_test() + sustain_test() + ownership_test() + clock_test(1) + clock_test(2) + clock_arp_and_boundaries() +
-              arp_ext_stop_test() + usb_burst_test() + route_test() + route_block_test() + cc_map_test() + midi_out_test();
+              arp_ext_stop_test() + usb_burst_test() + route_test() + route_block_test() + cc_map_test() + midi_out_test() +
+              midi_out_backpressure_test();
     printf("%s\n", bad ? "MIDI CONTROL/CLOCK TEST FAILED" : "MIDI control/clock integration tests passed"); return bad != 0;
 }
+
