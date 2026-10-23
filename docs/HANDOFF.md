@@ -133,7 +133,8 @@ Things that broke before and what fixes them:
 
 1. **The clock fallback** (small): **done** (`midi_clock.c`, `seq.c`; docs/NOTES.md "External clock"): with no
    clock for a beat the transport runs on the internal tempo; the next pulse takes it back. In the next firmware.
-2. **The soundscape maker** (big; the owner wants it generative). Plan in `docs/NOTES.md`:
+2. **The soundscape maker: dropped by the owner (2026-10-23, too costly).** The generator and its approved previews
+   are kept on the branch `scape-preview` (`firmware/src/scape.c`, never on the device). The plan as it was:
    - an ambience layer beside the four tracks (a SCAPE fader in the MIXER, its own send), saved with the project,
      following the tempo and the EPOCH key;
    - 8 layers, each pointable at any sound, with level, density and distance; the drone on its own page (type, key,
