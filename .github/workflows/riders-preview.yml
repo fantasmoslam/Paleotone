@@ -1,0 +1,101 @@
+name: Riders four-track audition
+on:
+  push:
+    branches: [codex/riders-four-track-preview]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+      - run: python3 tools/build.py --gen-only
+      - run: python3 -m pip install imageio-ffmpeg==0.6.0
+      - name: Clock fallback tests and firmware mixer audition
+        run: |
+          set -o pipefail
+          mkdir -p build/host
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/midi_control_test.c -lm -o build/host/midi_control_test
+          build/host/midi_control_test | tee build/clock-results.txt
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/riders_preview.c -lm -o build/host/riders_preview
+          python3 tools/riders_four_track.py > build/riders.score
+          build/host/riders_preview build/riders-four-track.wav < build/riders.score
+          python3 -c "import imageio_ffmpeg, subprocess; subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), '-y', '-i', 'build/riders-four-track.wav', '-codec:a', 'libmp3lame', '-q:a', '2', 'build/riders-four-track.mp3'], check=True)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: riders-four-track-audition
+          path: |
+            build/riders-four-track.mp3
+            build/riders-four-track.wav
+            build/clock-results.txt
+            build/riders.score
+  host-tests:
+    if: "!contains(github.event.head_commit.message, '[audio-only]')"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+      - run: python3 tools/build.py --gen-only
+      - run: HOST_ONLY=1 tests/run_tests.sh
+  firmware:
+    if: "!contains(github.event.head_commit.message, '[audio-only]')"
+    runs-on: ubuntu-24.04
+    container: debian:bookworm-slim
+    timeout-minutes: 30
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pip git curl xz-utils ca-certificates libraqm0   # (Pillow's shaping: tnum)
+          pip3 install --break-system-packages pillow==12.3.0 fonttools==4.61.1   # (as host-tests.yml: the same pixels)
+
+      - uses: actions/checkout@v4
+
+      - name: JieLi toolchain
+        run: tools/get_toolchain.sh "$HOME/.jieli"
+
+      - name: JieLi AC79 SDK
+        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          ./build.sh 2>&1 | tee build.log
+          cp build/felucca.fwsc dinobox.fwsc
+          sha256sum dinobox.fwsc | tee -a build.log
+
+      - name: Image tests (the update entry, the loader from another app, the render loops' cost)
+        shell: bash
+        run: |
+          set -eo pipefail
+          export AC79_SDK="$HOME/fw-AC79_AIoT_SDK"
+          apt-get install -y --no-install-recommends gcc libc6-dev > /dev/null
+          python3 tools/build.py --gen-only > /dev/null
+          mkdir -p build/host
+          cc -O1 -w -DOWN_PKG=1 -o build/host/ota_test tests/ota_test.c && build/host/ota_test build/felucca.fwsc | tail -1 | tee -a build.log
+          head -c 200000 build/felucca.bin > build/host/old_app.bin
+          python3 tools/fm1pkg_make.py build/host/old_app.bin build/loader/ota.bin build/host/old.fwsc > /dev/null
+          cc -O1 -w -o build/host/ldr_test tests/ldr_test.c && build/host/ldr_test build/host/old.fwsc build/felucca.fwsc | tail -1 | tee -a build.log
+          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt | tail -1 | tee -a build.log
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dinobox-firmware
+          path: dinobox.fwsc
+          if-no-files-found: error
+
+

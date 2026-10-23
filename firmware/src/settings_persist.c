@@ -104,7 +104,7 @@ static int settings_import(persist_t *p, int n)
         for (k = 0; k < FM4_NPRESETS; k++)
             if ((favorites.factory[ENGI_DIGITAL][0] >> k) & 1u)
                 favorites.factory[ENGI_FM6][FM4_TO_FM6[k] / 8u] |= (uint8_t)(1u << (FM4_TO_FM6[k] % 8u));
-        memset(favorites.factory[ENGI_DIGITAL], 0, sizeof favorites.factory[ENGI_DIGITAL]);
+        favorites.factory[ENGI_DIGITAL][0] = 0;   /* (DINOBOX: bytes 1..5 are MIDI OUT's, menu_items.c MO_BYTES) */
     }
 #endif
 #ifdef SMP_SET_PERC
@@ -115,6 +115,9 @@ static int settings_import(persist_t *p, int n)
 #endif
 #endif
     if (p->panel.magic == PANEL_MAGIC) panel = p->panel;
+#ifdef MO_BYTES                                        /* (menu_items.c: not in every host test) */
+    midi_out_load();                                   /* DINOBOX: MIDI OUT's channels and clock (seq.c) */
+#endif
     return current ? 1 : 2;
 }
 

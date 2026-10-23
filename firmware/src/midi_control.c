@@ -194,6 +194,7 @@ static void midi_silence_track(uint32_t track)
     t->nheld = t->arp_phys = t->rh_n = 0;
     arp_forget(t);
     t->seq_n = t->seq_hold = t->slide_glide = 0;
+    mo_seq_flush(track);                      /* (DINOBOX: the sequencer's MIDI OUT notes off too) */
     for (i = 0; i < NVOICE; i++)
         if (t->v[i].active)
             voice_kill(&t->v[i]);             /* one-block fade, regardless of RELEASE */

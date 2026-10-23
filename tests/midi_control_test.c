@@ -148,6 +148,22 @@ static int clock_test(uint32_t source)
     bad += check("external-clock playback applies recorded motion", trk[0].p[P_REV] == 100);
     clock_packet(source, 0xFC, 1010);
     bad += check("external Stop restores the musical parameter base", trk[0].p[P_REV] == 23);
+    /* Active Sensing is link liveness, not a clock: it must neither postpone
+     * fallback nor take a free-running transport back from the internal tempo. */
+    clock_setup(source);
+    clock_packet(source, 0xFA, 1);
+    clock_to(source, 1, 7);
+    for (uint32_t ms = 200; ms <= 1200; ms += 100) {
+        idle_ms(100);
+        clock_packet(source, 0xFE, ms);
+    }
+    bad += check("Active Sensing without clock still falls back to internal tempo", song.playing && midi_clock.free);
+    idx = trk[0].seq_idx;
+    for (uint32_t ms = 1300; ms <= 1600; ms += 100) {
+        idle_ms(100);
+        clock_packet(source, 0xFE, ms);
+    }
+    bad += check("Active Sensing cannot reclaim or freeze the free-running clock", midi_clock.free && trk[0].seq_idx != idx);
     return bad;
 }
 static int clock_arp_and_boundaries(void)
@@ -443,9 +459,288 @@ static int cc_map_test(void)
     bad += check("not armed: the CC is the new value, no event", trk[0].p[P_E5] == 77 && motion.count == 1u);
     return bad;
 }
+/* DINOBOX: MIDI OUT (seq.c mo_*, menu_items.c T1..T4 OUT, CLOCK OUT): the sequencer's notes on each track's channel
+ * (AUTO: ROUT's block, as the keys before), OFF silent, every note ended (a step, STOP, a channel change, a panic, a
+ * mute); the DRUM lanes as GM notes; CLOCK OUT 24 a quarter with CLK INT, START / STOP, none on an external clock;
+ * kept with the settings (the retired DIGITAL favourites' bytes 1..5) */
+static uint32_t mo_ev[8192], mo_nev;
+static void mo_drain(void) { while (mo_r != mo_w && mo_nev < 8192u) mo_ev[mo_nev++] = midi_out_q[mo_r++ % MQ]; mo_r = mo_w; }
+static void mo_run(uint32_t blocks) { for (uint32_t i = 0; i < blocks; i++) { fm1_ms += 1u; events_block(CTL); mo_drain(); } }
+static uint32_t mo_count(uint32_t st, uint32_t ch, int32_t note)   /* events of status st (0x90 on, 0x80 off, ..) on ch */
+{
+    uint32_t i, n = 0;
+    for (i = 0; i < mo_nev; i++) {
+        uint32_t s8 = (mo_ev[i] >> 8) & 0xFFu, d1 = (mo_ev[i] >> 16) & 0x7Fu, d2 = (mo_ev[i] >> 24) & 0x7Fu;
+        if (st >= 0xF0u ? s8 == st : (s8 & 0xF0u) == st && (s8 & 15u) == ch && (note < 0 || (int32_t)d1 == note) &&
+            (st != 0x90u || d2))
+            n++;
+    }
+    return n;
+}
+static uint32_t mo_open(uint32_t ch)                  /* notes on minus notes off on ch (0: all ended) */
+{
+    return mo_count(0x90u, ch, -1) - mo_count(0x80u, ch, -1);
+}
+static void mo_setup(void)
+{
+    uint32_t i;
+    midi_test_reset();
+    usb.config = 1;
+    mo_r = mo_w;
+    mo_nev = 0;
+    song.g[G_CLOCK] = 0;
+    song.g[G_BPM] = 120;
+    for (i = 0; i < NTRK; i++) {
+        mo_ch[i] = MO_AUTO;
+        trk[i].p[P_MUTE] = 1;
+    }
+    mo_clk = 0;
+    trk[0].p[P_MUTE] = 0;
+    trk[0].p[P_SLEN] = 16; trk[0].p[P_SDIV] = 2; trk[0].p[P_SGATE] = 64;
+    for (i = 0; i < 16; i++) trk[0].step[i] = (step_t){{(uint8_t)(48 + i)}, 1, ST_NOTE, 0, 100};
+    events_block(CTL);
+    mo_drain();
+    mo_nev = 0;
+}
+static int midi_out_test(void)
+{
+    int bad = 0, ok;
+    uint32_t i, a, b;
+    mo_setup();
+    transport_req = 1;
+    mo_run(1378u);                                      /* ~1 s at 120 BPM: 8 sixteenths */
+    a = mo_count(0x90u, 0, -1);
+    ok = a >= 7u && a <= 9u && mo_count(0x90u, 0, 48) == 1u && mo_count(0x90u, 0, 49) == 1u;
+    bad += check("MIDI OUT: the sequencer's notes go out on track 1's channel (AUTO: channel 1), a step each", ok);
+    bad += check("  each with its note-off at the gate (at most the playing one open)", mo_open(0) <= 1u);
+    transport_req = 2;
+    mo_run(4);
+    bad += check("  STOP: every note it sent ended", mo_open(0) == 0u && !mo_on[0][0] && !mo_on[0][1]);
+    mo_setup();
+    mo_ch[0] = 10u;                                     /* CH 10 */
+    transport_req = 1; mo_run(700u); transport_req = 2; mo_run(4);
+    bad += check("T1 OUT CH 10: the notes on channel 10, none on 1", mo_count(0x90u, 9, -1) >= 3u && !mo_count(0x90u, 0, -1) &&
+                 mo_open(9) == 0u);
+    mo_setup();
+    mo_ch[0] = MO_OFF;
+    mo_run(1u);
+    ok = mo_count(0xB0u, 0, 123) == 1u;                 /* (leaving channel 1: its CC123, once) */
+    mo_nev = 0;
+    transport_req = 1; mo_run(700u); transport_req = 2; mo_run(4);
+    bad += check("T1 OUT OFF: CC123 on the channel it left, then nothing goes out", ok && mo_nev == 0u);
+    mo_setup();
+    song.g[G_ROUTE] = 2;                                /* MIDI IN CH5-8: AUTO follows it (as the keys) */
+    transport_req = 1; mo_run(700u); transport_req = 2; mo_run(4);
+    bad += check("AUTO with MIDI IN CH5-8: track 1 out on channel 5", mo_count(0x90u, 4, -1) >= 3u && mo_open(4) == 0u);
+    song.g[G_ROUTE] = 0;
+    mo_setup();
+    trk[0].p[P_SGATE] = 127;                            /* (long notes: one is on when the channel changes) */
+    for (i = 0; i < 16; i++) trk[0].step[i].time = i ? ST_TIE : ST_NOTE;
+    transport_req = 1; mo_run(100u);
+    a = mo_open(0);
+    mo_ch[0] = 3u;                                      /* CH 3 while its note sounds */
+    mo_run(2u);
+    b = mo_count(0xB0u, 0, 123);
+    ok = a == 1u && mo_open(0) == 0u && b == 1u;
+    transport_req = 2; mo_run(4);
+    bad += check("a channel changed while a note sounds: its note-off and CC123 on the old channel", ok && mo_open(2) == 0u);
+    mo_setup();
+    for (i = 0; i < 16; i++) trk[0].step[i].time = i ? ST_TIE : ST_NOTE;
+    transport_req = 1; mo_run(100u);
+    panic_req = 1u;
+    mo_run(2u);
+    bad += check("a panic (CC120, a load): the sequencer's note ends at MIDI OUT too", mo_open(0) == 0u);
+    transport_req = 2; mo_run(4);
+    mo_setup();
+    trk[0].p[P_MUTE] = 1;
+    transport_req = 1; mo_run(700u); transport_req = 2; mo_run(4);
+    bad += check("a muted track sends nothing", mo_nev == 0u);
+    mo_setup();
+    host_drums(&trk[1]);
+    trk[1].p[P_MUTE] = 0;
+    trk[1].p[P_SLEN] = 16; trk[1].p[P_SDIV] = 2;
+    for (i = 0; i < 16; i++) { memset(&trk[1].step[i], 0, sizeof trk[1].step[i]); trk[1].step[i].time = ST_NOTE; }
+    trk[1].step[0].hit = 1u; trk[1].step[2].hit = 2u; trk[1].step[4].hit = 1u | 4u;
+    mo_ch[0] = MO_OFF;
+    transport_req = 1; mo_run(800u); transport_req = 2; mo_run(4);
+    ok = mo_count(0x90u, 1, DRUM_LANE_NOTE[0]) == 2u && mo_count(0x90u, 1, DRUM_LANE_NOTE[1]) == 1u &&
+         mo_count(0x90u, 1, DRUM_LANE_NOTE[2]) == 1u && mo_open(1) == 0u;
+    bad += check("a DRUM track: its lanes' hits as their GM notes on track 2's channel, each ended", ok);
+    /* CLOCK OUT */
+    mo_setup();
+    mo_clk = 1;
+    mo_run(1378u);                                      /* stopped, 1 s at 120 BPM: 48 pulses */
+    a = mo_count(0xF8u, 0, -1);
+    bad += check("CLOCK OUT: 24 pulses a quarter note while stopped too (48 in 1 s at 120 BPM)", a >= 47u && a <= 49u);
+    mo_nev = 0;
+    transport_req = 1; mo_run(1u);
+    ok = mo_nev >= 2u && ((mo_ev[0] >> 8) & 0xFFu) == 0xFAu && ((mo_ev[1] >> 8) & 0xFFu) == 0xF8u;
+    bad += check("  PLAY: START, then a pulse at once (with step 0)", ok);
+    mo_nev = 0;
+    mo_run(689u);                                       /* half a second: 24 pulses */
+    a = mo_count(0xF8u, 0, -1);
+    transport_req = 2; mo_run(1u);
+    bad += check("  playing: 24 pulses in half a second; STOP sends STOP", a >= 23u && a <= 25u && mo_count(0xFCu, 0, -1) == 1u);
+    mo_setup();
+    mo_clk = 1;
+    song.g[G_CLOCK] = 1;                                /* CLK USB: the FM-1 follows, sends none */
+    events_block(CTL);
+    mo_nev = 0;
+    mo_run(1378u);
+    bad += check("  CLK USB: no clock goes out", mo_count(0xF8u, 0, -1) == 0u);
+    song.g[G_CLOCK] = 0; events_block(CTL);
+    mo_setup();
+    mo_clk = 0;
+    mo_run(1378u);
+    bad += check("CLOCK OUT OFF: no clock", mo_count(0xF8u, 0, -1) == 0u);
+    /* the settings: the menu's rows, the bytes, a round trip, older settings */
+    {
+        persist_t p;
+        memset(&favorites, 0, sizeof favorites);
+        midi_out_load();
+        ok = mo_ch[0] == MO_AUTO && mo_ch[3] == MO_AUTO && !mo_clk && menu_get(MI_OUT1) == 1u && menu_get(MI_CLKOUT) == 0u;
+        bad += check("settings without MIDI OUT (older ones): every track AUTO, CLOCK OUT OFF", ok);
+        menu_put(MI_OUT1, 0); menu_put(MI_OUT2, 2); menu_put(MI_OUT3, 17); menu_put(MI_CLKOUT, 1);
+        ok = mo_ch[0] == MO_OFF && mo_ch[1] == 1u && mo_ch[2] == 16u && mo_ch[3] == MO_AUTO && mo_clk == 1u &&
+             str_eq(menu_vname(MI_OUT1, 0), "OFF") && str_eq(menu_vname(MI_OUT1, 1), "AUTO") &&
+             str_eq(menu_vname(MI_OUT1, 2), "CH 1") && str_eq(menu_vname(MI_OUT1, 17), "CH 16") && menu_n(MI_OUT2) == 18u;
+        bad += check("MENU > MIDI: T1 OFF, T2 CH 1, T3 CH 16, T4 AUTO, CLOCK OUT ON", ok);
+        favorites.factory[ENGI_DIGITAL][0] = 0x5Au;     /* (DIGITAL's old stars: moved and cleared on import) */
+        settings_export(&p);
+        memset(&favorites, 0, sizeof favorites);
+        mo_ch[0] = mo_ch[1] = mo_ch[2] = mo_clk = 0;
+        ok = settings_import(&p, sizeof p) != 0;
+        ok &= mo_ch[0] == MO_OFF && mo_ch[1] == 1u && mo_ch[2] == 16u && mo_ch[3] == MO_AUTO && mo_clk == 1u &&
+              favorites.factory[ENGI_DIGITAL][0] == 0u;
+        bad += check("  kept with the settings: read back after a save; DIGITAL's old stars still cleared", ok);
+        memset(&favorites, 0, sizeof favorites);
+        midi_out_load();
+    }
+    return bad;
+}
+
+/* Model a receiving synth, including sustain-independent CC120 recovery. */
+static int mo_receiver_held(uint32_t ch, uint32_t note)
+{
+    int held = 0;
+    for (uint32_t i = 0; i < mo_nev; i++) {
+        uint32_t e = mo_ev[i], st = (e >> 8) & 255u, d1 = (e >> 16) & 127u, d2 = e >> 24;
+        if ((st & 15u) != ch) continue;
+        if (st == (0xB0u | ch) && d1 == 120u) held = 0;
+        else if (d1 == note && st == (0x90u | ch)) held = d2 != 0;
+        else if (d1 == note && st == (0x80u | ch)) held = 0;
+    }
+    return held;
+}
+static void mo_fill(void)
+{
+    for (uint32_t i = 0; i < MQ; i++) midi_out_event(0xF80Fu);
+}
+static int midi_out_backpressure_test(void)
+{
+    int bad = 0;
+    uint32_t at;
+    mo_setup();
+    midi_out_event(0x643C9909u);                    /* CH10 note 60 on, received */
+    mo_drain();
+    mo_fill();
+    midi_out_event(0x003C8908u);                    /* its note-off cannot fit */
+    bad += check("MIDI congestion: the full ring remains bounded", mo_w - mo_r == MQ);
+    mo_drain();
+    mo_run(2);                                    /* stopped, clock out off, no more notes */
+    bad += check("MIDI congestion: a lost note-off recovers while stopped", !mo_receiver_held(9, 60) &&
+                 mo_count(0xB0u, 9, 120) == 1u && !mo_count(0xB0u, 0, 120));
+
+    mo_setup();
+    mo_fill();
+    midi_out_event(0x003C8908u);
+    mo_drain();
+    at = mo_nev;
+    midi_out_event(0x643D9909u);                    /* fresh note after the stall */
+    mo_drain();
+    bad += check("MIDI congestion: recovery precedes fresh notes on the wire", mo_nev == at + 2u &&
+                 ((mo_ev[at] >> 8) & 0xFFFFu) == 0x78B9u && mo_receiver_held(9, 61));
+    midi_out_event(0x003D8908u); mo_drain();
+
+    mo_setup();
+    mo_fill();
+    midi_out_event(0x003C8208u); midi_out_event(0x003C8F08u);
+    mo_r++;                                       /* exactly one slot becomes available */
+    mo_run(1);
+    mo_drain(); mo_run(2);
+    bad += check("MIDI congestion: recovery survives partial drains across channels", mo_count(0xB0u, 2, 120) == 1u &&
+                 mo_count(0xB0u, 15, 120) == 1u && !mo_count(0xB0u, 1, 120));
+
+    mo_setup();
+    mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0; mo_fill();
+    seq_stop();                                   /* STOP also has to wait for room */
+    mo_drain(); mo_clk = 0; mo_run(2);
+    bad += check("MIDI congestion: STOP is retried even after CLOCK OUT is disabled", mo_count(0xFCu, 0, -1) == 1u);
+
+    mo_setup();
+    mo_fill();
+    midi_out_event(0xFA0Fu); midi_out_event(0xFC0Fu);
+    mo_drain(); mo_run(2);
+    bad += check("MIDI congestion: only the latest blocked transport command is retried", mo_count(0xFAu, 0, -1) == 0u &&
+                 mo_count(0xFCu, 0, -1) == 1u);
+    mo_nev = 0; mo_run(2);
+    bad += check("MIDI congestion: stale clocks are never replayed in a burst", mo_nev == 0u);
+
+    mo_setup();
+    mo_r = mo_w = 0xFFFFFFF0u;
+    mo_fill(); midi_out_event(0x003C8F08u); mo_drain(); mo_run(2);
+    bad += check("MIDI congestion: output index wrap preserves recovery", mo_count(0xB0u, 15, 120) == 1u && mo_w == mo_r);
+
+    mo_setup();
+    mo_fill(); midi_out_event(0x003C8908u); midi_out_event(0xFC0Fu);
+    mo_drain(); usb.config = 0; mo_run(1); usb.config = 1; mo_nev = 0; mo_run(2);
+    bad += check("MIDI congestion: disconnected-host recovery never leaks to a new connection", mo_nev == 0u);
+    return bad;
+}
+
+static int clock_output_handoff_test(void)
+{
+    int bad = 0;
+    mo_setup(); mo_clk = 1; transport_req = 1; mo_run(2); mo_nev = 0;
+    mo_clk = 0; mo_run(2);
+    bad += check("CLOCK handoff: disabling output sends Stop without stopping local playback", song.playing &&
+                 mo_count(0xFCu, 0, -1) == 1u && !mo_count(0xF8u, 0, -1));
+    transport_req = 2; mo_run(3);
+    bad += check("CLOCK handoff: later local Stop does not send a duplicate", mo_count(0xFCu, 0, -1) == 1u);
+    for (uint32_t source = 1; source <= 2; source++) {
+        mo_setup(); mo_clk = 1; transport_req = 1; mo_run(2); mo_nev = 0;
+        song.g[G_CLOCK] = (int16_t)source; mo_run(2);
+        bad += check(source == 1 ? "CLOCK handoff: INT to USB ends the old master transport" :
+                                  "CLOCK handoff: INT to TRS ends the old master transport",
+                     !song.playing && mo_count(0xFCu, 0, -1) == 1u && !mo_count(0xF8u, 0, -1));
+        uint32_t stops = mo_count(0xFCu, 0, -1);
+        clock_packet(source, 0xFA, fm1_ms + 1); clock_packet(source, 0xFC, fm1_ms + 1);
+        bad += check("CLOCK handoff: external Start/Stop are not echoed", !mo_count(0xFAu, 0, -1) &&
+                     mo_count(0xFCu, 0, -1) == stops);
+    }
+    mo_setup(); mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0;
+    mo_clk = 0; seq_stop(); mo_drain(); mo_run(2);
+    bad += check("CLOCK handoff: Stop between the setting change and next block still reaches USB",
+                 mo_count(0xFCu, 0, -1) == 1u);
+    mo_setup(); mo_clk = 1; seq_start(); mo_drain();
+    usb.config = 0; mo_run(1); usb.config = 1; mo_nev = 0;
+    seq_stop(); mo_drain();
+    bad += check("CLOCK handoff: reconnect never stops a host we did not start", !mo_count(0xFCu, 0, -1));
+    mo_setup(); mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0;
+    usb.resets++;                                 /* reset/reconfigure completed before the next audio block */
+    seq_stop(); mo_drain();
+    bad += check("CLOCK handoff: fast USB reset also forgets the old host's Start", !mo_count(0xFCu, 0, -1));
+    mo_setup(); mo_clk = 1; transport_req = 1; mo_run(2); mo_nev = 0;
+    mo_fill(); mo_clk = 0; mo_run(1); mo_drain(); mo_nev = 0; mo_run(2);
+    bad += check("CLOCK handoff: a congested Stop is eventually delivered", mo_count(0xFCu, 0, -1) == 1u);
+    transport_req = 2; mo_run(2);
+    return bad;
+}
+
 int main(void)
 {
     int bad = controls_test() + sustain_test() + ownership_test() + clock_test(1) + clock_test(2) + clock_arp_and_boundaries() +
-              arp_ext_stop_test() + usb_burst_test() + route_test() + route_block_test() + cc_map_test();
+              arp_ext_stop_test() + usb_burst_test() + route_test() + route_block_test() + cc_map_test() + midi_out_test() +
+              midi_out_backpressure_test() + clock_output_handoff_test();
     printf("%s\n", bad ? "MIDI CONTROL/CLOCK TEST FAILED" : "MIDI control/clock integration tests passed"); return bad != 0;
 }

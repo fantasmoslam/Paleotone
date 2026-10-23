@@ -168,6 +168,11 @@ static uint8_t midi_in_source[MQ];                    /* 1 USB, 2 TRS */
 static volatile uint32_t fm1_ms;                    /* also declared by core.h; parser-only host tests */
 static volatile uint32_t mi_w, mi_r, mo_w, mo_r;
 static volatile uint8_t midi_in_overflow;               /* audio ISR discards a broken stream and releases notes */
+/* Audio ISR owns recovery. A slow USB host may fill the output ring: remember
+ * affected channels and the latest transport command rather than losing STOP
+ * or leaving the receiving synth holding a note forever. */
+static volatile uint32_t midi_out_pending;
+static volatile uint8_t midi_out_transport;
 
 static int midi_enqueue(uint32_t pkt, uint32_t source)
 {
@@ -186,13 +191,45 @@ static int midi_enqueue(uint32_t pkt, uint32_t source)
     return 1;
 }
 
-static void midi_out_event(uint32_t pkt)            /* from the audio ISR */
+static int midi_out_push(uint32_t pkt)
 {
     if (usb.config && mo_w - mo_r < MQ) {
         midi_out_q[mo_w % MQ] = pkt;
         RING_PUBLISH();
         mo_w++;
+        return 1;
     }
+    return 0;
+}
+static void midi_out_recover(void)                 /* audio ISR, even while stopped */
+{
+    uint32_t ch;
+    if (!usb.config) {
+        midi_out_pending = midi_out_transport = 0;
+        return;
+    }
+    for (ch = 0; midi_out_pending && ch < 16u; ch++)
+        if ((midi_out_pending >> ch) & 1u) {
+            /* CC120 ignores sustain, unlike All Notes Off. Only channels whose
+             * stream was damaged are silenced; queued events stay in order. */
+            if (!midi_out_push(0x0Bu | (0xB0u | ch) << 8 | 120u << 16))
+                return;
+            midi_out_pending &= ~(1u << ch);
+        }
+    if (midi_out_transport && midi_out_push(0x0Fu | (uint32_t)midi_out_transport << 8))
+        midi_out_transport = 0;
+}
+static void midi_out_event(uint32_t pkt)            /* from the audio ISR */
+{
+    uint32_t status = (pkt >> 8) & 255u;
+    midi_out_recover();                            /* before accepting fresh notes */
+    if (midi_out_push(pkt) || !usb.config)
+        return;
+    if (status >= 0x80u && status < 0xF0u)
+        midi_out_pending |= 1u << (status & 15u);
+    else if (status == 0xFAu || status == 0xFBu || status == 0xFCu)
+        midi_out_transport = (uint8_t)status;
+    /* Dropped timing clocks expire: replaying them later would cause a burst. */
 }
 
 /* ------------------------------------------------------- descriptors --- */
@@ -1255,6 +1292,7 @@ static void usb_poll(void)                              /* TIMER5 ISR, 2 kHz */
         usb.config = 0;
         usb.suspended = 0;
         mo_r = mo_w;                                    /* nothing stale for the next host */
+        midi_out_pending = midi_out_transport = 0;
         usb.sx_on = 0;
 #if FELUCCA_OTA
         so_r = so_w;
@@ -1357,3 +1395,4 @@ static __attribute__((unused)) void usb_cdc_switch(uint32_t on)
     usb_cdc_on = (uint8_t)on;
 }
 #endif
+
