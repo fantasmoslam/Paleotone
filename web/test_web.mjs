@@ -138,10 +138,10 @@ async function editorMock() {
   ok(E.parse[E.CMD.UI_SET](await rq(E.req.uiSet(0, 10))).rc === 1, "editor: out-of-range palette refused");
   ok(E.parse[E.CMD.UI_SET](await rq(E.req.uiSet(1, 1))).rc === 2, "editor: the retired font weight answers not supported");
   ok(E.parse[E.CMD.FAV_SET](await rq(E.req.favSet(info.nengines, 31, true))).rc === 1, "editor: empty user slot cannot be favorited");
-  await rq(E.req.favSet(0, 1, true));            /* (ANALOG SOFT PAD: GHOULBOX retired SAW LEAD, preset 0) */
+  await rq(E.req.favSet(0, 12, true));           /* (ANALOG JUNGLE PAD: DINOBOX keeps its own sounds only) */
   await rq(E.req.uiSet(3, 1));
   prefs = await E.readDevicePreferences(rq, info, names, prefs);
-  ok(E.devicePresetRows(info, names, prefs).length === 1 && prefs.favorites[0][1], "editor: favorites filter follows device state");
+  ok(E.devicePresetRows(info, names, prefs).length === 1 && prefs.favorites[0][12], "editor: favorites filter follows device state");
   m.state.favorites[0][1] = false; m.state.favorites[2][0] = true;
   prefs = await E.readDevicePreferences(rq, info, names, prefs);
   ok(!prefs.favorites[0][1] && prefs.favorites[2][0], "editor: panel-side favorite changes refresh");
@@ -376,11 +376,11 @@ function mockTables() {
     const m0 = E.makeMockDevice({ auto: false }), ph = m0.tables.ENG[9], dr = m0.tables.ENG[10];
     m0.stop();
     ok(ph.name === "PHYS" && ph.edit[0].names.join() === "MODAL,STRNG,MEMB,SYMP" && ph.edit[0].max === 3 &&
-       ph.presets.length === 13 && !ph.presets.some((p) => p.name === "RAIN" || p.name === "DRUM KIT"),
-       "editor: PHYS models MODAL STRNG MEMB SYMP (no DUST, no DRUM), 13 presets (4 GHOULBOX)");
+       ph.presets.length === 18 && !ph.presets.some((p) => p.name === "RAIN" || p.name === "DRUM KIT"),
+       "editor: PHYS models MODAL STRNG MEMB SYMP (no DUST, no DRUM), 18 presets (9 DINOBOX)");
     ok(dr.name === "DRUM" && dr.edit.map((d) => d.label).join() === "KIT,TUNE,TONE,DECY,SNAP,ACC,KICK,DRV" &&
-       dr.presets.length === 3 && dr.presets[0].pat === 12 && dr.presets[1].pat === 22 && dr.presets[2].pat === 22,
-       "editor: DRUM engine 10 (KIT TUNE TONE DECY SNAP ACC KICK DRV): DRUM KIT on BEAT; GHOULBOX's CRYPT KIT, TOMB DRUMS on TOMBBEAT");
+       dr.presets.length === 5 && dr.presets[0].pat === 12 && dr.presets[1].pat === 22 && dr.presets[2].pat === 22,
+       "editor: DRUM engine 10 (KIT TUNE TONE DECY SNAP ACC KICK DRV): DRUM KIT on BEAT; DINOBOX's TRIBAL KIT, WAR DRUMS on STOMP, 2 more");
   }
   const dj = DESC;
   if (!existsSync(dj)) { console.log("editor: mock tables == firmware (no build/host/desc.json)        skip"); return; }
@@ -397,7 +397,9 @@ function mockTables() {
   fw.GP.forEach((d, i) => cmp(`GP[${i}]`, T.GP[i] && norm(T.GP[i]), d));
   cmp("engines", T.ENG.map((e) => e.name), fw.ENG.map((e) => e.name));
   cmp("engine order (ENGINE_ORDER)", E.ENGINE_ORDER.filter((n) => fw.ENG.some((e) => e.name === n)), fw.ORDER);
-  cmp("retired presets (GB_HIDDEN)", Object.entries(E.PRESET_HIDDEN).flatMap(([e, ns]) => ns.map((n) => [e, n])), fw.HIDDEN);
+  const byName = (a, b) => (a.join("/") < b.join("/") ? -1 : a.join("/") > b.join("/") ? 1 : 0);
+  cmp("retired presets (GB_HIDDEN)", Object.entries(E.PRESET_HIDDEN).flatMap(([e, ns]) => ns.map((n) => [e, n])).sort(byName),
+      [...fw.HIDDEN].sort(byName));
   cmp("retired engines", E.ENGINE_HIDDEN.slice().sort(), fw.ENG.map((e) => e.name).filter((n) => n !== "-" && !fw.ORDER.includes(n) && n !== "DIGITAL").sort());
   fw.ENG.forEach((fe, i) => {
     const me = T.ENG[i];
@@ -414,7 +416,10 @@ function mockTables() {
   const m2 = E.makeMockDevice({ auto: false });   /* the mock's power-on scene (GHOULBOX: main.c felucca_init) */
   cmp("power-on sounds", m2.state.tracks.map((t) => [t.engine, t.preset]), fw.GB_SCENE.map((x) => x.slice(0, 2)));
   fw.GB_SCENE.forEach((x, k) => {
-    if (x[2]) cmp(`power-on pattern of track ${k + 1}`, m2.state.tracks[k].step.slice(0, 16).map((s) => (s.n ? s.notes[0] : 0)),
+    const LANE_N = [36, 38, 39, 42, 46, 45, 37, 56];   /* (a DRUM track: its grid, a lane's note as its hit; DINOBOX's
+                                                      * scenes start on one) */
+    const first = (s) => (s.n ? s.notes[0] : s.hit ? LANE_N[Math.min(...[0, 1, 2, 3, 4, 5, 6, 7].filter((l) => s.hit >> l & 1))] : 0);
+    if (x[2]) cmp(`power-on pattern of track ${k + 1}`, m2.state.tracks[k].step.slice(0, 16).map(first),
       fw.PATTERNS[x[2] - 1][0]);
   });
   m2.stop();
