@@ -25,6 +25,26 @@ The soundscape maker needs biomes, and sounds to support them, water most of all
 - Biomes (previewed 2026-10-23, scratchpad work/biomes.py): WATER, JUNGLE, TUNDRA, FOREST, PLAINS, MOUNTAINS, CANYONS,
   CALDERA. Feedback: wind too loud everywhere: start wind layers ~8 dB lower by default; every layer's level adjustable.
 
+### SCAPE, the generator (2026-10-23, previews sent; waiting for the owner's ear before it goes on the device)
+
+- `firmware/src/scape.c`: the whole generator in the firmware's fixed point, compiled only for the host for now
+  (`DINOBOX_SCAPE`, fx.c `mix_block` after AMB). `tests/scape_preview.c` renders it through the firmware's mix (reverb,
+  MASTER 2048, limiter), the calls by SAURUS on a track; `tools/scape_preview.py` makes the MP3 tour and its cues.
+- A biome: 8 layers {kind, LEVEL, DENS, DIST}, a drone (PAD CHOIR THROAT AIR) and its level, the room, the wind's
+  whistle, its creatures (SK_CALLS) and its predators (small, middle, big by DANGER). Kinds: beds (WIND STREAM WAVES
+  RAIN CICADA LAVA RUMBLE) and events (SONG WHISTLE HOOT KNOCK WADER RAPTOR CRICKET FROG TOAD DRIP ROCKS SNAP CREAK
+  STEAM CALLS HERD THUNDER), from 10 small voices (sine chirp, gated saw through a formant, noise burst, thump).
+- Globals: TIME (DAWN DAY DUSK NIGHT: each kind's weight, SK_INFO tod), WEATHER (CLEAR WIND RAIN STORM: wind +6 dB,
+  a rain bed and drops, thunder, birds and insects quieter), DANGER (encounters: 0 never .. 127 one every ~40 s; small
+  raptors' claws, a middle beast, a giant's steps; the hushable layers duck to ~-18 dB while it passes), DENSITY.
+- Levels (power-on SCAPE 112): a biome alone ~-33..-37 dBFS RMS, ~23 dB under the JUNGLE scene; a full-DANGER
+  encounter peaks ~-9 dBFS. The wind beds ~-50 dBFS RMS.
+- Cost (host, against one SAURUS track calling): ~0.9 .. 1.5 of it (the low beds and the AIR drone at a quarter of
+  the rate, as AMB). On the device: to be measured by target_budget once it is built in.
+- Still to do once the sound is approved: the SCAPE page and params (saved with the project), the MIXER fader and send,
+  a hidden SAURUS track for the calls (voices from the shared 12, the scape's first to go), the drone's key following
+  EPOCH, the tests.
+
 ## The growl (agreed from growl_preview_3)
 
 - A rolled-R flutter ~26 Hz, a little uneven, a rough sub rumble under it.
