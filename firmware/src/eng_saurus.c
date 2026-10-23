@@ -18,7 +18,7 @@
  * The loudness of the call multiplies the ADSR (engine_t.amp), so the ADSR still shapes and ends the note.
  *
  * Voice state: ph[0] the phase; ph[1] the period's gain (bits 0..14, Q15), the subharmonic's toggle (bit 15) and the
- * period's pitch jitter (bits 16..23, signed); ph[2] TRILL's phase; s[0..5] F1..F3 y1 / y2; s[6] the tilt; s[7] the
+ * period's pitch jitter (bits 16..23, signed); ph[2] TRILL's phase (GROWL's flutter, saurus_amp); s[0..5] F1..F3 y1 / y2; s[6] the tilt; s[7] the
  * call's progress (Q24, bits 0..24) and the note's random number (bits 25..31). */
 
 enum { SC_HOLD, SC_BELLOW, SC_ROAR, SC_BARK, SC_HOOT, SC_TRILL, SC_CHIRP, SC_MOAN, SC_HISS, SC_SNORT, SC_COUNT };
@@ -44,6 +44,9 @@ static const struct { int8_t p[5]; uint8_t m[5], a[5], f, g; } SAUR_CALL[SC_COUN
 static const uint16_t SAUR_F[3][3] = {{300, 870, 2240}, {500, 900, 2400}, {760, 1250, 2500}};
 static const uint8_t SAUR_B[3][3] = {{60, 80, 150}, {70, 80, 150}, {90, 100, 160}};
 #define SAUR_TRILL_INC 1753064u                           /* 18 Hz a sample (2^32 * 18 / FS) */
+#define SAUR_GROWL_INC 19784u                             /* the flutter: 26 Hz a control tick (2^20 * 26 * CTL / FS) */
+#define SAUR_GROWL_UP 10u                                 /* its envelope (4095 full) a tick: in ~0.3 s .. */
+#define SAUR_GROWL_DN 6u                                  /* .. out ~0.5 s */
 
 static uint32_t saur_shape(const track_t *t) { return (uint32_t)clamp(t->p[P_E0], 0, SC_COUNT - 1); }
 
@@ -77,6 +80,23 @@ static int32_t saurus_amp(track_t *t, voice_t *v, int32_t adsr)
     if (SAUR_CALL[sh].f & SCF_TRILL) {                  /* depth 70 %; WILD's random number sets this note's rate */
         v->ph[2] += (SAUR_TRILL_INC + ((uint32_t)v->s[7] >> 25) * 6000u) * CTL;
         a = (a * (32767 - ((((sine_i(v->ph[2]) + 32768) >> 1) * 22938) >> 15))) >> 15;
+    } else if (t->p[P_E4] > 64) {                       /* DINOBOX: GROWL above 64, the throat's flutter (a deep rolled
+                                                         * R): ~26 Hz, uneven; in over ~0.3 s while the call is loud and
+                                                         * the key held, out over ~0.5 s as it drops (the bellow rings on
+                                                         * without it). ph[2]: the flutter's envelope (bits 20..31), its
+                                                         * phase (0..19) */
+        uint32_t st = v->ph[2], ge = st >> 20, fp = st & 0xFFFFFu;
+        int32_t gd = clamp((t->p[P_E4] - 64) * 520, 0, 32767), depth, chop;
+        if (v->gate && saur_pt(0, SAUR_CALL[sh].a, q) >= (8 << 8))
+            ge = ge + SAUR_GROWL_UP < 4095u ? ge + SAUR_GROWL_UP : 4095u;
+        else
+            ge = ge > SAUR_GROWL_DN ? ge - SAUR_GROWL_DN : 0u;
+        fp = (fp + SAUR_GROWL_INC + (((noise32(&formant_nz) >> 20) - 2048u) << 1)) & 0xFFFFFu;
+        v->ph[2] = ge << 20 | fp;
+        chop = (sine_i(fp << 12) + 32768) >> 1;
+        chop = (chop * chop) >> 15;
+        depth = (int32_t)((gd * (int32_t)((ge * ge) >> 12)) >> 12);
+        a = (int32_t)(((int64_t)a * (32767 - ((depth * (32767 - chop)) >> 15))) >> 15);
     }
     return a;
 }

@@ -23,8 +23,19 @@
  * pressure low-pass. ph[0] chanterelle, ph[1] bourdon (x2: the trompette),
  * ph[2] mouche. */
 static const char *const N_GURDY_DRN[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-static const char *const N_GURDY_COUP[] = {"HOLD", "1/4", "1/8", "1/8T", "1/16", "TURN"};   /* (TURN: GHOULBOX's CRANK)    append-only */
-static const uint8_t GURDY_COUP_DIV[5] = {0, 0, 1, 4, 2};   /* N_DIV indices (fx.c div_samples) */
+static const char *const N_GURDY_COUP[] = {"HOLD", "1/4", "1/8", "1/8T", "1/16", "TURN", "DRM4", "DRM8", "GALOP", "TRES",
+                                           "WAR", "RAIN", "QUAKE"};   /* (TURN: GHOULBOX's CRANK)    append-only */
+static const uint8_t GURDY_COUP_DIV[13] = {0, 0, 1, 4, 2, 0, 0, 1, 2, 2, 2, 2, 2};   /* N_DIV indices (fx.c div_samples) */
+#define GURDY_DRUM 6u                                   /* DINOBOX: DRM4 DRM8, the strokes with a deep drum on each */
+#define GURDY_RHYTHM 8u                                 /* DINOBOX: GALOP .. QUAKE, the drum on a bar of 1/16s */
+/* DINOBOX: the rhythms, a bar of 16 sixteenths from the note-on: per step 0 rest, 1 soft, 2 loud */
+static const uint8_t GURDY_RHY[5][16] = {
+    {2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1},   /* GALOP: a herd running, da-da-DUM */
+    {2, 0, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 1, 0},   /* TRES: 3-3-2 */
+    {2, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, 1, 1},   /* WAR: a march, a boom on the bar's halves */
+    {2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1},   /* RAIN: hands never stopping */
+    {2, 0, 1, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0},   /* QUAKE: a slow heartbeat */
+};
 #define GURDY_CRANK 5u                                  /* COUP CRANK (GHOULBOX) */
 static uint32_t div_samples(uint32_t div);              /* fx.c */
 
@@ -123,7 +134,7 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     const int16_t *p = t->p;
     int32_t drn = 36 + clamp(p[P_E0], 0, 11), dlvl = p[P_E1] * 200, flvl = p[P_E2] * 170, whl = p[P_E3];
     int32_t buzz = p[P_E4] * 258, body = p[P_E6] * 258, wobl = p[P_E7];
-    uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 5), i;
+    uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 12), i, dper = 0, dlen = 1, rk = 0, rlv = 0;
     int32_t dd, fd, df = temper(p, (uint32_t)drn, &dd) - v->tfine, ff = temper(p, (uint32_t)drn + 7u, &fd) - v->tfine;
     uint32_t inc = m->inc, dinc = cents_inc(drn * 16 + dd, 0, m->fine + df), finc = cents_inc((drn + 7) * 16 + fd, 0, m->fine + ff);
                                                         /* GHOULBOX: the drones on TEMP's own degrees, not the note's */
@@ -157,7 +168,7 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         fric = whl * 24;
         pr = pa;
         dpr = (pb - pa) / (int32_t)n;
-    } else if (!buzz)
+    } else if (!buzz && coup < GURDY_DRUM)
         e0 = e1 = 0;
     else if (!coup)
         e0 = e1 = 32767;
@@ -167,6 +178,15 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         e0 = a < fall ? 32767 - (int32_t)((a * kf) >> 8) : 0;
         a += n;
         e1 = a < fall ? 32767 - (int32_t)((a * kf) >> 8) : a >= per ? 32767 : 0;
+        if (!buzz)
+            e0 = e1 = 0;
+        if (coup >= GURDY_RHYTHM) {                     /* DINOBOX: a rhythm: ~0.3 s a hit (QUAKE 0.45) */
+            dper = per;
+            dlen = coup == 12u ? FS * 45u / 100u : FS * 3u / 10u;
+        } else if (coup >= GURDY_DRUM) {                /* DINOBOX: the drum's stroke length (at most ~0.3 s) */
+            dper = per;
+            dlen = per * 9u / 10u < FS * 3u / 10u ? per * 9u / 10u : FS * 3u / 10u;
+        }
     }
     if (!v->gate && v->stage < 3u && !gurdy_rings(t))
         v->stage = 3;                                   /* RING off, or the transport stopped: the drones' release */
@@ -212,6 +232,33 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         x >>= 1;                                        /* (four sources: the filters' range) */
         r = gurdy_bp(&box, x, &b1, &b2) + (gurdy_bp(&nose, x, &n1, &n2) >> 1);
         x += mulq15(r - x, body);
+        if (dper) {                                     /* DINOBOX DRM4 / DRM8: a deep skin drum on each stroke at the
+                                                         * drone's pitch, kicked from 2.5x and falling to it (the
+                                                         * phase in closed form from the stroke's start: no state), a
+                                                         * slap of noise at the start; every other stroke softer */
+            uint32_t pos = (uint32_t)cnt + i, a = pos % dper, ak, st = pos / dper, lv = (st & 1u) ? 1u : 2u;
+            if (coup >= GURDY_RHYTHM) {                 /* the bar's last hit at or before this step, and how loud
+                                                         * (found at a step's start: once a block at most) */
+                if (!i || !a) {
+                    const uint8_t *rh = GURDY_RHY[coup - GURDY_RHYTHM];
+                    for (rk = 0; rk < 16u && !rh[(st - rk) & 15u]; rk++)
+                        ;
+                    rlv = rk < 16u ? rh[(st - rk) & 15u] : 0u;
+                }
+                lv = rlv;
+                a += rk * dper;
+            }
+            ak = a < dlen ? a : dlen;
+            x = (x * 5) >> 3;                           /* (the strings under the drum) */
+            if (a < dlen && lv) {
+                int32_t env = 32767 - (int32_t)(((uint64_t)a << 15) / dlen), dr;
+                uint32_t kick = ak - (uint32_t)(((uint64_t)ak * ak) / (2u * dlen));
+                env = mulq15(env, env);
+                dr = osc_sine(dinc * a + (dinc + (dinc >> 1)) * kick);
+                dr = mulq15(dr, env) + (a < FS / 300u ? nz : 0);
+                x += mulq15(dr, lv == 1u ? 17000 : 30000);
+            }
+        }
         x = soft_knee(x, 20000);
         if (coup == GURDY_CRANK) {                      /* the crank's pressure: the strings the wheel bows, and the */
             x = mulq15(x, pr);                          /* body with them (still: silent, the body's ring too) */
@@ -238,12 +285,18 @@ static const preset_t GURDY_PRESETS[] = {
     /* GHOULBOX presets (tools/ghoulbox_presets.py) */
     {"PRIMEVAL", {2, 100, 90, 60, 75, 0, 110, 70}, {25, 64, 127, 60}, 0, 1, FX(12, 15, 0, 100), PAT(15)},
     {"EARTHQUAKE", {2, 127, 110, 30, 50, 0, 127, 110}, {70, 64, 127, 110}, 0, 1, FX(25, 15, 0, 115), PAT(17)},
-    {"STAMPEDE", {2, 50, 40, 112, 110, 4, 80, 28}, {2, 64, 127, 25}, 0, 1, FX(25, 0, 0, 75), PAT(21)},
+    {"STAMPEDE", {2, 40, 30, 80, 40, 8, 60, 28}, {2, 64, 127, 25}, 0, 1, FX(25, 0, 0, 75), PAT(21)},
     {"REX GROWL", {2, 60, 0, 100, 127, 3, 100, 90}, {8, 64, 127, 45}, 0, 1, FX(40, 0, 0, 90), PAT(18)},
     {"SWAMP FIDDLE", {2, 10, 20, 85, 20, 0, 90, 80}, {45, 64, 120, 80}, 0, 1, FX(5, 30, 15, 105), PAT(19)},
     {"TRIBE PIPES", {2, 110, 127, 127, 5, 0, 30, 30}, {6, 64, 127, 35}, 0, 1, FX(20, 0, 0, 85), PAT(15)},
     {"WAR CHANT", {2, 100, 60, 90, 90, 2, 100, 55}, {5, 64, 127, 40}, 0, 1, FX(20, 0, 10, 95), PAT(18)},
     {"TUNDRA", {2, 120, 100, 40, 30, 0, 127, 127}, {90, 64, 127, 120}, 0, 1, FX(0, 40, 10, 120), PAT(17)},
+    {"WAR PARADE", {2, 70, 60, 70, 30, 10, 80, 20}, {5, 64, 127, 40}, 0, 1, FX(15, 0, 10, 100), PAT(18)},
+    {"JUNGLE CAMP", {2, 45, 50, 60, 20, 9, 50, 40}, {10, 64, 127, 50}, 0, 1, FX(0, 10, 15, 95), PAT(17)},
+    {"RITUAL FIRE", {2, 55, 70, 50, 10, 11, 70, 50}, {20, 64, 127, 60}, 0, 1, FX(5, 10, 20, 105), PAT(16)},
+    {"TITAN MARCH", {2, 90, 40, 70, 60, 6, 100, 30}, {5, 64, 127, 45}, 0, 1, FX(20, 0, 0, 100), PAT(17)},
+    {"HEARTBEAT", {2, 30, 20, 40, 0, 12, 40, 60}, {40, 64, 127, 90}, 0, 1, FX(0, 20, 0, 115), PAT(17)},
+    {"HERD RUN", {2, 35, 40, 90, 30, 7, 50, 30}, {2, 64, 127, 30}, 0, 1, FX(10, 0, 10, 85), PAT(17)},
     /* GHOULBOX end */
 };
 
@@ -263,7 +316,7 @@ static const engine_t ENG_GURDY = {
         {"5TH", F_PCT, 0, 127, 50, 0, 0},
         {"BRTH", F_PCT, 0, 127, 80, 0, 0},         /* (GHOULBOX: WHL, the wheel's pressure) */
         {"RASP", F_PCT, 0, 127, 60, 0, 0},         /* (BUZZ) */
-        {"PULS", F_ENUM, 0, 5, 2, N_GURDY_COUP, 0},   /* (COUP: the wheel's strokes) */
+        {"PULS", F_ENUM, 0, 12, 2, N_GURDY_COUP, 0},   /* (COUP: the wheel's strokes) */
         {"BODY", F_PCT, 0, 127, 70, 0, 0},
         {"WOBL", F_PCT, 0, 127, 40, 0, 0},
     },
