@@ -45,8 +45,8 @@ static const char *const PRESET_CAT[16] = {   /* Felucca's sounds, then DINOBOX'
                                   * DRUM, MAMMOTH, GLACIER PAD, METEOR, CICADA BUZZ, AMBER BELLS, TAR GROWL, MAMMOTH
                                   * CALL, GLACIER WIDE */
     "DD",                        /* 13 SLICE: CHOP, STUTTER */
-    "LPLLLLLP" "DDDDDD",         /* 14 ROAR: PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR
-                                  * CHANT, TUNDRA; the rhythms WAR PARADE .. HERD RUN */
+    "LPLLLLLP" "DDDDDDDDDDDD",   /* 14 ROAR: PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR
+                                  * CHANT, TUNDRA; the rhythms WAR PARADE .. CHAOS DRUMS */
     "FFFFLFFFFPFFFFPB" "FFLF",   /* 15 SAURUS (DINOBOX): the calls FX, CREST HOOT a lead, DEEP RUMBLE and DISTANT HERD
                                   * pads, LOW GROWL a bass; BABY REX, SEA MONSTER, HADRO HORN (a lead), COMPY PACK */
 };
