@@ -38,11 +38,19 @@ jobs:
         run: |
           mkdir -p /tmp/scape-output
           cp build/scape/dinobox_scape_preview.mp3 build/scape/cues.txt build/scape/host-cost.txt /tmp/scape-output/
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          data = Path('/tmp/scape-output/dinobox_scape_preview.mp3').read_bytes()
+          for i, at in enumerate(range(0, len(data), 500000)):
+              Path(f'/tmp/scape-output/audio-part-{i:02d}.b64').write_text(base64.b64encode(data[at:at+500000]).decode() + '\n')
+          PY
           printf '%s\n' "$GITHUB_SHA" > /tmp/scape-output/SOURCE
           sha256sum /tmp/scape-output/dinobox_scape_preview.mp3 > /tmp/scape-output/SHA256
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git checkout --orphan scape-audition-output
+          git fetch origin scape-audition-output
+          git checkout -B scape-audition-output FETCH_HEAD
           git rm -rf .
           cp /tmp/scape-output/* .
           git add .
