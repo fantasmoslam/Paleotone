@@ -36,7 +36,8 @@ static const struct { const char *name; uint8_t ph; } KIND[] = {
     {"NIGHT SWARM", PH_HOLD}, {"STORM CLOUD", PH_HOLD}, {"TUNDRA", PH_HOLD}, {"EARTHQUAKE", PH_HOLD},
     {"ENCOUNTER", PH_KIT},
     {"STAMPEDE", PH_HOLD}, {"WAR PARADE", PH_HOLD}, {"JUNGLE CAMP", PH_HOLD}, {"RITUAL FIRE", PH_HOLD},
-    {"TITAN MARCH", PH_HOLD}, {"HEARTBEAT", PH_HOLD}, {"HERD RUN", PH_HOLD},   /* (ROAR's rhythms: a held note plays on) */
+    {"TITAN MARCH", PH_HOLD}, {"HEARTBEAT", PH_HOLD}, {"HERD RUN", PH_HOLD}, {"TRIBAL WAR", PH_HOLD}, {"TALK DRUMS", PH_HOLD},
+    {"ODD RITUAL", PH_HOLD}, {"FIVE MOONS", PH_HOLD}, {"SPIRAL", PH_HOLD}, {"CHAOS DRUMS", PH_HOLD},   /* (ROAR's rhythms: a held note plays on) */
 };
 /* 16 steps of up to 3 notes; {T_} holds the step before, {0} rests */
 static const uint8_t PHRASE[9][16][3] = {

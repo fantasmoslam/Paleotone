@@ -24,18 +24,49 @@
  * ph[2] mouche. */
 static const char *const N_GURDY_DRN[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const N_GURDY_COUP[] = {"HOLD", "1/4", "1/8", "1/8T", "1/16", "TURN", "DRM4", "DRM8", "GALOP", "TRES",
-                                           "WAR", "RAIN", "QUAKE"};   /* (TURN: GHOULBOX's CRANK)    append-only */
-static const uint8_t GURDY_COUP_DIV[13] = {0, 0, 1, 4, 2, 0, 0, 1, 2, 2, 2, 2, 2};   /* N_DIV indices (fx.c div_samples) */
+                                           "WAR", "RAIN", "QUAKE", "WAR2", "TALK", "SEVEN", "PENTA", "SPIRL", "CHAOS"};   /* (TURN: GHOULBOX's CRANK)    append-only */
+static const uint8_t GURDY_COUP_DIV[19] = {0, 0, 1, 4, 2, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};   /* N_DIV indices (fx.c div_samples) */
 #define GURDY_DRUM 6u                                   /* DINOBOX: DRM4 DRM8, the strokes with a deep drum on each */
-#define GURDY_RHYTHM 8u                                 /* DINOBOX: GALOP .. QUAKE, the drum on a bar of 1/16s */
-/* DINOBOX: the rhythms, a bar of 16 sixteenths from the note-on: per step 0 rest, 1 soft, 2 loud */
-static const uint8_t GURDY_RHY[5][16] = {
-    {2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1},   /* GALOP: a herd running, da-da-DUM */
-    {2, 0, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 1, 0},   /* TRES: 3-3-2 */
-    {2, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, 1, 1},   /* WAR: a march, a boom on the bar's halves */
-    {2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1},   /* RAIN: hands never stopping */
-    {2, 0, 1, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0},   /* QUAKE: a slow heartbeat */
+#define GURDY_KICK (FS / 25u)                          /* DINOBOX: the drum's pitch falls to its note in 40 ms */
+#define GURDY_RHYTHM 8u                                 /* DINOBOX: GALOP .. CHAOS, the drum on 1/16s */
+/* DINOBOX: the rhythms, on sixteenths from the note-on: per step 0 rest, 1 soft, 2 loud (the low drum), 3 a high drum
+ * (a fifth up), 4 a talking drum (bending up into its note). Every fourth bar ends in a fill; WOBL adds ghost notes
+ * on the rests and moves each hit's pitch a little (gurdy_hit) */
+static const struct { uint8_t len, v[32]; } GURDY_RHY[] = {
+    {16, {2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1}},                   /* GALOP: a herd running, da-da-DUM */
+    {16, {2, 0, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 1, 0}},                   /* TRES: 3-3-2 */
+    {16, {2, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, 1, 1}},                   /* WAR: a march, a boom on the halves */
+    {16, {2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1}},                   /* RAIN: hands never stopping */
+    {16, {2, 0, 1, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0}},                   /* QUAKE: a slow heartbeat */
+    {32, {2, 0, 0, 2, 0, 0, 3, 0, 2, 0, 1, 1, 3, 0, 0, 0,                     /* WAR2: war drums, two bars, low and */
+          2, 0, 0, 2, 0, 0, 3, 0, 2, 0, 3, 0, 2, 3, 2, 3}},                   /* high answering */
+    {16, {4, 0, 1, 4, 0, 3, 0, 1, 4, 0, 0, 4, 1, 0, 3, 1}},                   /* TALK: talking drums */
+    {14, {2, 0, 1, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0}},                         /* SEVEN: 7/8, 2+2+3 */
+    {20, {2, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0}},       /* PENTA: five hits over four beats .. */
+    {32, {2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 3,   /* SPIRL: hits closing in, a roll into */
+          0, 1, 0, 3, 1, 3, 1, 3, 4, 4}},                                     /* the downbeat */
+    {16, {2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0}},                   /* CHAOS: the downbeats, the rest by chance */
 };
+#define GURDY_CHAOS 18u
+static uint32_t gurdy_hash(uint32_t x)
+{
+    x = (x + 0x9E3779B9u) * 0x85EBCA6Bu;
+    x ^= x >> 13;
+    x *= 0xC2B2AE35u;
+    return x ^ (x >> 16);
+}
+/* rhythm r's hit on step st (from the note-on): 0 none, else its kind (1 .. 4) */
+static uint32_t gurdy_hit(uint32_t r, uint32_t st, int32_t wobl)
+{
+    uint32_t len = GURDY_RHY[r].len, pos = st % len, v = GURDY_RHY[r].v[pos], h = gurdy_hash(st);
+    if (r + GURDY_RHYTHM == GURDY_CHAOS && !v && (h >> 28) < 7u)
+        v = (h >> 28) < 3u ? 1u : (h >> 28) < 5u ? 3u : (h >> 28) < 6u ? 4u : 2u;
+    if (((st / len) & 3u) == 3u && pos + 4u >= len)     /* the fill: the bar's last four steps a roll */
+        v = pos + 1u == len ? 2u : (pos & 1u) ? 3u : 1u;
+    if (!v && (int32_t)(h >> 25) < wobl / 3)            /* a ghost note */
+        v = 1;
+    return v;
+}
 #define GURDY_CRANK 5u                                  /* COUP CRANK (GHOULBOX) */
 static uint32_t div_samples(uint32_t div);              /* fx.c */
 
@@ -134,7 +165,7 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     const int16_t *p = t->p;
     int32_t drn = 36 + clamp(p[P_E0], 0, 11), dlvl = p[P_E1] * 200, flvl = p[P_E2] * 170, whl = p[P_E3];
     int32_t buzz = p[P_E4] * 258, body = p[P_E6] * 258, wobl = p[P_E7];
-    uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 12), i, dper = 0, dlen = 1, rk = 0, rlv = 0;
+    uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 18), i, dper = 0, dlen = 1, rk = 0, rlv = 0, rinc = 0;
     int32_t dd, fd, df = temper(p, (uint32_t)drn, &dd) - v->tfine, ff = temper(p, (uint32_t)drn + 7u, &fd) - v->tfine;
     uint32_t inc = m->inc, dinc = cents_inc(drn * 16 + dd, 0, m->fine + df), finc = cents_inc((drn + 7) * 16 + fd, 0, m->fine + ff);
                                                         /* GHOULBOX: the drones on TEMP's own degrees, not the note's */
@@ -180,6 +211,8 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         e1 = a < fall ? 32767 - (int32_t)((a * kf) >> 8) : a >= per ? 32767 : 0;
         if (!buzz)
             e0 = e1 = 0;
+        if (coup >= GURDY_DRUM)
+            e0 = e1 = 0;                                /* DINOBOX: the drum takes the trompette's place (no chatter) */
         if (coup >= GURDY_RHYTHM) {                     /* DINOBOX: a rhythm: ~0.3 s a hit (QUAKE 0.45) */
             dper = per;
             dlen = coup == 12u ? FS * 45u / 100u : FS * 3u / 10u;
@@ -237,26 +270,32 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
                                                          * phase in closed form from the stroke's start: no state), a
                                                          * slap of noise at the start; every other stroke softer */
             uint32_t pos = (uint32_t)cnt + i, a = pos % dper, ak, st = pos / dper, lv = (st & 1u) ? 1u : 2u;
-            if (coup >= GURDY_RHYTHM) {                 /* the bar's last hit at or before this step, and how loud
+            uint32_t di = dinc;
+            if (coup >= GURDY_RHYTHM) {                 /* the last hit at or before this step, its kind and pitch
                                                          * (found at a step's start: once a block at most) */
                 if (!i || !a) {
-                    const uint8_t *rh = GURDY_RHY[coup - GURDY_RHYTHM];
-                    for (rk = 0; rk < 16u && !rh[(st - rk) & 15u]; rk++)
+                    for (rk = 0, rlv = 0; rk < 8u && rk <= st && !(rlv = gurdy_hit(coup - GURDY_RHYTHM, st - rk, wobl)); rk++)
                         ;
-                    rlv = rk < 16u ? rh[(st - rk) & 15u] : 0u;
+                    rinc = dinc + (uint32_t)((int32_t)(dinc >> 9) * (((int32_t)(gurdy_hash(st - rk) >> 26) - 32) * wobl >> 7));
+                    if (rlv == 3u)
+                        rinc += rinc >> 1;              /* the high drum: a fifth up */
                 }
                 lv = rlv;
+                di = rinc;
                 a += rk * dper;
             }
-            ak = a < dlen ? a : dlen;
+            ak = a < GURDY_KICK ? a : GURDY_KICK;        /* the pitch's fall: over ~40 ms (talking: ~150 ms) */
+            if (lv == 4u)
+                ak = a < GURDY_KICK * 4u ? a : GURDY_KICK * 4u;
             x = (x * 5) >> 3;                           /* (the strings under the drum) */
             if (a < dlen && lv) {
                 int32_t env = 32767 - (int32_t)(((uint64_t)a << 15) / dlen), dr;
-                uint32_t kick = ak - (uint32_t)(((uint64_t)ak * ak) / (2u * dlen));
+                uint32_t kl = lv == 4u ? GURDY_KICK * 4u : GURDY_KICK, kick = ak - (uint32_t)(((uint64_t)ak * ak) / (2u * kl));
                 env = mulq15(env, env);
-                dr = osc_sine(dinc * a + (dinc + (dinc >> 1)) * kick);
+                dr = osc_sine(lv == 4u ? di * a - (di >> 1) * kick            /* talking: bends up into it */
+                                       : di * a + (di + (di >> 1)) * kick);      /* kicked from 2.5x, falling */
                 dr = mulq15(dr, env) + (a < FS / 300u ? nz : 0);
-                x += mulq15(dr, lv == 1u ? 17000 : 30000);
+                x += mulq15(dr, lv == 1u ? 17000 : lv == 2u ? 30000 : 23000);
             }
         }
         x = soft_knee(x, 20000);
@@ -285,18 +324,24 @@ static const preset_t GURDY_PRESETS[] = {
     /* GHOULBOX presets (tools/ghoulbox_presets.py) */
     {"PRIMEVAL", {2, 100, 90, 60, 75, 0, 110, 70}, {25, 64, 127, 60}, 0, 1, FX(12, 15, 0, 100), PAT(15)},
     {"EARTHQUAKE", {2, 127, 110, 30, 50, 0, 127, 110}, {70, 64, 127, 110}, 0, 1, FX(25, 15, 0, 115), PAT(17)},
-    {"STAMPEDE", {2, 40, 30, 80, 40, 8, 60, 28}, {2, 64, 127, 25}, 0, 1, FX(25, 0, 0, 75), PAT(21)},
+    {"STAMPEDE", {2, 40, 30, 80, 40, 8, 60, 45}, {2, 64, 127, 25}, 0, 1, FX(25, 0, 0, 75), PAT(21)},
     {"REX GROWL", {2, 60, 0, 100, 127, 3, 100, 90}, {8, 64, 127, 45}, 0, 1, FX(40, 0, 0, 90), PAT(18)},
     {"SWAMP FIDDLE", {2, 10, 20, 85, 20, 0, 90, 80}, {45, 64, 120, 80}, 0, 1, FX(5, 30, 15, 105), PAT(19)},
     {"TRIBE PIPES", {2, 110, 127, 127, 5, 0, 30, 30}, {6, 64, 127, 35}, 0, 1, FX(20, 0, 0, 85), PAT(15)},
     {"WAR CHANT", {2, 100, 60, 90, 90, 2, 100, 55}, {5, 64, 127, 40}, 0, 1, FX(20, 0, 10, 95), PAT(18)},
     {"TUNDRA", {2, 120, 100, 40, 30, 0, 127, 127}, {90, 64, 127, 120}, 0, 1, FX(0, 40, 10, 120), PAT(17)},
-    {"WAR PARADE", {2, 70, 60, 70, 30, 10, 80, 20}, {5, 64, 127, 40}, 0, 1, FX(15, 0, 10, 100), PAT(18)},
-    {"JUNGLE CAMP", {2, 45, 50, 60, 20, 9, 50, 40}, {10, 64, 127, 50}, 0, 1, FX(0, 10, 15, 95), PAT(17)},
-    {"RITUAL FIRE", {2, 55, 70, 50, 10, 11, 70, 50}, {20, 64, 127, 60}, 0, 1, FX(5, 10, 20, 105), PAT(16)},
+    {"WAR PARADE", {2, 70, 60, 70, 30, 10, 80, 45}, {5, 64, 127, 40}, 0, 1, FX(15, 0, 10, 100), PAT(18)},
+    {"JUNGLE CAMP", {2, 45, 50, 60, 20, 9, 50, 60}, {10, 64, 127, 50}, 0, 1, FX(0, 10, 15, 95), PAT(17)},
+    {"RITUAL FIRE", {2, 55, 70, 50, 10, 11, 70, 70}, {20, 64, 127, 60}, 0, 1, FX(5, 10, 20, 105), PAT(16)},
     {"TITAN MARCH", {2, 90, 40, 70, 60, 6, 100, 30}, {5, 64, 127, 45}, 0, 1, FX(20, 0, 0, 100), PAT(17)},
     {"HEARTBEAT", {2, 30, 20, 40, 0, 12, 40, 60}, {40, 64, 127, 90}, 0, 1, FX(0, 20, 0, 115), PAT(17)},
-    {"HERD RUN", {2, 35, 40, 90, 30, 7, 50, 30}, {2, 64, 127, 30}, 0, 1, FX(10, 0, 10, 85), PAT(17)},
+    {"HERD RUN", {2, 35, 40, 90, 30, 7, 50, 50}, {2, 64, 127, 30}, 0, 1, FX(10, 0, 10, 85), PAT(17)},
+    {"TRIBAL WAR", {2, 75, 60, 60, 20, 13, 90, 40}, {5, 64, 127, 45}, 0, 1, FX(20, 0, 10, 105), PAT(17)},
+    {"TALK DRUMS", {2, 40, 40, 50, 10, 14, 60, 50}, {10, 64, 127, 50}, 0, 1, FX(0, 10, 15, 95), PAT(17)},
+    {"ODD RITUAL", {2, 50, 60, 60, 20, 15, 70, 40}, {15, 64, 127, 60}, 0, 1, FX(5, 10, 20, 105), PAT(17)},
+    {"FIVE MOONS", {2, 40, 70, 50, 10, 16, 60, 60}, {30, 64, 127, 80}, 0, 1, FX(0, 30, 25, 115), PAT(17)},
+    {"SPIRAL", {2, 45, 50, 60, 30, 17, 60, 50}, {10, 64, 127, 50}, 0, 1, FX(10, 0, 20, 100), PAT(17)},
+    {"CHAOS DRUMS", {2, 40, 40, 70, 30, 18, 60, 90}, {5, 64, 127, 40}, 0, 1, FX(15, 0, 15, 95), PAT(17)},
     /* GHOULBOX end */
 };
 
@@ -316,7 +361,7 @@ static const engine_t ENG_GURDY = {
         {"5TH", F_PCT, 0, 127, 50, 0, 0},
         {"BRTH", F_PCT, 0, 127, 80, 0, 0},         /* (GHOULBOX: WHL, the wheel's pressure) */
         {"RASP", F_PCT, 0, 127, 60, 0, 0},         /* (BUZZ) */
-        {"PULS", F_ENUM, 0, 12, 2, N_GURDY_COUP, 0},   /* (COUP: the wheel's strokes) */
+        {"PULS", F_ENUM, 0, 18, 2, N_GURDY_COUP, 0},   /* (COUP: the wheel's strokes) */
         {"BODY", F_PCT, 0, 127, 70, 0, 0},
         {"WOBL", F_PCT, 0, 127, 40, 0, 0},
     },
