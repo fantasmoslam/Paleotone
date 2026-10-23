@@ -13,17 +13,17 @@
  * nothing of theirs is in the settings record (MI_PROJECT: menu_get / menu_put read and write song.g) */
 enum { MI_COLOR, MI_STYLE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_SCOPE, MI_HOME, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED,
        MI_PREVIEW, MI_CHADD, MI_NAMES, MI_LOWCUT, MI_USB,
-       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TUNE, MI_MIDIIN, MI_OUT1, MI_OUT2, MI_OUT3, MI_OUT4, MI_CLKOUT, MI_SCENE, MI_SERIAL, MI_RESTORE, MI_PANEL, MI_INFO, MI_ABOUT, MI_COUNT };
+       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TUNE, MI_MIDIIN, MI_OUT1, MI_OUT2, MI_OUT3, MI_OUT4, MI_CLKOUT, MI_SCENE, MI_SERIAL, MI_RESTORE, MI_SCAPE, MI_PANEL, MI_INFO, MI_ABOUT, MI_COUNT };
                                                        /* (1.1: the metronome's rows in AUDIO; 1.2: RESTORE LAST in
                                                         * SYSTEM, SCALE LEDS STEP PREVIEW CHORD ENTRY in CONTROL, SCOPE in
                                                         * DISPLAY, TUNE in AUDIO, MIDI IN in MIDI, INFO in SYSTEM;
                                                         * 1.3: HOME in DISPLAY) */
-#define MI_VALUES MI_PANEL
+#define MI_VALUES MI_SCAPE
 #define MI_PROJECT(row) ((row) == MI_TUNE || (row) == MI_MIDIIN)   /* the project's values (song.g), not settings */
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "STYLE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "SCOPE", "HOME", "HOLD", "KNOB ACCEL",
                                               "FX LATCH", "BPM LOCK", "SCALE LEDS", "STEP PREVIEW", "CHORD ENTRY", "NOTE NAMES",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TUNE",
-                                              "MIDI IN", "T1 OUT", "T2 OUT", "T3 OUT", "T4 OUT", "CLOCK OUT", "SCENE", "USB SERIAL", "RESTORE LAST", "CALIBRATION", "INFO", "ABOUT"};
+                                              "MIDI IN", "T1 OUT", "T2 OUT", "T3 OUT", "T4 OUT", "CLOCK OUT", "SCENE", "USB SERIAL", "RESTORE LAST", "SCAPE", "CALIBRATION", "INFO", "ABOUT"};
 /* 1.0.5: the MENU's tabs (ui_menu.c: ALGORITHM steps between them, PRESETS among one tab's rows; the editor gets a
  * row's tab after its MENU_DESC reply). A tab's rows follow each other in MI order (tests/ui_test.c checks it); at
  * most MTAB_ROWS each (the page does not scroll: ui_menu.c fits them; 1.2: 7, the rows of such a tab 21 px; 1.3: 8,
@@ -48,6 +48,7 @@ static const uint8_t MI_TAB[MI_COUNT] = {
     MTAB_MIDI,                                                              /* MIDI IN (1.2) */
     MTAB_MIDI, MTAB_MIDI, MTAB_MIDI, MTAB_MIDI, MTAB_MIDI,                  /* DINOBOX: T1..T4 OUT, CLOCK OUT */
     MTAB_SYSTEM,                                                            /* SCENE (GHOULBOX) */
+    MTAB_SYSTEM, /* SCAPE editor */
     MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM,        /* USB SERIAL, RESTORE LAST, CALIBRATION,
                                                                              * INFO (1.2), ABOUT */
 };

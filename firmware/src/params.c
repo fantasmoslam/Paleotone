@@ -460,7 +460,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
 
 /* ------------------------------------------------------------ pages --- */
 enum { FAM_HOME, FAM_ENV, FAM_LFO, FAM_FX, FAM_SCL, FAM_EDIT, FAM_GLO, FAM_SAVE, FAM_ARP, FAM_SEQ, FAM_TRK,
-       FAM_COUNT };
+       FAM_SCAPE, FAM_COUNT };
 enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK };   /* SC_TRK: the TRACKS page (ui_input.c tracks_edit) */
 enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
        GR_SLCR, GR_MOD, GR_PATS, GR_SONG, GR_TOOLS, GR_CHORD, GR_SLICES, GR_EVENTS,
@@ -508,17 +508,17 @@ static const page_t PAGES[] = {
     {"VOICE 3", FAM_EDIT, SC_TRACK, GR_NONE, {P_SPRD, 0xFF, 0xFF, 0xFF}},   /* #148: SPREAD */
     /* 1.2 (Discussion #153): a family's pages go round in this order, a tap of its button each (ui.c open_family) */
     {"SONG", FAM_GLO, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},        /* GLO's only page (1.2; up to 1.1.5 SEQ's) */
-    {"SCAPE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_BIO, G_SC_LEVEL, G_SC_DENS, G_SC_DANGER}},
-    {"WORLD", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_TIME, G_SC_WEATHER, G_SC_KEY, G_SC_SEND}},
-    {"DRONE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_DTYPE, G_SC_DLEVEL, G_SC_DMOVE, 0xFF}},
-    {"LAYER 1", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L0K, G_SC_L0V, G_SC_L0N, G_SC_L0D}},
-    {"LAYER 2", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L1K, G_SC_L1V, G_SC_L1N, G_SC_L1D}},
-    {"LAYER 3", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L2K, G_SC_L2V, G_SC_L2N, G_SC_L2D}},
-    {"LAYER 4", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L3K, G_SC_L3V, G_SC_L3N, G_SC_L3D}},
-    {"LAYER 5", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L4K, G_SC_L4V, G_SC_L4N, G_SC_L4D}},
-    {"LAYER 6", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L5K, G_SC_L5V, G_SC_L5N, G_SC_L5D}},
-    {"LAYER 7", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L6K, G_SC_L6V, G_SC_L6N, G_SC_L6D}},
-    {"LAYER 8", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L7K, G_SC_L7V, G_SC_L7N, G_SC_L7D}},
+    {"SCAPE", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_BIO, G_SC_LEVEL, G_SC_DENS, G_SC_DANGER}},
+    {"WORLD", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_TIME, G_SC_WEATHER, G_SC_KEY, G_SC_SEND}},
+    {"DRONE", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_DTYPE, G_SC_DLEVEL, G_SC_DMOVE, 0xFF}},
+    {"LAYER 1", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L0K, G_SC_L0V, G_SC_L0N, G_SC_L0D}},
+    {"LAYER 2", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L1K, G_SC_L1V, G_SC_L1N, G_SC_L1D}},
+    {"LAYER 3", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L2K, G_SC_L2V, G_SC_L2N, G_SC_L2D}},
+    {"LAYER 4", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L3K, G_SC_L3V, G_SC_L3N, G_SC_L3D}},
+    {"LAYER 5", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L4K, G_SC_L4V, G_SC_L4N, G_SC_L4D}},
+    {"LAYER 6", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L5K, G_SC_L5V, G_SC_L5N, G_SC_L5D}},
+    {"LAYER 7", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L6K, G_SC_L6V, G_SC_L6N, G_SC_L6D}},
+    {"LAYER 8", FAM_SCAPE, SC_GLOBAL, GR_NONE, {G_SC_L7K, G_SC_L7V, G_SC_L7N, G_SC_L7D}},
     {"PRESETS", FAM_SAVE, SC_GLOBAL, GR_BROWSE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* browser: PRESETS knob / KNOB 1 */
     {"USER", FAM_SAVE, SC_GLOBAL, GR_USER, {0xFF, 0xFF, 0xFF, 0xFF}},       /* user presets: SLOT LOAD ERASE SAVE */
     {"PHRASES", FAM_SAVE, SC_GLOBAL, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},    /* pattern loader: PAT LOAD (ui.c pat_load);

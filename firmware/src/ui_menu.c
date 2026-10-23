@@ -535,7 +535,10 @@ static void menu_input(uint32_t oct)                  /* oct: ui_input.c oct_tap
         if (s)
             menu_put(ui.menu_sel, menu_step(ui.menu_sel, s));
     } else if (up) {
-        if (ui.menu_sel == MI_PANEL) {
+        if (ui.menu_sel == MI_SCAPE) {
+            ui.menu=0; ui.home=0; ui.page=(uint8_t)page_first(FAM_SCAPE);
+            page_entered(); ui.force=1;
+        } else if (ui.menu_sel == MI_PANEL) {
             panel_setup();
             scrn.idle = fm1_ms;                         /* (SCREEN OFF: its own loop had the input) */
             ui.force = 1;

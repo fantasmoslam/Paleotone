@@ -8,12 +8,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DINOBOX Editor</title>
+<title>PALEOTONE Editor</title>
 <style>
   /* Fukiai: Hügelton Instruments' icon font (MIT, FUKIAI-LICENSE.txt). Icons are text in .ic spans;
      they stay hidden until the face has loaded (html.fk), so a missing font never shows boxes. */
   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
-  /* GHOULBOX: the dungeon, as the installer and the emulator (DINOBOX: TERMINAL's colours (GHOULBOX: CRYPT's); the art in ../art/, make_site.py) */
+  /* GHOULBOX: the dungeon, as the installer and the emulator (PALEOTONE: TERMINAL's colours (GHOULBOX: CRYPT's); the art in ../art/, make_site.py) */
   :root { --bg: #0D0C0B; --fg: #EFDFC6; --dim: #B3A58C; --line: #3A3A3E; --theme: #EF9A29;
           --night: #040a06; --edge: #6B4513; --frame: #3A3A3E; --ink: #000000; color-scheme: dark; }
   h1 { color: var(--theme); }
@@ -183,7 +183,7 @@
 <body>
 <header class="crest">
   <img class="skull" src="../art/skull.png" alt="">
-  <img class="logo" src="../art/logo.png" alt="DINOBOX">
+  <img class="logo" src="../art/logo.png" alt="PALEOTONE">
   <span class="what">Editor</span>
 </header>
 <div class="stage">
@@ -1745,6 +1745,49 @@ function makeMockDevice(opt = {}) {
     E("OCT", ["-2", "-1", "0", "+1", "+2"], 2),
     E("EVOL", ["OFF", "ON"], 0), D("DENS", F.INT, 1, 8, 4), D("DRFT", F.INT, 1, 8, 6),   /* G_DREAM .. G_DMOOD (ids 33..36; */
     E("MOOD", ["MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"], 0),                          /* GHOULBOX 2.3: HOME > DREAM) */
+    E("BIOME",["WATER", "JUNGLE", "TUNDRA", "FOREST", "PLAINS", "MOUNTAINS", "CANYONS", "CALDERA"],1),
+    D("LEVEL",F.PCT,0,127,0),
+    D("DENS",F.PCT,0,127,72),
+    D("DANGER",F.PCT,0,127,40),
+    E("TIME",["DAWN", "DAY", "DUSK", "NIGHT"],2),
+    E("WEATHER",["CLEAR", "WIND", "RAIN", "STORM"],0),
+    E("KEY",["FOLLOW", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],0),
+    D("SEND",F.PCT,0,127,127),
+    E("TYPE",["OFF", "PAD", "CHOIR", "THROAT", "AIR"],1),
+    D("LEVEL",F.PCT,0,127,26),
+    D("MOVE",F.PCT,0,127,40),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],5),
+    D("LEVEL",F.PCT,0,127,46),
+    D("DENS",F.PCT,0,127,64),
+    D("DIST",F.PCT,0,127,50),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],14),
+    D("LEVEL",F.PCT,0,127,54),
+    D("DENS",F.PCT,0,127,50),
+    D("DIST",F.PCT,0,127,50),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],15),
+    D("LEVEL",F.PCT,0,127,44),
+    D("DENS",F.PCT,0,127,44),
+    D("DIST",F.PCT,0,127,60),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],8),
+    D("LEVEL",F.PCT,0,127,44),
+    D("DENS",F.PCT,0,127,36),
+    D("DIST",F.PCT,0,127,70),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],9),
+    D("LEVEL",F.PCT,0,127,46),
+    D("DENS",F.PCT,0,127,30),
+    D("DIST",F.PCT,0,127,80),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],17),
+    D("LEVEL",F.PCT,0,127,40),
+    D("DENS",F.PCT,0,127,36),
+    D("DIST",F.PCT,0,127,40),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],22),
+    D("LEVEL",F.PCT,0,127,64),
+    D("DENS",F.PCT,0,127,36),
+    D("DIST",F.PCT,0,127,100),
+    E("SOUND",["OFF", "WIND", "STREAM", "WAVES", "RAIN", "CICADA", "LAVA", "RUMBLE", "SONGBIRD", "WHISTLE", "HOOT", "KNOCK", "WADER", "RAPTOR", "CRICKET", "FROG", "TOAD", "DRIP", "ROCKS", "SNAP", "CREAK", "STEAM", "CALLS", "HERD", "THUNDER"],10),
+    D("LEVEL",F.PCT,0,127,46),
+    D("DENS",F.PCT,0,127,30),
+    D("DIST",F.PCT,0,127,80),
   ];
   const NONE = D("-", F.INT, 0, 0, 0);
   const RATIO = [".5", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "14", "16"];
@@ -1781,7 +1824,7 @@ function makeMockDevice(opt = {}) {
       presets: [P("PIANO", [0, 0, 0, 1, 127, 0, 0, 0], [0, 127, 127, 70]), P("PIANO", [0, 0, 0, 1, 127, 0, 0, 0], [0, 127, 127, 70]),
         P("FLUTE", [2, 0, 0, 1, 127, 0, 0, 0], [12, 80, 120, 60]), P("SAX", [3, 0, 0, 1, 127, 0, 0, 0], [12, 80, 120, 60]),
         P("PIANO", [0, 0, 0, 1, 127, 0, 0, 0], [0, 127, 127, 70]),   /* (PERC's alias: hidden) */
-        /* DINOBOX: its own sets, SET 8..11 (after USR1..3; GHOULBOX 1.1's places) */
+        /* PALEOTONE: its own sets, SET 8..11 (after USR1..3; GHOULBOX 1.1's places) */
         P("JUNGLE NIGHT", [8, 0, 0, 1, 127, 0, 0, 0], [45, 80, 127, 95]), P("ENCOUNTER", [9, 0, 0, 0, 127, 0, 0, 0], [0, 127, 127, 60], 0, 12),
         P("LITHOPHONE", [10, 0, 0, 1, 127, 0, 0, 0], [0, 127, 127, 70]), P("TROPIC STORM", [11, 0, 0, 1, 127, 0, 0, 0], [45, 80, 127, 95])] },
     { name: "VOICE", titles: ["VOWL", "TONE"], edit: [D("VOWL", F.INT, 0, 127, 0), D("VOWL2", F.INT, 0, 127, 64), D("TALK", F.TIME, 0, 127, 0),
@@ -1891,7 +1934,7 @@ function makeMockDevice(opt = {}) {
   TP.push(D("-", F.INT, 0, 8, 0), D("-", F.INT, 0, 127, 64), D("-", F.INT, 0, 127, 96), D("-", F.INT, 0, 127, 96),   /* GHOULBOX: */
     D("-", F.INT, 0, 127, 127), D("-", F.INT, 0, 2, 0), D("-", F.INT, 0, 1, 0),   /* Felucca 1.5's 96..102, reserved */
     E("TEMP", ["EQUAL", "PYTH", "MEAN", "JUST"], 0), E("RING", ["OFF", "ON"], 0));   /* TEMP (103), RING (104, 2.3) */
-  const P_COUNT = 113, G_COUNT = 37, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
+  const P_COUNT = 113, G_COUNT = 80, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */
@@ -2519,7 +2562,7 @@ const ENGINE_ORDER = ["ANALOG", "FM6", "SAURUS", "DIGITAL", "PHASE", "LOFI", "SA
 /* GHOULBOX: the engines and factory presets the device no longer offers (src/engines.c ENGINE_ORDER, GB_HIDDEN; a
    stored number still loads them): left out of the lists here too. test_web.mjs: == the firmware's */
 const ENGINE_HIDDEN = ["SLICE"];
-/* DINOBOX: + Felucca's sounds GHOULBOX still offered (its own take their place) */
+/* PALEOTONE: + Felucca's sounds GHOULBOX still offered (its own take their place) */
 const PRESET_HIDDEN = { ANALOG: ["SAW LEAD", "SQR BASS", "ACID", "SINE KEY", "RAVE", "PLUCK", "BRASS", "SOFT PAD", "PWM STR", "SUB BASS", "WIND", "STRINGS"], PHASE: ["BRASS", "ORGAN", "RESO", "BELL", "WIRE", "STRING"], LOFI: ["PULSE LD", "WAVE BASS", "ARP 8BIT", "WAVE LEAD", "STEP LEAD"], SAMPLE: ["PIANO", "FLUTE", "SAX"], VOICE: ["VOX LEAD", "WOW BASS", "WHISPER", "CHOIR AAH"], TRIO: ["FAT BASS", "ARP LEAD", "SYNC LEAD", "RING BELL", "CHIP CHOIR"], WHEEL: ["JAZZ PERC", "GOSPEL", "ROCK DRIVE", "FULL ORGAN", "SOFT FLUTE"], GRAIN: ["GLITCH", "SHIMMER", "CLOUD PAD", "FROZEN"], PHYS: ["BELL TREE", "MARIMBA", "PLUCK", "BOWED METAL", "KALIMBA", "HAND DRUM", "TOMS", "DRONE STRING", "HARP"], DRUM: ["DRUM KIT"], NOISE: ["WIND", "RAIN", "ARCADE", "METAL"], FM6: ["TINE EP", "FM BASS", "BRASS", "MARIMBA", "ORGAN", "PLUCK", "BELL", "PAD"], SLICE: ["CHOP", "STUTTER"] };
 function engineOrder(names) {
   const rank = (n) => { const k = ENGINE_ORDER.indexOf(n); return k < 0 ? ENGINE_ORDER.length : k; };
@@ -2649,9 +2692,9 @@ const TEXT = {
     foot: "Chrome か Edge で使えます。", iconsCredit: "アイコン: Fukiai（MIT）Hügelton Instruments",
     nomidi: "このブラウザでは使えません。Chrome か Edge で開いてください。",
     denied: "MIDI（SysEx）の使用が許可されませんでした。",
-    nodevice: "DINOBOX が見つかりません。USB で接続して、もう一度押してください。",
+    nodevice: "PALEOTONE が見つかりません。USB で接続して、もう一度押してください。",
     connecting: "接続中", reading: "読み込み中 ", steploading: "ステップを読み込み中 ",
-    ready: "接続しました", disconnected: "切断されました", lost: "DINOBOX が外されました",
+    ready: "接続しました", disconnected: "切断されました", lost: "PALEOTONE が外されました",
     noreply: "応答がありません", error: "エラー: ", busy: "処理中",
     applying: "書き込み中 ", applied: "読み込みました", badfile: "ファイルを読み込めません: ",
     savedSlot: "保存しました: スロット ", loadedSlot: "読み込みました: スロット ", emptySlot: "空のスロットです: ",
@@ -2687,7 +2730,7 @@ const TEXT = {
     putDone: "本体に書き込みました: スロット ", storedSlot: "本体に保存しました: スロット ", erasedSlot: "消去しました: スロット ",
     loadedUser: "音色を読み込みました（シーケンスはそのまま。パターンは本体の SAVE > PHRASES から。SAVE 長押しで元に戻せます）: ", reloaded: "本体で音色が変わったので読み直しました", readingBank: "スロットを読み込み中",
     badEngine: "このファームウェアにないエンジンです: ", flashFail: "書き込みに失敗しました（rc {rc}）",
-    installer: "DINOBOX インストーラー", tryit: "ブラウザで試す", support: "Ko-fi で支援", merch: "グッズ",
+    installer: "PALEOTONE インストーラー", tryit: "ブラウザで試す", support: "Ko-fi で支援", merch: "グッズ",
     tabSeq: "シーケンサー", tabTracks: "トラック", tabSettings: "設定",
     needDevice: "FM-1 を接続すると編集できます。", smpNone: "このファームウェアにはユーザーサンプルのスロットがありません。",
     bankConnect: "FM-1 を接続すると本体のユーザープリセットも扱えます。", bankNone: "このファームウェアにはユーザープリセットがありません。",
@@ -2752,9 +2795,9 @@ const TEXT = {
     foot: "Works in Chrome or Edge.", iconsCredit: "Icons: Fukiai (MIT), Hügelton Instruments",
     nomidi: "This browser cannot do it. Open the page in Chrome or Edge.",
     denied: "MIDI (SysEx) access was not allowed.",
-    nodevice: "DINOBOX not found. Connect it by USB and press Connect again.",
+    nodevice: "PALEOTONE not found. Connect it by USB and press Connect again.",
     connecting: "Connecting", reading: "Reading ", steploading: "Reading steps ",
-    ready: "Connected", disconnected: "Disconnected", lost: "DINOBOX was unplugged",
+    ready: "Connected", disconnected: "Disconnected", lost: "PALEOTONE was unplugged",
     noreply: "No reply from the device", error: "Error: ", busy: "Busy",
     applying: "Writing ", applied: "Loaded", badfile: "Cannot read the file: ",
     savedSlot: "Saved to slot ", loadedSlot: "Loaded slot ", emptySlot: "Empty slot: ",
@@ -2790,7 +2833,7 @@ const TEXT = {
     putDone: "Written to the device: slot ", storedSlot: "Stored on the device: slot ", erasedSlot: "Erased slot ",
     loadedUser: "Sound loaded (the sequence stays; its pattern is on the device under SAVE > PHRASES; hold SAVE to undo): ", reloaded: "The sound changed on the device: read again", readingBank: "Reading the slots",
     badEngine: "This firmware has no such engine: ", flashFail: "Write failed (rc {rc})",
-    installer: "DINOBOX installer", tryit: "Play it in your browser", support: "Support on Ko-fi", merch: "Merch",
+    installer: "PALEOTONE installer", tryit: "Play it in your browser", support: "Support on Ko-fi", merch: "Merch",
     tabSeq: "Sequencer", tabTracks: "Tracks", tabSettings: "Settings",
     needDevice: "Connect the FM-1 to edit.", smpNone: "This firmware has no user sample slots.",
     bankConnect: "Connect the FM-1 to see its user presets too.", bankNone: "This firmware has no user presets.",
