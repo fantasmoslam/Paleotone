@@ -11,7 +11,8 @@ Persinger), itself built on Felucca 1.4.1 (Leo Kuroshita, Hügelton Instruments)
 - **Builds:** GitHub Actions only (`.github/workflows/build-firmware.yml`); the JieLi toolchain and SDK can't be
   fetched locally. Every push to `main` builds; the result (`dinobox.fwsc`, `build.log`, `felucca.bin`, `ota.bin`,
   `felucca.dis`, `RESULT`) goes to the **`build-output`** branch.
-- **Last firmware delivered and installed on the owner's FM-1:** commit `945e00c` (all host tests passed, GitHub
+- **Last firmware delivered and installed on the owner's FM-1:** commit `db51439` (2026-10-23: the clock fallback, easier
+  track selection and the track colours; image 547,504 B). Before it: commit `945e00c` (all host tests passed, GitHub
   build OK). Image 547,104 B in an app slot of ~581 KB; the build refuses less than 16 KB spare (about 18 KB of
   room left above that floor). The firmware has not changed since: every later commit is docs, tests or tools.
 - **Ground rules from the owner:** no copyrighted film audio, logos, lettering or screens (all sound is synthesized
@@ -145,8 +146,7 @@ Things that broke before and what fixes them:
    - **feedback to honour:** the previews were far too loud and busy: it is meant to be *ambient*: quiet by
      default, sparse, wind ~8 dB lower than the previews; every layer's level adjustable;
    - flash: ~18 KB above the floor, so procedural synthesis, not new samples; voices: shares the 12 with the tracks.
-3. **Easier track selection** (original step 4): built on the branch `track-select`, previews sent, waiting for
-   the owner's OK. HOME held + F3 G3 A3 B3 (the first four white keys, GLO's SOLO keys): track 1..4 at once, the key
+3. **Easier track selection** (original step 4): **done**, approved and installed (commit `db51439`, image 547,504 B). HOME held + F3 G3 A3 B3 (the first four white keys, GLO's SOLO keys): track 1..4 at once, the key
    silent, HOME then neither changes the page nor opens the menu (`ui_input.c` `home_keys`, `ui_layer.c`
    `layer_masks`). Each track its colour: the selected track's is ACCENT (badge, corners, cursor, playhead, lamps;
    `gfx.c` `ux_track`), the MIXER and HOME TRACKS show each track's; T1 keeps the palette's ACCENT, T2..T4 three
