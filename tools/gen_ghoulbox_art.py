@@ -19,7 +19,7 @@ from gen_aa_font import huff_pack, huff_unpack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FONT = ROOT / "assets/fonts/ShareTechMono-Regular.ttf"
-WORD = "DINOBOX"
+WORD = "PALEOTONE"
 SS = 4                                                  # supersampling of the drawn art
 
 
@@ -42,6 +42,8 @@ def skull(w, h):
     """a Dilophosaurus skull in side view, facing left: the long low skull with its notch behind the nostril, the two
     thin crests arching over it, the slender jaw and teeth; the nostril, the windows before and behind the eye, the
     eye and the jaw's window cut out, and a gap between the two crests"""
+    # Native low-resolution source, nearest-neighbour enlargement only.
+    return Image.open(ROOT / "assets/paleotone-oviraptor.png").convert("L").resize((80,96),Image.Resampling.NEAREST)
     W, H = w * SS, h * SS
     im = Image.new("L", (W, H), 0)
     d = ImageDraw.Draw(im)

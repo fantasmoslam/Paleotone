@@ -146,6 +146,13 @@ static const param_desc_t TP[P_COUNT] = {
     [P_RING] = PE("RING", N_ONOFF, 0),            /* GHOULBOX 2.3: GURDY's drones through the rests; OFF = as before */
 };
 
+static const char *const N_SC_BIO[] = {"WATER","JUNGLE","TUNDRA","FOREST","PLAINS","MOUNTAINS","CANYONS","CALDERA"};
+static const char *const N_SC_TIME[] = {"DAWN","DAY","DUSK","NIGHT"};
+static const char *const N_SC_WEATHER[] = {"CLEAR","WIND","RAIN","STORM"};
+static const char *const N_SC_KEY[] = {"FOLLOW","C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
+static const char *const N_SC_DRONE[] = {"OFF","PAD","CHOIR","THROAT","AIR"};
+static const char *const N_SC_KIND[] = {"OFF","WIND","STREAM","WAVES","RAIN","CICADA","LAVA","RUMBLE","SONGBIRD","WHISTLE","HOOT","KNOCK","WADER","RAPTOR","CRICKET","FROG","TOAD","DRIP","ROCKS","SNAP","CREAK","STEAM","CALLS","HERD","THUNDER"};
+
 static const param_desc_t GP[G_COUNT] = {
     [G_BPM] = PD("BPM", F_BPM, 40, 240, 120),
     [G_SWING] = PD("SWG", F_PCT, 0, 100, 0),
@@ -193,6 +200,50 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DDENS] = PD("DENS", F_INT, 1, 8, 4),
     [G_DDRFT] = PD("DRFT", F_INT, 1, 8, 6),        /* (a change every 3 passes: ~80 s at 72 BPM) */
     [G_DMOOD] = PE("MOOD", N_DMOOD, 0),
+    [G_SC_BIO] = PE("BIOME",N_SC_BIO,1),
+    [G_SC_LEVEL] = PD("LEVEL",F_PCT,0,127,0),
+    [G_SC_DENS] = PD("DENS",F_PCT,0,127,72),
+    [G_SC_DANGER] = PD("DANGER",F_PCT,0,127,40),
+    [G_SC_TIME] = PE("TIME",N_SC_TIME,2),
+    [G_SC_WEATHER] = PE("WEATHER",N_SC_WEATHER,0),
+    [G_SC_KEY] = PE("KEY",N_SC_KEY,0),
+    [G_SC_SEND] = PD("SEND",F_PCT,0,127,127),
+    [G_SC_DTYPE] = PE("TYPE",N_SC_DRONE,1),
+    [G_SC_DLEVEL] = PD("LEVEL",F_PCT,0,127,26),
+    [G_SC_DMOVE] = PD("MOVE",F_PCT,0,127,40),
+    [G_SC_L0K] = PE("SOUND",N_SC_KIND,5),
+    [G_SC_L0V] = PD("LEVEL",F_PCT,0,127,46),
+    [G_SC_L0N] = PD("DENS",F_PCT,0,127,64),
+    [G_SC_L0D] = PD("DIST",F_PCT,0,127,50),
+    [G_SC_L1K] = PE("SOUND",N_SC_KIND,14),
+    [G_SC_L1V] = PD("LEVEL",F_PCT,0,127,54),
+    [G_SC_L1N] = PD("DENS",F_PCT,0,127,50),
+    [G_SC_L1D] = PD("DIST",F_PCT,0,127,50),
+    [G_SC_L2K] = PE("SOUND",N_SC_KIND,15),
+    [G_SC_L2V] = PD("LEVEL",F_PCT,0,127,44),
+    [G_SC_L2N] = PD("DENS",F_PCT,0,127,44),
+    [G_SC_L2D] = PD("DIST",F_PCT,0,127,60),
+    [G_SC_L3K] = PE("SOUND",N_SC_KIND,8),
+    [G_SC_L3V] = PD("LEVEL",F_PCT,0,127,44),
+    [G_SC_L3N] = PD("DENS",F_PCT,0,127,36),
+    [G_SC_L3D] = PD("DIST",F_PCT,0,127,70),
+    [G_SC_L4K] = PE("SOUND",N_SC_KIND,9),
+    [G_SC_L4V] = PD("LEVEL",F_PCT,0,127,46),
+    [G_SC_L4N] = PD("DENS",F_PCT,0,127,30),
+    [G_SC_L4D] = PD("DIST",F_PCT,0,127,80),
+    [G_SC_L5K] = PE("SOUND",N_SC_KIND,17),
+    [G_SC_L5V] = PD("LEVEL",F_PCT,0,127,40),
+    [G_SC_L5N] = PD("DENS",F_PCT,0,127,36),
+    [G_SC_L5D] = PD("DIST",F_PCT,0,127,40),
+    [G_SC_L6K] = PE("SOUND",N_SC_KIND,22),
+    [G_SC_L6V] = PD("LEVEL",F_PCT,0,127,64),
+    [G_SC_L6N] = PD("DENS",F_PCT,0,127,36),
+    [G_SC_L6D] = PD("DIST",F_PCT,0,127,100),
+    [G_SC_L7K] = PE("SOUND",N_SC_KIND,10),
+    [G_SC_L7V] = PD("LEVEL",F_PCT,0,127,46),
+    [G_SC_L7N] = PD("DENS",F_PCT,0,127,30),
+    [G_SC_L7D] = PD("DIST",F_PCT,0,127,80),
+
 };
 
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
@@ -422,6 +473,18 @@ typedef struct {
 } page_t;
 
 static const page_t PAGES[] = {
+    {"SCAPE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_BIO, G_SC_LEVEL, G_SC_DENS, G_SC_DANGER}},
+    {"WORLD", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_TIME, G_SC_WEATHER, G_SC_KEY, G_SC_SEND}},
+    {"DRONE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_DTYPE, G_SC_DLEVEL, G_SC_DMOVE, 0xFF}},
+    {"LAYER 1", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L0K, G_SC_L0V, G_SC_L0N, G_SC_L0D}},
+    {"LAYER 2", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L1K, G_SC_L1V, G_SC_L1N, G_SC_L1D}},
+    {"LAYER 3", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L2K, G_SC_L2V, G_SC_L2N, G_SC_L2D}},
+    {"LAYER 4", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L3K, G_SC_L3V, G_SC_L3N, G_SC_L3D}},
+    {"LAYER 5", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L4K, G_SC_L4V, G_SC_L4N, G_SC_L4D}},
+    {"LAYER 6", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L5K, G_SC_L5V, G_SC_L5N, G_SC_L5D}},
+    {"LAYER 7", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L6K, G_SC_L6V, G_SC_L6N, G_SC_L6D}},
+    {"LAYER 8", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SC_L7K, G_SC_L7V, G_SC_L7N, G_SC_L7D}},
+
     {"ENV", FAM_ENV, SC_TRACK, GR_ADSR, {P_ATK, P_DEC, P_SUS, P_REL}},
     {"ENV DEST", FAM_ENV, SC_TRACK, GR_NONE, {P_ED_FLT, P_ED_PIT, P_ED_SHP, 0xFF}},   /* (P_ED_FX: nothing reads it) */
     {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, P_LPHASE, P_LFADE}},
