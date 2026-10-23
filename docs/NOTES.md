@@ -28,3 +28,9 @@ The soundscape maker needs biomes, and sounds to support them, water most of all
 - A rolled-R flutter ~26 Hz, a little uneven, a rough sub rumble under it.
 - In over ~0.3 s, out over ~0.5 s once the call drops: gone before the bellow ends; the bellow keeps its hall.
 - Predators: TYRANT ROAR, MONSTER ROAR, LOW GROWL, BABY REX, TITAN APE (REX ROAR, REX GROWL in other engines).
+
+## External clock (found 2026-10-23)
+
+With CLK on USB and the FM-1 plugged into a computer that sends no (or a stalled) MIDI clock, ROAR's rhythms
+froze into a flat drone: they take their tempo from the last measured external clock (fx.c beat_samples). Fix
+later: fall back to the internal tempo when no clock tick has come for a beat or two.
