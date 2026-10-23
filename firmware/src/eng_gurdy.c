@@ -28,6 +28,7 @@ static const char *const N_GURDY_COUP[] = {"HOLD", "1/4", "1/8", "1/8T", "1/16",
 static const uint8_t GURDY_COUP_DIV[19] = {0, 0, 1, 4, 2, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};   /* N_DIV indices (fx.c div_samples) */
 #define GURDY_DRUM 6u                                   /* DINOBOX: DRM4 DRM8, the strokes with a deep drum on each */
 #define GURDY_KICK (FS / 25u)                          /* DINOBOX: the drum's pitch falls to its note in 40 ms */
+#define GURDY_RQ ((1u << 24) / (2u * GURDY_KICK))      /* (its fall's 1 / (2 x KICK), Q24) */
 #define GURDY_RHYTHM 8u                                 /* DINOBOX: GALOP .. CHAOS, the drum on 1/16s */
 /* DINOBOX: the rhythms, on sixteenths from the note-on: per step 0 rest, 1 soft, 2 loud (the low drum), 3 a high drum
  * (a fifth up), 4 a talking drum (bending up into its note). Every fourth bar ends in a fill; WOBL adds ghost notes
@@ -66,6 +67,23 @@ static uint32_t gurdy_hit(uint32_t r, uint32_t st, int32_t wobl)
     if (!v && (int32_t)(h >> 25) < wobl / 3)            /* a ghost note */
         v = 1;
     return v;
+}
+/* the drum on step st: the hit sounding then (its kind, 0 none), how many steps back it was struck, its pitch */
+static uint32_t gurdy_drum_at(uint32_t coup, uint32_t st, int32_t wobl, uint32_t dinc, uint32_t *rk, uint32_t *inc)
+{
+    uint32_t lv = 0, k;
+    if (coup < GURDY_RHYTHM) {                          /* DRM4 DRM8: every stroke, every other one softer */
+        *rk = 0;
+        *inc = dinc;
+        return (st & 1u) ? 1u : 2u;
+    }
+    for (k = 0; k < 8u && k <= st && !(lv = gurdy_hit(coup - GURDY_RHYTHM, st - k, wobl)); k++)
+        ;
+    *rk = k;
+    *inc = dinc + (uint32_t)((int32_t)(dinc >> 9) * ((((int32_t)(gurdy_hash(st - k) >> 26) - 32) * wobl) >> 7));
+    if (lv == 3u)
+        *inc += *inc >> 1;                              /* the high drum: a fifth up */
+    return lv;
 }
 #define GURDY_CRANK 5u                                  /* COUP CRANK (GHOULBOX) */
 static uint32_t div_samples(uint32_t div);              /* fx.c */
@@ -165,7 +183,8 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     const int16_t *p = t->p;
     int32_t drn = 36 + clamp(p[P_E0], 0, 11), dlvl = p[P_E1] * 200, flvl = p[P_E2] * 170, whl = p[P_E3];
     int32_t buzz = p[P_E4] * 258, body = p[P_E6] * 258, wobl = p[P_E7];
-    uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 18), i, dper = 0, dlen = 1, rk = 0, rlv = 0, rinc = 0;
+    uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 18), i, dper = 0, dlen = 1, ha = 0, lv = 0, di = 0, bnd = ~0u, nlv = 0;
+    uint32_t ninc = 0, invd = 0;
     int32_t dd, fd, df = temper(p, (uint32_t)drn, &dd) - v->tfine, ff = temper(p, (uint32_t)drn + 7u, &fd) - v->tfine;
     uint32_t inc = m->inc, dinc = cents_inc(drn * 16 + dd, 0, m->fine + df), finc = cents_inc((drn + 7) * 16 + fd, 0, m->fine + ff);
                                                         /* GHOULBOX: the drones on TEMP's own degrees, not the note's */
@@ -240,6 +259,16 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         e1 = mulq15(e1, g1);
     }
     de = (e1 - e0) / (int32_t)n;
+    if (dper) {                                         /* DINOBOX: the drum this block: the hit sounding, and the
+                                                         * next step's if it starts one inside the block (a block is
+                                                         * shorter than a step) */
+        uint32_t st = (uint32_t)cnt / dper, a = (uint32_t)cnt % dper, rk, rk2;
+        lv = gurdy_drum_at(coup, st, wobl, dinc, &rk, &di);
+        ha = a + rk * dper;
+        nlv = gurdy_drum_at(coup, st + 1u, wobl, dinc, &rk2, &ninc);
+        bnd = rk2 ? ~0u : dper - a;
+        invd = (1u << 30) / dlen;
+    }
     e = e0;
     tsvf_coef(&box, 44 << 8, 70);                      /* ~270 Hz (CUTOFF_HZ: 30 Hz .. 16 kHz over 0..127) */
     tsvf_coef(&nose, 73 << 8, 90);                     /* ~1.1 kHz */
@@ -265,38 +294,26 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         x >>= 1;                                        /* (four sources: the filters' range) */
         r = gurdy_bp(&box, x, &b1, &b2) + (gurdy_bp(&nose, x, &n1, &n2) >> 1);
         x += mulq15(r - x, body);
-        if (dper) {                                     /* DINOBOX DRM4 / DRM8: a deep skin drum on each stroke at the
-                                                         * drone's pitch, kicked from 2.5x and falling to it (the
-                                                         * phase in closed form from the stroke's start: no state), a
-                                                         * slap of noise at the start; every other stroke softer */
-            uint32_t pos = (uint32_t)cnt + i, a = pos % dper, ak, st = pos / dper, lv = (st & 1u) ? 1u : 2u;
-            uint32_t di = dinc;
-            if (coup >= GURDY_RHYTHM) {                 /* the last hit at or before this step, its kind and pitch
-                                                         * (found at a step's start: once a block at most) */
-                if (!i || !a) {
-                    for (rk = 0, rlv = 0; rk < 8u && rk <= st && !(rlv = gurdy_hit(coup - GURDY_RHYTHM, st - rk, wobl)); rk++)
-                        ;
-                    rinc = dinc + (uint32_t)((int32_t)(dinc >> 9) * (((int32_t)(gurdy_hash(st - rk) >> 26) - 32) * wobl >> 7));
-                    if (rlv == 3u)
-                        rinc += rinc >> 1;              /* the high drum: a fifth up */
-                }
-                lv = rlv;
-                di = rinc;
-                a += rk * dper;
+        if (dper) {                                     /* DINOBOX DRM4 .. CHAOS: a deep skin drum at the drone's
+                                                         * pitch, kicked from 2.5x and falling to it in ~40 ms (talking:
+                                                         * bending up into it over ~150 ms), the phase in closed form
+                                                         * from the hit (no state), a slap of noise at the start */
+            if (i == bnd) {
+                ha = 0;
+                lv = nlv;
+                di = ninc;
             }
-            ak = a < GURDY_KICK ? a : GURDY_KICK;        /* the pitch's fall: over ~40 ms (talking: ~150 ms) */
-            if (lv == 4u)
-                ak = a < GURDY_KICK * 4u ? a : GURDY_KICK * 4u;
             x = (x * 5) >> 3;                           /* (the strings under the drum) */
-            if (a < dlen && lv) {
-                int32_t env = 32767 - (int32_t)(((uint64_t)a << 15) / dlen), dr;
-                uint32_t kl = lv == 4u ? GURDY_KICK * 4u : GURDY_KICK, kick = ak - (uint32_t)(((uint64_t)ak * ak) / (2u * kl));
+            if (ha < dlen && lv) {
+                uint32_t kl = lv == 4u ? GURDY_KICK * 4u : GURDY_KICK, ak = ha < kl ? ha : kl;
+                uint32_t kick = ak - ((((ak * ak) >> 8) * (lv == 4u ? GURDY_RQ / 4u : GURDY_RQ)) >> 16);
+                int32_t env = 32767 - (int32_t)((ha * invd) >> 15), dr;
                 env = mulq15(env, env);
-                dr = osc_sine(lv == 4u ? di * a - (di >> 1) * kick            /* talking: bends up into it */
-                                       : di * a + (di + (di >> 1)) * kick);      /* kicked from 2.5x, falling */
-                dr = mulq15(dr, env) + (a < FS / 300u ? nz : 0);
+                dr = osc_sine(lv == 4u ? di * ha - (di >> 1) * kick : di * ha + (di + (di >> 1)) * kick);
+                dr = mulq15(dr, env) + (ha < FS / 300u ? nz : 0);
                 x += mulq15(dr, lv == 1u ? 17000 : lv == 2u ? 30000 : 23000);
             }
+            ha++;
         }
         x = soft_knee(x, 20000);
         if (coup == GURDY_CRANK) {                      /* the crank's pressure: the strings the wheel bows, and the */
