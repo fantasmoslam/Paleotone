@@ -1279,6 +1279,7 @@ static void events_block(uint32_t n)
 {
     uint32_t i, pr, seq_n = n;
     uint32_t clock_mode = (uint32_t)song.g[G_CLOCK], ext = clock_mode;   /* ext: the master's clock runs us */
+    midi_out_recover();                            /* retry damaged output even with PLAY and CLOCK OUT off */
     if (midi_clock.mode != clock_mode) {
         seq_stop();
         memset(&midi_clock, 0, sizeof midi_clock);
@@ -1435,3 +1436,4 @@ static void events_block(uint32_t n)
     if (song.playing)
         song.tick++;
 }
+
