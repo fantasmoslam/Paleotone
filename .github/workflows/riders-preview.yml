@@ -1,0 +1,49 @@
+name: Riders four-track audition
+on:
+  push:
+    branches: [codex/riders-four-track-preview]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+      - run: python3 tools/build.py --gen-only
+      - name: Clock fallback tests and firmware mixer audition
+        run: |
+          mkdir -p build/host
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/midi_control_test.c -lm -o build/host/midi_control_test
+          build/host/midi_control_test | tee build/clock-results.txt
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/riders_preview.c -lm -o build/host/riders_preview
+          python3 tools/riders_four_track.py > build/riders.score
+          build/host/riders_preview build/riders-four-track.wav < build/riders.score
+          ffmpeg -y -i build/riders-four-track.wav -codec:a libmp3lame -q:a 2 build/riders-four-track.mp3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: riders-four-track-audition
+          path: |
+            build/riders-four-track.mp3
+            build/riders-four-track.wav
+            build/clock-results.txt
+            build/riders.score
+  host-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+      - run: python3 tools/build.py --gen-only
+      - run: HOST_ONLY=1 tests/run_tests.sh
