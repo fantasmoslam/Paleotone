@@ -1214,7 +1214,7 @@ static int32_t click_beat_now(void)
 static void events_block(uint32_t n)
 {
     uint32_t i, pr, seq_n = n;
-    uint32_t clock_mode = (uint32_t)song.g[G_CLOCK];
+    uint32_t clock_mode = (uint32_t)song.g[G_CLOCK], ext = clock_mode;   /* ext: the master's clock runs us */
     if (midi_clock.mode != clock_mode) {
         seq_stop();
         memset(&midi_clock, 0, sizeof midi_clock);
@@ -1300,6 +1300,8 @@ static void events_block(uint32_t n)
         mi_r++;
         if (status >= 0xF8u) {
             if (clock_mode == source) {
+                midi_clock.seen_ms = ms;              /* DINOBOX: the source is alive (the clock fallback) */
+                midi_clock.heard = 1;
                 if (status == 0xF8u)
                     midi_clock_pulse(ms);
                 else
@@ -1310,14 +1312,22 @@ static void events_block(uint32_t n)
     }
     if (clock_mode) {
         seq_n = 0;
-        if (song.playing) {
-            uint32_t last = midi_clock.have_pulse ? midi_clock.last_ms : midi_clock.start_ms;
-            if (fm1_ms - last > 500u) {
-                seq_stop();                         /* cable loss must not leave a running held note */
-                midi_clock.tempo_valid = 0;
-            } else
-                seq_n = midi_clock_advance(fm1_ms);
+        if (midi_clock_quiet(fm1_ms)) {             /* DINOBOX: no clock coming: the internal tempo (midi_clock.c) */
+            if (song.playing && !midi_clock.free)
+                midi_clock_go_free();
+            if (midi_clock.free)
+                seq_n = n;
+        } else if (song.playing) {
+            if (midi_clock.free)
+                midi_clock_rejoin();                /* (its pulse came this block: midi_clock_pulse) */
+            seq_n = midi_clock_advance(fm1_ms);
         }
+        if (!song.playing)
+            midi_clock.free = 0;
+        else if (midi_clock.free)
+            ext = 0;
+        if (!song.playing && !midi_clock.heard)
+            ext = 0;                                /* stopped, a source that never spoke: the ARP on INT */
     }
     if (aud_req)
         seq_audition();                               /* (STEP PREVIEW: a step sounds, stopped) */
@@ -1329,8 +1339,8 @@ static void events_block(uint32_t n)
     if (song.playing)
         click_tick(seq_n);
     for (i = 0; i < NPART; i++)
-        arp_step(&trk[i], clock_mode ? seq_n : n, clock_mode && song.playing ? seq_n : n);
-    beat_pos += clock_mode ? seq_n : n;               /* the beat the ARP LED flashes on (ui_leds) */
+        arp_step(&trk[i], ext ? seq_n : n, ext && song.playing ? seq_n : n);
+    beat_pos += ext ? seq_n : n;               /* the beat the ARP LED flashes on (ui_leds) */
     if (beat_pos >= beat_samples()) {
         beat_pos -= beat_samples();
         beat_pos = beat_pos < beat_samples() ? beat_pos : 0u;

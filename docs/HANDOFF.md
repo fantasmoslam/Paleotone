@@ -83,7 +83,8 @@ call is loud, out over ~0.5 s as it drops; in `saurus_amp`, per control tick, no
 ### Found on the hardware
 
 With **CLK on USB** and the FM-1 plugged into a PC that sends no clock, the rhythms froze into a flat drone (they
-take their tempo from the last external clock). Workaround: set CLK to INT (HOME > CLOCK). Fix planned below.
+take their tempo from the last external clock). Workaround: set CLK to INT (HOME > CLOCK). **Fixed** by the
+clock fallback (docs/NOTES.md "External clock"): PLAY with no clock coming runs on the internal tempo.
 
 ### Detour: demo music (not firmware)
 
@@ -130,8 +131,8 @@ Things that broke before and what fixes them:
 
 ## What comes next (agreed order)
 
-1. **The clock fallback** (small): when CLK is USB or TRS and no tick has come for a beat or two, use the internal
-   tempo (`fx.c` `beat_samples`, `midi_clock.c`). Fold into the next firmware.
+1. **The clock fallback** (small): **done** (`midi_clock.c`, `seq.c`; docs/NOTES.md "External clock"): with no
+   clock for a beat the transport runs on the internal tempo; the next pulse takes it back. In the next firmware.
 2. **The soundscape maker** (big; the owner wants it generative). Plan in `docs/NOTES.md`:
    - an ambience layer beside the four tracks (a SCAPE fader in the MIXER, its own send), saved with the project,
      following the tempo and the EPOCH key;

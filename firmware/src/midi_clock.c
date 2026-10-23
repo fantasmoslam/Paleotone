@@ -5,21 +5,73 @@
 static struct {
     uint32_t pos, rendered, last_ms, start_ms, rem, interval_ms;
     uint32_t pulse_samples, interp_q8, tempo_ms;
+    uint32_t seen_ms;                              /* DINOBOX: the source's last sign of life (a pulse, Start ..) */
     uint8_t mode, have_pulse, tempo_valid, tempo_n;
+    uint8_t heard, free;                           /* DINOBOX: the source spoke since CLK was set; playing on INT */
 } midi_clock;
+
+/* DINOBOX: the clock fallback. With CLK on USB or TRS and no clock coming (a PC that sends none, a cable pulled), the
+ * transport runs on the internal tempo (the last measured one, in BPM) instead of freezing: seq.c events_block. The
+ * source is quiet after a beat with nothing from it (at least 250 ms), or when it has said nothing since CLK was set;
+ * its next pulse takes the transport back from where it is (a Start puts it on the master's step 0). */
+static int midi_clock_quiet(uint32_t ms)
+{
+    uint32_t beat_ms = beat_samples() * 1000u / (uint32_t)FS;
+    return !midi_clock.heard || ms - midi_clock.seen_ms > (beat_ms > 250u ? beat_ms : 250u);
+}
+
+/* the tracks' fractional step phases (and the metronome's) kept through a change of the master tempo */
+static __attribute__((noinline)) void midi_clock_rescale(uint32_t old_beat, uint32_t new_beat)
+{
+    uint32_t i, ratio = (new_beat << 12) / old_beat;
+    for (i = 0; i < NTRK; i++) {
+        if (trk[i].seq_pos < (uint32_t)FS * 2u)
+            trk[i].seq_pos = (uint32_t)(((uint64_t)trk[i].seq_pos * ratio + 2048u) >> 12);
+        if (trk[i].seq_off)
+            trk[i].seq_off = (uint32_t)(((uint64_t)trk[i].seq_off * ratio + 2048u) >> 12);
+        if (trk[i].nd_late)                        /* (NUDGE: the latched plays, seq_pos + 1, with the step) */
+            trk[i].nd_late = (uint32_t)(((uint64_t)(trk[i].nd_late - 1u) * ratio + 2048u) >> 12) + 1u;
+        if (trk[i].nd_early)
+            trk[i].nd_early = (uint32_t)(((uint64_t)(trk[i].nd_early - 1u) * ratio + 2048u) >> 12) + 1u;
+    }
+    if (clk_pos < (uint32_t)FS * 2u)               /* (the metronome's beat as the steps) */
+        clk_pos = (uint32_t)(((uint64_t)clk_pos * ratio + 2048u) >> 12);
+}
+
+/* DINOBOX: the source went quiet with the transport running: on to the internal tempo (BPM holds the last measured
+ * one: no jump bigger than its rounding, and the BPM knob moves it from here) */
+static __attribute__((noinline)) void midi_clock_go_free(void)
+{
+    uint32_t old_beat = beat_samples(), new_beat;
+    midi_beat_samples = 0;
+    new_beat = beat_samples();
+    if (new_beat != old_beat)
+        midi_clock_rescale(old_beat, new_beat);
+    midi_clock.free = 1;
+    midi_clock.have_pulse = midi_clock.tempo_valid = 0;
+    midi_clock.interval_ms = 0;
+}
+
+/* DINOBOX: a pulse while running free: the master again, from the step the transport is on (as a Continue) */
+static __attribute__((noinline)) void midi_clock_rejoin(void)
+{
+    midi_clock.free = 0;
+    midi_clock.pos = midi_clock.rendered;
+    midi_clock.rem = 0;
+}
 
 static __attribute__((noinline)) void midi_clock_transport(uint32_t status, uint32_t ms)
 {
     if (status == 0xFAu) {                         /* Start: step zero */
         midi_clock.pos = midi_clock.rendered = midi_clock.rem = 0;
-        midi_clock.have_pulse = midi_clock.tempo_valid = 0;
+        midi_clock.have_pulse = midi_clock.tempo_valid = midi_clock.free = 0;
         midi_clock.interval_ms = 0;
         midi_clock.start_ms = ms;
         seq_start();
     } else if (status == 0xFBu) {                  /* Continue: preserve the step */
         midi_clock.pos = midi_clock.rendered;
         midi_clock.rem = 0;
-        midi_clock.have_pulse = midi_clock.tempo_valid = 0;
+        midi_clock.have_pulse = midi_clock.tempo_valid = midi_clock.free = 0;
         midi_clock.interval_ms = 0;
         midi_clock.start_ms = ms;
         if (!song.playing)
@@ -44,23 +96,10 @@ static __attribute__((noinline)) void midi_clock_pulse(uint32_t ms)
         /* Six clocks are a quarter of a beat. Reject gaps and corrupt bursts. */
         if (dt >= 62u && dt <= 375u) {
             uint32_t old_beat = beat_samples(), new_beat = (uint32_t)FS * dt / 250u;
-            if (song.playing && new_beat != old_beat) {
-                uint32_t i, ratio = (new_beat << 12) / old_beat;
-                /* Preserve each track's fractional step phase when the master
-                 * changes tempo. The next pulse then lands on its new boundary. */
-                for (i = 0; i < NTRK; i++) {
-                    if (trk[i].seq_pos < (uint32_t)FS * 2u)
-                        trk[i].seq_pos = (uint32_t)(((uint64_t)trk[i].seq_pos * ratio + 2048u) >> 12);
-                    if (trk[i].seq_off)
-                        trk[i].seq_off = (uint32_t)(((uint64_t)trk[i].seq_off * ratio + 2048u) >> 12);
-                    if (trk[i].nd_late)            /* (NUDGE: the latched plays, seq_pos + 1, with the step) */
-                        trk[i].nd_late = (uint32_t)(((uint64_t)(trk[i].nd_late - 1u) * ratio + 2048u) >> 12) + 1u;
-                    if (trk[i].nd_early)
-                        trk[i].nd_early = (uint32_t)(((uint64_t)(trk[i].nd_early - 1u) * ratio + 2048u) >> 12) + 1u;
-                }
-                if (clk_pos < (uint32_t)FS * 2u)   /* (the metronome's beat as the steps) */
-                    clk_pos = (uint32_t)(((uint64_t)clk_pos * ratio + 2048u) >> 12);
-            }
+            /* Preserve each track's fractional step phase when the master
+             * changes tempo. The next pulse then lands on its new boundary. */
+            if (song.playing && new_beat != old_beat)
+                midi_clock_rescale(old_beat, new_beat);
             midi_beat_samples = new_beat;
             song.g[G_BPM] = (int16_t)clamp((int32_t)((15000u + dt / 2u) / dt), 40, 240);
         }

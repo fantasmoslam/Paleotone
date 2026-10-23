@@ -112,6 +112,11 @@ static void clock_to(uint32_t source, uint32_t start, uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++) clock_packet(source, 0xF8, start + (i * 125u) / 6u);
 }
+static void idle_ms(uint32_t ms)               /* about ms of audio blocks, no MIDI */
+{
+    uint32_t i, ms0 = fm1_ms;
+    for (i = 0; i < ms * 23u / 16u; i++) { fm1_ms = ms0 + i * 16u / 23u; events_block(CTL); }
+}
 static int clock_test(uint32_t source)
 {
     int bad = 0; clock_setup(source);
@@ -127,7 +132,14 @@ static int clock_test(uint32_t source)
     clock_packet(source, 0xFB, 150);
     bad += check("external Continue resumes the existing step position", song.playing && trk[0].seq_idx == idx && trk[0].seq_pos == pos);
     clock_packet(source, 0xF8, 151); fm1_ms = 672; events_block(CTL);
-    bad += check("lost clock times out and releases transport notes", !song.playing && !trk[0].seq_n);
+    bad += check("lost clock (a beat without one): the transport goes on at the internal tempo", song.playing && midi_clock.free && !midi_beat_samples);
+    idx = trk[0].seq_idx; idle_ms(260);
+    bad += check("  .. its steps advance on their own (16ths at 120 BPM)", trk[0].seq_idx == (idx + 2u) % 16u || trk[0].seq_idx == (idx + 3u) % 16u);
+    idx = trk[0].seq_idx; pos = fm1_ms + 1u; clock_packet(source, 0xF8, pos);
+    bad += check("  .. the next pulse takes it back from the step it is on", song.playing && !midi_clock.free && trk[0].seq_idx == idx);
+    clock_to(source, pos, 13); idle_ms(5);
+    bad += check("  .. and pulses step it again (12 pulses: two 16ths)", trk[0].seq_idx == (idx + 2u) % 16u || trk[0].seq_idx == (idx + 3u) % 16u);
+    fm1_ms += 600u; events_block(CTL);
     clock_packet(source, 0xFA, 700); clock_to(source, 700, 7);
     bad += check("Start after timeout restarts cleanly at the master's phase", song.playing && trk[0].seq_idx == 1u);
     /* Original base values remain after MIDI Stop even while motion sounds. */
@@ -153,8 +165,14 @@ static int clock_arp_and_boundaries(void)
     clock_setup(1); clock_packet(1, 0xFA, 0xFFFFFFF0u); clock_packet(1, 0xF8, 0xFFFFFFF0u);
     clock_packet(1, 0xF8, 5u); fm1_ms = 10; events_block(CTL);
     bad += check("external clock timestamps survive uint32 millisecond wrap", song.playing && midi_clock.last_ms == 5u);
-    clock_setup(1); transport_req = 1; events_block(CTL); fm1_ms = 501; events_block(CTL);
-    bad += check("local PLAY waiting for missing external clock also times out", !song.playing);
+    clock_setup(1); transport_req = 1; events_block(CTL);
+    bad += check("local PLAY with no clock coming plays on the internal tempo at once", song.playing && midi_clock.free);
+    fm1_ms = 1; idle_ms(140);
+    bad += check("  .. its steps advance (16ths at 120 BPM)", trk[0].seq_idx == 1u);
+    clock_setup(1); clock_packet(1, 0xFC, 1); transport_req = 1; events_block(CTL);
+    bad += check("local PLAY just after the source spoke waits for its clock", song.playing && !midi_clock.free && trk[0].seq_idx == 0u);
+    fm1_ms = 2; idle_ms(1000);
+    bad += check("  .. and goes on the internal tempo after a beat without one", song.playing && midi_clock.free && trk[0].seq_idx >= 3u);
     return bad;
 }
 /* ARP HOLD latched on an external clock: a Stop, a lost clock or a tap while stopped must not leave the arp note
@@ -172,11 +190,6 @@ static uint32_t arp_ext_run(uint32_t ms)       /* Start, tap 60 (latched), clock
     for (i = 0; i < 400 && trk[0].arp_note != 72; i++) clock_packet(1, 0xF8, ms + i * 21u);
     return ms + i * 21u;
 }
-static void idle_ms(uint32_t ms)               /* about ms of audio blocks, no MIDI */
-{
-    uint32_t i, ms0 = fm1_ms;
-    for (i = 0; i < ms * 23u / 16u; i++) { fm1_ms = ms0 + i * 16u / 23u; events_block(CTL); }
-}
 static int arp_ext_stop_test(void)
 {
     int bad = 0; uint32_t ms, i, off;
@@ -189,8 +202,13 @@ static int arp_ext_stop_test(void)
     for (i = 1; i < 40 && !trk[0].arp_note; i++) clock_packet(1, 0xF8, ms + i * 21u);
     bad += check("Continue plays the latched chord again", trk[0].arp_note != 0);
     arp_latch(1); arp_ext_run(10); idle_ms(2000);
-    bad += check("a lost external clock stops the transport and ends the ARP note", !song.playing && !trk[0].arp_note && !gate_note(&trk[0], 72));
+    bad += check("a lost external clock: the transport and the ARP go on at the internal tempo", song.playing && midi_clock.free && trk[0].arp_note);
+    clock_packet(1, 0xFC, fm1_ms + 1);
+    bad += check("  .. a Stop from the source still ends the ARP note", !song.playing && !trk[0].arp_note && !gate_note(&trk[0], 72));
     arp_latch(1); queued(0x90, 64, 100, 1); queued(0x80, 64, 0, 1);
+    for (i = 0; i < 4000 && trk[0].arp_note != 76; i++) events_block(CTL);
+    bad += check("stopped, a source that never spoke: the latched ARP steps on the internal tempo", trk[0].arp_note == 76);
+    arp_latch(1); clock_packet(1, 0xFC, 1); queued(0x90, 64, 100, 1); queued(0x80, 64, 0, 1);
     bad += check("a tap while the external transport is stopped sounds", trk[0].arp_note == 64);
     idle_ms(2000);
     bad += check("its ARP gate still ends in real time", !trk[0].arp_note && !gate_note(&trk[0], 64));
