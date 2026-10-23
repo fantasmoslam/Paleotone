@@ -148,6 +148,22 @@ static int clock_test(uint32_t source)
     bad += check("external-clock playback applies recorded motion", trk[0].p[P_REV] == 100);
     clock_packet(source, 0xFC, 1010);
     bad += check("external Stop restores the musical parameter base", trk[0].p[P_REV] == 23);
+    /* Active Sensing is link liveness, not a clock: it must neither postpone
+     * fallback nor take a free-running transport back from the internal tempo. */
+    clock_setup(source);
+    clock_packet(source, 0xFA, 1);
+    clock_to(source, 1, 7);
+    for (uint32_t ms = 200; ms <= 1200; ms += 100) {
+        idle_ms(100);
+        clock_packet(source, 0xFE, ms);
+    }
+    bad += check("Active Sensing without clock still falls back to internal tempo", song.playing && midi_clock.free);
+    idx = trk[0].seq_idx;
+    for (uint32_t ms = 1300; ms <= 1600; ms += 100) {
+        idle_ms(100);
+        clock_packet(source, 0xFE, ms);
+    }
+    bad += check("Active Sensing cannot reclaim or freeze the free-running clock", midi_clock.free && trk[0].seq_idx != idx);
     return bad;
 }
 static int clock_arp_and_boundaries(void)
