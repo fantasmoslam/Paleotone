@@ -78,6 +78,8 @@ static uint8_t mo_cur[NTRK];                       /* channel + 1 the sequencer'
 static uint8_t mo_last[NTRK] = {0xFEu, 0xFEu, 0xFEu, 0xFEu};   /* each track's channel the last block (0xFE: none yet) */
 static uint32_t mo_on[NTRK][4];
 static uint32_t mo_cpos;                           /* CLOCK OUT: samples x 24 into the pulse */
+static uint8_t mo_started;                         /* this USB connection was sent our transport Start */
+static uint32_t mo_started_reset;                  /* catch a reset/reconfigure between audio blocks too */
 typedef char mo_ntrk4[NTRK == 4 ? 1 : -1];
 static uint32_t trk_out_ch(uint32_t i)             /* 0..15, or 0xFF: OFF */
 {
@@ -882,6 +884,8 @@ static void seq_start(void)
     uint32_t i;
     if (mo_clk && !song.g[G_CLOCK]) {              /* DINOBOX: CLOCK OUT: START, the first pulse with step 0 */
         midi_out_event(0x0Fu | 0xFAu << 8);
+        mo_started = usb.config != 0;
+        mo_started_reset = usb.resets;
         mo_cpos = 0xFFFFFFFFu;
     }
     motion_begin();
@@ -919,8 +923,9 @@ static void seq_release(track_t *t)
 static void seq_stop(void)
 {
     uint32_t i;
-    if (mo_clk && !song.g[G_CLOCK] && song.playing)   /* DINOBOX: CLOCK OUT: STOP */
+    if (mo_started && usb.config && mo_started_reset == usb.resets) /* even if clock settings changed */
         midi_out_event(0x0Fu | 0xFCu << 8);
+    mo_started = 0;
     song.playing = 0;
     cin_left = 0;                                  /* (a count-in: cancelled, nothing recorded) */
     cin_flush = 0;
@@ -1280,6 +1285,12 @@ static void events_block(uint32_t n)
     uint32_t i, pr, seq_n = n;
     uint32_t clock_mode = (uint32_t)song.g[G_CLOCK], ext = clock_mode;   /* ext: the master's clock runs us */
     midi_out_recover();                            /* retry damaged output even with PLAY and CLOCK OUT off */
+    if (!usb.config || (mo_started && mo_started_reset != usb.resets))
+        mo_started = 0;                            /* a new host never inherits the old host's transport */
+    if (mo_started && (!mo_clk || clock_mode)) {
+        midi_out_event(0x0Fu | 0xFCu << 8);         /* give up master clock cleanly, once */
+        mo_started = 0;
+    }
     if (midi_clock.mode != clock_mode) {
         seq_stop();
         memset(&midi_clock, 0, sizeof midi_clock);
@@ -1436,4 +1447,3 @@ static void events_block(uint32_t n)
     if (song.playing)
         song.tick++;
 }
-
