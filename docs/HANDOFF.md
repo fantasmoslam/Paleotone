@@ -11,10 +11,12 @@ Persinger), itself built on Felucca 1.4.1 (Leo Kuroshita, Hügelton Instruments)
 - **Builds:** GitHub Actions only (`.github/workflows/build-firmware.yml`); the JieLi toolchain and SDK can't be
   fetched locally. Every push to `main` builds; the result (`dinobox.fwsc`, `build.log`, `felucca.bin`, `ota.bin`,
   `felucca.dis`, `RESULT`) goes to the **`build-output`** branch.
-- **Last firmware delivered and installed on the owner's FM-1:** commit `db51439` (2026-10-23: the clock fallback, easier
-  track selection and the track colours; image 547,504 B). Before it: commit `945e00c` (all host tests passed, GitHub
+- **Last firmware delivered and installed on the owner's FM-1:** commit `81e2f1b` (2026-10-23; owner confirms it works).
+  Includes the Active Sensing clock-fallback correction and the MIDI output controls described below. Before it:
+  `db51439` (clock fallback, track selection and track colours; image 547,504 B), then `945e00c` (all host tests passed, GitHub
   build OK). Image 547,104 B in an app slot of ~581 KB; the build refuses less than 16 KB spare (about 18 KB of
-  room left above that floor). The firmware has not changed since: every later commit is docs, tests or tools.
+  room left above that floor). Riders was approved as a standalone audition, then its built-in integration was
+  cancelled by the owner to reserve flash. No built-in song is to be added.
 - **Ground rules from the owner:** no copyrighted film audio, logos, lettering or screens (all sound is synthesized
   or CC0); no Sloop code; ask before big changes when he says so; he judges by ear, so send previews (MP3) before
   building anything into the firmware.
@@ -152,9 +154,16 @@ Things that broke before and what fixes them:
    `gfx.c` `ux_track`), the MIXER and HOME TRACKS show each track's; T1 keeps the palette's ACCENT, T2..T4 three
    hues per palette checked for contrast as ACCENT (`tools/gen_ui_palettes.py` `track_colours`, `UI_TRK_ACCENT`);
    GREY and MONO one colour. Tests: `tests/ui_test.c` `test_home_track_keys`.
-4. **MIDI** (original step 5): a MIDI channel per track (or off), the sequencer's notes out over USB MIDI, MIDI clock
-   out.
+4. **MIDI** (original step 5): built on the branch `midi-out`. MENU > MIDI: T1..T4 OUT (OFF, AUTO = the channel in
+   MIDI IN's block as the keys always had, CH 1..16) and CLOCK OUT (OFF / ON). Device settings, not the project's (the
+   project format has 2 bytes left): bytes 1..5 of the retired DIGITAL engine's favourites (`menu_items.c` `MO_BYTES`).
+   The keys and now the sequencer's notes (steps, chords, ratchets, DRUM lanes as GM notes) go out on each track's
+   channel, USB only (the TRS jack is an input); every note gets its note-off (STOP, panic, mute, a channel change:
+   CC123 on the old one). CLOCK OUT: 24 a quarter with CLK INT, always; START with PLAY, STOP with STOP; none on an
+   external clock. Code: `seq.c` `mo_*`, `seq_on` / `seq_off`; editor ids 26..30. Tests: `tests/midi_control_test.c`
+   `midi_out_test`.
 5. **Each step:** previews to the owner first, then the full host suite, the GitHub build, the firmware sent with
    short Windows install notes.
 
 Optional: turn TITAN RISING into a project the owner can load; publish the sound gallery.
+
