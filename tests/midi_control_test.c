@@ -698,11 +698,49 @@ static int midi_out_backpressure_test(void)
     return bad;
 }
 
+static int clock_output_handoff_test(void)
+{
+    int bad = 0;
+    mo_setup(); mo_clk = 1; transport_req = 1; mo_run(2); mo_nev = 0;
+    mo_clk = 0; mo_run(2);
+    bad += check("CLOCK handoff: disabling output sends Stop without stopping local playback", song.playing &&
+                 mo_count(0xFCu, 0, -1) == 1u && !mo_count(0xF8u, 0, -1));
+    transport_req = 2; mo_run(3);
+    bad += check("CLOCK handoff: later local Stop does not send a duplicate", mo_count(0xFCu, 0, -1) == 1u);
+    for (uint32_t source = 1; source <= 2; source++) {
+        mo_setup(); mo_clk = 1; transport_req = 1; mo_run(2); mo_nev = 0;
+        song.g[G_CLOCK] = (int16_t)source; mo_run(2);
+        bad += check(source == 1 ? "CLOCK handoff: INT to USB ends the old master transport" :
+                                  "CLOCK handoff: INT to TRS ends the old master transport",
+                     !song.playing && mo_count(0xFCu, 0, -1) == 1u && !mo_count(0xF8u, 0, -1));
+        uint32_t stops = mo_count(0xFCu, 0, -1);
+        clock_packet(source, 0xFA, fm1_ms + 1); clock_packet(source, 0xFC, fm1_ms + 1);
+        bad += check("CLOCK handoff: external Start/Stop are not echoed", !mo_count(0xFAu, 0, -1) &&
+                     mo_count(0xFCu, 0, -1) == stops);
+    }
+    mo_setup(); mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0;
+    mo_clk = 0; seq_stop(); mo_drain(); mo_run(2);
+    bad += check("CLOCK handoff: Stop between the setting change and next block still reaches USB",
+                 mo_count(0xFCu, 0, -1) == 1u);
+    mo_setup(); mo_clk = 1; seq_start(); mo_drain();
+    usb.config = 0; mo_run(1); usb.config = 1; mo_nev = 0;
+    seq_stop(); mo_drain();
+    bad += check("CLOCK handoff: reconnect never stops a host we did not start", !mo_count(0xFCu, 0, -1));
+    mo_setup(); mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0;
+    usb.resets++;                                 /* reset/reconfigure completed before the next audio block */
+    seq_stop(); mo_drain();
+    bad += check("CLOCK handoff: fast USB reset also forgets the old host's Start", !mo_count(0xFCu, 0, -1));
+    mo_setup(); mo_clk = 1; transport_req = 1; mo_run(2); mo_nev = 0;
+    mo_fill(); mo_clk = 0; mo_run(1); mo_drain(); mo_nev = 0; mo_run(2);
+    bad += check("CLOCK handoff: a congested Stop is eventually delivered", mo_count(0xFCu, 0, -1) == 1u);
+    transport_req = 2; mo_run(2);
+    return bad;
+}
+
 int main(void)
 {
     int bad = controls_test() + sustain_test() + ownership_test() + clock_test(1) + clock_test(2) + clock_arp_and_boundaries() +
               arp_ext_stop_test() + usb_burst_test() + route_test() + route_block_test() + cc_map_test() + midi_out_test() +
-              midi_out_backpressure_test();
+              midi_out_backpressure_test() + clock_output_handoff_test();
     printf("%s\n", bad ? "MIDI CONTROL/CLOCK TEST FAILED" : "MIDI control/clock integration tests passed"); return bad != 0;
 }
-
