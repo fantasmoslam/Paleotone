@@ -1,0 +1,64 @@
+name: Biome resource feasibility
+on:
+  push:
+    branches: [codex/scape-resource-probe]
+permissions:
+  contents: read
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    container: debian:bookworm-slim
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pip git curl xz-utils ca-certificates libraqm0
+          pip3 install --break-system-packages pillow==12.3.0 fonttools==4.61.1
+      - run: tools/get_toolchain.sh "$HOME/.jieli"
+      - run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+      - name: Production baseline with experimental switch absent
+        shell: bash
+        run: |
+          set -o pipefail
+          ./build.sh 2>&1 | tee baseline.log
+          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt | tee baseline-budget.txt
+      - name: Enable DSP-only probe (not an install candidate)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('firmware/src/felucca.c')
+          s = '#define DINOBOX_SCAPE 1\n' + p.read_text()
+          s = s.replace('#include "fx.c"', '#include "fx.c"\nstatic volatile uint32_t scape_probe_call;\nstatic void scape_call(uint32_t c, int32_t lvl, int32_t dist, int32_t pan, uint32_t ms) { scape_probe_call = c + lvl + dist + pan + ms; }')
+          p.write_text(s)
+          p = Path('firmware/src/main.c')
+          s = p.read_text().replace('    chain_defaults(&chain_config);', '    scape_reset(); /* DSP probe only: no UI, save state, or shared voice integration. */\n    chain_defaults(&chain_config);')
+          p.write_text(s)
+          PY
+      - name: Measure experimental DSP image with normal resource limits
+        shell: bash
+        run: |
+          set -o pipefail
+          ./build.sh 2>&1 | tee scape-probe.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: biome-resource-feasibility
+          path: |
+            baseline.log
+            baseline-budget.txt
+            scape-probe.log
+  host-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+      - run: python3 tools/build.py --gen-only
+      - run: HOST_ONLY=1 tests/run_tests.sh
