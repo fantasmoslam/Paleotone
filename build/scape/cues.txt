@@ -1,0 +1,12 @@
+0:00  MUSIC alone (the JUNGLE power-on scene): set your volume here   [JUNGLE NIGHT CLEAR DANGER 0]   rms -15.5 dBFS  peak -5.9 dBFS  calls 0  events 0
+0:13  ... the same music with the JUNGLE scape under it (SCAPE at its default)   [JUNGLE NIGHT CLEAR DANGER 40]   rms -15.4 dBFS  peak -5.9 dBFS  calls 3  events 25
+0:44  WATER at dawn: a stream into a lake, frogs, a bullfrog, waders, something big out on the water   [WATER DAWN CLEAR DANGER 0]   rms -33.7 dBFS  peak -16.1 dBFS  calls 1  events 73
+1:18  JUNGLE at night, DANGER high: crickets, frogs, owls ... then something comes through   [JUNGLE NIGHT CLEAR DANGER 110]   rms -20.4 dBFS  peak -4.9 dBFS  calls 3  events 25
+1:59  TUNDRA by day: wind, ice creaking, a herd far off   [TUNDRA DAY CLEAR DANGER 0]   rms -31.7 dBFS  peak -15.5 dBFS  calls 1  events 3
+2:31  FOREST at dawn: songbirds, a woodpecker, crested hoots   [FOREST DAWN CLEAR DANGER 0]   rms -33.4 dBFS  peak -11.6 dBFS  calls 1  events 14
+3:02  FOREST at night: the same forest, an owl and crickets   [FOREST NIGHT CLEAR DANGER 0]   rms -36.7 dBFS  peak -19.0 dBFS  calls 1  events 6
+3:28  PLAINS by day: grass wind, cicadas, a herd passing, the herds' calls   [PLAINS DAY CLEAR DANGER 0]   rms -34.2 dBFS  peak -17.2 dBFS  calls 1  events 3
+3:59  PLAINS in a STORM: rain, thunder, the wind up   [PLAINS DAY STORM DANGER 0]   rms -32.4 dBFS  peak -13.5 dBFS  calls 1  events 67
+4:27  MOUNTAINS by day: wind in the peaks, a rock fall, a hawk, pterosaurs   [MOUNTAINS DAY CLEAR DANGER 0]   rms -35.1 dBFS  peak -20.3 dBFS  calls 1  events 3
+4:58  CANYONS at dusk: wind down the walls, rocks, raptors   [CANYONS DUSK CLEAR DANGER 0]   rms -35.4 dBFS  peak -22.4 dBFS  calls 1  events 3
+5:30  CALDERA at night: rumble, lava, steam vents   [CALDERA NIGHT CLEAR DANGER 0]   rms -34.1 dBFS  peak -14.1 dBFS  calls 1  events 16

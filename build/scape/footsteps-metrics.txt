@@ -1,4 +1,0 @@
-rms -25.2 dBFS  peak -5.9 dBFS  calls 3  events 23
-rms -23.9 dBFS  peak -5.5 dBFS  calls 3  events 23
-rms -25.4 dBFS  peak -5.8 dBFS  calls 0  events 23
-rms -24.0 dBFS  peak -5.5 dBFS  calls 0  events 23

@@ -1,5 +1,0 @@
-0:00 Original high-danger encounter
-0:33 Revised heavy approach
-1:07 Original without creature calls
-1:40 Revised without creature calls
-No normalization; identical gain. Quiet DANGER 0 render was byte-identical.
