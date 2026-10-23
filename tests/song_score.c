@@ -5,7 +5,7 @@
  * SCORE lines ('#' comments):
  *   bpm B | master Q12 | secs S
  *   sound K ENGINE PRESET NAME        track K (0..3): an engine index and a factory preset (sends: DIST only)
- *   level K V | param K NAME V        the sound's own LEVEL or a parameter (E0..E7 ATK DEC SUS REL DST CHO DLY REV PAN)
+ *   level K V | param K NAME V        the sound's own LEVEL or a parameter (E0..E7 ATK DEC SUS REL DST CHO DLY REV PAN RING)
  *   slot S                            start project slot S (0..3): every track's steps and automation cleared
  *   pat K DIV LEN GATE                track K's DIV (N_DIV index: 0 1/4, 1 1/8, 7 1/1), LEN steps, GATE
  *   n K STEP NOTE STEPS VEL [RATCH]   a note (up to 4 on a step), held STEPS steps (ties); RATCH 2 or 3: the step
@@ -21,7 +21,7 @@
 static const struct { const char *name; uint32_t id; } PNAME[] = {
     {"E0", P_E0}, {"E1", P_E0 + 1}, {"E2", P_E0 + 2}, {"E3", P_E0 + 3}, {"E4", P_E0 + 4}, {"E5", P_E0 + 5},
     {"E6", P_E0 + 6}, {"E7", P_E0 + 7}, {"ATK", P_ATK}, {"DEC", P_DEC}, {"SUS", P_SUS}, {"REL", P_REL},
-    {"DST", P_DIST}, {"CHO", P_CHOR}, {"DLY", P_DLY}, {"REV", P_REV}, {"PAN", P_PAN}, {"LVL", P_LEVEL}};
+    {"DST", P_DIST}, {"CHO", P_CHOR}, {"DLY", P_DLY}, {"REV", P_REV}, {"PAN", P_PAN}, {"LVL", P_LEVEL}, {"RING", P_RING}};
 static uint32_t pid(const char *s)
 {
     for (uint32_t i = 0; i < sizeof PNAME / sizeof PNAME[0]; i++)

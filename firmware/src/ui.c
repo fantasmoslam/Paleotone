@@ -1266,6 +1266,8 @@ static void track_defaults(track_t *t)
     track_defaults_steps(t);
 }
 
+#include "riders.c"                       /* DINOBOX: the RIDERS scene's demo song */
+
 /* GHOULBOX: power-on scene s (engines.c GB_SCENES; one out of range, from a later version, plays DUNGEON): the globals'
  * defaults, each part's sound and pattern at 1/8, the scene's tempo, HALL and TAPE (main.c felucca_init) */
 static void gb_scene_load(uint32_t s)
@@ -1296,6 +1298,9 @@ static void gb_scene_load(uint32_t s)
     song.g[G_BPM] = GB_SCENES[s].bpm;
     song.g[G_RTYPE] = 2;                      /* HALL */
     song.g[G_TAPE] = GB_SCENES[s].tape;
+    riders_on = 0;
+    if (s == GB_SCENE_RIDERS)
+        riders_scene();                       /* DINOBOX: the demo song's levels and theme (riders.c) */
     ui.home = 1;
     ui.force = 1;
 }

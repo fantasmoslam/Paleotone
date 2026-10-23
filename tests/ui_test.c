@@ -9645,12 +9645,13 @@ static int test_scenes(void)
         {"STAMPEDE", "BRONTO HORN", "TAR PIT BASS", "TRIBAL KIT"},
         {"BRACHIO CALL", "EPIC STRINGS", "VALLEY HARP", "SPIRIT VOX"},
         {"LOG MARIMBA", "JUNGLE PAD", "JUNGLE NIGHT", "TRIBAL KIT"},
+        {"PRIMEVAL", "STAMPEDE", "TAR PIT BASS", "WAR DRUMS"},
     };
     static const char *const PAT[GB_NSCENE][NTRK] = {
         {"ARPEGGIO", "DIRGE", "PEDAL", "STOMP"}, {"PEDAL", "DIRGE", "PEDAL", "STOMP"},
-        {"BALLAD", "MARCH", "SUB", "STOMP"}, {"PEDAL", "DIRGE", "ARPEGGIO", "LAMENT"}, {0, 0, 0, 0},
+        {"BALLAD", "MARCH", "SUB", "STOMP"}, {"PEDAL", "DIRGE", "ARPEGGIO", "LAMENT"}, {0, 0, 0, 0}, {0, 0, 0, 0},
     };
-    static const int16_t BPM[GB_NSCENE] = {72, 60, 104, 66, 72};
+    static const int16_t BPM[GB_NSCENE] = {72, 60, 104, 66, 72, 84};
     int bad = 0, ok = 1;
     uint32_t s, i, k, row = MI_SCENE;
     for (s = 0; s < GB_NSCENE; s++) {
@@ -9660,28 +9661,31 @@ static int test_scenes(void)
         for (i = 0; i < NTRK; i++) {
             const track_t *t = &trk[i];
             ok &= t->engine == t->eng_req && !strcmp(ENGINES[t->engine]->presets[t->preset].name, WANT[s][i]) &&
-                  t->p[P_SDIV] == 1;
-            if (PAT[s][i])
+                  (t->p[P_SDIV] == 1 || s == GB_SCENE_RIDERS);
+            if (s == GB_SCENE_RIDERS)                              /* DINOBOX: the demo song's theme (riders.c) */
+                ok &= !seq_is_empty(t) && pat_sig[i] == steps_sig(t) && riders_on;
+            else if (PAT[s][i])
                 ok &= pat_last[i] && !strcmp(PATTERNS[pat_last[i] - 1u].name, PAT[s][i]) && pat_sig[i] == steps_sig(t);
             else
                 for (k = 0; k < NSTEP; k++)
                     ok &= !t->step[k].n && !t->step[k].hit;
         }
     }
-    bad += check("1.3 SCENE: JUNGLE VOLCANO STAMPEDE VALLEY BLANK load their sounds, patterns (BLANK: none), tempo, HALL", ok);
+    bad += check("1.3 SCENE: JUNGLE VOLCANO STAMPEDE VALLEY BLANK RIDERS load their sounds, patterns (BLANK: none; RIDERS: "
+                 "its song's theme), tempo, HALL", ok);
     ui_power_on();
     ok = MI_TAB[row] == MTAB_SYSTEM && MI_TAB[row + 1u] == MTAB_SYSTEM && row + 1u == MI_SERIAL &&
          menu_n(row) == GB_NSCENE && str_eq(MI_NAME[row], "SCENE") && menu_get(row) == 0 &&
          str_eq(menu_vname(row, 0), "JUNGLE") && str_eq(menu_vname(row, 4), "BLANK");
     menu_put(row, 2);
     ok &= menu_get(row) == 2 && ui_scene == 2 && menu_step(row, 1) == 3 && menu_step(row, -1) == 1;
-    menu_put(row, 4);
-    ok &= menu_step(row, 1) == 4;                              /* (stops at the end) */
+    menu_put(row, GB_NSCENE - 1u);
+    ok &= menu_step(row, 1) == GB_NSCENE - 1u && str_eq(menu_vname(row, GB_SCENE_RIDERS), "RIDERS");   /* (stops at the end) */
     ui_scene = 200;                                            /* a value from a later version: DUNGEON */
     ok &= menu_get(row) == 0;
     gb_scene_load(ui_scene);
     ok &= !strcmp(ENGINES[trk[0].engine]->presets[trk[0].preset].name, "LOG MARIMBA") && song.g[G_BPM] == 72;
-    bad += check("1.3 SCENE: MENU > SYSTEM row (5 names, stops at the ends); a later version's value plays JUNGLE", ok);
+    bad += check("1.3 SCENE: MENU > SYSTEM row (6 names, stops at the ends); a later version's value plays JUNGLE", ok);
     {   /* the row redraws at once when its value changes (ui_menu.c: the menu signature holds ui_scene) */
         static uint16_t before[240 * 240];
         ui_power_on();
