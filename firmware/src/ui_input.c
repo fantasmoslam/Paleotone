@@ -36,7 +36,7 @@ static void led_clear(uint8_t *nl, uint32_t id)
 }
 
 static const uint8_t FAM_BTN[FAM_COUNT] = {B_HOME, B_ENV, B_LFO, B_FX, B_SCL, B_EDIT, B_GLO, B_SAVE,
-                                           B_ARP, B_SEQ, B_HOME};   /* MIXER: HOME's (1.2); REC is transport */
+                                           B_ARP, B_SEQ, B_HOME, B_GLO};   /* MIXER: HOME's (1.2); REC is transport */
 
 static uint32_t cur_fam(void) { return ui.home ? FAM_HOME : cur_page()->fam; }
 
@@ -1217,6 +1217,7 @@ static int page_tap(uint32_t b)
         name_rename();                                  /* SAVE > USER / PROJECT: EDIT renames the slot */
         return 1;
     }
+    if (b == B_GLO && !ui.home && cur_page()->fam == FAM_SCAPE) { open_family(FAM_SCAPE); return 0; }
     for (f = FAM_HOME + 1u; f < FAM_COUNT; f++)        /* (GLO SEQ SAVE ..: HOME is ui_input's, home_tap) */
         if (FAM_BTN[f] == b && b != B_HOME) {
             open_family(f);

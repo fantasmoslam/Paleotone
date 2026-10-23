@@ -57,6 +57,10 @@ int main(void)
     sc.danger=110; sc.enc_len=100; sc.hush_to=4000; sc.danger=0;
     sc_encounter(); CHECK(!sc.enc_len && sc.hush_to==32767);
     for(i=0;i<NPAGES;i++) if(PAGES[i].fam==FAM_GLO) { CHECK(PAGES[i].graph==GR_SONG); break; }
+    ui_power_on(); hold(B_HOME); ui.menu_sel=MI_SCAPE; press(B_OCTUP);
+    CHECK(!ui.menu && !ui.home && cur_page()->fam==FAM_SCAPE && !strcmp(cur_page()->title,"SCAPE"));
+    press(B_GLO); frames(320); CHECK(!strcmp(cur_page()->title,"WORLD"));
+    go_home(); press(B_GLO); frames(320); CHECK(cur_page()->graph==GR_SONG);
     printf("SCAPE integration: %s\n",failures?"FAIL":"PASS");
     return failures ? 1 : 0;
 }

@@ -1,4 +1,4 @@
-# DINOBOX: FM-1 Prehistoric Synth
+# PALEOTONE: FM-1 Prehistoric Synth
 
 ![DINOBOX 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
 
