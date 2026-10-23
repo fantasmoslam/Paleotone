@@ -193,6 +193,18 @@ def limiter(y, ceil=0.95):
     return y * g[:, None]
 
 
+def drive(x, amount, tone=2500, bias=0.08):
+    """grit: the mids pushed into an asymmetric soft clip (a hot tape / overdriven desk), the level kept"""
+    if amount <= 0:
+        return x
+    rms = np.sqrt(np.mean(x ** 2)) + 1e-9
+    v = x / (rms * 6) * amount
+    v = v + 0.35 * filt(v, "bandpass", [tone * 0.5, tone * 2])          # (the mids hit it first)
+    y = np.tanh(v + bias) - np.tanh(bias)
+    y = filt(y, "lowpass", 11000)
+    return y / (np.sqrt(np.mean(y ** 2)) + 1e-9) * rms
+
+
 def put(bus, x, at):
     m = min(len(x), len(bus) - at)
     if m > 0:
@@ -250,7 +262,7 @@ def main(out):
     roar_plan = [(0, 8, "STAMPEDE"), (8, 8, "WAR PARADE"), (16, 8, "TRIBAL WAR"), (24, 8, "HEARTBEAT"),
                  (32, 12, "STAMPEDE"), (44, 4, "CHAOS DRUMS")]
     for b0, nb, name in roar_plan:
-        x = render("ROAR", name, [(0, 50, nb * 4 + 0.5, 110)], secs=nb * BAR + 5)
+        x = drive(render("ROAR", name, [(0, 50, nb * 4 + 0.5, 110)], secs=nb * BAR + 5), 2.2, 900)
         n = len(x)
         fade = np.ones(n)
         fi = int(0.3 * SR)
@@ -280,7 +292,7 @@ def main(out):
             for e in range(8):
                 bass.append((bar * 4 + e * 0.5, r + (12 if e in (3, 7) else 0), 0.42, 120 if e % 2 == 0 else 95))
     bass += [(44 * 4, 38, 8, 110)]
-    x = render("ANALOG", "STOMP BASS", bass)
+    x = drive(render("ANALOG", "STOMP BASS", bass), 2.5, 700)
     add(x, 0, 0, 0.65, hall=0.06, name="bass")
     bass_bus_key = x
 
@@ -306,8 +318,8 @@ def main(out):
             toms += [(bar * 4 + 3, 45, .2, 100), (bar * 4 + 3.25, 45, .2, 105), (bar * 4 + 3.5, 45, .2, 115),
                      (bar * 4 + 3.75, 45, .2, 127)]
     kick += [(44 * 4, 36, .3, 127), (44 * 4, 56, .3, 127)]
-    xk = render("DRUM", "WAR DRUMS", kick + toms)
-    xs = render("DRUM", "WAR DRUMS", snare)
+    xk = drive(render("DRUM", "WAR DRUMS", kick + toms), 2.0, 300)
+    xs = drive(render("DRUM", "WAR DRUMS", snare), 2.8, 2000)
     drums_key = np.pad(xk, (0, max(0, N - len(xk))))[:N]
     add(xk, 0, 0, 1.0, hall=0.12, name="kick/toms")
     ys = stereo(xs, 0, 0) * 1.1
@@ -322,16 +334,16 @@ def main(out):
         for bt, l in ((0, 1.2), (1.5, 0.4), (2, 1.2)):
             stabs += [(bar * 4 + bt, r, l, 120), (bar * 4 + bt, r + 7, l, 110)]
     stabs += [(44 * 4, 50, 8, 120), (44 * 4, 57, 8, 110), (44 * 4, 62, 8, 110)]
-    x = render("FM6", "MAMMOTH", stabs)
+    x = drive(render("FM6", "MAMMOTH", stabs), 3.0, 900)
     add(x, 0, -0.15, 1.4, width=8, hall=0.25, name="stabs")
 
     # --- the horns: CANYON HORN, the fanfare in the rally, the theme, an octave up in the climax; TITAN BRASS
     # doubling the climax below
     lead = mel_notes(FANFARE, 10) + mel_notes(FANFARE2, 14) + mel_notes(MEL, 16) + mel_notes(MEL, 32, 0, 120) \
         + mel_notes(MEL[:13], 40, 0, 120) + [(44 * 4, 74, 7, 120)]
-    x = render("ANALOG", "CANYON HORN", lead)
+    x = drive(render("TRIO", "LAVA BRASS", lead), 3.5, 1800)              # (sync brass, overdriven)
     add(x, 0, 0.12, 0.62, width=6, hall=0.35, delay_send=0.18, name="horn")
-    x = render("PHASE", "TITAN BRASS", mel_notes(MEL, 32, -12, 110) + mel_notes(MEL[:13], 40, -12, 110))
+    x = drive(render("PHASE", "TITAN BRASS", mel_notes(MEL, 32, -12, 110) + mel_notes(MEL[:13], 40, -12, 110)), 3.0, 1200)
     add(x, 0, -0.2, 0.45, width=10, hall=0.3, name="brass2")
 
     # --- the chip arpeggio: EGG ARP (its own arp off), sixteenths over the chord, the theme and the climax
@@ -345,12 +357,12 @@ def main(out):
 
     # --- strings: EPIC STRINGS, from the intro's middle on; the choir: EPIC CHOIR in the bridge and the climax
     pad = [(bar * 4, n, 3.95, 85) for bar in range(4, 44) for n in PROG[bar]] + [(44 * 4, n, 8, 90) for n in (50, 57, 62)]
-    x = render("ANALOG", "EPIC STRINGS", pad)
+    x = drive(render("ANALOG", "EPIC STRINGS", pad), 1.5, 1500)
     x[: at_bar(4)] *= 0
     add(x, 0, 0, 0.25, width=15, hall=0.4, name="strings")
     ch = [(bar * 4, n + 12, 3.95, 90) for bar in list(range(24, 32)) + list(range(36, 44)) for n in PROG[bar]]
     ch += [(44 * 4, n + 12, 8, 95) for n in (50, 57, 62)]
-    x = render("VOICE", "EPIC CHOIR", ch)
+    x = drive(render("VOICE", "EPIC CHOIR", ch), 1.3, 1500)
     add(chorus(stereo(x), 7, 0.3, 0.4).mean(1), 0, 0, 0.3, width=18, hall=0.5, name="choir")
 
     # --- the dinosaurs
@@ -363,7 +375,7 @@ def main(out):
         (37, 3.5, "RAPTOR BARK", 66, 0.5, -0.7, 0.4, 0.2), (40, 0, "MONSTER ROAR", 43, 6, 0.0, 0.8, 0.0),
         (46, 0, "TYRANT ROAR", 43, 6, 0.0, 0.9, 0.1), (47, 2, "BRACHIO CALL", 45, 6, 0.4, 0.4, 0.8)]
     for bar, bt, name, nt, l, pan, g, d in calls:
-        x = render("SAURUS", name, [(0, nt, l, 127)], secs=l * BEAT + 5)
+        x = drive(render("SAURUS", name, [(0, nt, l, 127)], secs=l * BEAT + 5), 1.6, 1200)
         if d:
             x = filt(x, "lowpass", 9000 * (1 - d) + 900)
         add(x, at_bar(bar, bt), pan, g * (1 - 0.4 * d), width=4, valley=0.25 + 0.5 * d, delay_send=0.12 + 0.2 * d, name="dinos")
@@ -387,7 +399,14 @@ def main(out):
     for k, v in LAYER.items():                                   # (the balance, by section)
         print(f"{k:12s}" + " ".join(f"{20 * np.log10(np.std(v[at_bar(a):at_bar(b)]) + 1e-9):6.1f}"
                                     for a, b in ((0, 8), (8, 16), (16, 24), (24, 32), (32, 44), (44, 48))))
-    mix = np.tanh(mix * 1.2) / 1.2
+    mix = drive(mix.mean(1), 0, 0) if False else mix
+    mix = np.tanh(mix * 2.0) / 2.0                                   # (hot tape on the bus)
+    tt = np.arange(N) / SR                                           # a little wow and flutter
+    wob = (0.0009 * np.sin(2 * np.pi * 0.6 * tt) + 0.0003 * np.sin(2 * np.pi * 5.3 * tt)) * SR
+    idx = np.clip(np.arange(N) - 40 - wob, 0, N - 1)
+    mix = np.stack([np.interp(idx, np.arange(N), mix[:, c]) for c in range(2)], 1)
+    hiss = filt(rng.standard_normal((N, 2)), "bandpass", [2000, 9000]) * 0.0025
+    mix = mix + hiss
     mix = mix / (np.abs(mix).max() + 1e-9) * 0.98
     mix = limiter(mix * 1.25, 0.93)
     t = np.arange(N) / SR
