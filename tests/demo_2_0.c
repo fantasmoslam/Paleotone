@@ -202,7 +202,7 @@ int main(int argc, char **argv)
                 break;
             case S_TEMP:
                 silence(0);
-                part(1, 12, "LAVA ORGAN", 7, 8, 110, 80, &IV_ORGAN);
+                part(1, 12, "GLACIER PAD", 7, 8, 110, 80, &IV_ORGAN);
                 trk[1].p[P_ROOT] = 2;                  /* D: TEMP tunes from the root */
                 trk[3].p[P_ROOT] = 2;
                 trk[1].p[P_TEMP] = trk[3].p[P_TEMP] = 0;   /* EQUAL */

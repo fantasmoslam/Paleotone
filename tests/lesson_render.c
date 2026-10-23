@@ -359,7 +359,7 @@ static const lstep_t L6T_STEPS[] = {
 static const act_t L7_HARP[] = {
     TURN_TO(C_ALGO, U_TRACK, 0, 0, "Turn ALGORITHM to 1"),
     TAP(C_SCL, "Tap SCL: as in Lesson 2"),
-    TURN_TO(C_PRESETS, U_SOUND, 0, "RIVER HARP", "Turn PRESETS to FOLK HARP"),
+    TURN_TO(C_PRESETS, U_SOUND, 0, "LITHOPHONE", "Turn PRESETS to LITHOPHONE"),
     TURN_TO(C_K1, U_VALUE, 2, 0, "KNOB 1 (ROOT) to D"),
     TURN_TO(C_K2, U_VALUE, 2, 0, "KNOB 2 (SCL) to MIN"),
     TURN_TO(C_K3, U_VALUE, 2, 0, "KNOB 3 (QNT) to WHITE: no wrong notes"),
@@ -411,28 +411,28 @@ static const lstep_t L7_STEPS[] = {
 static const act_t L8_KIT[] = {
     TURN_TO(C_ALGO, U_TRACK, 2, 0, "Turn ALGORITHM to 3"),
     TAPS(C_HOME, "MIXER", "Tap HOME until the MIXER"),
-    TURN_TO(C_PRESETS, U_SOUND, 0, "WAR DRUMS", "Turn PRESETS to TOMB DRUMS"),
+    TURN_TO(C_PRESETS, U_SOUND, 0, "WAR DRUMS", "Turn PRESETS to WAR DRUMS"),
     SAY(C_NONE, "Low, slow drums, far back in the hall", 4), END};
 static const act_t L8_GRID[] = {
     TAP(C_SEQ, "Tap SEQ: on a drum track, a drum grid"),
     SAY(C_NONE, "The white keys are the steps: 16 of them, left to right", 5),
     SAY(C_NONE, "The black keys pick the drum", 4),
-    KEY(LN_FRAME, "1st black key, FRAME, the frame drum", 1.6f),
+    KEY(LN_FRAME, "1st black key, BOOM, the earth drum", 1.6f),
     KEY(0, "1st white key, step 1: a hit", 1.6f),
     KEY(6, "4th white key, step 4", 1.6f),
     KEY(14, "9th white key, step 9", 1.6f),
     SAY(C_NONE, "BOOM . . boom . . . . BOOM: a slow heartbeat", 8), END};
 static const act_t L8_MORE[] = {
-    KEY(LN_TIMP, "6th black key, TIMP, the timpani", 1.6f),
+    KEY(LN_TIMP, "6th black key, LOG, the log drum", 1.6f),
     KEY(21, "13th white key, step 13", 1.6f),
     KEY(24, "15th white key, step 15", 1.6f),
-    SAY(C_NONE, "The timpani rolls into the next round", 7),
-    KEY(LN_SHAKR, "4th black key, SHAKR, a shaker", 1.6f),
+    SAY(C_NONE, "The log drum knocks into the next round", 7),
+    KEY(LN_SHAKR, "4th black key, SEEDS, a seed shaker", 1.6f),
     KEY(7, "5th white key, step 5", 1.6f),
     KEY(16, "10th white key, step 10", 1.6f),
     SAY(C_NONE, "Few hits, far apart: that is a ritual", 8), END};
 static const act_t L8_ACCENT[] = {
-    KEY(LN_FRAME, "1st black key, back to the frame drum", 1.6f),
+    KEY(LN_FRAME, "1st black key, back to the earth drum", 1.6f),
     TURN(C_K1, -1, "Turn KNOB 1 (STEP) left: the cursor back to step 9"),
     TURN(C_K4, 1, "Turn KNOB 4 (ACC) right: step 9 hits harder"),
     SAY(C_NONE, "The big beat of the procession", 7), END};

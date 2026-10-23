@@ -24,11 +24,15 @@ own, `FM-1.fwsc`) can be installed again.
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
   controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
   HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
-- **45 sounds, renamed and mostly retuned.** GHOULBOX's dungeon sounds became prehistoric ones, in the same slots
-  and engines, so projects and user presets saved with GHOULBOX still load.
+- **107 sounds of its own, nothing inherited.** Every sound in PRESETS is DINOBOX's: GHOULBOX's slots hold new
+  prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 62 more join
+  them (SAURUS's 20 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
+- **Its own sample material, synthesized**: a night jungle, a tropical storm, a lithophone and the ENCOUNTER kit
+  (footfalls near and far, a mud stomp, a claw tap, a branch snap, a falling tree, a splash, a rock fall, leaves,
+  bone clacks, a ground ripple, thunder, a huff), in the place of GHOULBOX's four recordings, 12 KB smaller.
+- **New FM6 patches F9..F15** and **the TRIBE drum kit**: BOOM, SKIN, CLAP, SEEDS, RATTL, LOG, BONE and ROCK.
 - **Four new power-on scenes** (MENU > SYSTEM > SCENE): JUNGLE (the default), VOLCANO, STAMPEDE and VALLEY, plus
   BLANK.
-- **The TRIBE drum kit** (GHOULBOX's CRYPT kit) and its STOMP pattern.
 
 ### SAURUS, the creature voice
 
@@ -45,27 +49,31 @@ An engine of its own (engine 15): one note is one call. A throat that buzzes, ra
 | MOUTH | Closed "oo" to open "ah"; the call opens and closes it |
 | WILD | Each note's own variation: length, pitch, roughness |
 
-16 creatures: BRACHIO CALL, TYRANT ROAR, RAPTOR BARK, RAPTOR CHAT, CREST HOOT, PTERO SHRIEK, HERD MOAN, FRILL HISS,
-SAURO SNORT, DEEP RUMBLE, TITAN APE, NEST CHIRPS, SWAMP CROAK, MONSTER ROAR, DISTANT HERD, LOW GROWL. All synthesised.
+20 creatures: BRACHIO CALL, TYRANT ROAR, RAPTOR BARK, RAPTOR CHAT, CREST HOOT, PTERO SHRIEK, HERD MOAN, FRILL HISS,
+SAURO SNORT, DEEP RUMBLE, TITAN APE, NEST CHIRPS, SWAMP CROAK, MONSTER ROAR, DISTANT HERD, LOW GROWL, BABY REX, SEA
+MONSTER, HADRO HORN, COMPY PACK. All synthesised.
 
 ### The sounds
 
 | Engine | Sounds |
 | --- | --- |
-| ANALOG | JUNGLE PAD, EPIC STRINGS, CANYON HORN, STOMP BASS |
-| VOICE | TRIBE CHANT, EPIC CHOIR, RAPTOR CALL (a hissing screech), REX ROAR (an "oo" opening into a low "ah", with drive) |
-| WHEEL | AMBER ORGAN, CANOPY, SWAMP REED, MOSS FLUTE |
-| PHYS | LOG MARIMBA, GEODE BELLS, VALLEY HARP, TARPIT DRONE |
-| TRIO | PANGAEA PAD, BRONTO HORN (two octaves of low brass), SKY STRINGS, PTERO CRY |
-| LOFI | FOSSIL LEAD, DINO CHOIR, BONE WHISTLE |
-| PHASE | TITAN BRASS |
-| NOISE | VOLCANO (a deep rumble with falling rocks), LAVA CRACKLE |
-| ROAR | PRIMEVAL, EARTHQUAKE, STAMPEDE (1/16 thunder), REX GROWL, SWAMP FIDDLE, TRIBE PIPES |
-| FM6 | HERO HORNS, FERN PLUCK, COMET CHOIR, DEEP STRINGS, MIST FLUTE, LAVA ORGAN, BRONTO TUBA (F9..F15) |
-| SAMPLE | AURORA BOW, REED ORGAN, CAVE FLUTE, RIVER HARP |
-| DRUM | TRIBAL KIT, WAR DRUMS |
+| ANALOG | JUNGLE PAD, EPIC STRINGS, CANYON HORN, STOMP BASS, AMBER LEAD, SWAMP BASS, FERN SWELL, STAR SKY, ICE AGE PAD |
+| VOICE | TRIBE CHANT, EPIC CHOIR, RAPTOR CALL, REX ROAR, DEEP CHANT, SPIRIT VOX, SHAMAN, NIGHT WAIL |
+| WHEEL | AMBER ORGAN, CANOPY, SWAMP REED, MOSS FLUTE, TEMPLE ORGAN, BONE KEYS, LAGOON |
+| PHYS | LOG MARIMBA, GEODE BELLS, VALLEY HARP, TARPIT DRONE, HIDE DRUM, WATER DROPS, BOWED BONE, SITAR VINE, TUSK TINES |
+| TRIO | PANGAEA PAD, BRONTO HORN, SKY STRINGS, PTERO CRY, LAVA BRASS, SPORE CLOUD, PRIMAL STAB, AURORA PAD |
+| LOFI | FOSSIL LEAD, DINO CHOIR, BONE WHISTLE, PIXEL RAPTOR, EGG ARP, CAVE ECHO |
+| PHASE | TITAN BRASS, ICE CRYSTAL, RESIN PAD, DEEP PULSE |
+| NOISE | VOLCANO, LAVA CRACKLE, MONSOON, GEYSER, SWARM, WIND RIDGE |
+| ROAR | PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR CHANT, TUNDRA |
+| FM6 | TAR PIT BASS, SLIT DRUM, MAMMOTH, GLACIER PAD, METEOR, CICADA BUZZ, AMBER BELLS (patches F9..F15), TAR GROWL, MAMMOTH CALL, GLACIER WIDE |
+| SAMPLE | JUNGLE NIGHT, ENCOUNTER (the kit, one sound per key from F3), LITHOPHONE, TROPIC STORM |
+| GRAIN | NIGHT SWARM, STONE MIST, STORM CLOUD, AMBER DUST (grains of the jungle, the stones and the storm) |
+| DRUM | TRIBAL KIT, WAR DRUMS, BONE RATTLE, RITUAL |
+| SAURUS | the 20 creatures above |
 
-The FM6 and SAMPLE sounds keep GHOULBOX's patches and recordings under new names; the others are new settings.
+The sample material is made by `tools/gen_dino_samples.py` (no recordings), the FM6 patches are in
+`tools/gen_fm6_patches.py`, the TRIBE kit in `firmware/src/drum_voice.c`.
 
 ## Building
 

@@ -488,10 +488,10 @@ static int test_sound_loads(void)
     project_load(1);
     bad += check("a project load drops the copy and takes none", undo.trk == 0 && undo_depth == 0);
     ui_power_on();
-    bad += check("SAMPLE factory presets: 1.0's four (PIANO .. SAX), PERC's alias, then GHOULBOX's four (BOWED PSALT .. FOLK HARP)",
+    bad += check("SAMPLE factory presets: 1.0's four (PIANO .. SAX), PERC's alias, then DINOBOX's four (JUNGLE NIGHT .. TROPIC STORM)",
                  ENGINES[4]->npresets == 9u && str_eq(ENGINES[4]->presets[0].name, "PIANO") &&
-                 str_eq(ENGINES[4]->presets[3].name, "SAX") && str_eq(ENGINES[4]->presets[5].name, "AURORA BOW") &&
-                 str_eq(ENGINES[4]->presets[8].name, "RIVER HARP") && preset_hidden(ENGINES[4], 4));
+                 str_eq(ENGINES[4]->presets[3].name, "SAX") && str_eq(ENGINES[4]->presets[5].name, "JUNGLE NIGHT") &&
+                 str_eq(ENGINES[4]->presets[8].name, "TROPIC STORM") && preset_hidden(ENGINES[4], 4));
     {   /* TRANH (SET 1, preset 1) is gone: both are PIANO aliases, kept for old data, never offered */
         const param_desc_t *sd = &ENGINES[4]->edit[0];
         uint32_t all, pos, k, e, pos0, shown = 0;
@@ -5090,8 +5090,8 @@ static int test_fm4_retired(void)
     bad += check("power-on: track 2 is FM6 PAD (TRK_DEF, was DIGITAL PAD)", trk[1].eng_req == ENGI_FM6 &&
                  str_eq(ENGINES[ENGI_FM6]->presets[trk[1].preset].name, "PAD"));
     {   /* GHOULBOX: felucca_init's scene, by name (a preset inserted before these would swap the sound) */
-        static const char *const want[NPART][3] = {{"ROAR", "PRIMEVAL", "BALLAD"}, {"ANALOG", "JUNGLE PAD", "DIRGE"},
-                                                    {"VOICE", "TRIBE CHANT", "CHANT"}, {"ROAR", "EARTHQUAKE", "PEDAL"}};
+        static const char *const want[NPART][3] = {{"PHYS", "LOG MARIMBA", "ARPEGGIO"}, {"ANALOG", "JUNGLE PAD", "DIRGE"},
+                                                    {"SAMPLE", "JUNGLE NIGHT", "PEDAL"}, {"DRUM", "TRIBAL KIT", "STOMP"}};
         int sc = 1;
         for (i = 0; i < NPART; i++) {
             const engine_t *en = ENGINES[GB_SCENE[i][0]];
@@ -5099,7 +5099,8 @@ static int test_fm4_retired(void)
                   str_eq(en->presets[GB_SCENE[i][1]].name, want[i][1]) &&
                   GB_SCENE[i][2] >= 1u && GB_SCENE[i][2] <= NPATTERNS && str_eq(PATTERNS[GB_SCENE[i][2] - 1u].name, want[i][2]);
         }
-        bad += check("power-on (GHOULBOX): HURDY GURDY on BALLAD, CRYPT PAD on DIRGE, MONKS on CHANT, DRONE WHEEL on PEDAL", sc);
+        bad += check("power-on (DINOBOX): LOG MARIMBA on ARPEGGIO, JUNGLE PAD on DIRGE, JUNGLE NIGHT on PEDAL, TRIBAL KIT on "
+                     "STOMP", sc);
     }
     preset_all_pos(&total);
     for (i = 0; i < total; i++) {
@@ -9504,8 +9505,8 @@ static int test_edit_quick_actions(void)
  * DRUM, SLICE): not browsed, not picked, but every stored number still loads its sound */
 static int test_hidden_presets(void)
 {
-    static const char *const KEEP[] = {"JUNGLE PAD", "TRIBE CHANT", "PRIMEVAL", "HERO HORNS", "SOFT PAD", "FULL ORGAN",
-                                       "CLOUD PAD", "LOG MARIMBA", "VOLCANO", "PAD", "BELL"};
+    static const char *const KEEP[] = {"JUNGLE PAD", "TRIBE CHANT", "PRIMEVAL", "TAR PIT BASS", "AMBER LEAD", "TEMPLE ORGAN",
+                                       "NIGHT SWARM", "LOG MARIMBA", "VOLCANO", "GLACIER PAD", "AMBER BELLS"};
     int bad = 0, ok = 1;
     uint32_t i, k, e, total, shown = 0;
     ui_power_on();
@@ -9515,18 +9516,18 @@ static int test_hidden_presets(void)
             ;
         if (k == en->npresets) { printf("  no %s preset %s\n", en->name, GB_HIDDEN[i].name); ok = 0; }
     }
-    bad += check("hidden presets: 54 names (PIANO covers SAMPLE's two), each one a real preset",
-                 ok && NELEM(GB_HIDDEN) == 54u);
+    bad += check("hidden presets: 68 names (PIANO covers SAMPLE's two; DINOBOX: + Felucca's 14 GHOULBOX kept), each one "
+                 "a real preset", ok && NELEM(GB_HIDDEN) == 68u);
     preset_all_pos(&total);
-    ok = total == 59u + ENG_SAURUS.npresets + (FELUCCA_FM4 ? ENGINES[ENGI_DIGITAL]->npresets : 0u);   /* (+ DIGITAL's, built in;
-                                                                 * 1.1: + 4 CC0, BAGPIPE; DINOBOX: + SAURUS's) */
+    ok = total == 87u + ENG_SAURUS.npresets + (FELUCCA_FM4 ? ENGINES[ENGI_DIGITAL]->npresets : 0u);   /* (+ DIGITAL's, built in;
+                                                                 * DINOBOX: its own 87, SAURUS's) */
     for (i = 0; i < total; i++) {
         e = preset_all_at(i, &k);
         ok &= e < NENGINES && !preset_hidden(ENGINES[e], k);
         for (uint32_t j = 0; j < NELEM(KEEP); j++)
             shown += str_eq(ENGINES[e]->presets[k].name, KEEP[j]);
     }
-    bad += check("hidden presets: the PRESETS list holds the 59 kept and SAURUS's, none hidden", ok && shown >= NELEM(KEEP));
+    bad += check("hidden presets: the PRESETS list holds DINOBOX's 87 and SAURUS's, none hidden", ok && shown >= NELEM(KEEP));
     ok = NENG_SHOWN == 14u + FELUCCA_FM4 && eng_ok(ENGI_SLICE) && eng_ok(ENGI_SAURUS);
     for (i = 0, k = 0; i < NENG_SHOWN; i++) {
         ok &= eng_vis(i) != ENGI_SLICE;
@@ -9534,13 +9535,13 @@ static int test_hidden_presets(void)
     }
     bad += check("hidden engines: SLICE not offered, still playable; SAMPLE, DRUM and SAURUS offered (14 engines)", ok && k);
     select_engine(ENGI_SAMPLE);
-    bad += check("1.1: picking SAMPLE loads BOWED PSALT (its first kept preset), SET 8",
-                 str_eq(ENGINES[ENGI_SAMPLE]->presets[TSEL->preset].name, "AURORA BOW") && TSEL->p[P_E0] == 8);
+    bad += check("1.1: picking SAMPLE loads JUNGLE NIGHT (its first kept preset), SET 8",
+                 str_eq(ENGINES[ENGI_SAMPLE]->presets[TSEL->preset].name, "JUNGLE NIGHT") && TSEL->p[P_E0] == 8);
     {
         const param_desc_t *sd = &ENGINES[ENGI_SAMPLE]->edit[0];
         int32_t v = 8, seen[6], n;
         for (n = 0; n < 6; n++) { v = param_turn(sd, v, 1); seen[n] = v; }   /* (params.c: one detent, in the shown order) */
-        bad += check("1.1: the SET knob from PSALTERY: RENORGAN RECORDER FOLKHARP USR1 USR2 USR3",
+        bad += check("1.1: the SET knob from JUNGLE: STEPS STONE STORM USR1 USR2 USR3",
                      seen[0] == 9 && seen[1] == 10 && seen[2] == 11 && seen[3] == 5 && seen[4] == 6 && seen[5] == 7);
         for (k = 0; k < ENGINES[ENGI_GURDY]->npresets && !str_eq(ENGINES[ENGI_GURDY]->presets[k].name, "TRIBE PIPES"); k++)
             ;
@@ -9581,32 +9582,35 @@ static int test_hidden_presets(void)
                      param_turn(sd, 0, 1) == 2 && param_turn(sd, 2, -1) == 0);
     }
     select_engine(0);
-    ok = TSEL->eng_req == 0u && str_eq(ENGINES[0]->presets[TSEL->preset].name, "SOFT PAD");
+    ok = TSEL->eng_req == 0u && str_eq(ENGINES[0]->presets[TSEL->preset].name, "JUNGLE PAD");
     select_engine(ENGI_FM6);
-    ok &= str_eq(ENGINES[ENGI_FM6]->presets[TSEL->preset].name, "BELL");
-    bad += check("hidden presets: picking an engine loads its first kept preset (ANALOG SOFT PAD, FM6 BELL)", ok);
+    ok &= str_eq(ENGINES[ENGI_FM6]->presets[TSEL->preset].name, "TAR PIT BASS");
+    bad += check("hidden presets: picking an engine loads its first kept preset (ANALOG JUNGLE PAD, FM6 TAR PIT BASS: "
+                 "DINOBOX keeps its own only)", ok);
     set_engine(0);
     apply_preset(0);                                        /* (a stored ANALOG 0: an old project, a user preset) */
     bad += check("hidden presets: a stored hidden preset still loads its sound (ANALOG 0 SAW LEAD)",
                  TSEL->eng_req == 0u && TSEL->preset == 0u && TSEL->p[P_E0] == ENGINES[0]->presets[0].e[0]);
-    apply_preset(4);                                        /* ACID (retired): browsing goes to its kept neighbours */
+    apply_preset(4);                                        /* ACID (retired): browsing goes to a kept sound */
     turn(EN_PRESET, -1);
-    ok = TSEL->preset == 3u;                                /* PWM STR */
+    ok = TSEL->eng_req == ENGI_DRUM && str_eq(ENGINES[ENGI_DRUM]->presets[TSEL->preset].name, "RITUAL");   /* (none
+                                                            * kept before it: the list's previous sound, DRUM's last) */
+    set_engine_of(TSEL, 0);
     apply_preset(4);
     turn(EN_PRESET, 1);
-    ok &= TSEL->preset == 7u;                               /* SUB BASS */
+    ok &= TSEL->eng_req == 0u && TSEL->preset == 12u;       /* JUNGLE PAD, the next kept */
     set_engine_of(TSEL, ENGI_SLICE);                        /* (an old project's SLICE track: still not offered) */
     turn(EN_PRESET, 1);
-    ok &= TSEL->eng_req == 0u && str_eq(ENGINES[0]->presets[TSEL->preset].name, "SOFT PAD");
+    ok &= TSEL->eng_req == 0u && str_eq(ENGINES[0]->presets[TSEL->preset].name, "JUNGLE PAD");
     bad += check("hidden presets: from a retired sound or engine, browsing steps to the kept one beside it", ok);
-    set_engine_of(TSEL, 0);                                 /* SOFT PAD */
+    set_engine_of(TSEL, 0);                                 /* JUNGLE PAD */
     eng_list_step(1);
-    ok = TSEL->preset == 3u;                                /* EDIT KNOB 2: PWM STR, the next kept */
+    ok = TSEL->preset == 13u;                               /* EDIT KNOB 2: EPIC STRINGS, the next kept */
     eng_list_step(-1);
-    ok &= TSEL->preset == 1u;
+    ok &= TSEL->preset == 12u;
     apply_preset(4);                                        /* ACID (retired) */
     eng_list_step(1);
-    ok &= TSEL->preset == 7u;                               /* SUB BASS */
+    ok &= TSEL->preset == 12u;                              /* JUNGLE PAD */
     for (i = 0; i < 40u; i++) {                             /* round the engine: never a retired one */
         eng_list_step(1);
         ok &= !preset_hidden(ENGINES[0], TSEL->preset);
@@ -9636,15 +9640,15 @@ static int test_sample_values(void)
 static int test_scenes(void)
 {
     static const char *const WANT[GB_NSCENE][NTRK] = {
-        {"PRIMEVAL", "JUNGLE PAD", "TRIBE CHANT", "EARTHQUAKE"},
-        {"REX ROAR", "EPIC CHOIR", "VOLCANO", "WAR DRUMS"},
-        {"STAMPEDE", "VALLEY HARP", "LOG MARIMBA", "TRIBAL KIT"},
-        {"CANOPY", "TRIBE CHANT", "CAVE FLUTE", "SWAMP FIDDLE"},
-        {"PRIMEVAL", "JUNGLE PAD", "TRIBE CHANT", "EARTHQUAKE"},
+        {"LOG MARIMBA", "JUNGLE PAD", "JUNGLE NIGHT", "TRIBAL KIT"},
+        {"VOLCANO", "EPIC CHOIR", "TYRANT ROAR", "WAR DRUMS"},
+        {"STAMPEDE", "BRONTO HORN", "TAR PIT BASS", "TRIBAL KIT"},
+        {"BRACHIO CALL", "EPIC STRINGS", "VALLEY HARP", "SPIRIT VOX"},
+        {"LOG MARIMBA", "JUNGLE PAD", "JUNGLE NIGHT", "TRIBAL KIT"},
     };
     static const char *const PAT[GB_NSCENE][NTRK] = {
-        {"BALLAD", "DIRGE", "CHANT", "PEDAL"}, {"PEDAL", "DIRGE", "PEDAL", "STOMP"},
-        {"BALLAD", "ARPEGGIO", "MARCH", "STOMP"}, {"DIRGE", "CHANT", "LAMENT", "ANTIPHON"}, {0, 0, 0, 0},
+        {"ARPEGGIO", "DIRGE", "PEDAL", "STOMP"}, {"PEDAL", "DIRGE", "PEDAL", "STOMP"},
+        {"BALLAD", "MARCH", "SUB", "STOMP"}, {"PEDAL", "DIRGE", "ARPEGGIO", "LAMENT"}, {0, 0, 0, 0},
     };
     static const int16_t BPM[GB_NSCENE] = {72, 60, 104, 66, 72};
     int bad = 0, ok = 1;
@@ -9676,7 +9680,7 @@ static int test_scenes(void)
     ui_scene = 200;                                            /* a value from a later version: DUNGEON */
     ok &= menu_get(row) == 0;
     gb_scene_load(ui_scene);
-    ok &= !strcmp(ENGINES[trk[0].engine]->presets[trk[0].preset].name, "PRIMEVAL") && song.g[G_BPM] == 72;
+    ok &= !strcmp(ENGINES[trk[0].engine]->presets[trk[0].preset].name, "LOG MARIMBA") && song.g[G_BPM] == 72;
     bad += check("1.3 SCENE: MENU > SYSTEM row (5 names, stops at the ends); a later version's value plays JUNGLE", ok);
     {   /* the row redraws at once when its value changes (ui_menu.c: the menu signature holds ui_scene) */
         static uint16_t before[240 * 240];

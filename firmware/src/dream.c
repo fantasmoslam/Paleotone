@@ -45,12 +45,15 @@ static int dr_has(const char *s, const char *w)            /* the word w (up to 
 }
 
 /* the part a track's sound suits: by words in its factory preset's name (each word after its DR_ role; the first that
- * is there: "STEP LEAD" a melody, not EP's; DINOBOX: ROAR, QUAKE and AURORA keep REX ROAR, EARTHQUAKE and AURORA BOW
- * in the parts of the GHOULBOX sounds they replace), else by its engine (and a user preset by its engine) */
+ * is there: "STEP LEAD" a melody, not EP's; DINOBOX: its sounds' words, NIGHT WAIL a pad before JUNGLE NIGHT's drone),
+ * else by its engine (and a user preset by its engine) */
 static uint32_t dr_role(const track_t *t)
 {
-    static const char KW[] = "0DRONE 0ROAR 0QUAKE 0RUMBLE 1BASS 1TUBA 6TOMS 6DRUM 4LEAD 4FLUTE 2PAD 2STR 2CHOIR 2ORGAN 2BOWED 2AURORA "
-                             "3ARP 3LUTE 3VIRGINAL 3BELL 3PLUCK 3MARIMBA 3PIANO 3KEY 3EP";
+    static const char KW[] = "0DRONE 0ROAR 0QUAKE 0RUMBLE 0TUNDRA 0VOLCANO 0MONSOON 0GEYSER 0WIND 2WAIL 0NIGHT 0STORM "
+                             "1BASS 1TUBA 1PULSE 1GROWL 6TOMS 6DRUM 6ENCOUNTER 6RATTLE 4LEAD 4FLUTE 4HORN 4BRASS 4VOX "
+                             "4WHISTLE 2PAD 2STR 2CHOIR 2ORGAN 2BOWED 2AURORA 2CHANT 2SWELL 2SKY 2MIST 2CLOUD 2CANOPY "
+                             "2GLACIER 3ARP 3LUTE 3BELL 3PLUCK 3MARIMBA 3PIANO 3KEY 3EP 3HARP 3LITHO 3TINES 3DROPS 3STAB "
+                             "3CRYSTAL 3VINE";
     const engine_t *e = ENGINES[t->eng_req % NENGINES];
     uint32_t ei = t->eng_req % NENGINES;
     const char *w;

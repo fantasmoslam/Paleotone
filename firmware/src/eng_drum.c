@@ -119,10 +119,10 @@ static uint32_t drum_swaps(const track_t *t)
 static const char *drum_lane_name(const track_t *t, uint32_t l)
 {
     static const char *const N[NLANE] = {"KICK", "SNARE", "CLAP", "HATCL", "HATOP", "TOM", "RIM", "BELL"};
-    static const char *const CR[NLANE] = {"FRAME", "ROPE", "SLAP", "SHAKR", "JINGL", "TIMP", "STICK", "GONG"};
+    static const char *const CR[NLANE] = {"BOOM", "SKIN", "CLAP", "SEEDS", "RATTL", "LOG", "BONE", "ROCK"};
     uint32_t kit = drum_swaps(t);
     l &= NLANE - 1u;
-    if (drum_kit_plays(t->p[P_E0]) == DK_CRYPT)         /* GHOULBOX: the dungeon kit's own pieces */
+    if (drum_kit_plays(t->p[P_E0]) == DK_CRYPT)         /* GHOULBOX's CRYPT, DINOBOX's TRIBE: its own pieces */
         return CR[l];
     if (l == DV_TOM && (kit & 1u))
         return "CONGA";
@@ -134,7 +134,7 @@ static const char *drum_lane_name(const track_t *t, uint32_t l)
 static const char *drum_lane_abbr(const track_t *t, uint32_t l)
 {
     static const char *const N[NLANE] = {"BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
-    static const char *const CR[NLANE] = {"FD", "RO", "SL", "SH", "JN", "TI", "ST", "GO"};
+    static const char *const CR[NLANE] = {"BM", "SK", "CL", "SE", "RA", "LG", "BN", "RK"};
     uint32_t kit = drum_swaps(t);
     l &= NLANE - 1u;
     if (drum_kit_plays(t->p[P_E0]) == DK_CRYPT)
@@ -322,9 +322,12 @@ static int32_t drum_keys(const track_t *t, uint32_t k)
 /* {KIT, TUNE, TONE, DECY, SNAP, ACC, KICK, DRV}; every kit suggests the BEAT pattern (GM notes) */
 static const preset_t DRUM_PRESETS[] = {
     {"DRUM KIT", DRUM_KIT_E, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
-    /* GHOULBOX 1.2's CRYPT kit (DINOBOX: TRIBE): TRIBAL KIT a little longer, WAR DRUMS lower, longer, driven */
-    {"TRIBAL KIT", {DK_CRYPT, 60, 64, 70, 70, 100, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 70), PAT(22)},
-    {"WAR DRUMS", {DK_CRYPT, 40, 46, 70, 72, 110, 0, 20}, {0, 100, 127, 100}, 0, 0, FX(15, 0, 0, 100), PAT(22)},
+    /* GHOULBOX presets (tools/ghoulbox_presets.py) */
+    {"TRIBAL KIT", {9, 66, 72, 58, 80, 95, 0, 10}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 70), PAT(22)},
+    {"WAR DRUMS", {9, 36, 40, 90, 60, 120, 1, 35}, {0, 100, 127, 100}, 0, 0, FX(20, 0, 0, 100), PAT(22)},
+    {"BONE RATTLE", {9, 92, 100, 30, 100, 90, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 15, 60), PAT(12)},
+    {"RITUAL", {9, 50, 30, 110, 40, 100, 1, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 10, 110), PAT(22)},
+    /* GHOULBOX end */
 };
 
 static const engine_t ENG_DRUM = {

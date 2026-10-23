@@ -27,10 +27,9 @@ WHAT = {"ANALOG": "virtual analog", "FM6": "6-operator FM", "PHASE": "phase dist
 
 
 def ghoulbox_names():
-    """GHOULBOX's own presets: tools/ghoulbox_presets.py, FM6's F9.., SAMPLE's CC0 sets"""
+    """DINOBOX's own presets: tools/ghoulbox_presets.py (FM6, DRUM and GRAIN too), SAMPLE's own sets"""
     names = set(re.findall(r'\("([A-Z0-9 ]+)", \[', (ROOT / "tools/ghoulbox_presets.py").read_text()))
-    return names | {"HERO HORNS", "FERN PLUCK", "COMET CHOIR", "DEEP STRINGS", "MIST FLUTE", "LAVA ORGAN", "BRONTO TUBA",
-                    "AURORA BOW", "REED ORGAN", "CAVE FLUTE", "RIVER HARP", "TRIBAL KIT", "WAR DRUMS"}
+    return names | {"JUNGLE NIGHT", "ENCOUNTER", "LITHOPHONE", "TROPIC STORM"}
 
 
 def main(site):

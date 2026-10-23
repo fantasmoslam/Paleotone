@@ -18,30 +18,37 @@ static uint32_t cat_of_engine(uint32_t e) { return e == 10u || e == 13u ? CAT_DR
  * L LEAD, P PAD, U PLUCK, K KEYS, D DRUM, F FX, O OTHER); a preset past its string (DIGITAL's, FELUCCA_FM4 builds
  * only; SAMPLE's retired PERC, past SMP_NPRESETS): its engine's (cat_of_engine). tests/ui_test.c checks every string
  * against its engine's preset count. A preset's category is a hint for browsing: nothing else reads it */
-static const char *const PRESET_CAT[16] = {   /* GHOULBOX: its sounds after Felucca's, GURDY at 14 */
-    "LPBPBKLBULLP" "PPLB",       /* 0 ANALOG: SAW LEAD, SOFT PAD, SQR BASS, PWM STR, ACID, SINE KEY, RAVE, SUB BASS,
-                                  * PLUCK, BRASS, WIND, STRINGS; CRYPT PAD, FROST STR, WAR HORN, DIRGE BASS */
+static const char *const PRESET_CAT[16] = {   /* Felucca's sounds, then DINOBOX's (tools/ghoulbox_presets.py), ROAR at 14 */
+    "LPBPBKLBULLP" "PPLBLBPPP",  /* 0 ANALOG: SAW LEAD, SOFT PAD, SQR BASS, PWM STR, ACID, SINE KEY, RAVE, SUB BASS,
+                                  * PLUCK, BRASS, WIND, STRINGS; JUNGLE PAD, EPIC STRINGS, CANYON HORN, STOMP BASS,
+                                  * AMBER LEAD, SWAMP BASS, FERN SWELL, STAR SKY, ICE AGE PAD */
     "",                          /* 1 DIGITAL (retired) */
-    "LKPLUU" "L",                /* 2 PHASE: BRASS, ORGAN, STRING, RESO, BELL, WIRE; GRIM BRASS */
-    "LBLLL" "LPL",               /* 3 LOFI: PULSE LD, WAVE BASS, ARP 8BIT, WAVE LEAD, STEP LEAD; TOWER LEAD, CASIO CHOIR,
-                                  * RECORDER */
-    "KKLL" "K" "PKLU",           /* 4 SAMPLE: PIANO, (PIANO: the retired TRANH's alias), FLUTE, SAX, (PIANO: the retired
-                                  * PERC's alias); BOWED PSALT, REN ORGAN, TENOR RECORD, FOLK HARP */
-    "PLBF" "PPFP",               /* 5 VOICE: CHOIR AAH, VOX LEAD, WOW BASS, WHISPER; MONKS, CRYPT CHOIR, WRAITH, LOW DRONE */
-    "BLLUP" "PLPL",              /* 6 TRIO: FAT BASS, ARP LEAD, SYNC LEAD, RING BELL, CHIP CHOIR; FANTASY PAD, MOURN HORN,
-                                  * STRING MACH, SHAWM */
-    "KKKKK" "KKKK",              /* 7 WHEEL: the organs; CRYPT ORGAN, CATHEDRAL, HARMONIUM, TOWER FLUTE */
-    "PFPP",                      /* 8 GRAIN: CLOUD PAD, GLITCH, FROZEN, SHIMMER */
-    "UUUPUDDPU" "UKUP",          /* 9 PHYS: BELL TREE, MARIMBA, PLUCK, BOWED METAL, KALIMBA, HAND DRUM, TOMS, DRONE
-                                  * STRING, HARP; LUTE, HARPSICHORD, DUNGEON HARP, GURDY DRONE */
-    "D" "DD",                    /* 10 DRUM: DRUM KIT; CRYPT KIT, TOMB DRUMS */
-    "FFFF" "FF",                 /* 11 NOISE: WIND, RAIN, ARCADE, METAL; CAVE WIND, TORCH */
-    "KUBLPUKU" "LKPPLKB",        /* 12 FM6: TINE EP, BELL, FM BASS, BRASS, PAD, MARIMBA, ORGAN, PLUCK; FRENCH HORN,
-                                  * VIRGINAL, GLASS CHOIR, DARK STRINGS, LOFI FLUTE, PIPE ORGAN, TUBA */
+    "LKPLUU" "LUPB",             /* 2 PHASE: BRASS, ORGAN, STRING, RESO, BELL, WIRE; TITAN BRASS, ICE CRYSTAL, RESIN PAD,
+                                  * DEEP PULSE */
+    "LBLLL" "LPLFUL",            /* 3 LOFI: PULSE LD, WAVE BASS, ARP 8BIT, WAVE LEAD, STEP LEAD; FOSSIL LEAD, DINO CHOIR,
+                                  * BONE WHISTLE, PIXEL RAPTOR, EGG ARP, CAVE ECHO */
+    "KKLL" "K" "FDUF",           /* 4 SAMPLE: PIANO, (PIANO: the retired TRANH's alias), FLUTE, SAX, (PIANO: the retired
+                                  * PERC's alias); JUNGLE NIGHT, ENCOUNTER (a kit), LITHOPHONE, TROPIC STORM */
+    "PLBF" "PPFFPPLP",           /* 5 VOICE: CHOIR AAH, VOX LEAD, WOW BASS, WHISPER; TRIBE CHANT, EPIC CHOIR, RAPTOR CALL,
+                                  * REX ROAR, DEEP CHANT, SPIRIT VOX, SHAMAN, NIGHT WAIL */
+    "BLLUP" "PLPFLPKP",          /* 6 TRIO: FAT BASS, ARP LEAD, SYNC LEAD, RING BELL, CHIP CHOIR; PANGAEA PAD, BRONTO HORN,
+                                  * SKY STRINGS, PTERO CRY, LAVA BRASS, SPORE CLOUD, PRIMAL STAB, AURORA PAD */
+    "KKKKK" "KKKKKKK",           /* 7 WHEEL: the organs, DINOBOX's too */
+    "PFPP" "FPFF",               /* 8 GRAIN: CLOUD PAD, GLITCH, FROZEN, SHIMMER; NIGHT SWARM, STONE MIST, STORM CLOUD,
+                                  * AMBER DUST */
+    "UUUPUDDPU" "UUUPDUPUU",     /* 9 PHYS: BELL TREE, MARIMBA, PLUCK, BOWED METAL, KALIMBA, HAND DRUM, TOMS, DRONE
+                                  * STRING, HARP; LOG MARIMBA, GEODE BELLS, VALLEY HARP, TARPIT DRONE, HIDE DRUM, WATER
+                                  * DROPS, BOWED BONE, SITAR VINE, TUSK TINES */
+    "D" "DDDD",                  /* 10 DRUM: DRUM KIT; TRIBAL KIT, WAR DRUMS, BONE RATTLE, RITUAL */
+    "FFFF" "FFFFFF",             /* 11 NOISE: WIND, RAIN, ARCADE, METAL; VOLCANO .. WIND RIDGE */
+    "KUBLPUKU" "BULPFFUBLP",     /* 12 FM6: TINE EP, BELL, FM BASS, BRASS, PAD, MARIMBA, ORGAN, PLUCK; TAR PIT BASS, SLIT
+                                  * DRUM, MAMMOTH, GLACIER PAD, METEOR, CICADA BUZZ, AMBER BELLS, TAR GROWL, MAMMOTH
+                                  * CALL, GLACIER WIDE */
     "DD",                        /* 13 SLICE: CHOP, STUTTER */
-    "LPLLLL",                    /* 14 GURDY: HURDY GURDY, DRONE WHEEL, DANCE GURDY, TROMPETTE, VIELLE, BAGPIPE */
-    "FFFFLFFFFPFFFFPB",          /* 15 SAURUS (DINOBOX): the calls FX, CREST HOOT a lead, DEEP RUMBLE and DISTANT HERD
-                                  * pads, LOW GROWL a bass */
+    "LPLLLLLP",                  /* 14 ROAR: PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR
+                                  * CHANT, TUNDRA */
+    "FFFFLFFFFPFFFFPB" "FFLF",   /* 15 SAURUS (DINOBOX): the calls FX, CREST HOOT a lead, DEEP RUMBLE and DISTANT HERD
+                                  * pads, LOW GROWL a bass; BABY REX, SEA MONSTER, HADRO HORN (a lead), COMPY PACK */
 };
 static uint32_t preset_cat(uint32_t e, uint32_t k)    /* factory preset k of engine e */
 {

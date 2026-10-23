@@ -149,6 +149,9 @@ static const struct { uint8_t e; const char *name; } GB_HIDDEN[] = {
     {11, "WIND"}, {11, "RAIN"}, {11, "ARCADE"}, {11, "METAL"},
     {12, "TINE EP"}, {12, "FM BASS"}, {12, "BRASS"}, {12, "MARIMBA"}, {12, "ORGAN"}, {12, "PLUCK"},
     {13, "CHOP"}, {13, "STUTTER"},
+    /* DINOBOX: Felucca's sounds GHOULBOX still offered (its own prehistoric ones take their place) */
+    {0, "SOFT PAD"}, {0, "PWM STR"}, {0, "SUB BASS"}, {0, "WIND"}, {0, "STRINGS"}, {2, "STRING"}, {5, "CHOIR AAH"},
+    {6, "CHIP CHOIR"}, {7, "FULL ORGAN"}, {7, "SOFT FLUTE"}, {8, "CLOUD PAD"}, {8, "FROZEN"}, {12, "BELL"}, {12, "PAD"},
 };
 
 /* the engines one can pick (engine 1 only with FELUCCA_FM4), in ENGINE_ORDER: eng_ok(e), the n-th of them
@@ -226,7 +229,7 @@ static const struct {
      {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}},
     {"ANTIPHON", {62, 0, 65, 64, 62, 0, 0, 0, 50, 0, 53, 52, 50, 0, 0, 0},          /* 21 a call, answered an octave down */
      {1, T_, 0, 0, 0, T_, T_, 0, 1, T_, 0, 0, 0, T_, T_, 0}},
-    /* GHOULBOX 1.2: for the DRUM engine's CRYPT kit (GM notes: its FRAME, SHAKR, TIMP, ROPE, SLAP lanes) */
+    /* GHOULBOX 1.2: for the DRUM engine's CRYPT kit, DINOBOX's TRIBE (GM notes: its BOOM, SEEDS, LOG, SKIN, CLAP lanes) */
     {"STOMP", {36, 42, 0, 42, 45, 42, 36, 42, 36, 42, 45, 45, 38, 42, 39, 42},       /* 22 a procession */
      {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}},
 };
@@ -241,15 +244,15 @@ static const uint8_t TRK_DEF[NPART][3] = {{0, 4, 0}, {ENGI_FM6, 4, 0}, {3, 0, 0}
  * value keeps its scene, an unknown one plays JUNGLE, DINOBOX's DUNGEON). The patterns are GHOULBOX's nine (PATTERNS[n - 1]) */
 #define GB_NSCENE 5u
 static const struct { const char *name; uint8_t bpm, tape, part[NPART][3]; } GB_SCENES[GB_NSCENE] = {
-    {"JUNGLE", 72, 40, {{ENGI_GURDY, 0, 15}, {0, 12, 14}, {5, 4, 16}, {ENGI_GURDY, 1, 17}}},   /* HURDY GURDY BALLAD,
-                                    * CRYPT PAD DIRGE, MONKS CHANT, DRONE WHEEL PEDAL: the scene up to 1.2 */
-    {"VOLCANO", 60, 55, {{5, 7, 17}, {5, 5, 14}, {11, 4, 17}, {ENGI_DRUM, 2, 22}}},              /* LOW DRONE PEDAL,
-                                    * CRYPT CHOIR DIRGE, CAVE WIND PEDAL, TOMB DRUMS TOMBBEAT */
-    {"STAMPEDE", 104, 30, {{ENGI_GURDY, 2, 15}, {ENGI_PHYS, 11, 20}, {ENGI_PHYS, 9, 18}, {ENGI_DRUM, 1, 22}}},   /* DANCE
-                                    * GURDY BALLAD, DUNGEON HARP ARPEGGIO, LUTE MARCH, CRYPT KIT TOMBBEAT */
-    {"VALLEY", 66, 40, {{7, 6, 14}, {5, 4, 16}, {ENGI_SAMPLE, 7, 19}, {ENGI_GURDY, 4, 21}}},     /* CATHEDRAL DIRGE,
-                                    * MONKS CHANT, TENOR RECORD LAMENT, VIELLE ANTIPHON */
-    {"BLANK", 72, 40, {{ENGI_GURDY, 0, 0}, {0, 12, 0}, {5, 4, 0}, {ENGI_GURDY, 1, 0}}},         /* DUNGEON's sounds, no
+    {"JUNGLE", 72, 40, {{ENGI_PHYS, 9, 20}, {0, 12, 14}, {ENGI_SAMPLE, 5, 17}, {ENGI_DRUM, 1, 22}}},   /* DINOBOX: LOG
+                                    * MARIMBA ARPEGGIO, JUNGLE PAD DIRGE, JUNGLE NIGHT PEDAL, TRIBAL KIT STOMP */
+    {"VOLCANO", 60, 55, {{11, 4, 17}, {5, 5, 14}, {ENGI_SAURUS, 1, 17}, {ENGI_DRUM, 2, 22}}},   /* VOLCANO PEDAL, EPIC
+                                    * CHOIR DIRGE, TYRANT ROAR PEDAL, WAR DRUMS STOMP */
+    {"STAMPEDE", 104, 30, {{ENGI_GURDY, 2, 15}, {6, 6, 18}, {ENGI_FM6, 8, 8}, {ENGI_DRUM, 1, 22}}},   /* STAMPEDE BALLAD,
+                                    * BRONTO HORN MARCH, TAR PIT BASS SUB, TRIBAL KIT STOMP */
+    {"VALLEY", 66, 40, {{ENGI_SAURUS, 0, 17}, {0, 13, 14}, {ENGI_PHYS, 11, 20}, {5, 9, 19}}},   /* BRACHIO CALL PEDAL,
+                                    * EPIC STRINGS DIRGE, VALLEY HARP ARPEGGIO, SPIRIT VOX LAMENT */
+    {"BLANK", 72, 40, {{ENGI_PHYS, 9, 0}, {0, 12, 0}, {ENGI_SAMPLE, 5, 0}, {ENGI_DRUM, 1, 0}}},   /* JUNGLE's sounds, no
                                     * notes: a clean start */
 };
 #define GB_SCENE (GB_SCENES[0].part)   /* (the scene up to 1.2: tests/descdump.c, tests/ghoulbox_shots.c) */

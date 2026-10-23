@@ -81,6 +81,9 @@ static int same_values(const int16_t *p, uint32_t i)
 {
     for (uint32_t k = 0; k < NP14; k++) {
         uint32_t id = k < PE0_14 ? k : P_E0 + (k - PE0_14);
+        if (id == P_E7 && t14[i].eng == (int)ENGI_FM6 && t14[i].p[k] == 11 && p[id] == FM6_OWN)
+            continue;                                    /* DINOBOX: SLOT F12 is its own patch now; the project's plays
+                                                          * as OWN (checked below) */
         if (p[id] != t14[i].p[k]) {
             printf("  track %u value %u (now %u): %d, saved %d\n", i + 1u, k, id, p[id], t14[i].p[k]);
             return 0;
@@ -142,9 +145,9 @@ int main(int argc, char **argv)
     {
         uint8_t f12[FP_SIZE + 1u];
         fm6_unpack(FM6_FACTORY[11], f12);
-        bad += check("project A: FM6 SLOT F12, GHOULBOX's patch (FR HORN .. TUBA after Felucca's 8)",
-                     trk[1].p[P_E7] == 11 && FM6_NFACTORY == 15u && !strcmp(N_FM6_PATCH[11], "F12") &&
-                     !memcmp(fm6_patch[1], f12, FP_SIZE));
+        bad += check("project A: FM6 saved on SLOT F12 (GHOULBOX's DARK STRGS): it keeps that patch, now its own (OWN: "
+                     "DINOBOX's F12 is another)", trk[1].p[P_E7] == FM6_OWN && FM6_NFACTORY == 15u &&
+                     !memcmp(fm6_patch[1] + FP_NAME, "DARK STRGS", 10) && memcmp(fm6_patch[1], f12, FP_SIZE));
     }
     for (i = 0, ok = 1; i < NTRK; i++)
         ok &= trk[i].p[P_LN0] == TP[P_LN0].def && trk[i].p[P_SPRD] == TP[P_SPRD].def && trk[i].p[P_SQNT] == TP[P_SQNT].def;
