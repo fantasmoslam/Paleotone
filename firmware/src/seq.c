@@ -1299,7 +1299,7 @@ static void events_block(uint32_t n)
         uint32_t source = midi_in_source[at] ? midi_in_source[at] : 1u, ms = midi_in_ms[at];
         mi_r++;
         if (status >= 0xF8u) {
-            if (clock_mode == source) {
+            if (clock_mode == source && (status == 0xF8u || status == 0xFAu || status == 0xFBu || status == 0xFCu)) {
                 midi_clock.seen_ms = ms;              /* DINOBOX: the source is alive (the clock fallback) */
                 midi_clock.heard = 1;
                 if (status == 0xF8u)
