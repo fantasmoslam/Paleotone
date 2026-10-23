@@ -171,8 +171,8 @@ static volatile uint8_t midi_in_overflow;               /* audio ISR discards a 
 /* Audio ISR owns recovery. A slow USB host may fill the output ring: remember
  * affected channels and the latest transport command rather than losing STOP
  * or leaving the receiving synth holding a note forever. */
-static uint32_t midi_out_pending;
-static uint8_t midi_out_transport;
+static volatile uint32_t midi_out_pending;
+static volatile uint8_t midi_out_transport;
 
 static int midi_enqueue(uint32_t pkt, uint32_t source)
 {
