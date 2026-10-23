@@ -672,7 +672,7 @@ static int midi_out_backpressure_test(void)
                  mo_count(0xB0u, 15, 120) == 1u && !mo_count(0xB0u, 1, 120));
 
     mo_setup();
-    mo_clk = 1; mo_fill();
+    mo_clk = 1; seq_start(); mo_drain(); mo_nev = 0; mo_fill();
     seq_stop();                                   /* STOP also has to wait for room */
     mo_drain(); mo_clk = 0; mo_run(2);
     bad += check("MIDI congestion: STOP is retried even after CLOCK OUT is disabled", mo_count(0xFCu, 0, -1) == 1u);
