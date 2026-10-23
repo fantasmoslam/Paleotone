@@ -389,7 +389,7 @@ def main(out):
         add(x, at_bar(bar, bt), 0, g, valley=0.4, name="earth")
 
     # --- the deep jungle under it all (DINOBOX's soundscape layer, previewed: insects, frogs, birds, drips)
-    jp = Path("/tmp/claude-0/-home-claude/aeec7edc-4479-5166-b960-d620d05ff473/scratchpad/biome_JUNGLE.wav")
+    jp = ROOT / "build/biomes/biome_JUNGLE.wav"                 # (tools/biome_preview.py JUNGLE makes it)
     if jp.exists():
         w = wave.open(str(jp))
         jb = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2).astype(float) / 32768
