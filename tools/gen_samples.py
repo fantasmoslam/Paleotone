@@ -72,10 +72,16 @@ TR = 22050                                   # stored sample rate
 # PIANO too (PERC_SLOT; its sounds load as the DRUM engine)
 CC0_SETS = [("PIANO", "oneshot"), ("PIANO", "alias"), ("FLUTE", "sus"), ("SAX", "sus"), ("PIANO", "alias"),
             # GHOULBOX 1.1: appended (data sets 5..8); their SET values follow USR1..3 (8..11: eng_sample.c smp_set_at)
-            ("PSALTERY", "sus"), ("RENORGAN", "sus"), ("RECORDER", "sus"), ("FOLKHARP", "oneshot")]
+            # DINOBOX: GHOULBOX's four recordings replaced (same indices) by DINOBOX's own synthesized material
+            # (tools/gen_dino_samples.py, CC0): a night jungle, an encounter kit, a lithophone, a tropical storm
+            ("JUNGLE", "loop"), ("STEPS", "kit"), ("STONE", "oneshot"), ("STORM", "loop")]
 USR_V0 = 5                                   # eng_sample.c SMP_USR_V0: the SET value of USR1 (1.0's, fixed)
 NUSR = 3                                     # the user slots USR1..3
-PRESET_NAME = {"PSALTERY": "AURORA BOW", "RENORGAN": "REED ORGAN", "RECORDER": "CAVE FLUTE", "FOLKHARP": "RIVER HARP"}   # DINOBOX
+PRESET_NAME = {"JUNGLE": "JUNGLE NIGHT", "STEPS": "ENCOUNTER", "STONE": "LITHOPHONE", "STORM": "TROPIC STORM"}   # DINOBOX
+# DINOBOX: sets written ready to use by tools/gen_dino_samples.py: kept at the file's own rate, whole, at the
+# file's own level (a kit's far footstep stays quieter than its near one), the C3 = 60 names; "loop" files loop
+# end to start seamlessly (rendered on a circle)
+DINO_SETS = ("JUNGLE", "STEPS", "STONE", "STORM")
 GB_FX = "FX(0, 20, 15, 95)"                  # GHOULBOX presets' sends (the HALL)
 PERC_SLOT = 4                                # core.h SMP_SET_PERC: SAMPLE's factory presets end before it
 MEASURED_TUNING = ()                         # sets whose recordings are not at A440 (was TRANH, ~+35 ct)
@@ -109,14 +115,14 @@ BREAK_HITS = [(0, "kick", 1.0), (0, "chh", 0.55), (2, "kick", 0.7), (2, "chh", 0
 SLC_PIANO_NOTE = 60                          # SLICE's SRC PIANO: the PIANO zone of this root (middle C)
 SLC_GRID, SLC_AUTO = 128, 32                # eng_slice.c slc_src_t
 
-ENV = {"wave":(5, 80, 100, 50), "kit": (0, 127, 127, 60), "multi": (0, 85, 0, 75),
+ENV = {"wave":(5, 80, 100, 50), "kit": (0, 127, 127, 60), "multi": (0, 85, 0, 75), "loop": (45, 80, 127, 95),
        "oneshot": (0, 127, 127, 70), "sus": (12, 80, 120, 60)}
 
 # PIANO's notes cut to 0.75 s (saves flash), faded out over the last SET_FADE s (the 5-zone PIANO of 1.0 .. 1.1.5:
 # SLICE's PIANO, the PIANO HD user slot)
 SET_KEEP = {"PIANO": 0.75,
-            "PSALTERY": 0.80, "RENORGAN": 0.70, "RECORDER": 0.60, "FOLKHARP": 0.90}   # GHOULBOX: <= 130 KB, the four
-SET_FADE = {"PIANO": 0.15, "FOLKHARP": 0.50}
+            }
+SET_FADE = {"PIANO": 0.15}
 
 _wavs = {}
 
@@ -156,8 +162,22 @@ def octave_conv(files):
     return 2 if votes[2] >= votes[1] else 1
 
 
+def dino_entries(setname, kind):
+    """DINOBOX: a DINO_SETS set -> [(file name, int16 samples, loop or None, root, rate)]"""
+    out = []
+    for k, p in enumerate(sorted((CC0 / setname).glob("*.wav"))):
+        sr, x = wav(p)
+        nn = name_note(p.name)
+        root = KIT_BASE + k if kind == "kit" else (nn[0] + 2) * 12 + nn[1]
+        loop = (0, len(x) - 1) if kind == "loop" else None
+        out.append((p.name, [max(-32767, min(32767, int(round(v * 30000)))) for v in x], loop, root, sr))
+    return out
+
+
 def cc0_entries(setname, kind):
-    """-> [(file name, int16 samples at TR, loop or None, root)]"""
+    """-> [(file name, int16 samples at TR, loop or None, root, rate)]"""
+    if setname in DINO_SETS:
+        return dino_entries(setname, kind)
     files = sorted((CC0 / setname).glob("*.wav"))
     out = []
     if kind != "kit":
@@ -195,7 +215,7 @@ def cc0_entries(setname, kind):
                     x[n - fade + i] *= 1 - i / fade
             loop = None
         pk = peak(x)
-        out.append((p.name, [int(v * 30000 / pk) for v in x], loop, root))
+        out.append((p.name, [int(v * 30000 / pk) for v in x], loop, root, TR))
     return out
 
 
@@ -317,7 +337,7 @@ class Builder:
         z = next((z for name, z0, nz in self.sets if name == "PIANO"
                   for z in self.zones[z0:z0 + nz] if z["root16"] == SLC_PIANO_NOTE * 16), None)
         if not z and any(name == "PIANO" for name, _, _ in self.sets):    # PIANO_LO: the 1.0.4 zone, a copy of its own
-            s = next((s for _, s, _, root in cc0_entries("PIANO", "oneshot") if root == SLC_PIANO_NOTE), None)
+            s = next((s for _, s, _, root, _ in cc0_entries("PIANO", "oneshot") if root == SLC_PIANO_NOTE), None)
             if s:
                 off, _ = self.add(s, len(s))
                 z = dict(off=off, n=len(s))
@@ -364,10 +384,10 @@ class Builder:
         if not found:                                # GHOULBOX: never skip one (the sets after it would move down a place
             raise SystemExit(f"samples: CC0 set {name} has no recordings in {CC0 / name} "   # and stored SET values
                              "(tools/fetch_cc0.py fetches it)")                                # play another sound)
-        for k, (_, s, loop, root) in enumerate(found):
+        for k, (_, s, loop, root, rate) in enumerate(found):
             ls, le = loop if loop else (len(s), len(s))
             off, st = self.add(s, ls)
-            entries.append(dict(off=off, n=len(s), ls=ls, le=le, looped=bool(loop), sr=TR,
+            entries.append(dict(off=off, n=len(s), ls=ls, le=le, looped=bool(loop), sr=rate,
                                 root16=int(round(root * 16)), pred=st[0], idx=st[1],
                                 key=KIT_BASE + k if kind == "kit" else None))
         self.add_set(name, kind, entries)
@@ -547,7 +567,7 @@ def user_slot_file(setname, slotname, prefix):
     if kind != "oneshot":
         raise SystemExit(f"{setname}: not a one-shot CC0 set")
     ent = cc0_entries(setname, kind)
-    hdr, data = sio.user_slot(slotname, [(s, int(round(root)), None, None) for _, s, _, root in ent])
+    hdr, data = sio.user_slot(slotname, [(s, int(round(root)), None, None) for _, s, _, root, _ in ent])
     b = Builder()
     b.cc0_set(setname, kind)
     zl = sorted(b.zones, key=lambda z: z["root16"])

@@ -10,24 +10,34 @@
 #undef main
 
 #define T_ 255                                     /* a tie */
-enum { PH_LEAD, PH_CHORD, PH_PLUCK, PH_BASS, PH_HOLD, PH_CALL, PH_CALLHI, PH_DRUM };
+enum { PH_LEAD, PH_CHORD, PH_PLUCK, PH_BASS, PH_HOLD, PH_CALL, PH_CALLHI, PH_KIT, PH_AMB, PH_DRUM };
 static const char *const PH_NAME[] = {"a lament", "slow chords", "broken chords", "a low line", "a held note",
-                                      "two calls", "two calls, high", "STOMP"};
+                                      "two calls", "two calls, high", "an encounter", "a held C4", "STOMP"};
 static const struct { const char *name; uint8_t ph; } KIND[] = {
-    {"SOFT PAD", PH_CHORD}, {"PWM STR", PH_CHORD}, {"STRINGS", PH_CHORD}, {"JUNGLE PAD", PH_CHORD},
-    {"EPIC STRINGS", PH_CHORD}, {"STRING", PH_CHORD}, {"DINO CHOIR", PH_CHORD}, {"CHOIR AAH", PH_CHORD},
-    {"TRIBE CHANT", PH_CHORD}, {"EPIC CHOIR", PH_CHORD}, {"RAPTOR CALL", PH_CHORD}, {"CHIP CHOIR", PH_CHORD},
-    {"PANGAEA PAD", PH_CHORD}, {"SKY STRINGS", PH_CHORD}, {"FULL ORGAN", PH_CHORD}, {"AMBER ORGAN", PH_CHORD},
-    {"CANOPY", PH_CHORD}, {"SWAMP REED", PH_CHORD}, {"CLOUD PAD", PH_CHORD}, {"FROZEN", PH_CHORD},
-    {"PAD", PH_CHORD}, {"COMET CHOIR", PH_CHORD}, {"DEEP STRINGS", PH_CHORD}, {"LAVA ORGAN", PH_CHORD},
-    {"REED ORGAN", PH_CHORD},
-    {"RIVER HARP", PH_PLUCK}, {"LOG MARIMBA", PH_PLUCK}, {"GEODE BELLS", PH_PLUCK}, {"VALLEY HARP", PH_PLUCK},
-    {"FERN PLUCK", PH_PLUCK}, {"BELL", PH_PLUCK},
-    {"SUB BASS", PH_BASS}, {"STOMP BASS", PH_BASS}, {"BRONTO TUBA", PH_BASS}, {"REX ROAR", PH_BASS},
-    {"WIND", PH_HOLD}, {"VOLCANO", PH_HOLD}, {"LAVA CRACKLE", PH_HOLD}, {"TARPIT DRONE", PH_HOLD},
+    {"SOFT PAD", PH_CHORD}, {"PWM STR", PH_CHORD}, {"STRINGS", PH_CHORD}, {"STRING", PH_CHORD}, {"CHOIR AAH", PH_CHORD},
+    {"CHIP CHOIR", PH_CHORD}, {"FULL ORGAN", PH_CHORD}, {"CLOUD PAD", PH_CHORD}, {"FROZEN", PH_CHORD}, {"PAD", PH_CHORD},
+    {"BELL", PH_PLUCK}, {"SUB BASS", PH_BASS}, {"WIND", PH_HOLD},
+    /* DINOBOX */
+    {"JUNGLE PAD", PH_CHORD}, {"EPIC STRINGS", PH_CHORD}, {"FERN SWELL", PH_CHORD}, {"STAR SKY", PH_CHORD},
+    {"ICE AGE PAD", PH_CHORD}, {"TRIBE CHANT", PH_CHORD}, {"EPIC CHOIR", PH_CHORD}, {"DEEP CHANT", PH_CHORD},
+    {"SPIRIT VOX", PH_CHORD}, {"NIGHT WAIL", PH_CHORD}, {"AMBER ORGAN", PH_CHORD}, {"CANOPY", PH_CHORD},
+    {"SWAMP REED", PH_CHORD}, {"TEMPLE ORGAN", PH_CHORD}, {"LAGOON", PH_CHORD}, {"BOWED BONE", PH_CHORD},
+    {"PANGAEA PAD", PH_CHORD}, {"SKY STRINGS", PH_CHORD}, {"SPORE CLOUD", PH_CHORD}, {"AURORA PAD", PH_CHORD},
+    {"DINO CHOIR", PH_CHORD}, {"RESIN PAD", PH_CHORD}, {"GLACIER PAD", PH_CHORD}, {"GLACIER WIDE", PH_CHORD},
+    {"STONE MIST", PH_CHORD}, {"PRIMAL STAB", PH_CHORD}, {"CICADA BUZZ", PH_CHORD},
+    {"LOG MARIMBA", PH_PLUCK}, {"GEODE BELLS", PH_PLUCK}, {"VALLEY HARP", PH_PLUCK}, {"WATER DROPS", PH_PLUCK},
+    {"SITAR VINE", PH_PLUCK}, {"TUSK TINES", PH_PLUCK}, {"BONE KEYS", PH_PLUCK}, {"EGG ARP", PH_PLUCK},
+    {"ICE CRYSTAL", PH_PLUCK}, {"SLIT DRUM", PH_PLUCK}, {"AMBER BELLS", PH_PLUCK}, {"LITHOPHONE", PH_PLUCK},
+    {"HIDE DRUM", PH_PLUCK}, {"AMBER DUST", PH_PLUCK},
+    {"STOMP BASS", PH_BASS}, {"SWAMP BASS", PH_BASS}, {"DEEP PULSE", PH_BASS}, {"TAR PIT BASS", PH_BASS},
+    {"TAR GROWL", PH_BASS}, {"REX ROAR", PH_BASS},
+    {"VOLCANO", PH_HOLD}, {"LAVA CRACKLE", PH_HOLD}, {"MONSOON", PH_HOLD}, {"GEYSER", PH_HOLD}, {"SWARM", PH_HOLD},
+    {"WIND RIDGE", PH_HOLD}, {"TARPIT DRONE", PH_HOLD}, {"JUNGLE NIGHT", PH_AMB}, {"TROPIC STORM", PH_AMB},
+    {"NIGHT SWARM", PH_HOLD}, {"STORM CLOUD", PH_HOLD}, {"TUNDRA", PH_HOLD}, {"EARTHQUAKE", PH_HOLD},
+    {"ENCOUNTER", PH_KIT},
 };
 /* 16 steps of up to 3 notes; {T_} holds the step before, {0} rests */
-static const uint8_t PHRASE[7][16][3] = {
+static const uint8_t PHRASE[9][16][3] = {
     [PH_LEAD] = {{62}, {T_}, {65}, {T_}, {64}, {T_}, {62}, {T_}, {61}, {T_}, {62}, {T_}, {T_}, {T_}, {T_}, {T_}},
     [PH_CHORD] = {{50, 53, 57}, {T_}, {T_}, {T_}, {50, 53, 58}, {T_}, {T_}, {T_},
                   {50, 55, 58}, {T_}, {T_}, {T_}, {49, 52, 57}, {T_}, {T_}, {T_}},
@@ -36,6 +46,10 @@ static const uint8_t PHRASE[7][16][3] = {
     [PH_HOLD] = {{50}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}},
     [PH_CALL] = {{50}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}, {45}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}},   /* DINOBOX: */
     [PH_CALLHI] = {{62}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}, {57}, {T_}, {T_}, {T_}, {T_}, {T_}, {0}, {0}},  /* SAURUS */
+    [PH_AMB] = {{60}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}, {T_}},   /* a
+                                    * recorded scene at its own pitch */
+    [PH_KIT] = {{54}, {0}, {0}, {54}, {0}, {61}, {0}, {53}, {0}, {0}, {57}, {0}, {53}, {65}, {0}, {64}},   /* the kit: far
+                                    * steps, leaves, near steps, a branch, a huff, thunder */
 };
 
 static uint32_t phrase_of(uint32_t e, const preset_t *p)

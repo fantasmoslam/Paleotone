@@ -272,23 +272,24 @@ static const dv_kit_t DV_KIT[DV_NKIT][DV_NLANE] = {
         /* the cymbal: 34 ms + 0.3 s */
         {DVT_CYM, 53, 1690, 1100, 7582, {1969, 5120, 1748, 5120, 24000, 16000, 34, 24576, 6554, 5, 0, 0, 0}},
     },
-    {   /* CRYPT (GHOULBOX): a dungeon kit, the lanes renamed (eng_drum.c drum_lane_name) */
-        /* FRAME: a frame drum, 65 Hz, a soft rise, a finger's skin click, a long body */
-        {DVT_PUNCH, 64, 576, 400, 2277, {40, 200, 0, 3200, 1600, 1100, 1000, 6000, 25, 0, 0, 0, 0}},
-        /* ROPE: a rope-tension snare, one low shell 147 Hz, a dark loose rattle (band ~2.6 kHz), long */
-        {DVT_SNARE, 40, 800, 520, 4141, {0, 90, 160, 70, 0, 9000, 1450, 8192, 40, 0, 26000, 0, 1828}},
-        /* SLAP: a hand on the drum's head: two strikes at ~740 Hz, a short tail */
-        {DVT_CLAP, 48, 1150, 200, 19234, {0, 2500, 1678, 0, 2500, 30000, 30, 300, 2, 0, 0, 0, 0}},
-        /* SHAKR: a shaker, noise only (no metal) through a band near 5 kHz, a swish in */
-        {DVT_HATC, 45, 1600, 160, 4500, {1600, 2048, 1600, 2042, 0, 0, 22000, 30, 6, 0, 0, 0, 0}},
-        /* JINGL: tambourine jingles, a high metal cluster and noise, ~0.3 s */
-        {DVT_HATO, 63, 1909, 300, 2940, {1996, 5120, 1940, 2042, 3000, 14000, 9000, 3, 3, 0, 0, 0, 0}},
-        /* TIMP: a timpani, 68 Hz, a long ring, its pitch dropping, a felt mallet */
-        {DVT_TOM, 53, 570, 900, 1684, {30, 400, 1100, 2000, 0, 7000, 0, 0, 0, 0, 0, 0, 0}},
-        /* STICK: a wooden stick, 880 Hz, a light crack */
-        {DVT_RIM, 32, 1250, 30, 6150, {200, 20000, 8000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-        /* GONG: low bands of the four-square metal, a soft strike, a long shimmer */
-        {DVT_CYM, 53, 900, 3500, 9000, {1500, 3413, 1300, 3413, 12000, 9000, 120, 19661, 0, 2, 0, 0, 0}},
+    {   /* TRIBE (DINOBOX, in GHOULBOX's CRYPT kit's place, KIT 9): a prehistoric kit, the lanes renamed (eng_drum.c
+         * drum_lane_name) */
+        /* BOOM: a big earth drum, 46 Hz swept from above, a slow swell, a long body, driven a little */
+        {DVT_PUNCH, 64, 470, 520, 2000, {70, 260, 0, 2600, 900, 0, 0, 7000, 35, 0, 0, 0, 0}},
+        /* SKIN: a hide drum struck with the palm: one shell 196 Hz, a dark short rattle (band ~1 kHz) */
+        {DVT_SNARE, 40, 880, 300, 4400, {0, 60, 120, 90, 0, 12000, 1344, 8192, 30, 0, 20000, 0, 1828}},
+        /* CLAP: many hands: four claps ~14 ms apart, band ~1 kHz, a dry tail */
+        {DVT_CLAP, 48, 1331, 160, 15000, {0, 3000, 1678, 0, 2000, 30000, 30, 600, 4, 0, 0, 0, 0}},
+        /* SEEDS: a seed-pod shaker, noise only through a band near 3.7 kHz, a longer swish in */
+        {DVT_HATC, 45, 1700, 200, 4300, {1700, 2048, 1650, 2042, 0, 0, 22000, 50, 6, 0, 0, 0, 0}},
+        /* RATTL: a bone rattle: noise and a little dull metal, lower, ~0.4 s */
+        {DVT_HATO, 63, 1750, 400, 3000, {1750, 4096, 1700, 2042, 0, 6000, 20000, 20, 3, 0, 0, 0, 0}},
+        /* LOG: a hollow log drum, 220 Hz, a short woody ring, a stick's knock */
+        {DVT_TOM, 53, 912, 250, 2600, {10, 200, 1300, 6000, 2000, 0, 0, 0, 0, 0, 0, 0, 0}},
+        /* BONE: two bones knocked, 1.2 kHz and a 5th above, dry */
+        {DVT_RIM, 32, 1376, 40, 5600, {112, 22000, 9000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
+        /* ROCK: a ringing stone slab: the four-square metal's low bands, a hard strike, a shorter ring */
+        {DVT_CYM, 53, 820, 1500, 9500, {1300, 3413, 1100, 3413, 8000, 16000, 60, 19661, 0, 2, 0, 0, 0}},
     },
 };
 

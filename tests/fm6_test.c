@@ -435,9 +435,9 @@ static void macros(void)
         trk[0].p[P_E7] = FM6_OWN;
         fm6_poll();
         check("SLOT back to OWN: the own patch again", fm6_slot[0] == FM6_OWN && !memcmp(fm6_patch[0], own, FP_SIZE));
-        check("SLOT (GHOULBOX): F1..F15, the dungeon patches F9.. after Felucca's 8 (V1), stored values written before keep "
-              "their meaning", FM6_NFACTORY == 15u && FM6_NFACTORY_V1 == 8u && !memcmp(FM6_FACTORY[8] + 118, "FR HORN", 7) &&
-              !memcmp(FM6_FACTORY[7] + 118, "NYLON PICK", 10) && !memcmp(FM6_FACTORY[14] + 118, "TUBA", 4));
+        check("SLOT (GHOULBOX, DINOBOX's patches): F1..F15, F9.. after Felucca's 8 (V1), stored values written before keep "
+              "their meaning", FM6_NFACTORY == 15u && FM6_NFACTORY_V1 == 8u && !memcmp(FM6_FACTORY[8] + 118, "TARPITBASS", 10) &&
+              !memcmp(FM6_FACTORY[7] + 118, "NYLON PICK", 10) && !memcmp(FM6_FACTORY[14] + 118, "AMBERBELLS", 10));
         check("SLOT: F1..F15, OWN, then B1..B32 (1.4.1, the voice bank), nothing past it",
               ENG_FM6.edit[7].max == FM6_OWN + FM6_NBANK && FM6_OWN == FM6_NFACTORY && FM6_NBANK == 32u &&
               !strcmp(ENG_FM6.edit[7].names[FM6_OWN], "OWN") && !strcmp(ENG_FM6.edit[7].names[FM6_OWN + 1], "B1") &&

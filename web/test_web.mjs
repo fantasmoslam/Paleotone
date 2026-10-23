@@ -314,10 +314,10 @@ async function editorSamplePresets() {
   const names = E.parse[C.NAMES](await rq(E.req.names(4)));
   await rq(E.req.preset(4, 0));
   const set = E.parse[C.DESC](await rq(E.req.desc(0, info.pe0)));
-  ok(eq(names.names, ["PIANO", "PIANO", "FLUTE", "SAX", "PIANO", "AURORA BOW", "REED ORGAN", "CAVE FLUTE", "RIVER HARP"])
+  ok(eq(names.names, ["PIANO", "PIANO", "FLUTE", "SAX", "PIANO", "JUNGLE NIGHT", "ENCOUNTER", "LITHOPHONE", "TROPIC STORM"])
     && eq(set.names.slice(0, 4), ["PIANO", "PIANO", "FLUTE", "SAX"]) && set.names[4] === "PIANO"
-    && eq(set.names.slice(5, 8), ["USR1", "USR2", "USR3"]) && eq(set.names.slice(8), ["PSALTERY", "RENORGAN", "RECORDER", "FOLKHARP"]),
-    "SAMPLE: TRANH and PERC removed, SET 1 and 4 kept as PIANO aliases, USR1..3 at 5..7; GHOULBOX 1.1's sets after them");
+    && eq(set.names.slice(5, 8), ["USR1", "USR2", "USR3"]) && eq(set.names.slice(8), ["JUNGLE", "STEPS", "STONE", "STORM"]),
+    "SAMPLE: TRANH and PERC removed, SET 1 and 4 kept as PIANO aliases, USR1..3 at 5..7; DINOBOX's sets after them (GHOULBOX 1.1's places)");
   ok(E.aliasOf(names.names, 1) === 0 && E.aliasOf(names.names, 2) === 2 && E.aliasOf(set.names, 5) === 5 &&
      E.aliasOf(set.names, 4) === 0, "SAMPLE: an entry named like an earlier one is an alias of it");
   const alias = E.parse[C.PRESET](await rq(E.req.preset(4, 1)));
@@ -1155,7 +1155,7 @@ async function editorFm6() {
   const info = E.parse[C.INFO](await rq(E.req.info()));
   ok(info.fm6 && info.fm6.factory === 15 && info.fm6.bank === 0 && info.fm6.caps === 3, "FM6: INFO tag (15 factory, no bank; FM6 v2 caps 3)");
   let list = E.parse[C.FM6_LIST](await rq(E.req.fm6List()));
-  ok(list.factory === 15 && list.bank === 0 && list.slots.length === 15 && list.slots[0].name === "TINE EP" && list.slots[8].name === "FR HORN", "FM6: LIST names the factory patches, nbank 0");
+  ok(list.factory === 15 && list.bank === 0 && list.slots.length === 15 && list.slots[0].name === "TINE EP" && list.slots[8].name === "TARPITBASS", "FM6: LIST names the factory patches, nbank 0");
   const mine = F6.setName(F6.factory(2), "my bass");
   let p = E.parse[C.FM6_PUT](await rq(E.req.fm6Put(1, 4, F6.pack(mine))));
   let g = E.parse[C.FM6_GET](await rq(E.req.fm6Get(1, 4)));

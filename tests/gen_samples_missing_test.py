@@ -16,11 +16,11 @@ with tempfile.TemporaryDirectory() as t:
     for f in ("gen_samples.py", "sampleio.py", "gen_waves.py"):
         shutil.copy(ROOT / "tools" / f, t / "tools" / f)
     shutil.copytree(ROOT / "assets" / "samples-cc0", t / "assets" / "samples-cc0",
-                    ignore=lambda d, names: ["RENORGAN"] if d.endswith("samples-cc0") else [])
+                    ignore=lambda d, names: ["STONE"] if d.endswith("samples-cc0") else [])
     r = subprocess.run([sys.executable, str(t / "tools" / "gen_samples.py"), str(t / "out.h")],
                        capture_output=True, text=True)
-    ok = r.returncode != 0 and "RENORGAN" in (r.stdout + r.stderr) and not (t / "out.h").exists()
-    print(f"gen_samples: a missing CC0 set (RENORGAN) stops the build, named {'ok' if ok else 'FAIL'}")
+    ok = r.returncode != 0 and "STONE" in (r.stdout + r.stderr) and not (t / "out.h").exists()
+    print(f"gen_samples: a missing CC0 set (STONE) stops the build, named {'ok' if ok else 'FAIL'}")
     if not ok:
         print((r.stdout + r.stderr)[-600:])
     sys.exit(0 if ok else 1)

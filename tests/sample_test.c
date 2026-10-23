@@ -173,10 +173,10 @@ int main(int argc, char **argv)
         const smp_set_t *s = &SMP_SETS[0];
         const smp_zone_t *z = &SMP_ZONES[s->z0];
         uint32_t bytes = (z[0].n + 1u) / 2u + (z[1].n + 1u) / 2u;
-        check("PIANO: SET 0, its aliases 1 and 4 the same zones; FLUTE 2, SAX 3, USR1..3 5..7; GHOULBOX's 4 sets 8..11",
+        check("PIANO: SET 0, its aliases 1 and 4 the same zones; FLUTE 2, SAX 3, USR1..3 5..7; DINOBOX's 4 sets 8..11",
               SMP_NSETS == 9u && str_eq(SMP_SETS[0].name, "PIANO") && SMP_SETS[1].z0 == s->z0 && SMP_SETS[4].z0 == s->z0 &&
               SMP_SETS[1].nz == s->nz && SMP_SETS[4].nz == s->nz && str_eq(SMP_SETS[2].name, "FLUTE") &&
-              str_eq(SMP_SETS[3].name, "SAX") && str_eq(SMP_ALL_NAMES[5], "USR1") && str_eq(SMP_SETS[5].name, "PSALTERY") &&
+              str_eq(SMP_SETS[3].name, "SAX") && str_eq(SMP_ALL_NAMES[5], "USR1") && str_eq(SMP_SETS[5].name, "JUNGLE") &&
               ENG_SAMPLE.edit[0].max == 11);
         snprintf(m, sizeof m, "PIANO: 2 one-shot zones at 11,025 Hz, roots 48 / 72, keys 0-59 / 60-127, 1.6 s (%u B ADPCM)",
                  bytes);

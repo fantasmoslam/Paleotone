@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* GHOULBOX 1.1: the CC0 sets PSALTERY, RENORGAN, RECORDER, FOLKHARP (SET 8..11): each zone sounds, the looped ones
- * hold without a click at the seam, the harp decays to silence, the four fit their flash budget */
+/* DINOBOX: its own sets JUNGLE, STEPS, STONE, STORM (SET 8..11, GHOULBOX 1.1's places): each zone sounds, the looped
+ * ones hold without a click at the seam, the struck ones decay to silence, the four fit their flash budget */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
@@ -47,40 +47,42 @@ static double click_ratio(const int32_t *x, uint32_t a, uint32_t b)
 
 int main(void)
 {
-    static const struct { uint32_t v; const char *name; int looped; } SET[] = {
-        {8, "PSALTERY", 1}, {9, "RENORGAN", 1}, {10, "RECORDER", 1}, {11, "FOLKHARP", 0}};
+    /* DINOBOX: its own sets in GHOULBOX 1.1's places: kind 1 looped, 0 one-shot, 2 a kit (one sound per key) */
+    static const struct { uint32_t v; const char *name; int kind; uint32_t nz; } SET[] = {
+        {8, "JUNGLE", 1, 1}, {9, "STEPS", 2, 13}, {10, "STONE", 0, 2}, {11, "STORM", 1, 1}};
     uint32_t k, z, len, bytes = 0;
     for (k = 0; k < 4u; k++) {
         uint32_t s = SET[k].v < SMP_NALL ? smp_set_at(SET[k].v) : SMP_NONE;   /* (a value past the list: no such set) */
         const smp_set_t *set = &SMP_SETS[s == SMP_NONE ? 0u : s];
-        int ok = s != SMP_NONE && str_eq(SMP_ALL_NAMES[SET[k].v], SET[k].name) && set->nz >= 3u;
+        int ok = s != SMP_NONE && str_eq(SMP_ALL_NAMES[SET[k].v], SET[k].name) && set->nz == SET[k].nz;
         if (!ok) { check(SET[k].name, 0); continue; }
-        for (z = 0; ok && z < set->nz; z++) {               /* every zone sounds at its root */
+        for (z = 0; ok && z < set->nz; z++) {               /* every zone sounds at its root (a kit: its key) */
             const smp_zone_t *zn = &SMP_ZONES[set->z0 + z];
-            int32_t *x = render(SET[k].v, (uint32_t)(zn->root16 / 16), 1.0, 0.5, &len);
-            ok &= rms(x, FS / 10, FS / 2) > 300.0;
+            uint32_t n = SET[k].kind == 2 ? zn->lo : (uint32_t)(zn->root16 / 16);
+            int32_t *x = render(SET[k].v, n, 1.0, 0.5, &len);
+            double lv = rms(x, 0, FS / 4);
+            if (SET[k].kind == 2)
+                printf("sets:   %s key %u: rms %.0f\n", SET[k].name, n, lv);
+            ok &= lv > 150.0 && (SET[k].kind != 2 || (zn->lo == zn->hi && zn->lo == 53u + z));
             bytes += (zn->n + 1u) / 2u;
             free(x);
         }
         check(SET[k].name, ok);
-        if (SET[k].looped) {                                 /* each zone held 5 s: past several loop seams, no click */
-            int okz = 1;
-            for (z = 0; z < set->nz; z++) {
-                int32_t *x = render(SET[k].v, (uint32_t)(SMP_ZONES[set->z0 + z].root16 / 16), 5.0, 0.2, &len);
-                double r = click_ratio(x, FS, 5 * FS);
-                printf("sets:   %s zone %u click ratio %.1f\n", SET[k].name, z, r);
-                okz &= r < 12.0 && rms(x, 4 * FS, 5 * FS) > 300.0;
-                free(x);
-            }
-            check("  every zone held 5 s: no click at the loop seam (ratio < 12)", okz);
-        } else {                                             /* plucked: rings, then silence */
-            int32_t *x = render(SET[k].v, 62, 3.0, 0.5, &len);
-            check("  plucked: decays to silence", rms(x, FS / 20, FS / 5) > 300.0 && rms(x, len - FS / 5, len) < 30.0);
+        if (SET[k].kind == 1) {                              /* held 8 s: past several loop seams, no click */
+            int32_t *x = render(SET[k].v, (uint32_t)(SMP_ZONES[set->z0].root16 / 16), 8.0, 0.2, &len);
+            double r = click_ratio(x, FS, 8 * FS);
+            printf("sets:   %s click ratio %.1f\n", SET[k].name, r);
+            check("  held 8 s: no click at the loop seam (ratio < 12), still sounding", r < 12.0 && rms(x, 7 * FS, 8 * FS) > 300.0);
+            free(x);
+        } else {                                             /* struck: sounds, then silence */
+            const smp_zone_t *zn = &SMP_ZONES[set->z0];
+            int32_t *x = render(SET[k].v, SET[k].kind == 2 ? zn->lo : 62u, 3.0, 0.5, &len);
+            check("  struck: decays to silence", rms(x, 0, FS / 5) > 300.0 && rms(x, len - FS / 5, len) < 30.0);
             free(x);
         }
     }
     printf("sets: the four use %u B of flash\n", bytes);
-    check("the four fit their budget (<= 130 KB)", bytes <= 130u * 1024u);
+    check("the four fit their budget (<= 110 KB: GHOULBOX's four were 114 KB)", bytes <= 110u * 1024u);
     check("1.0's values unchanged: PIANO 0, FLUTE 2, SAX 3, USR1 5",
           str_eq(SMP_ALL_NAMES[0], "PIANO") && str_eq(SMP_ALL_NAMES[2], "FLUTE") && str_eq(SMP_ALL_NAMES[3], "SAX") &&
           str_eq(SMP_ALL_NAMES[5], "USR1") && smp_set_at(2) == 2u);

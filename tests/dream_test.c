@@ -85,10 +85,10 @@ int main(void)
     int bad = 0, ok;
     uint32_t i, k, sc, m, d;
     static const uint8_t ROLES[4][4] = {
-        {DR_MELODY, DR_PAD, DR_PAD, DR_DRONE},         /* DUNGEON: HURDY GURDY, CRYPT PAD, MONKS, DRONE WHEEL */
-        {DR_DRONE, DR_PAD, DR_DRONE, DR_PERC},         /* CRYPT: LOW DRONE, CRYPT CHOIR, CAVE WIND, TOMB DRUMS */
-        {DR_MELODY, DR_ARP, DR_ARP, DR_PERC},          /* TAVERN: DANCE GURDY, DUNGEON HARP, LUTE, CRYPT KIT */
-        {DR_PAD, DR_PAD, DR_MELODY, DR_HIGH},          /* CHAPEL: CATHEDRAL, MONKS, TENOR RECORD, VIELLE (2nd melody) */
+        {DR_ARP, DR_PAD, DR_DRONE, DR_PERC},           /* JUNGLE: LOG MARIMBA, JUNGLE PAD, JUNGLE NIGHT, TRIBAL KIT */
+        {DR_DRONE, DR_PAD, DR_DRONE, DR_PERC},         /* VOLCANO: VOLCANO, EPIC CHOIR, TYRANT ROAR, WAR DRUMS */
+        {DR_MELODY, DR_HIGH, DR_BASS, DR_PERC},        /* STAMPEDE: STAMPEDE, BRONTO HORN (2nd melody), TAR PIT BASS, TRIBAL KIT */
+        {DR_MELODY, DR_PAD, DR_ARP, DR_HIGH},          /* VALLEY: BRACHIO CALL, EPIC STRINGS, VALLEY HARP, SPIRIT VOX (2nd melody) */
     };
 
     /* 1 */
