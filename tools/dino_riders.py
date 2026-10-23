@@ -17,7 +17,7 @@ from scipy import signal
 ROOT = Path(__file__).resolve().parent.parent
 STEM = ROOT / "build/host/stem"
 SR = 44100
-BPM = 96.0
+BPM = 84.0
 BEAT = 60.0 / BPM
 BAR = 4 * BEAT
 NBARS = 48
@@ -262,7 +262,8 @@ def main(out):
     roar_plan = [(0, 8, "STAMPEDE"), (8, 8, "WAR PARADE"), (16, 8, "TRIBAL WAR"), (24, 8, "HEARTBEAT"),
                  (32, 12, "STAMPEDE"), (44, 4, "CHAOS DRUMS")]
     for b0, nb, name in roar_plan:
-        x = drive(render("ROAR", name, [(0, 50, nb * 4 + 0.5, 110)], secs=nb * BAR + 5), 2.2, 900)
+        x = drive(render("ROAR", name, [(0, 38, nb * 4 + 0.5, 110)], secs=nb * BAR + 5), 2.6, 500)
+        x = filt(x, "lowpass", 2200, 2)                            # (rolled through the mud)
         n = len(x)
         fade = np.ones(n)
         fi = int(0.3 * SR)
@@ -292,8 +293,8 @@ def main(out):
             for e in range(8):
                 bass.append((bar * 4 + e * 0.5, r + (12 if e in (3, 7) else 0), 0.42, 120 if e % 2 == 0 else 95))
     bass += [(44 * 4, 38, 8, 110)]
-    x = drive(render("ANALOG", "STOMP BASS", bass), 2.5, 700)
-    add(x, 0, 0, 0.65, hall=0.06, name="bass")
+    x = filt(drive(render("FM6", "TAR PIT BASS", bass), 3.0, 400), "lowpass", 1400, 2)
+    add(x, 0, 0, 1.6, hall=0.06, name="bass")
     bass_bus_key = x
 
     # --- drums: WAR DRUMS; the boom and toms dry and big, the skin and clap through a gated plate (80s)
@@ -313,57 +314,57 @@ def main(out):
                 toms += [(bar * 4 + 3, 45, .3, 100), (bar * 4 + 3.5, 45, .3, 110)]
             continue
         kick += [(bar * 4, 36, .3, 127), (bar * 4 + 1.5, 36, .3, 100), (bar * 4 + 2, 36, .3, 120)]
-        snare += [(bar * 4 + 1, 38, .3, 120), (bar * 4 + 3, 38, .3, 127), (bar * 4 + 3, 39, .3, 100)]
+        snare += [(bar * 4 + 1, 38, .3, 110), (bar * 4 + 3, 38, .3, 127)]
         if bar % 4 == 3:
             toms += [(bar * 4 + 3, 45, .2, 100), (bar * 4 + 3.25, 45, .2, 105), (bar * 4 + 3.5, 45, .2, 115),
                      (bar * 4 + 3.75, 45, .2, 127)]
     kick += [(44 * 4, 36, .3, 127), (44 * 4, 56, .3, 127)]
-    xk = drive(render("DRUM", "WAR DRUMS", kick + toms), 2.0, 300)
-    xs = drive(render("DRUM", "WAR DRUMS", snare), 2.8, 2000)
+    xk = drive(render("DRUM", "WAR DRUMS", kick + toms, edits=[(1, 14)]), 2.4, 250)   # (tuned down: deep skins)
+    xs = filt(drive(render("DRUM", "WAR DRUMS", snare, edits=[(1, 20), (2, 30)]), 3.0, 900), "lowpass", 3500, 2)
     drums_key = np.pad(xk, (0, max(0, N - len(xk))))[:N]
     add(xk, 0, 0, 1.0, hall=0.12, name="kick/toms")
     ys = stereo(xs, 0, 0) * 1.1
     put(mix, ys, 0)
     put(LAYER.setdefault("snare", np.zeros((N, 2))), ys, 0)
-    put(mix, gate_verb(ys, [b * BEAT for b, nt, _, _ in snare if nt == 38], 0.3, 0.8), 0)
+    put(sends["hall"], ys * 0.35, 0)                              # (a big dark room, no 80s gate)
+    steps = []                                                     # giant footfalls under the climax's downbeats
+    for bar in range(32, 44):
+        steps += [(bar * 4, 53, 1, 127)]
+    xg = render("SAMPLE", "ENCOUNTER", steps)
+    add(filt(xg, "lowpass", 900), 0, 0, 0.55, valley=0.25, name="footfalls")
 
     # --- brass stabs: MAMMOTH, root and fifth on 1 and the "and" of 2 (theme and climax)
     stabs = []
     for bar in list(range(16, 24)) + list(range(32, 44)):
-        r = ROOT_OF[PROG[bar]] + 12
-        for bt, l in ((0, 1.2), (1.5, 0.4), (2, 1.2)):
+        r = ROOT_OF[PROG[bar]]
+        for bt, l in ((0, 1.6), (2.5, 0.5), (3, 0.9)):
             stabs += [(bar * 4 + bt, r, l, 120), (bar * 4 + bt, r + 7, l, 110)]
     stabs += [(44 * 4, 50, 8, 120), (44 * 4, 57, 8, 110), (44 * 4, 62, 8, 110)]
-    x = drive(render("FM6", "MAMMOTH", stabs), 3.0, 900)
+    x = filt(drive(render("FM6", "MAMMOTH", stabs), 3.5, 600), "lowpass", 1800, 2)
     add(x, 0, -0.15, 1.4, width=8, hall=0.25, name="stabs")
 
     # --- the horns: CANYON HORN, the fanfare in the rally, the theme, an octave up in the climax; TITAN BRASS
     # doubling the climax below
     lead = mel_notes(FANFARE, 10) + mel_notes(FANFARE2, 14) + mel_notes(MEL, 16) + mel_notes(MEL, 32, 0, 120) \
         + mel_notes(MEL[:13], 40, 0, 120) + [(44 * 4, 74, 7, 120)]
-    x = drive(render("TRIO", "LAVA BRASS", lead), 3.5, 1800)              # (sync brass, overdriven)
-    add(x, 0, 0.12, 0.62, width=6, hall=0.35, delay_send=0.18, name="horn")
-    x = drive(render("PHASE", "TITAN BRASS", mel_notes(MEL, 32, -12, 110) + mel_notes(MEL[:13], 40, -12, 110)), 3.0, 1200)
+    lead = [(b, n - 12, l, v) for b, n, l, v in lead]
+    x = filt(drive(render("ROAR", "PRIMEVAL", lead), 3.0, 1000), "lowpass", 3200, 2)   # (a bowed, droning beast of a lead)
+    add(x, 0, 0.08, 0.8, width=6, hall=0.35, delay_send=0.15, name="lead")
+    x = filt(drive(render("ROAR", "SWAMP FIDDLE", mel_notes(MEL, 32, -24, 110) + mel_notes(MEL[:13], 40, -24, 110)), 3.0, 700),
+             "lowpass", 2500, 2)
     add(x, 0, -0.2, 0.45, width=10, hall=0.3, name="brass2")
-
-    # --- the chip arpeggio: EGG ARP (its own arp off), sixteenths over the chord, the theme and the climax
-    arp = []
-    for bar in list(range(16, 24)) + list(range(32, 44)):
-        ch = PROG[bar]
-        tones = [ch[0] + 24, ch[1] + 24, ch[2] + 24, ch[1] + 24]
-        arp += [(bar * 4 + i * 0.25, tones[i % 4] + (12 if (i // 4) % 2 else 0), 0.2, 90) for i in range(16)]
-    x = render("LOFI", "EGG ARP", arp, edits=[(6, 0)])
-    add(x, 0, 0.35, 0.3, width=4, plate=0.2, delay_send=0.25, name="arp")
 
     # --- strings: EPIC STRINGS, from the intro's middle on; the choir: EPIC CHOIR in the bridge and the climax
     pad = [(bar * 4, n, 3.95, 85) for bar in range(4, 44) for n in PROG[bar]] + [(44 * 4, n, 8, 90) for n in (50, 57, 62)]
-    x = drive(render("ANALOG", "EPIC STRINGS", pad), 1.5, 1500)
+    pad = [(b, n - 12, l, v) for b, n, l, v in pad]
+    x = filt(drive(render("ANALOG", "ICE AGE PAD", pad), 3.0, 600), "lowpass", 1600, 2)   # (phat, through the mud)
     x[: at_bar(4)] *= 0
-    add(x, 0, 0, 0.25, width=15, hall=0.4, name="strings")
+    add(x, 0, 0, 0.6, width=15, hall=0.35, name="pad")
     ch = [(bar * 4, n + 12, 3.95, 90) for bar in list(range(24, 32)) + list(range(36, 44)) for n in PROG[bar]]
     ch += [(44 * 4, n + 12, 8, 95) for n in (50, 57, 62)]
-    x = drive(render("VOICE", "EPIC CHOIR", ch), 1.3, 1500)
-    add(chorus(stereo(x), 7, 0.3, 0.4).mean(1), 0, 0, 0.3, width=18, hall=0.5, name="choir")
+    ch = [(b, n - 12, l, v) for b, n, l, v in ch]
+    x = filt(drive(render("VOICE", "DEEP CHANT", ch), 2.0, 700), "lowpass", 2500, 2)
+    add(chorus(stereo(x), 7, 0.3, 0.4).mean(1), 0, 0, 0.21, width=18, hall=0.5, name="chant")
 
     # --- the dinosaurs
     calls = [  # (bar, beat, preset, note, beats, pan, gain, distance 0..1)
@@ -387,6 +388,17 @@ def main(out):
         x = render("SAMPLE", "ENCOUNTER", [(0, nt, 2, 127)], secs=4)
         add(x, at_bar(bar, bt), 0, g, valley=0.4, name="earth")
 
+    # --- the deep jungle under it all (DINOBOX's soundscape layer, previewed: insects, frogs, birds, drips)
+    jp = Path("/tmp/claude-0/-home-claude/aeec7edc-4479-5166-b960-d620d05ff473/scratchpad/biome_JUNGLE.wav")
+    if jp.exists():
+        w = wave.open(str(jp))
+        jb = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2).astype(float) / 32768
+        jb = jb[: int(10.5 * SR)]                                  # (before its encounter: the night alone)
+        jb = np.tile(jb, (int(np.ceil(N / len(jb))) + 1, 1))[:N]
+        jb *= 0.36
+        put(mix, jb, 0)
+        put(LAYER.setdefault("jungle", np.zeros((N, 2))), jb, 0)
+
     # --- the space: the sends' returns, the drums ducking the long sounds a little
     ret = reverb(sends["hall"], "hall", 1.0) + reverb(sends["valley"], "valley", 1.0) + reverb(sends["plate"], "plate", 1.0)
     ret += delay(dly, 0.75, 0.45, 1.0, 3500)                     # dotted-eighth echoes, ping-pong
@@ -395,6 +407,7 @@ def main(out):
     mix = mix + ret * 0.9
     # --- the master: a gentle glue, tape warmth, a limiter
     mix = filt(mix, "highpass", 28)
+    mix = mix * 0.6 + filt(mix, "lowpass", 6000) * 0.4               # (darker: less air, more earth)
     mix = comp(mix, -20, 1.6, 0.02, 0.25, 2)
     for k, v in LAYER.items():                                   # (the balance, by section)
         print(f"{k:12s}" + " ".join(f"{20 * np.log10(np.std(v[at_bar(a):at_bar(b)]) + 1e-9):6.1f}"
