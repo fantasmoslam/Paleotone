@@ -72,7 +72,7 @@ class FakeFM1:
         self.image, self.unplug_after, self.after_write = image, unplug_after, after_write
         self.loader = loader
         self.stall_after, self.bad_addr = stall_after, bad_addr
-        self.served = self.bad = self.upgrades = 0
+        self.served = self.bad = self.upgrades = self.uboot = 0
         self.sent, self.links, self.gen, self.lock = [], [], 0, threading.Lock()
         self.boot(identity, name)
 
@@ -103,6 +103,9 @@ class FakeFM1:
         if d == I.HS_QUERY:
             t = self.identity.encode()
             self.tx(b"\xF0" + I.pack7(bytes([0, 0x59, 0x11, 0, 0, 0]) + t + bytes(28 - len(t))) + b"\xF7")
+        elif d == I.UBOOT:                              # (PALEOTONE: the backup path's soft key)
+            if self.identity.startswith("ota-"):
+                self.uboot += 1
         elif d == I.UPGRADE:
             self.upgrades += 1
             first = self.bad_addr if self.bad_addr is not None else 0
@@ -369,6 +372,14 @@ def smk():
     dev = FakeFM1(image, identity="ota-SMK-37 Pro_900", name="Felucca Update", after_write="SMK-37 Pro_900")
     rc, out, err = cli([p, "--yes"], dev)
     ok(rc == 0 and dev.upgrades == 1, "SMK-37 Pro in Felucca's update mode -> finishes the write")
+    dev = FakeFM1(image, identity="SMK-37 Elite_016", name="SMK-37 Elite", after_write="SMK-37 Pro_900",
+                  loader=("ota-SMK-37 Pro_900", "Felucca Update"))
+    rc, out, err = cli([p, "--uboot", "--yes"], dev)
+    ok(rc == 0 and dev.upgrades == 1 and dev.uboot == 1 and dev.bad == 0 and "WL82 UBOOT" in out,
+       "--uboot (the backup path): the check step only, then UBOOT sent to the loader; nothing written")
+    dev = FakeFM1(image, identity="FM-1_015", name="FM-1")
+    rc, out, err = cli([p, "--uboot", "--yes"], dev)
+    ok(rc == 6 and dev.upgrades == 0 and dev.uboot == 0, "--uboot with an SMK package on an FM-1: exit 6, nothing sent")
     dev = FakeFM1(image, identity="SMK-37 Pro_016", name="SMK-37 Pro Midi")
     rc, out, err = cli([pkgfile("fm1.fwsc", package("FM-1_900")), "--yes"], dev)
     ok(rc == 6 and dev.upgrades == 0, "FM-1 package on an SMK-37 Pro -> exit 6 (wrong model), nothing sent")

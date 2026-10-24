@@ -33,6 +33,7 @@ import time
 
 HS_QUERY = bytes([0xF0, 0x00, 0x32, 0x45, 0x00, 0x00, 0x00, 0x40, 0x7F, 0xF7])
 UPGRADE = bytes([0xF0, 0x22, 0x24, 0x35, 0x7F, 0xF7])
+UBOOT = bytes([0xF0, 0x22, 0x24, 0x35, 0x7D, 0xF7])   # the update loader's soft key: the mask-ROM bootloader (WL82 UBOOT)
 FINISH_CHECK, FINISH_WRITE = 0xE0000000, 0xF0000000
 MAXDATA = 512
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F         # BLOCKS: the identity blocks (more may follow, see block_count)
@@ -537,6 +538,28 @@ def run(a, backend, out, ask):
         raise not_found(up)
     print(f"device:  {dev.id.text}  ({dev.name})" + ("  in update mode: the write will be finished" if dev.id.loader else ""),
           file=out)
+    if a.uboot:                                     # PALEOTONE: the backup path (fm1-to-smk37 docs/02, 3.1)
+        if dev.id.loader:
+            ota = dev
+        else:
+            if not same_keyboard(dev.id.text, product):
+                dev.link.close()
+                raise InstallError("model", f"the device is {dev.id.text}, the package is for {product}")
+            if not a.yes and not ask("Run the check step (nothing is written) and enter UBOOT? [y/N] "):
+                dev.link.close()
+                print("cancelled", file=out)
+                return 1
+            prog = Progress(out)
+            try:
+                ota = up.check(dev, image, prog)
+            finally:
+                prog.end()
+        ota.link.send(UBOOT)
+        ota.link.close()
+        print("sent UBOOT: the keyboard now shows up as a USB disk named WL82 UBOOT. Read the whole flash twice with "
+              "jl-uboot-tool (elevated shell), compare the two, and check that offset 0xC1224 reads trimdat. "
+              "A power-cycle brings it back in update mode: then install the package.", file=out)
+        return 0
     if not a.yes and not ask("Install? Do not unplug the FM-1 while writing. [y/N] "):
         dev.link.close()
         print("cancelled", file=out)
@@ -563,6 +586,9 @@ def main(argv=None, backend=None, out=sys.stdout, ask=ask_tty):
     ap.add_argument("--port", metavar="NAME", help="MIDI port to use (part of its name)")
     ap.add_argument("--yes", action="store_true", help="do not ask for confirmation")
     ap.add_argument("--force", action="store_true", help="install a package without the Felucca loader marker")
+    ap.add_argument("--uboot", action="store_true",
+                    help="for a full flash backup before the first install: only the check step (nothing is written), "
+                         "then the loader goes into the mask-ROM bootloader (a USB disk WL82 UBOOT) for jl-uboot-tool")
     a = ap.parse_args(argv)
     if bool(a.info) == bool(a.package):
         ap.error("give a PACKAGE.fwsc or --info")
