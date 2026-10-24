@@ -1,239 +1,277 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 DINOBOX (on GHOULBOX by Jason Persinger and Felucca by Leo Kuroshita, Hügelton Instruments) */
-/* SAURUS (DINOBOX): a creature's voice. One note is one call: a buzzing throat source, roughened (GROWL), with breath
- * (BRTH), through three throat formants scaled by the animal's SIZE and opened by its MOUTH, while the CALL shape moves
- * the pitch (SWOOP deep), the mouth and the loudness over LEN after the note-on. WILD makes each call its own.
- *
- *   source  a band-limited saw, darkened by a one-pole tilt (GROWL and velocity open it). Each period draws its own
- *           gain and its next period's length at the wrap: GROWL makes every other period weaker (a subharmonic an
- *           octave down: the fry of a big throat), GROWL and WILD jitter both (shimmer and jitter: a rough voice).
- *           BRTH mixes noise in, louder in each period's first half (aspiration); HISS and SNORT are the noise alone
- *   throat  F1 -> F2 -> F3 in cascade (eng_formant.c's Klatt resonators and pitch ratios), from a closed "oo" through
- *           "oh" to an open "ah"; SIZE moves them from an octave up (a small animal) to two octaves down (a sauropod),
- *           key tracking a quarter; GROWL widens their bands (rougher, less ringing)
- *   call    CALL's shape: five points each of pitch, mouth and loudness over LEN, linear between, the last one held.
- *           SWOOP is the pitch points' depth (16 = two octaves at 127); TRILL flutters the loudness at 18..26 Hz.
- *           WILD: this note's call a little longer or shorter and up to two semitones off (the note's random number)
- *   out     the last formant with its presence (as VOICE), then GROWL's drive: a soft clip blended in
- * The loudness of the call multiplies the ADSR (engine_t.amp), so the ADSR still shapes and ends the note.
- *
- * Voice state: ph[0] the phase; ph[1] the period's gain (bits 0..14, Q15), the subharmonic's toggle (bit 15) and the
- * period's pitch jitter (bits 16..23, signed); ph[2] TRILL's phase (GROWL's flutter, saurus_amp); s[0..5] F1..F3 y1 / y2; s[6] the tilt; s[7] the
- * call's progress (Q24, bits 0..24) and the note's random number (bits 25..31). */
+/* SAURUS (DINOBOX, PALEOTONE 2): a creature's voice, made like a film roar: up to three throats at once (a low rumble, the
+ * body, a scream or a whistle), each with its own pitch and loudness over the call, the way an alligator, a lion and
+ * an elephant are layered. One note is one call; CALL picks the recipe (SAUR_CALL: which throats, their pitches above
+ * or below the note, resonances, roughness), the knobs scale it (64: the recipe as made):
+ *   SIZE   the throats' resonances, x2 (0) .. x0.5 (127), key tracking a quarter
+ *   SWOOP  how far the recipe's pitch curves move (64: as made, 127 twice)
+ *   LEN    the call's length (1 ms .. 10 s, as before; WILD makes each its own)
+ *   GROWL  the roughness: the throat's bursts or flutter, the weak every other period (a subharmonic), the drive
+ *   BRTH   the breath and the scream's noise
+ *   MOUTH  how far the mouth opens (the resonances from their closed to their open place); a harder note opens it
+ *   WILD   the wander: each period's length and loudness, the pitch's slow drift, each call's pitch and length
+ * A throat, a sample at a time: a band-limited saw whose periods each draw their own gain and length (jitter,
+ * shimmer, the subharmonic), darkened by a one-pole tilt, with breath noise in each period's opening; gated by the
+ * growl (a flutter, or bursts that open fast and die away); three resonators side by side (peak gain 1, weights 1,
+ * 0.6, 0.35) between closed and open; a soft clip (its drive); a two-pole high or low cut. Its loudness and pitch follow
+ * the recipe's six points over LEN. The ADSR still shapes and ends the note.
+ * State: the throats' (16 words each) in a pool of SAUR_SLOTS (a voice takes one at its note-on, the oldest if none is
+ * free: .poly 4, so only when four tracks play SAURUS at once); s[0] the voice's slot; s[7] the call's progress (Q24,
+ * bits 0..24) and the note's random number (bits 25..31). */
 
-enum { SC_HOLD, SC_BELLOW, SC_ROAR, SC_BARK, SC_HOOT, SC_TRILL, SC_CHIRP, SC_MOAN, SC_HISS, SC_SNORT, SC_COUNT };
+enum { SC_HOLD, SC_BELLOW, SC_ROAR, SC_BARK, SC_HOOT, SC_TRILL, SC_CHIRP, SC_MOAN, SC_HISS, SC_SNORT, SC_SHRIEK, SC_HONK,
+       SC_BOOM, SC_RATTLE, SC_COUNT };
 static const char *const N_SAUR_CALL[SC_COUNT] = {"HOLD", "BELLOW", "ROAR", "BARK", "HOOT", "TRILL", "CHIRP", "MOAN",
-                                                  "HISS", "SNORT"};   /* (stored values: append only) */
-#define SCF_UNVOICED 1u
-#define SCF_TRILL 2u
-/* pitch (in 16ths of SWOOP's depth), mouth (16 = MOUTH), loudness (16 = full), at 0, 1/4 .. 1 of LEN; flags; the
- * output gain (16 = x1: low noise loses most of its energy in the throat) */
-static const struct { int8_t p[5]; uint8_t m[5], a[5], f, g; } SAUR_CALL[SC_COUNT] = {
-    {{0, 0, 0, 0, 0}, {16, 16, 16, 16, 16}, {16, 16, 16, 16, 16}, 0, 16},            /* HOLD: as played (drones) */
-    {{0, 4, 2, -4, -12}, {2, 10, 16, 14, 8}, {5, 14, 16, 14, 9}, 0, 16},             /* BELLOW: swells, rises a little, sinks */
-    {{6, 4, 0, -8, -16}, {16, 16, 14, 10, 5}, {16, 16, 14, 10, 4}, 0, 16},           /* ROAR: wide open at once, falling */
-    {{8, 0, -8, -12, -16}, {16, 12, 6, 2, 0}, {16, 9, 3, 0, 0}, 0, 16},              /* BARK: short; it ends by itself */
-    {{-2, 0, 0, 0, -2}, {0, 1, 1, 1, 0}, {6, 16, 16, 14, 10}, 0, 16},                /* HOOT: a closed mouth, steady */
-    {{0, 1, 0, 1, 0}, {8, 12, 12, 12, 8}, {16, 16, 16, 16, 12}, SCF_TRILL, 16},      /* TRILL: fluttering */
-    {{-12, 8, 12, 6, 0}, {4, 16, 16, 12, 8}, {10, 16, 12, 6, 0}, 0, 16},             /* CHIRP: a fast rising squeal */
-    {{2, 0, -4, -8, -10}, {6, 8, 8, 6, 4}, {8, 14, 16, 14, 10}, 0, 16},              /* MOAN: a slow falling groan */
-    {{0, 0, 0, 0, 0}, {16, 16, 14, 12, 10}, {6, 16, 14, 10, 6}, SCF_UNVOICED, 16},   /* HISS */
-    {{0, 0, 0, 0, 0}, {6, 4, 2, 0, 0}, {16, 8, 2, 0, 0}, SCF_UNVOICED, 45},          /* SNORT: a short burst */
-};
-/* the throat's three formants (Hz) and bandwidths (Hz): a closed "oo", "oh", an open "ah" */
-static const uint16_t SAUR_F[3][3] = {{300, 870, 2240}, {500, 900, 2400}, {760, 1250, 2500}};
-static const uint8_t SAUR_B[3][3] = {{60, 80, 150}, {70, 80, 150}, {90, 100, 160}};
-#define SAUR_TRILL_INC 1753064u                           /* 18 Hz a sample (2^32 * 18 / FS) */
-#define SAUR_GROWL_INC 19784u                             /* the flutter: 26 Hz a control tick (2^20 * 26 * CTL / FS) */
-#define SAUR_GROWL_UP 10u                                 /* its envelope (4095 full) a tick: in ~0.3 s .. */
-#define SAUR_GROWL_DN 6u                                  /* .. out ~0.5 s */
+                                                  "HISS", "SNORT", "SHRIEK", "HONK", "BOOM", "RATTLE"};   /* (stored values:
+                                                                                                    * append only) */
+#define SAUR_NL 3u
+typedef struct {
+    int8_t off;                  /* semitones from the note */
+    uint8_t lvl;                 /* its share (255 = x1) */
+    uint8_t fc[3], fo[3], bw[3]; /* resonances closed and open (Hz / 16), their widths (Hz / 4) */
+    uint8_t bright, breath, sub, growl, grate, burst, gfloor;   /* tilt; noise; the weak period; the growl's depth, rate
+                                  * (Hz), bursts (their decay x 16; 0: a flutter), the floor between bursts (/255) */
+    uint8_t jit, shim, drive, hp, lp, vibr, vibd;   /* jitter (0.1 %), shimmer, drive (x / 16), high cut (Hz / 8), low
+                                  * cut (Hz / 32; 0 none), vibrato (Hz x 4, cents / 2) */
+    uint8_t amp[6];              /* loudness at the call's six times (255 = full) */
+    int8_t pit[6];               /* pitch at them, quarter semitones (x SWOOP / 64) */
+} slayer_t;
+typedef struct {
+    uint8_t t[6];                /* the six times, of LEN (255 = the end) */
+    uint8_t mouth[6];            /* the mouth at them (255 open, x MOUTH / 64) */
+    uint8_t nl;                  /* throats */
+    uint8_t g;                   /* the output's gain (16 = x1: as loud as SAURUS's calls before) */
+    slayer_t l[SAUR_NL];
+} scall_t;
+/* the recipes (tools/saurus_design.py has them as made, by ear against the CC0 recordings the 2026-10-24 work used) */
+#define SAUR_NONE {0, 0, {0}, {0}, {0}, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0}, {0}}
+#include "saurus_calls.h"
+_Static_assert(NELEM(SAUR_CALL) == SC_COUNT, "a recipe for every CALL");
+
+#define SAUR_SLOTS 6u
+typedef struct {
+    uint32_t ph, gs, gph, vph;   /* the saw; the period's gain (0..14), weak toggle (15), jitter (16..23); growl; vibrato */
+    int32_t lp, lq, y[6], f1, f2; /* tilt (two poles: a throat's -12 dB an octave); resonators; the cut */
+    int32_t gate, wf, wg, am;    /* the growl's gate (Q15) at the block's end; the drifts (pitch, the growl's); the
+                                  * loudness at the block's end (Q15; -1 none yet) */
+} sthroat_t;
+static struct {
+    const voice_t *owner;
+    uint32_t age;
+    sthroat_t l[SAUR_NL];
+} saur_slot[SAUR_SLOTS];
+static uint32_t saur_age;
 
 static uint32_t saur_shape(const track_t *t) { return (uint32_t)clamp(t->p[P_E0], 0, SC_COUNT - 1); }
 
-/* a call curve at progress q (Q24): five points (signed s or unsigned u), linear between, the last held; Q8 */
-static int32_t saur_pt(const int8_t *s, const uint8_t *u, uint32_t q)
+/* a recipe curve at progress q (Q24), its times tm (/255); u (0..255) or s (signed); Q8 */
+static int32_t saur_at(const uint8_t *tm, const uint8_t *u, const int8_t *s, uint32_t q)
 {
-    uint32_t i = q >= (1u << 24) ? 4u : q >> 22, fr = q >= (1u << 24) ? 0u : (q >> 14) & 255u;
-    int32_t a = s ? s[i] : u[i], b = i < 4u ? (s ? s[i + 1u] : u[i + 1u]) : a;
-    return (a << 8) + (b - a) * (int32_t)fr;
+    uint32_t i, x = q >> 16;                            /* 0..256 */
+    for (i = 0; i < 5u && x >= tm[i + 1u]; i++)
+        ;
+    {
+        int32_t a = u ? u[i] : s[i], b = i < 5u ? (u ? u[i + 1u] : s[i + 1u]) : a;
+        int32_t d = i < 5u ? (int32_t)tm[i + 1u] - (int32_t)tm[i] : 0, f = d > 0 ? (((int32_t)x - tm[i]) << 8) / d : 0;
+        return (a << 8) + (b - a) * clamp(f, 0, 256);
+    }
+}
+
+/* a resonator of peak gain 1 at F (Hz * 16), width BW (Hz * 16): Q30 */
+static void saur_res(fres_t *r, uint32_t f16, uint32_t bw16)
+{
+    int32_t s = sine_i(f16 * 3044u), x = (int32_t)(bw16 * 4781u);
+    int32_t x2 = (int32_t)(((int64_t)x * x) >> 30), x3 = (int32_t)(((int64_t)x2 * x) >> 30);
+    int32_t e = (1 << 30) - x + (x2 >> 1) - (int32_t)(((int64_t)x3 * 178956971) >> 30);
+    int32_t cs = (1 << 30) - 2 * s * s;
+    r->b = (int32_t)(((int64_t)e * cs) >> 29);
+    r->c = -(int32_t)(((int64_t)e * e) >> 30);
+    r->a = (int32_t)(((int64_t)((1 << 30) - e) * s) >> 14);   /* (1 - r) 2 sin(w): the peak at 1 */
 }
 
 static void saurus_note_on(track_t *t, voice_t *v)
 {
+    uint32_t k = (uint32_t)v->s[0], i, best = 0;
     (void)t;
     v->s[7] = (int32_t)((noise32(&formant_nz) >> 25) << 25);   /* the call starts; this note's random number */
-    if (!v->env && !v->env_out) {                       /* from rest (not a retrigger: its states go on, no click) */
-        uint32_t i;
-        v->ph[0] = 0;
-        v->ph[1] = 32767u;                              /* the first period at full gain, no jitter */
-        v->ph[2] = 0;
-        for (i = 0; i < 7u; i++)
-            v->s[i] = 0;
+    if (k < SAUR_SLOTS && saur_slot[k].owner == v && (v->env || v->env_out))
+        return;                                         /* a retrigger: its throats go on (no click) */
+    for (i = 0; i < SAUR_SLOTS; i++) {                  /* a free slot, else the oldest */
+        if (!saur_slot[i].owner || !saur_slot[i].owner->active || saur_slot[i].owner == v) {
+            best = i;
+            break;
+        }
+        if (saur_slot[i].age < saur_slot[best].age)
+            best = i;
     }
-}
-
-/* the voice's loudness: the ADSR x the call's loudness (x TRILL's flutter), once per control tick */
-static int32_t saurus_amp(track_t *t, voice_t *v, int32_t adsr)
-{
-    uint32_t sh = saur_shape(t), q = (uint32_t)v->s[7] & FMT_TALK_MASK;
-    int32_t a = (int32_t)(((int64_t)adsr * saur_pt(0, SAUR_CALL[sh].a, q)) >> 12);   /* (16 << 8: x1) */
-    if (SAUR_CALL[sh].f & SCF_TRILL) {                  /* depth 70 %; WILD's random number sets this note's rate */
-        v->ph[2] += (SAUR_TRILL_INC + ((uint32_t)v->s[7] >> 25) * 6000u) * CTL;
-        a = (a * (32767 - ((((sine_i(v->ph[2]) + 32768) >> 1) * 22938) >> 15))) >> 15;
-    } else if (t->p[P_E4] > 64) {                       /* DINOBOX: GROWL above 64, the throat's flutter (a deep rolled
-                                                         * R): ~26 Hz, uneven; in over ~0.3 s while the call is loud and
-                                                         * the key held, out over ~0.5 s as it drops (the bellow rings on
-                                                         * without it). ph[2]: the flutter's envelope (bits 20..31), its
-                                                         * phase (0..19) */
-        uint32_t st = v->ph[2], ge = st >> 20, fp = st & 0xFFFFFu;
-        int32_t gd = clamp((t->p[P_E4] - 64) * 520, 0, 32767), depth, chop;
-        if (v->gate && saur_pt(0, SAUR_CALL[sh].a, q) >= (8 << 8))
-            ge = ge + SAUR_GROWL_UP < 4095u ? ge + SAUR_GROWL_UP : 4095u;
-        else
-            ge = ge > SAUR_GROWL_DN ? ge - SAUR_GROWL_DN : 0u;
-        fp = (fp + SAUR_GROWL_INC + (((noise32(&formant_nz) >> 20) - 2048u) << 1)) & 0xFFFFFu;
-        v->ph[2] = ge << 20 | fp;
-        chop = (sine_i(fp << 12) + 32768) >> 1;
-        chop = (chop * chop) >> 15;
-        depth = (int32_t)((gd * (int32_t)((ge * ge) >> 12)) >> 12);
-        a = (int32_t)(((int64_t)a * (32767 - ((depth * (32767 - chop)) >> 15))) >> 15);
+    memset(&saur_slot[best], 0, sizeof saur_slot[best]);
+    saur_slot[best].owner = v;
+    saur_slot[best].age = ++saur_age;
+    for (i = 0; i < SAUR_NL; i++) {
+        saur_slot[best].l[i].gs = 32767u;
+        saur_slot[best].l[i].gate = 32767;
+        saur_slot[best].l[i].am = -1;
     }
-    return a;
+    v->s[0] = (int32_t)best;
 }
 
 static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
-    uint32_t sh = saur_shape(t), fl = SAUR_CALL[sh].f, q = (uint32_t)v->s[7] & FMT_TALK_MASK;
-    uint32_t rnd = (uint32_t)v->s[7] >> 25, i, j, ph = v->ph[0], gs = v->ph[1], inc, incj;
-    int32_t wild = p[P_E7], growl = p[P_E4], pitch16, open, ratio, bws, f0, fq[3], bq[3];
-    int32_t og, ogk, tilt, gv, gn, dr, sub, jit, jp;
-    int32_t y1 = v->s[0], y2 = v->s[1], y3 = v->s[2], y4 = v->s[3], y5 = v->s[4], y6 = v->s[5], lp = v->s[6];
+    const scall_t *c = &SAUR_CALL[saur_shape(t)];
+    uint32_t k = (uint32_t)v->s[0], q = (uint32_t)v->s[7] & FMT_TALK_MASK, rnd = (uint32_t)v->s[7] >> 25, li, i, j;
+    int32_t wild = p[P_E7], acc[CTL], mouth, size, roff;
+    int32_t kg = p[P_E4], kb = p[P_E5], ks = p[P_E2];
     int32_t nst = formant_nz;
-    fres_t r1, r2, r3;
-
-    if (q < (1u << 24)) {                               /* the call goes on over LEN (WILD: this note's own length) */
+    if (k >= SAUR_SLOTS || saur_slot[k].owner != v || n > CTL)
+        return;                                         /* (its slot taken by a newer call: silent until it ends) */
+    if (q < (1u << 24)) {
         q += ENV_LIN[clamp(p[P_E3] + ((((int32_t)rnd - 64) * wild) >> 8), 0, 127)];
         if (q > (1u << 24))
             q = 1u << 24;
         v->s[7] = (int32_t)(((uint32_t)v->s[7] & ~(uint32_t)FMT_TALK_MASK) | q);
     }
-    /* pitch: the shape's points x SWOOP, and WILD's offset for this note (up to +-2 semitones) */
-    pitch16 = ((saur_pt(SAUR_CALL[sh].p, 0, q) * p[P_E2] * 3) >> 12) + ((((int32_t)rnd - 64) * wild) >> 8);
-    {
-        uint64_t x = pitch16 ? ((uint64_t)m->inc * fmt_ratio(pitch16)) >> 16 : m->inc;
-        inc = x > 0x7FFFFFFFu ? 0x7FFFFFFFu : (uint32_t)x;
-    }
-    /* the mouth: MOUTH x the shape's opening, ENV / LFO -> FLT, a harder note opens it a little */
-    open = clamp(((p[P_E6] * saur_pt(0, SAUR_CALL[sh].m, q)) >> 11) + (m->cutoff >> 7) + ((v->vel - 64) >> 1), 0, 256);
-    /* SIZE: +1 octave (0) .. -2 octaves (127), key tracking 1/4; HISS's noise a twelfth up (a fricative) */
-    ratio = (int32_t)fmt_ratio(192 - ((p[P_E1] * 4645) >> 10) + ((v->pitch_cur - 60 * 16) >> 2) + (sh == SC_HISS ? 304 : 0));
-    bws = (int32_t)fmt_ratio((growl - 32) * 2);         /* GROWL widens the bands */
-    f0 = (int32_t)(((uint64_t)inc * 705600u) >> 32);    /* F0 in Hz * 16 */
-    {
-        int32_t a = open >= 128 ? 1 : 0, w = open - (a << 7);   /* oo -> oh (0..128), oh -> ah (128..256) */
+    mouth = clamp(((saur_at(c->t, c->mouth, 0, q) >> 8) * p[P_E6]) >> 6, 0, 255);
+    mouth = clamp(mouth + (m->cutoff >> 8) - 64 + ((v->vel - 64) >> 1) + 64, 0, 255);   /* (FLT mod; a harder note) */
+    size = (int32_t)fmt_ratio((64 - p[P_E1]) * 3 + ((v->pitch_cur - 60 * 16) >> 2));   /* Q16 */
+    roff = (((int32_t)rnd - 64) * wild) >> 8;           /* this call's pitch, +-2 semitones at WILD 127 */
+    for (i = 0; i < n; i++)
+        acc[i] = 0;
+    for (li = 0; li < c->nl; li++) {
+        const slayer_t *L = &c->l[li];
+        sthroat_t *z = &saur_slot[k].l[li];
+        int32_t amp0, amp1, p16, g0, g1, gstep, tilt, gn, sub, shim, jp, dr, kc, vib;
+        uint32_t inc, incj, ph = z->ph, gs = z->gs;
+        int32_t lp = z->lp, lq = z->lq, y0 = z->y[0], y1 = z->y[1], y2 = z->y[2], y3 = z->y[3], y4 = z->y[4], y5 = z->y[5];
+        int32_t f1 = z->f1, f2 = z->f2;
+        fres_t r[3];
+        uint64_t x64;
+        amp1 = ((saur_at(c->t, L->amp, 0, q) >> 8) * L->lvl) >> 1;   /* Q15 */
+        amp0 = z->am < 0 ? amp1 : z->am;
+        z->am = amp1;
+        /* drifts: the pitch slow, the growl's quicker (smoothed noise, +-1 Q15) */
+        z->wf += ((((int32_t)(noise32(&nst) >> 16) - 32768) - z->wf) >> 7);
+        z->wg += ((((int32_t)(noise32(&nst) >> 16) - 32768) - z->wg) >> 4);
+        z->vph += (uint32_t)L->vibr * 24348u * n;       /* (Hz x 4: 2^32 / 44100 / 4) */
+        vib = (int32_t)(((int64_t)sine_i(z->vph) * L->vibd * 10) >> 20);
+        p16 = L->off * 16 + (((saur_at(c->t, 0, L->pit, q) >> 8) * 4 * ks) >> 6) + vib + roff +
+              (int32_t)((((int64_t)clamp(z->wf * 16, -32767, 32767)) * L->jit * 277 * (64 + wild)) >> 31);
+        x64 = ((uint64_t)m->inc * fmt_ratio(p16)) >> 16;
+        inc = x64 > 0x7FFFFFFFu ? 0x7FFFFFFFu : (uint32_t)x64;
+        /* the resonances: closed -> open, x SIZE */
         for (j = 0; j < 3u; j++) {
-            int32_t fz = ((SAUR_F[a][j] << 7) + (SAUR_F[a + 1][j] - SAUR_F[a][j]) * w) >> 3;   /* Hz * 16 */
-            int32_t bz = ((SAUR_B[a][j] << 7) + (SAUR_B[a + 1][j] - SAUR_B[a][j]) * w) >> 3;
-            fz = (int32_t)(((int64_t)fz * ratio) >> 16);
-            bz = (int32_t)(((((int64_t)bz * ratio) >> 16) * bws) >> 16);
-            if (j == 0 && fz < f0 + (f0 >> 4) && fz > 0) {   /* a high call: F1 follows F0 (no boom on it) */
-                bz = (int32_t)(((int64_t)bz * (f0 + (f0 >> 4))) / fz);
-                fz = f0 + (f0 >> 4);
+            int32_t fz = ((L->fc[j] << 8) + (((int32_t)L->fo[j] - L->fc[j]) * mouth)) ;   /* Hz * 16 (Hz/16 << 8) */
+            int32_t bz = L->bw[j] << 6;                 /* Hz * 16 */
+            fz = (int32_t)(((int64_t)fz * size) >> 16);
+            bz = (int32_t)(((int64_t)bz * size) >> 16);
+            saur_res(&r[j], (uint32_t)clamp(fz, 30 * 16, 9000 * 16), (uint32_t)clamp(bz, 15 * 16, 1500 * 16));
+        }
+        /* the growl's gate at the block's end */
+        {
+            int32_t gd = clamp((L->growl * kg) >> 6, 0, 127) * 258, rate = L->grate, sq;
+            uint32_t gi = (uint32_t)(rate * 97391) + (uint32_t)(((int64_t)rate * 97391 * z->wg) >> 17);
+            z->gph += gi * n;
+            if (L->burst) {                             /* a burst: opens over 1/60 of its cycle, dies away */
+                uint32_t fr = z->gph >> 16;             /* 0..65535 */
+                int32_t e = (int32_t)fmt_ratio(-(int32_t)(((uint64_t)fr * L->burst * 17) >> 16)) >> 1;   /* Q15 */
+                int32_t at = (int32_t)(fr * 16u > 65535u ? 32767u : fr * 16u / 2u);   /* (over 1/16: no click) */
+                at = (at * at) >> 15;
+                int32_t fl = L->gfloor * 128;
+                sq = fl + (((((32767 - fl) * e) >> 15) * at) >> 15);
+                g1 = 32767 - ((gd * (32767 - sq)) >> 15);
+            } else {                                    /* a flutter: on and off, now and then skipped or doubled */
+                sq = sine_i(z->gph) + ((z->wg * 3) >> 1) > 0 ? 32767 : 0;
+                g1 = 32767 - ((gd * sq) >> 15);
             }
-            fq[j] = clamp(fz, 40 * 16, 7000 * 16);
-            bq[j] = clamp(bz, 20 * 16, 1500 * 16);
         }
-    }
-    fres_coef(&r1, (uint32_t)fq[0], (uint32_t)bq[0]);
-    fres_coef(&r2, (uint32_t)fq[1], (uint32_t)bq[1]);
-    fres_coef(&r3, (uint32_t)fq[2], (uint32_t)bq[2]);
-
-    tilt = clamp(2600 + growl * 70 + (v->vel - 64) * 24, 1500, 16000);   /* the source: dark .. open (Q14) */
-    gv = 32767 - p[P_E5] * p[P_E5];                     /* voicing: a little less with more breath */
-    gn = p[P_E5] * 200;                                 /* breath: Q15 */
-    if (fl & SCF_UNVOICED) {
-        gv = 0;
-        gn = 22000 + p[P_E5] * 80;
-    }
-    sub = (growl * growl * 19) >> 4;                    /* the weak period's dip: up to 0.58 (Q15) */
-    jit = (growl + wild) * 40;                          /* a period's random gain: up to 0.31 */
-    jp = growl * 40 + wild * 120;                       /* a period's random length: up to +-3.8 % */
-    og = (int32_t)(((int64_t)(750 * SAUR_CALL[sh].g) * fmt_ratio((60 * 16 - v->pitch_cur) / 4)) >> 16);   /* low notes: +1.5 dB
-                                                                                         * an octave */
-    ogk = (og >> 2) * (2 + (growl >> 5));               /* presence */
-    dr = 64 + growl * 3;                                /* GROWL's drive: x1 .. x7 */
-    incj = inc + (uint32_t)((int32_t)(inc >> 11) * (int32_t)(int8_t)(gs >> 16));
-
-    for (i = 0; i < n; i++) {
-        int32_t e, x, a, s;
-        uint32_t nx;
-        e = (osc_saw(ph, incj) * (int32_t)(gs & 0x7FFFu)) >> 15;
-        lp += ((e - lp) * tilt) >> 14;
-        x = (lp * gv) >> 15;
-        if (gn) {
-            int32_t nz = (((int32_t)(noise32(&nst) >> 16) - 32768) * gn) >> 15;
-            x += (fl & SCF_UNVOICED) || ph < 0x80000000u ? nz : nz >> 1;   /* aspiration: with the period's opening */
+        g0 = z->gate;
+        gstep = (g1 - g0) / (int32_t)(n ? n : 1u);
+        tilt = clamp(1600 + L->bright * 110 + (v->vel - 64) * 16, 900, 16000);
+        gn = clamp((L->breath * kb) >> 6, 0, 160) * 200;
+        sub = clamp((L->sub * kg) >> 6, 0, 127) * 200;
+        shim = L->shim * 200;
+        jp = L->jit * (32 + wild) >> 3;                 /* a period's length: +-(jit 0.1 %) */
+        dr = 16 + ((L->drive * kg) >> 6);
+        kc = L->lp ? clamp(L->lp * 149, 0, 30000) : clamp(L->hp * 37, 0, 30000);   /* (one-pole: 2 pi f / FS, Q15) */
+        incj = inc + (uint32_t)(((int64_t)(inc >> 11) * (int8_t)(gs >> 16)) >> 0);
+        for (i = 0; i < n; i++) {
+            int32_t e, x, a, s, g = g0 + gstep * (int32_t)i, am = amp0 + (((amp1 - amp0) * (int32_t)i) >> CTL_LOG2);
+            uint32_t nx;
+            e = (osc_saw(ph, incj) * (int32_t)(gs & 0x7FFFu)) >> 15;
+            lp += ((e - lp) * tilt) >> 14;
+            lq += ((lp - lq) * tilt) >> 14;
+            x = lq;
+            if (gn) {
+                int32_t nz = (((int32_t)(noise32(&nst) >> 16) - 32768) * gn) >> 15;
+                x += ph < 0x66666666u ? nz : nz >> 2;   /* breath: in each period's opening */
+            }
+            x = (x * g) >> 15;
+            a = (int32_t)(((int64_t)r[0].a * (x << 6) + (int64_t)r[0].b * y0 + (int64_t)r[0].c * y1) >> 30);
+            y1 = y0;
+            y0 = a;
+            a = (int32_t)(((int64_t)r[1].a * (x << 6) + (int64_t)r[1].b * y2 + (int64_t)r[1].c * y3) >> 30);
+            y3 = y2;
+            y2 = a;
+            a = (int32_t)(((int64_t)r[2].a * (x << 6) + (int64_t)r[2].b * y4 + (int64_t)r[2].c * y5) >> 30);
+            y5 = y4;
+            y4 = a;
+            s = (y0 + ((y2 * 19661) >> 15) + ((y4 * 11469) >> 15)) >> 6;   /* Q15 */
+            s = softclip(clamp((s * dr) >> 4, -2000000, 2000000));
+            f1 += ((s - f1) * kc) >> 15;
+            f2 += ((f1 - f2) * kc) >> 15;
+            s = L->lp ? f2 : L->hp ? s - f2 : s;
+            acc[i] += (s * am) >> 15;
+            nx = ph + incj;
+            if (nx < ph) {                              /* a new period: its gain and length */
+                uint32_t rr = noise32(&nst), tog = ((gs >> 15) & 1u) ^ 1u;
+                int32_t gg = 32767 - (tog ? sub : 0) - (int32_t)(((rr & 0x7FFFu) * (uint32_t)shim) >> 15);
+                int32_t pj = (((int32_t)((rr >> 16) & 255u) - 128) * jp) >> 10;
+                pj = clamp(pj, -127, 127);
+                gs = (uint32_t)clamp(gg, 0, 32767) | tog << 15 | ((uint32_t)pj & 255u) << 16;
+                incj = inc + (uint32_t)(((int64_t)(inc >> 11) * pj));
+            }
+            ph = nx;
         }
-        a = (int32_t)(((int64_t)r1.a * (x << 6) + (int64_t)r1.b * y1 + (int64_t)r1.c * y2 + (1 << 29)) >> 30);
-        y2 = y1;
-        y1 = a;
-        a = (int32_t)(((int64_t)r2.a * a + (int64_t)r2.b * y3 + (int64_t)r2.c * y4 + (1 << 29)) >> 30);
-        y4 = y3;
-        y3 = a;
-        a = (int32_t)(((int64_t)r3.a * a + (int64_t)r3.b * y5 + (int64_t)r3.c * y6 + (1 << 29)) >> 30);
-        y6 = y5;
-        y5 = clamp(a, -(1 << 28), 1 << 28);
-        s = clamp((int32_t)(((int64_t)y5 * og + (int64_t)(y5 - y6) * ogk) >> 21), -200000, 200000);
-        if (growl)                                      /* the drive, blended in by GROWL */
-            s += ((softclip((s * dr) >> 6) - s) * growl) >> 7;
-        s = soft_knee(s, 24000);
-        out[i] += voice_amp(s, m, i) << 1;
-        nx = ph + incj;
-        if (nx < ph) {                                  /* a new period: its gain and its length */
-            uint32_t r = noise32(&nst), tog = ((gs >> 15) & 1u) ^ 1u;
-            int32_t g = 32767 - (tog ? sub : 0) - (int32_t)(((r & 0x7FFFu) * (uint32_t)jit) >> 15);
-            int32_t pj = (((int32_t)((r >> 16) & 255u) - 128) * jp) >> 15;
-            gs = (uint32_t)clamp(g, 0, 32767) | tog << 15 | ((uint32_t)pj & 255u) << 16;
-            incj = inc + (uint32_t)((int32_t)(inc >> 11) * pj);
-        }
-        ph = nx;
+        z->ph = ph;
+        z->gs = gs;
+        z->lp = lp;
+        z->lq = lq;
+        z->y[0] = y0; z->y[1] = y1; z->y[2] = y2; z->y[3] = y3; z->y[4] = y4; z->y[5] = y5;
+        z->f1 = f1;
+        z->f2 = f2;
+        z->gate = g1;
     }
-    v->ph[0] = ph;
-    v->ph[1] = gs;
     formant_nz = nst;
-    v->s[0] = y1;
-    v->s[1] = y2;
-    v->s[2] = y3;
-    v->s[3] = y4;
-    v->s[4] = y5;
-    v->s[5] = y6;
-    v->s[6] = lp;
+    for (i = 0; i < n; i++)
+        out[i] += voice_amp(soft_knee((acc[i] * c->g) >> 4, 26000), m, i) << 1;
 }
 
 static const preset_t SAURUS_PRESETS[] = {
     /* name, {CALL, SIZE, SWOOP, LEN | GROWL, BRTH, MOUTH, WILD}, {A D S R}, fenv, mono (tools/ghoulbox_presets.py) */
     /* GHOULBOX presets (tools/ghoulbox_presets.py) */
-    {"BRACHIO CALL", {1, 120, 42, 108, 20, 35, 90, 25}, {40, 90, 127, 90}, 0, 0, FX(0, 20, 15, 110), PAT(17)},
-    {"TYRANT ROAR", {2, 105, 58, 102, 100, 45, 127, 30}, {4, 90, 127, 80}, 0, 1, FX(30, 0, 10, 100), PAT(17)},
-    {"RAPTOR BARK", {3, 35, 55, 82, 80, 60, 120, 50}, {0, 70, 127, 40}, 0, 0, FX(10, 0, 25, 85), PAT(4)},
-    {"RAPTOR CHAT", {5, 30, 20, 96, 50, 50, 90, 70}, {2, 80, 110, 40}, 0, 0, FX(5, 0, 20, 85), PAT(4)},
-    {"CREST HOOT", {4, 85, 10, 104, 10, 25, 40, 15}, {50, 90, 127, 100}, 0, 0, FX(0, 30, 20, 115), PAT(17)},
-    {"PTERO SHRIEK", {6, 15, 70, 92, 70, 70, 127, 60}, {0, 80, 110, 50}, 0, 0, FX(15, 0, 30, 95), PAT(4)},
-    {"HERD MOAN", {7, 95, 45, 110, 35, 40, 80, 40}, {40, 90, 120, 100}, 0, 0, FX(0, 40, 10, 110), PAT(5)},
-    {"FRILL HISS", {8, 40, 0, 96, 30, 90, 110, 30}, {6, 80, 110, 60}, 0, 0, FX(0, 0, 10, 80), PAT(17)},
-    {"SAURO SNORT", {9, 120, 0, 88, 40, 110, 70, 30}, {0, 80, 127, 50}, 0, 0, FX(0, 0, 0, 90), PAT(4)},
-    {"DEEP RUMBLE", {0, 127, 0, 0, 60, 30, 40, 20}, {80, 90, 127, 110}, 0, 0, FX(10, 30, 0, 110), PAT(17)},
-    {"TITAN APE", {2, 70, 30, 98, 100, 60, 110, 30}, {6, 90, 127, 80}, 0, 1, FX(25, 0, 10, 95), PAT(17)},
-    {"NEST CHIRPS", {6, 5, 50, 84, 20, 40, 110, 90}, {0, 70, 110, 40}, 0, 0, FX(0, 20, 30, 90), PAT(4)},
-    {"SWAMP CROAK", {5, 75, 8, 100, 60, 30, 20, 40}, {10, 80, 120, 60}, 0, 0, FX(0, 0, 10, 90), PAT(8)},
-    {"MONSTER ROAR", {2, 90, 66, 100, 127, 70, 127, 45}, {2, 90, 127, 70}, 0, 1, FX(60, 0, 20, 90), PAT(17)},
-    {"DISTANT HERD", {1, 110, 36, 112, 15, 30, 70, 50}, {90, 90, 120, 120}, 0, 0, FX(0, 40, 25, 127), PAT(5)},
-    {"LOW GROWL", {0, 95, 0, 0, 127, 80, 50, 40}, {30, 90, 127, 80}, 0, 1, FX(20, 0, 0, 90), PAT(17)},
-    {"BABY REX", {2, 55, 60, 95, 70, 50, 110, 40}, {2, 90, 127, 60}, 0, 1, FX(10, 0, 20, 90), PAT(4)},
-    {"SEA MONSTER", {7, 127, 30, 118, 70, 30, 60, 30}, {60, 90, 127, 120}, 0, 0, FX(10, 30, 20, 127), PAT(17)},
-    {"HADRO HORN", {4, 100, 15, 110, 15, 20, 70, 20}, {40, 90, 127, 110}, 0, 0, FX(0, 20, 30, 120), PAT(17)},
-    {"COMPY PACK", {6, 20, 60, 70, 30, 50, 100, 110}, {0, 64, 100, 30}, 0, 0, FX(0, 20, 30, 85), PAT(13)},
+    {"BRACHIO CALL", {1, 104, 60, 110, 50, 60, 70, 25}, {30, 90, 127, 90}, 0, 0, FX(0, 20, 15, 110), PAT(17)},
+    {"TYRANT ROAR", {2, 64, 64, 112, 64, 64, 64, 30}, {2, 90, 127, 80}, 0, 1, FX(15, 0, 10, 100), PAT(17)},
+    {"RAPTOR BARK", {3, 64, 64, 92, 64, 64, 64, 40}, {0, 70, 127, 40}, 0, 0, FX(5, 0, 25, 85), PAT(4)},
+    {"RAPTOR CHAT", {5, 64, 64, 98, 64, 64, 64, 60}, {1, 80, 110, 40}, 0, 0, FX(0, 0, 20, 85), PAT(4)},
+    {"CREST HOOT", {4, 70, 50, 104, 40, 50, 60, 15}, {40, 90, 127, 100}, 0, 0, FX(0, 30, 20, 115), PAT(17)},
+    {"PTERO SHRIEK", {10, 30, 80, 98, 50, 70, 80, 50}, {0, 80, 110, 50}, 0, 0, FX(10, 0, 30, 95), PAT(4)},
+    {"HERD MOAN", {7, 76, 64, 110, 64, 64, 64, 40}, {30, 90, 120, 100}, 0, 0, FX(0, 40, 10, 110), PAT(5)},
+    {"FRILL HISS", {8, 64, 0, 96, 64, 64, 64, 30}, {4, 80, 110, 60}, 0, 0, FX(0, 0, 10, 80), PAT(17)},
+    {"SAURO SNORT", {9, 90, 0, 88, 64, 64, 64, 30}, {0, 80, 127, 50}, 0, 0, FX(0, 0, 0, 90), PAT(4)},
+    {"DEEP RUMBLE", {0, 110, 0, 0, 80, 40, 40, 20}, {80, 90, 127, 110}, 0, 0, FX(10, 30, 0, 110), PAT(17)},
+    {"TITAN APE", {2, 80, 50, 104, 90, 70, 80, 30}, {4, 90, 127, 80}, 0, 1, FX(20, 0, 10, 95), PAT(17)},
+    {"NEST CHIRPS", {6, 30, 64, 84, 40, 50, 64, 90}, {0, 70, 110, 40}, 0, 0, FX(0, 20, 30, 90), PAT(4)},
+    {"SWAMP CROAK", {13, 50, 40, 100, 70, 40, 50, 40}, {6, 80, 120, 60}, 0, 0, FX(0, 0, 10, 90), PAT(8)},
+    {"MONSTER ROAR", {2, 90, 70, 112, 100, 90, 80, 45}, {2, 90, 127, 70}, 0, 1, FX(40, 0, 20, 90), PAT(17)},
+    {"DISTANT HERD", {7, 90, 50, 112, 50, 80, 50, 50}, {80, 90, 120, 120}, 0, 0, FX(0, 40, 25, 127), PAT(5)},
+    {"LOW GROWL", {13, 80, 30, 116, 90, 60, 64, 40}, {20, 90, 127, 80}, 0, 1, FX(10, 0, 0, 90), PAT(17)},
+    {"BABY REX", {2, 30, 64, 100, 50, 50, 70, 40}, {2, 90, 127, 60}, 0, 1, FX(5, 0, 20, 90), PAT(4)},
+    {"SEA MONSTER", {1, 120, 50, 116, 100, 60, 50, 30}, {50, 90, 127, 120}, 0, 0, FX(10, 30, 20, 127), PAT(17)},
+    {"HADRO HORN", {11, 64, 64, 110, 64, 64, 64, 20}, {30, 90, 127, 110}, 0, 0, FX(0, 20, 30, 120), PAT(17)},
+    {"COMPY PACK", {3, 20, 64, 82, 50, 60, 64, 110}, {0, 64, 100, 30}, 0, 0, FX(0, 20, 30, 85), PAT(13)},
+    {"RAPTOR CRY", {10, 64, 64, 100, 64, 64, 64, 40}, {0, 80, 120, 50}, 0, 0, FX(5, 0, 25, 90), PAT(4)},
+    {"TITAN BOOM", {12, 64, 64, 114, 64, 64, 64, 20}, {60, 90, 127, 110}, 0, 0, FX(0, 20, 10, 120), PAT(17)},
     /* GHOULBOX end */
 };
 
@@ -254,7 +292,6 @@ static const engine_t ENG_SAURUS = {
     .npresets = NELEM(SAURUS_PRESETS),
     .note_on = saurus_note_on,
     .render = saurus_render,
-    .amp = saurus_amp,
     .knob = {P_E1, P_E4, P_E2, P_E3},
     .poly = 4,
 };
