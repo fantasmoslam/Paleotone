@@ -255,8 +255,8 @@ static const struct { const char *name; uint8_t bpm, tape, part[NPART][4]; } GB_
                                     * EPIC STRINGS DIRGE, VALLEY HARP ARPEGGIO, SPIRIT VOX LAMENT */
     {"BLANK", 72, 40, {{ENGI_PHYS, 9, 0}, {0, 12, 0}, {ENGI_SAMPLE, 5, 0}, {ENGI_DRUM, 1, 0}}},   /* JUNGLE's sounds, no
                                     * notes: a clean start */
-    {"HERD", 84, 30, {{ENGI_GURDY, 2, 17, 108}, {ENGI_SAURUS, 0, 17, 81}, {6, 6, 14, 117}, {5, 8, 16, 88}}},   /* DINOBOX: the herd
-                                    * on the move: STAMPEDE PEDAL, BRACHIO CALL PEDAL, BRONTO HORN DIRGE, DEEP CHANT
+    {"HERD", 84, 30, {{ENGI_GURDY, 2, 17, 108}, {ENGI_SAURUS, 0, 17, 81}, {ENGI_FM6, 10, 14, 115}, {5, 8, 16, 88}}},   /* DINOBOX: the herd
+                                    * on the move: STAMPEDE PEDAL, BRACHIO CALL PEDAL, MAMMOTH DIRGE, DEEP CHANT
                                     * CHANT (2026-10-23, in place of RIDERS: a saved 5 plays it) */
 };
 #define GB_SCENE_HERD 5u

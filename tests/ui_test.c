@@ -9662,7 +9662,7 @@ static int test_scenes(void)
         {"STAMPEDE", "BRONTO HORN", "TAR PIT BASS", "TRIBAL KIT"},
         {"BRACHIO CALL", "EPIC STRINGS", "VALLEY HARP", "SPIRIT VOX"},
         {"LOG MARIMBA", "JUNGLE PAD", "JUNGLE NIGHT", "TRIBAL KIT"},
-        {"STAMPEDE", "BRACHIO CALL", "BRONTO HORN", "DEEP CHANT"},
+        {"STAMPEDE", "BRACHIO CALL", "MAMMOTH", "DEEP CHANT"},
     };
     static const char *const PAT[GB_NSCENE][NTRK] = {
         {"ARPEGGIO", "DIRGE", "PEDAL", "STOMP"}, {"PEDAL", "DIRGE", "PEDAL", "STOMP"},
