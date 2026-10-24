@@ -280,6 +280,18 @@ static void turn(uint32_t role, int32_t s)
     host_ticks += 200000u;                        /* (no knob acceleration between the turns) */
 }
 static void stop_transport(void) { transport_req = 0; song.playing = 0; }
+/* DINOBOX: HOME tapped on EPOCH goes through SCAPE's five pages (scape.c), then HOME. 1 = so */
+static int home_through_scape(void)
+{
+    static const char *const T[5] = {"SCAPE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE DENSITY", "SCAPE DENSITY 2"};
+    int ok = 1;
+    for (uint32_t i = 0; i < 5u; i++) {
+        press(B_HOME);
+        ok &= !ui.home && str_eq(cur_page()->title, T[i]);
+    }
+    press(B_HOME);
+    return ok && ui.home;
+}
 static int16_t stored_param(uint32_t slot, uint32_t track, uint32_t id)
 {
     project_t p;
@@ -2753,8 +2765,9 @@ static int test_page_cycles(void)
         ok &= f != FAM_SEQ || PAGES[i].graph == GR_ROLL || PAGES[i].graph == GR_EVENTS;
         ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG;   /* (1.2: GLO's only page) */
         ok &= f != FAM_TRK || PAGES[i].graph == GR_TRK || str_eq(PAGES[i].title, "CLOCK") ||
-              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "EPOCH");   /* HOME's: MIXER CLOCK KEYS (2.1)
+              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "EPOCH") ||   /* HOME's: MIXER CLOCK KEYS (2.1)
                                                                                      * DREAM (2.3) */
+              !memcmp(PAGES[i].title, "SCAPE", 5);   /* DINOBOX: SCAPE's five */
         ok &= PAGES[i].graph != GR_TRK || f == FAM_TRK;
         ui_power_on(); ui.home = 0; ui.page = (uint8_t)i; page_entered();
         ok &= FAM_BTN[cur_fam()] == (f == FAM_TRK ? B_HOME : f == FAM_GLO ? B_GLO : f == FAM_SEQ ? B_SEQ :
@@ -2935,8 +2948,7 @@ static int test_product_ux(void)
     ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
     press(B_HOME);
     ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
-    press(B_HOME);
-    ok &= ui.home && !ui.menu;
+    ok &= home_through_scape() && !ui.menu;
     press(B_HOME);
     ok &= cur_page()->graph == GR_TRK;
     go_title("ENV"); press(B_HOME);
@@ -2961,9 +2973,8 @@ static int test_product_ux(void)
               song.g[G_DDRFT] == g0[G_DDRFT] - 1 && song.g[G_DMOOD] == g0[G_DMOOD] + 1 && song.g[G_BPM] == g0[G_BPM];
         memcpy(song.g, g0, sizeof g0);
     }
-    press(B_HOME);
-    ok &= ui.home;
-    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
+    ok &= home_through_scape();
+    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
                  "DREAM: EVOL DENS DRFT MOOD); elsewhere HOME", ok);
     hold(B_HOME);
     bad += check("1.2: HOME held still opens the menu", ui.menu == 1);
@@ -7356,7 +7367,7 @@ static int test_fx_map(void)
             ok &= p == 10u || perf_map[p] == PF_DEF[p];
         memset(&pp.favorites, 0, sizeof pp.favorites);
         pp.magic = 0x50455233u;                         /* PER3: no favorites */
-        ok &= settings_import(&pp, (int)(sizeof pp - sizeof pp.favorites)) == 2;
+        ok &= settings_import(&pp, (int)(sizeof pp - sizeof pp.scape - sizeof pp.favorites)) == 2;
         frame();
         for (p = 0; p < PF_KEYS; p++)
             ok &= perf_map[p] == PF_DEF[p];
@@ -7513,7 +7524,7 @@ static int test_fx_latch(void)
         ok = settings_import(&p, (int)sizeof p) == 1 && (fx_latch & 1u);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                    /* PER3: no favorites */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(fx_latch & 1u);
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && !(fx_latch & 1u);
         bad += check("  FX LATCH saved with the settings; settings from before it: OFF", ok);
     }
     fx_latch = 0;
@@ -7709,7 +7720,7 @@ static int test_knob_accel(void)
         ok = settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_ACCEL;
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
         bad += check("#52 KNOB ACCEL saved with the settings; settings from before it: OFF", ok);
     }
     ui_prefs = 0;
@@ -7779,7 +7790,7 @@ static int test_usb_level(void)
         ok &= settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_USB_FIXED;
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
         frame();
         ok &= !fx_usb_fixed;
     }
@@ -7845,7 +7856,7 @@ static int test_click_menu(void)
         ok &= click_mode == CLICK_OFF && click_lvl == 1u && cin_bars == 1u;
         memset(&p.favorites, 0, sizeof p.favorites);   /* settings from before the favorites (PER3): the defaults */
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !ui_rec_prefs;
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && !ui_rec_prefs;
         frame();
         ok &= click_mode == CLICK_OFF && click_lvl == 1u && !cin_bars;
     }
@@ -7955,7 +7966,7 @@ static int test_usb_serial(void)
         ok &= !usb_cdc_on && !usb.up && plain_desc();
         memset(&p.favorites, 0, sizeof p.favorites);   /* settings from before it (PER3): GHOULBOX turns the console OFF */
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && (ui_prefs & PREF_SERIAL_OFF);
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && (ui_prefs & PREF_SERIAL_OFF);
         usb_cdc_on = 1;
         usb_serial_apply();
         ok &= !usb_cdc_on && plain_desc();
@@ -8067,7 +8078,7 @@ static int test_bpm_lock(void)
         ok &= settings_import(&q, (int)sizeof q) == 1 && ui_prefs == PREF_BPM_LOCK && !memcmp(&p, &q, sizeof p);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                        /* (PER3: before the favorites record) */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
         q = p;
         ok &= settings_import(&q, (int)sizeof q) == 1 && ui_prefs == PREF_SERIAL_OFF;
         frame();
@@ -8177,7 +8188,7 @@ static int test_large(void)
         ok &= settings_import(&q, (int)sizeof q) == 1 && ui_prefs == PREF_LARGE && !memcmp(&p, &q, sizeof p);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                    /* (PER3: before the favorites record) */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
         q = p;
         ok &= settings_import(&q, (int)sizeof q) == 1 && ui_prefs == PREF_SERIAL_OFF;
         ui.force = 1; frame();
@@ -8263,7 +8274,7 @@ static int test_menu_prefs(void)
         ok = settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & PREF_ANIM_OFF);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && ui_prefs == PREF_SERIAL_OFF;   /* (GHOULBOX: older settings: SERIAL OFF; RESTORE LAST ON, as 2.1 sets it once) */
         bad += check("#46 ANIM saved with the settings; settings from before it: ON", ok);
     }
     ui_prefs = 0;
@@ -8320,7 +8331,7 @@ static int test_style(void)
         settings_export(&p);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                          /* settings from before STYLE (PER3) */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_style == ST_FLAT;
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.scape - sizeof p.favorites)) == 2 && ui_style == ST_FLAT;
         frame();
         ok &= ux.style == ST_FLAT && ux.surf != ux.bg;
         bad += check("  STYLE saved with the settings and read back; older settings and unknown values: FLAT, PIXEL: LINE (idempotent)", ok);
@@ -9220,10 +9231,10 @@ static int test_home_tracks(void)
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "CLOCK");
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
-    press(B_HOME); ok &= ui.home;
+    ok &= home_through_scape();
     frame();
     ok &= tr_px(3 + 22, tr_y(3) + 1) == T_THEME;
-    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > HOME (the rows back)", ok);
+    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (the rows back)", ok);
 
     ui_prefs |= PREF_LARGE;                             /* MENU > LARGE: the cards as on a list page, the rows */
     ui.force = 1; frame();

@@ -107,6 +107,10 @@ static uint32_t ed_bk_commit(void)
         obj = OBJ_PROJECT0 + ed_bk_id - 2u;
     } else if (ed_bk_id == 1u) {
         const persist_t *p = (const persist_t *)raw;
+        if (ed_bk_len == sizeof *p - sizeof p->scape) {   /* DINOBOX: from before SCAPE: none stored */
+            memset((uint8_t *)raw + ed_bk_len, 0, sizeof p->scape);
+            ed_bk_len = sizeof *p;
+        }
         if (ed_bk_len != sizeof *p || p->magic != PERSIST_MAGIC || !palette_stored_ok(p->palette) ||
             p->lowcut > 2u || !leds_stored_ok(p->zoom) || !hold_stored_ok(p->bold) || p->favorites.filter > 1u || !ed_bk_panel_valid(&p->panel)) return 2;
         obj = OBJ_SETTINGS;
@@ -168,7 +172,8 @@ static uint32_t ed_bk_write(const uint8_t *a, uint32_t n)
         if (n != 12u || a[6] > 15u || a[11] > 15u) return 1;
         uint32_t len = ed_bk_r32(a + 2);
         if (len > ED_BK_MAX || (a[1] == 0u && !proj_store_len(len)) ||
-            (a[1] == 1u && len != sizeof(persist_t)) ||
+            (a[1] == 1u && len != sizeof(persist_t) && len != sizeof(persist_t) - sizeof(scape_side)) ||   /* (DINOBOX:
+                                                         * a backup from before SCAPE, settings_persist.c) */
             (a[1] >= 2u && a[1] <= 5u && len && !proj_store_len(len)) ||
             ((a[1] == 6u || a[1] == 7u) && len && len != sizeof(up_bank_t)) ||
             (a[1] == 8u && len && len != sizeof(fm6_bank_t)) || (a[1] == 9u && len && len != sizeof(upf_t))) return 1;

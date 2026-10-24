@@ -17,11 +17,12 @@ enum { SC_WIND, SC_WATER, SC_RAIN, SC_INSECT, SC_FROG, SC_BIRD, SC_DRIP, SC_RUMB
 #define SC_NEV 6u
 #define SC_DIV 4u                                       /* the noise beds' rate: FS / 4 */
 
-typedef struct {
-    uint8_t level[SC_NL], density[SC_NL];               /* 0..127 */
-    uint8_t dist, time, master;                         /* DIST, TIME (0 day .. 127 night), SCAPE level */
-} scape_cfg_t;
-static scape_cfg_t scape_cfg;
+/* the settings: the globals of HOME > SCAPE (core.h G_SCAPE .., params.c), stored with the project (project.c) */
+#define SC_LEVEL(k) ((uint32_t)clamp(song.g[G_SL0 + (k)], 0, 127))
+#define SC_DENS(k) ((uint32_t)clamp(song.g[G_SD0 + (k)], 0, 127))
+#define SC_TIME ((uint32_t)clamp(song.g[G_STIME], 0, 127))
+#define SC_DIST ((int32_t)clamp(song.g[G_SDIST], 0, 127))
+#define SC_MASTER ((uint32_t)clamp(song.g[G_SCAPE], 0, 127))
 
 typedef struct {
     uint32_t ph, inc;                                   /* the sine */
@@ -61,7 +62,7 @@ static const uint16_t SC_TRIM[SC_NL] = {21200, 16600, 14900, 7500, 14400, 19000,
 /* how loud a layer is now: its LEVEL, the trim, the master, and TIME's share (day / night) */
 static int32_t sc_gain(uint32_t k)
 {
-    int32_t g = mulq15(mulq15(sc_lvl(scape_cfg.level[k]), sc_lvl(scape_cfg.master)), SC_TRIM[k]), night = scape_cfg.time * 258;
+    int32_t g = mulq15(mulq15(sc_lvl(SC_LEVEL(k)), sc_lvl(SC_MASTER)), SC_TRIM[k]), night = (int32_t)SC_TIME * 258;
     if (k == SC_BIRD)
         g = mulq15(g, 32767 - mulq15(night, night));    /* birds fall quiet towards night */
     else if (k == SC_FROG)
@@ -72,7 +73,7 @@ static int32_t sc_gain(uint32_t k)
 /* a new event of layer k in a free slot (or the quietest), panned at random */
 static void sc_spawn(uint32_t k)
 {
-    uint32_t i, s = 0, night = scape_cfg.time;
+    uint32_t i, s = 0, night = SC_TIME;
     int32_t g = sc_gain(k), q = 0x7FFFFFFF, pan = (int32_t)sc_rnd(32768u);
     sc_ev_t *e;
     if (g < 40)
@@ -202,10 +203,10 @@ static inline int32_t sc_ev_run(sc_ev_t *e, int32_t *r)
 static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
 {
     int32_t gw = sc_gain(SC_WIND), gs = sc_gain(SC_WATER), gr = sc_gain(SC_RAIN), gm = sc_gain(SC_RUMBLE);
-    int32_t dist = scape_cfg.dist, lpk = 32767 - dist * 220, wet = 2048 + dist * 48;
+    int32_t dist = SC_DIST, lpk = 32767 - dist * 220, wet = 2048 + dist * 48;
     tsvf_t fw[2], fs;
     uint32_t i, k;
-    if (!scape_cfg.master) {
+    if (!SC_MASTER) {
         sc.on = 0;
         return;
     }
@@ -216,15 +217,16 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
         sc.wbl = sc.wbl_to = 16384;
         sc.rlvl = sc.rlvl_to = 16384;
         for (k = 0; k < SC_NL; k++)
-            sc.wait[k] = sc_rnd(sc_wait(k, scape_cfg.density[k]) + 1u);
+            sc.wait[k] = sc_rnd(sc_wait(k, SC_DENS(k)) + 1u);
         sc.on = 1;
     }
     /* once a block: the walks, the events due */
     for (k = 0; k < 2u; k++)
         sc.wc[k] = clamp(sc.wc[k] + (int32_t)(noise32(&sc.rng) >> 25) - 64 - (sc.wc[k] >> 11), -6 << 8, 6 << 8);
     if (sc.gust - sc.gust_to < 256 && sc.gust_to - sc.gust < 256)
-        sc.gust_to = 8192 + (int32_t)(sc_rnd(24576u));                    /* gusts: -12 dB .. 0 */
-    sc.gust += (sc.gust_to - sc.gust) >> 10;
+        sc.gust_to = 32767 - (int32_t)sc_rnd(1u + SC_DENS(SC_WIND) * 193u);   /* gusts: WIND's DENSITY, 0 steady ..
+                                                                          * 127 -12 dB .. 0 */
+    sc.gust += (sc.gust_to - sc.gust) >> (10 - (SC_DENS(SC_WIND) >> 5));   /* (and quicker) */
     if (sc.wbl - sc.wbl_to < 512 && sc.wbl_to - sc.wbl < 512)
         sc.wbl_to = 6000 + (int32_t)sc_rnd(26000u);                        /* the stream's burble */
     sc.wbl += (sc.wbl_to - sc.wbl) >> 3;
@@ -235,12 +237,12 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
     tsvf_coef(&fw[1], ((52 + 28) << 8) + sc.wc[1], 60);
     tsvf_coef(&fs, ((66 + 28) << 8), 30);                                  /* the stream ~800 Hz, broad */
     for (k = 0; k < SC_NL; k++) {
-        if (k == SC_WIND || k == SC_RAIN || !scape_cfg.density[k])
+        if (k == SC_WIND || k == SC_RAIN || !SC_DENS(k))
             continue;
         if (sc.wait[k])
             sc.wait[k]--;
         else {
-            uint32_t m = sc_wait(k, scape_cfg.density[k]);
+            uint32_t m = sc_wait(k, SC_DENS(k));
             sc.wait[k] = m / 2u + sc_rnd(m);
             if (k == SC_RUMBLE) {
                 if (gm > 40 && !sc.renv) {
@@ -258,7 +260,7 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
                 sc.hold[k]++;
             else {
                 sc_ev_t *e = &sc.ev[k];
-                uint32_t len = e->kind == SC_INSECT && e->gper && scape_cfg.time >= 64 ? e->gper * (3u + sc_rnd(3u))
+                uint32_t len = e->kind == SC_INSECT && e->gper && SC_TIME >= 64 ? e->gper * (3u + sc_rnd(3u))
                              : e->kind == SC_FROG ? FS / 1000u * (120u + sc_rnd(150u))
                              : FS / 1000u * (40u + sc_rnd(70u));
                 e->reps--;
@@ -317,7 +319,7 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
             sc.rp = x;
             sc.rlp += (y - sc.rlp) >> 1;
             t = mulq15(mulq15(sc.rlp, sc.rlvl), gr) >> 1;
-            if (!(noise32(&sc.rng) >> (19 + (scape_cfg.density[SC_RAIN] >> 5))))   /* drops: ~5 .. ~40 a s */
+            if (!(noise32(&sc.rng) >> (19 + (SC_DENS(SC_RAIN) >> 5))))   /* drops: ~5 .. ~40 a s */
                 t += mulq15((int32_t)(noise32(&sc.rng) >> 17), gr) >> 1;
             al += t;
             ar += t;
@@ -339,20 +341,26 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
 #define SC_NBIOME 8u
 static const struct { const char *name; uint8_t level[SC_NL], density[SC_NL], dist, time; } SC_BIOME[SC_NBIOME] = {
     /*                WIND WATR RAIN INSC FROG BIRD DRIP RUMB */
-    {"WATER",     {35, 90,  0, 40, 70, 60,  0,  0}, { 0, 60,  0, 30, 40, 35,  0,  0}, 30, 40},
-    {"JUNGLE",    {25, 40, 50, 85, 70, 75, 30, 50}, { 0, 30, 40, 70, 50, 55, 20, 30}, 40, 70},
-    {"TUNDRA",    {70,  0,  0,  0,  0, 30,  0, 55}, { 0,  0,  0,  0,  0, 15,  0, 25}, 60, 30},
-    {"FOREST",    {40, 25,  0, 35, 30, 85,  0,  0}, { 0, 20,  0, 25, 20, 60,  0,  0}, 30, 25},
-    {"PLAINS",    {55,  0,  0, 75,  0, 50,  0, 40}, { 0,  0,  0, 60,  0, 30,  0, 20}, 50, 30},
-    {"MOUNTAINS", {65, 30,  0,  0,  0, 40,  0, 50}, { 0, 20,  0,  0,  0, 20,  0, 25}, 70, 35},
-    {"CANYONS",   {55,  0,  0,  0,  0, 35, 40, 45}, { 0,  0,  0,  0,  0, 15, 20, 20}, 80, 40},
-    {"CALDERA",   {40, 50,  0,  0,  0,  0,  0, 85}, { 0, 70,  0,  0,  0,  0,  0, 60}, 45, 60},
+    {"WATER",     {35, 90,  0, 40, 70, 60,  0,  0}, {50, 60,  0, 30, 40, 35,  0,  0}, 30, 40},
+    {"JUNGLE",    {25, 40, 50, 85, 70, 75, 30, 50}, {40, 30, 40, 70, 50, 55, 20, 30}, 40, 70},
+    {"TUNDRA",    {70,  0,  0,  0,  0, 30,  0, 55}, {90,  0,  0,  0,  0, 15,  0, 25}, 60, 30},
+    {"FOREST",    {40, 25,  0, 35, 30, 85,  0,  0}, {50, 20,  0, 25, 20, 60,  0,  0}, 30, 25},
+    {"PLAINS",    {55,  0,  0, 75,  0, 50,  0, 40}, {64,  0,  0, 60,  0, 30,  0, 20}, 50, 30},
+    {"MOUNTAINS", {65, 30,  0,  0,  0, 40,  0, 50}, {90, 20,  0,  0,  0, 20,  0, 25}, 70, 35},
+    {"CANYONS",   {55,  0,  0,  0,  0, 35, 40, 45}, {70,  0,  0,  0,  0, 15, 20, 20}, 80, 40},
+    {"CALDERA",   {40, 50,  0,  0,  0,  0,  0, 85}, {50, 70,  0,  0,  0,  0,  0, 60}, 45, 60},
 };
+/* biome b into the settings (its BIOME, the layers' levels and densities, DIST, TIME; not the LEVEL): a BIOME turned on
+ * the SCAPE page (ui_input.c) */
 static void scape_biome(uint32_t b)
 {
+    uint32_t k;
     b %= SC_NBIOME;
-    memcpy(scape_cfg.level, SC_BIOME[b].level, SC_NL);
-    memcpy(scape_cfg.density, SC_BIOME[b].density, SC_NL);
-    scape_cfg.dist = SC_BIOME[b].dist;
-    scape_cfg.time = SC_BIOME[b].time;
+    song.g[G_SBIOME] = (int16_t)b;
+    for (k = 0; k < SC_NL; k++) {
+        song.g[G_SL0 + k] = SC_BIOME[b].level[k];
+        song.g[G_SD0 + k] = SC_BIOME[b].density[k];
+    }
+    song.g[G_SDIST] = SC_BIOME[b].dist;
+    song.g[G_STIME] = SC_BIOME[b].time;
 }

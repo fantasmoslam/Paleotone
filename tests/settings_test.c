@@ -105,11 +105,11 @@ int main(void)
     assert(p.favorites.factory[8][0] == 1 && p.favorites.filter == 1);
     assert(p.panel.enc[0] == 3); /* saving one feature preserves the other */
     p = original; p.magic = 0x50455233u;
-    assert(settings_import(&p, sizeof p - sizeof p.favorites) == 2);
+    assert(settings_import(&p, sizeof p - sizeof p.scape - sizeof p.favorites) == 2);
     assert(p.bold == 1 && !p.favorites.user && !p.favorites.filter);
     settings_export(&p); assert(p.bold == 1); /* favorites-only preserves PER3 font */
     p = original; p.magic = 0x50455232u;
-    assert(settings_import(&p, sizeof p - sizeof p.favorites - sizeof p.bold) == 2);
+    assert(settings_import(&p, sizeof p - sizeof p.scape - sizeof p.favorites - sizeof p.bold) == 2);
     assert(!p.bold && !p.favorites.user && settings.zoom && panel.enc[0] == 3);
     p = original; p.magic = 0x50455231u;
     memcpy((uint8_t *)&p + 8, &PANEL_DEFAULT, sizeof(panel_t));
@@ -182,7 +182,7 @@ int main(void)
         persist_t q;
         uint32_t b;
         p = original; p.magic = 0x50455233u;            /* PER3 (no favorites): 0 */
-        assert(settings_import(&p, sizeof p - sizeof p.favorites) == 2 && favorites.factory[15][12] == 0u);
+        assert(settings_import(&p, sizeof p - sizeof p.scape - sizeof p.favorites) == 2 && favorites.factory[15][12] == 0u);
         for (b = 0; b < 256u; b++) {
             uint32_t f, want = b;
             for (f = 0; f < 3u; f++)
@@ -199,7 +199,7 @@ int main(void)
          * with the other flags once the marks say it was chosen */
         persist_t q;
         p = original; p.magic = 0x50455233u;
-        assert(settings_import(&p, sizeof p - sizeof p.favorites) == 2 && !(favorites.factory[15][30] & 128u));
+        assert(settings_import(&p, sizeof p - sizeof p.scape - sizeof p.favorites) == 2 && !(favorites.factory[15][30] & 128u));
         p = original; p.favorites.factory[15][30] = 128u | 64u | 1u;
         p.favorites.factory[15][28] |= GB_MIG_SERIAL | GB_MIG_RESTORE | GB_MIG_RESTORE_ON;
         assert(settings_import(&p, sizeof p) == 1 && favorites.factory[15][30] == (128u | 64u | 1u));
@@ -212,7 +212,7 @@ int main(void)
         persist_t q;
         uint32_t i;
         p = original; p.magic = 0x50455233u;
-        assert(settings_import(&p, sizeof p - sizeof p.favorites) == 2);
+        assert(settings_import(&p, sizeof p - sizeof p.scape - sizeof p.favorites) == 2);
         for (i = 14; i < 24u; i++) assert(favorites.factory[15][i] == 0u);
         p = original;
         for (i = 14; i < 24u; i++) p.favorites.factory[15][i] = (uint8_t)(i * 37u + 5u);

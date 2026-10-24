@@ -112,6 +112,10 @@ enum {                          /* global parameters */
                                  * KOCT KTRK's octave (0..4: -2..+2). Appended: FUN10's tail (project.c PROJ_KEYS_OFF) */
     G_DREAM, G_DDENS, G_DDRFT, G_DMOOD,   /* GHOULBOX 2.3: HOME > DREAM (dream.c): EVOL OFF / ON, DENS 1..8, DRFT 1..8,
                                  * MOOD. Appended: FUN10's tail (project.c PROJ_DREAM_OFF) */
+    G_SCAPE, G_SBIOME, G_SDIST, G_STIME,   /* DINOBOX: SCAPE (scape.c): its level (0: off), the biome, DIST, TIME */
+    G_SL0, G_SL1, G_SL2, G_SL3, G_SL4, G_SL5, G_SL6, G_SL7,   /* .. each layer's level (WIND .. RUMBLE) */
+    G_SD0, G_SD1, G_SD2, G_SD3, G_SD4, G_SD5, G_SD6, G_SD7,   /* .. and density. Appended: FUN10's tail
+                                 * (project.c PROJ_SCAPE_OFF) */
     G_COUNT
 };
 
