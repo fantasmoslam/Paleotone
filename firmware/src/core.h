@@ -114,8 +114,11 @@ enum {                          /* global parameters */
                                  * MOOD. Appended: FUN10's tail (project.c PROJ_DREAM_OFF) */
     G_SCAPE, G_SBIOME, G_SDIST, G_STIME,   /* DINOBOX: SCAPE (scape.c): its level (0: off), the biome, DIST, TIME */
     G_SL0, G_SL1, G_SL2, G_SL3, G_SL4, G_SL5, G_SL6, G_SL7,   /* .. each layer's level (WIND .. RUMBLE) */
-    G_SD0, G_SD1, G_SD2, G_SD3, G_SD4, G_SD5, G_SD6, G_SD7,   /* .. and density. Appended: FUN10's tail
-                                 * (project.c PROJ_SCAPE_OFF) */
+    G_SD0, G_SD1, G_SD2, G_SD3, G_SD4, G_SD5, G_SD6, G_SD7,   /* .. and density. Kept beside a project (the
+                                 * settings' sidecar, project.c scape_side_*) */
+    G_SDRN, G_SDTYP, G_SDKEY, G_SDMOV,   /* .. the drone: its level (0: none), type, key (AUTO: track 1's ROOT), movement */
+    G_SCTRK, G_SCRATE, G_SCNOTE, G_SCSPRD,   /* .. the calls: the track that calls (OFF, T1..T4), how often, PTCH (D3 +),
+                                 * the spread of notes round it */
     G_COUNT
 };
 

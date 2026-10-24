@@ -171,7 +171,7 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
  * defaults) or 1 + EVOL + 2 x (DENS - 1 + 8 x (DRFT - 1 + 8 x MOOD)), up to 768. Two bytes left below it */
 #define PROJ_DREAM_OFF (PROJ_KEYS_OFF - 2u)
 typedef union { uint32_t align; uint8_t raw[PROJ_STORE_SIZE]; } project_store_t;
-_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 30u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
+_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 38u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
                "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store)");
 _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUN10 / FUN7 sizes");
 typedef struct {                               /* a track of format 4, read only */
