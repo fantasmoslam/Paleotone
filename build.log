@@ -28,7 +28,7 @@ ghoulbox art: 1027 B -> /__w/dinobox-fm1/dinobox-fm1/build/gen/ghoulbox_art.h
 app      /__w/dinobox-fm1/dinobox-fm1/build/felucca.bin  564792 B
 loader   /__w/dinobox-fm1/dinobox-fm1/build/loader/ota.bin  7031 B
 package  /__w/dinobox-fm1/dinobox-fm1/build/felucca.fwsc  610187 B, identity FM-1_900
-21e32d98ece010b67602a12fff83ad65d1a6085c0b58bd44d14cb939244ed94e  dinobox.fwsc
+af049fa0982504e7263a02389ca3132d3598ff1b8d516bb98245a2cad421e593  dinobox.fwsc
 ota test passed
 loader test passed
 target: saurus_render     633 instructions,  311 in loops, 2 divides,  0 calls there: cost   327 (budget 334) ok
