@@ -1,0 +1,83 @@
+# smk37-port.yaml: every decision for PALEOTONE's SMK-37 build, in one place (the fm1-to-smk37 kit's setup file,
+# github.com/genkigenki/fm1-to-smk37). Change this file first, then the code.
+
+firmware:
+  name: PALEOTONE           # unchanged on the SMK-37: same name, boot, art and manual
+  upstream: https://github.com/fantasmoslam/dinobox-fm1
+  base: PALEOTONE (GHOULBOX 2.3.2 on Felucca 1.4.1)
+  family: felucca
+  board_layer: felucca      # genkigenki/Felucca ghoulbox-smk37 (the layer on GHOULBOX 2.1, Felucca 1.4.1), adapted
+  lost_on_smk: [TRS MIDI IN / clock in]   # the SMK's jack is MIDI OUT; USB MIDI and USB clock stay
+  priorities:
+    - everything on the FM-1 works the same: the manual applies
+    - SCAPE under the hands: its layers on the faders, the herd on the pads
+    - the keybed: 37 keys with velocity, through PALEOTONE's own key path (chords, latch, KEYS LAYER / SPLIT)
+
+delivery:
+  mode: own                 # PALEOTONE's own repository; the SMK-37 builds sit beside the FM-1's
+  package: paleotone-smk37.fwsc   # -elite, -mke
+  usb_name: Felucca         # unchanged (the FM-1 build's)
+  data_family: PALEOTN      # its own: GHOULBOX's and Felucca's stores are cleared on a switch, and the other way
+  copyright: PALEOTONE contributors
+
+models: [pro, elite, mke]   # the owner's unit: SMK-37 Elite
+
+keys:
+  middle: fm1               # keys 5..31 (F3..G5) = the FM-1's 27 keys, velocity from the unit's factory curves
+  outer: extend             # through key_on_to: chords, drone latch, KEYS LAYER / SPLIT; on a DRUM track its GM drums
+  velocity: factory
+  velocity_setting: true    # MENU > CONTROL > KEY VELOCITY: DYNAMIC (default), SOFT, HARD, FIXED 64 / 100 / 127
+
+pads:
+  pattern: custom           # two banks, KNOB BANK switches them (its LED lit in CALLS)
+  banks:
+    STEPS: the FM-1's 16 white keys (F3..G5) in reading order, steps 1-8 top row, 9-16 bottom; lit as the key LEDs
+    CALLS: the herd on the pads: each pad plays a note on the SCAPE CALLS track (TRK; the selected track while it is
+      OFF), in the track's scale from its root, low notes bottom left, with velocity; held while held
+  order: reading
+  colours: screen           # the track colour; CALLS: the calling track's colour, brighter with each hit
+  idle: dark
+  playhead: bright
+  velocity: true
+
+faders:
+  pattern: banks
+  takeover: soft
+  bank_button: FADER BANK
+  banks:
+    A: [level 1, level 2, level 3, level 4]                     # the MIXER's LEVEL
+    B: [reverb 1, reverb 2, reverb 3, reverb 4]                 # the FX page's REV send
+    C: [SCAPE WIND, SCAPE WATER, SCAPE RAIN, SCAPE BUGS]        # SCAPE LEVELS
+    D: [SCAPE FROGS, SCAPE BIRDS, SCAPE DRIPS, SCAPE RUMBL]     # SCAPE LEVELS 2
+    E: [SCAPE LEVEL, SCAPE DRONE, SCAPE DIST, SCAPE TIME]       # the soundscape's master, drone, distance, day/night
+  screen: bar               # a short overlay: the bank, the four values, the one moved highlighted
+
+wheels:
+  pitch:
+    target: bend
+    range_semitones: 2
+    applies_to: selected
+  mod:
+    target: macro
+    detail: CC1 into the MOD matrix's MODW source (as a MIDI mod wheel); no MODW slot set = vibrato on the selected track
+  calibration: auto
+
+knobs:
+  layout: fm1               # K1 MASTER (virtual pot), K2 SELECT, K3 ALGORITHM, K4 PRESETS, K5-K8 KNOB 1-4
+  notes: SELECT is also ROAR's TURN crank (reads enc_dfr; SMK frames are 625/s, the FM-1's 909/s)
+
+buttons:
+  map: printed              # FX SCL ENV LFO EDIT GLO on FX SCALE CHORD NOTE-REPEAT PARA GLOBE; PATCH = HOME, BT = SAVE
+  extra:
+    KNOB BANK: pads STEPS / CALLS
+    FADER BANK: the fader bank, A..E
+    "<": previous page of the group (in the menu: row)
+    ">": next page of the group (on HOME: HOME tapped, through MIXER .. SCAPE DENSITY 2)
+
+screen:
+  ui: fm1                   # PALEOTONE's own screens, 240 x 240 as on the FM-1; "KNOB 1..4" shown as K5..K8 where named
+
+rules:
+  no_doubles: false
+  doubles_allowed:
+    - faders A..E repeat knobs on MIXER, FX and the SCAPE pages (the owner asked for SCAPE on the faders)

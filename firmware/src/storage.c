@@ -88,14 +88,14 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
 /* The owner of the store. Several FM-1 firmwares are ported to the SMK-37 Pro with the same board layer and this
  * same store area, each with its own object formats: a firmware must never parse another's data. The sector after
  * the objects (0xAF000, the same place in every port) holds "SMK37DATA" + the firmware family
- * (FELUCCA_DATA_FAMILY, build.py; the SMK build: GHOULBX, not Felucca's FELUCCA: GHOULBOX keeps some
+ * (FELUCCA_DATA_FAMILY, build.py; the SMK build: PALEOTN, not Felucca's FELUCCA: GHOULBOX keeps some
  * settings in other bytes). Ours: load as ever. None (erased): data written before the
  * tag existed, kept only with FELUCCA_DATA_UNTAGGED_OK (0 here: the SMK build never had untagged data, so an erased tag
  * with objects present is another firmware's). Another family's: clear the objects (0x9D000..0xAEFFF) and the FM6
  * voice bank (0xB0000) and take the store. User samples (FL_SMP) validate themselves. Calibration, BT pairing and
  * key_mac are outside FL_DATA: never touched. Called first in persist_boot (project.c), before any store read. */
 #ifndef FELUCCA_DATA_FAMILY
-#define FELUCCA_DATA_FAMILY "GHOULBX"
+#define FELUCCA_DATA_FAMILY "PALEOTN"
 #endif
 #ifndef FELUCCA_DATA_UNTAGGED_OK
 #define FELUCCA_DATA_UNTAGGED_OK 0
