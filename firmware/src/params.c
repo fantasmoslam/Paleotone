@@ -19,6 +19,8 @@ static const char *const N_DMOOD[] = {"MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"
 static const char *const N_DTYPE[] = {"HUM", "WIND", "CHOIR", "EARTH"};   /* DINOBOX: SCAPE's drone (scape.c) */
 static const char *const N_SKEY[] = {"AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const N_SCTRK[] = {"OFF", "T1", "T2", "T3", "T4"};   /* .. the track its calls play */
+static const char *const N_DSIZE[] = {"SMALL", "BIG", "HUGE"};   /* .. DANGER's beast (scape.c sc_danger) */
+static const char *const N_DROAR[] = {"OFF", "CALLS", "T1", "T2", "T3", "T4"};   /* .. the track that roars */
 static const char *const N_BIOME[] = {"WATER", "JUNGL", "TUNDR", "FORST", "PLAIN", "MOUNT", "CANYN", "CALDR"};   /* DINOBOX:
                                                      * SCAPE's biomes (scape.c SC_BIOME, in that order) */
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
@@ -220,6 +222,10 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SCRATE] = PD("RATE", F_PCT, 0, 127, 40),
     [G_SCNOTE] = PD("PTCH", F_SEMI, -24, 24, 0),   /* the note: D3 + PTCH semitones */
     [G_SCSPRD] = PD("SPRD", F_INT, 0, 24, 5),       /* semitones each way */
+    [G_SDNGR] = PD("DANGR", F_PCT, 0, 127, 0),      /* DANGER: 0 never .. 127 a beast every ~40 s */
+    [G_SDSIZ] = PE("SIZE", N_DSIZE, 1),
+    [G_SDSTP] = PD("STEP", F_PCT, 0, 127, 100),     /* the footsteps' level */
+    [G_SDROR] = PE("ROAR", N_DROAR, 1),             /* CALLS: the SCAPE CALLS track */
 };
 
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
@@ -505,6 +511,7 @@ static const page_t PAGES[] = {
     {"SCAPE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCAPE, G_SBIOME, G_SDIST, G_STIME}},
     {"SCAPE DRONE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SDRN, G_SDTYP, G_SDKEY, G_SDMOV}},
     {"SCAPE CALLS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCTRK, G_SCRATE, G_SCNOTE, G_SCSPRD}},
+    {"SCAPE DANGER", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SDNGR, G_SDSIZ, G_SDSTP, G_SDROR}},
     {"SCAPE LEVELS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL0, G_SL1, G_SL2, G_SL3}},
     {"SCAPE LEVELS 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL4, G_SL5, G_SL6, G_SL7}},
     {"SCAPE DENSITY", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SD0, G_SD1, G_SD2, G_SD3}},

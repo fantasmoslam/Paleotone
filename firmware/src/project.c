@@ -171,7 +171,7 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
  * defaults) or 1 + EVOL + 2 x (DENS - 1 + 8 x (DRFT - 1 + 8 x MOOD)), up to 768. Two bytes left below it */
 #define PROJ_DREAM_OFF (PROJ_KEYS_OFF - 2u)
 typedef union { uint32_t align; uint8_t raw[PROJ_STORE_SIZE]; } project_store_t;
-_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 38u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
+_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 42u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
                "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store)");
 _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUN10 / FUN7 sizes");
 typedef struct {                               /* a track of format 4, read only */
@@ -1234,9 +1234,9 @@ static uint32_t chain_prepare(void)
  * object written after it), put back with it; a slot with none stored: SCAPE off, its defaults */
 #define SCAPE_SIDE_N (G_SD7 - G_SCAPE + 1u)
 _Static_assert(SCAPE_SIDE_N + 1u <= sizeof scape_side[0], "SCAPE's sidecar entry");
-/* (stage 2, the drone and the calls: G_SDRN .. G_SCSPRD, each stored as its value - min + 1 after the twenty, 0 = none
- * stored, its default: an entry of the first SCAPE firmware holds 0 there) */
-#define SCAPE_SIDE_N2 (G_SCSPRD - G_SDRN + 1u)
+/* (stage 2, the drone and the calls, and DANGER after them: G_SDRN .. G_SDROR, each stored as its value - min + 1
+ * after the twenty, 0 = none stored, its default: an entry of an earlier SCAPE firmware holds 0 there) */
+#define SCAPE_SIDE_N2 (G_SDROR - G_SDRN + 1u)
 _Static_assert(1u + SCAPE_SIDE_N + SCAPE_SIDE_N2 <= sizeof scape_side[0], "SCAPE's sidecar entry, stage 2");
 static void scape_side_put(uint32_t s)
 {

@@ -54,6 +54,11 @@ int main(int argc, char **argv)
     if (getenv("DTYP")) song.g[G_SDTYP] = (int16_t)atoi(getenv("DTYP"));
     if (getenv("DKEY")) song.g[G_SDKEY] = (int16_t)atoi(getenv("DKEY"));
     if (getenv("DMOV")) song.g[G_SDMOV] = (int16_t)atoi(getenv("DMOV"));
+    if (getenv("DNGR")) song.g[G_SDNGR] = (int16_t)atoi(getenv("DNGR"));   /* DANGER: DNGR, DSIZ, DSTP, DROR */
+    if (getenv("DSIZ")) song.g[G_SDSIZ] = (int16_t)atoi(getenv("DSIZ"));
+    if (getenv("DSTP")) song.g[G_SDSTP] = (int16_t)atoi(getenv("DSTP"));
+    if (getenv("DROR")) song.g[G_SDROR] = (int16_t)atoi(getenv("DROR"));
+    if (getenv("CRATE0")) song.g[G_SCRATE] = 0;           /* (the calls track only roars) */
     if (getenv("TIME"))
         song.g[G_STIME] = (int16_t)atoi(getenv("TIME"));
     if (getenv("DIST"))
@@ -64,6 +69,8 @@ int main(int argc, char **argv)
     wav_hdr(f, frames);
     for (t = 0; t < frames; t += CTL) {
         mix_block(o, CTL);
+        if (sc.nlen && sc.nt == 1u)
+            fprintf(stderr, "beast at %.2f s, %.2f s long\n", (double)t / FS, (double)sc.nlen * CTL / FS);
         for (i = 0; i < CTL; i++)
             wav_put(f, o[2 * i], o[2 * i + 1]);
     }

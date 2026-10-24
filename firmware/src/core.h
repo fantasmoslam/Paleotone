@@ -119,6 +119,8 @@ enum {                          /* global parameters */
     G_SDRN, G_SDTYP, G_SDKEY, G_SDMOV,   /* .. the drone: its level (0: none), type, key (AUTO: track 1's ROOT), movement */
     G_SCTRK, G_SCRATE, G_SCNOTE, G_SCSPRD,   /* .. the calls: the track that calls (OFF, T1..T4), how often, PTCH (D3 +),
                                  * the spread of notes round it */
+    G_SDNGR, G_SDSIZ, G_SDSTP, G_SDROR,   /* .. DANGER: how often a beast comes by (0: never), its SIZE, its STEPs'
+                                 * level, the track that ROARs as it passes (OFF, the CALLS track, T1..T4) */
     G_COUNT
 };
 

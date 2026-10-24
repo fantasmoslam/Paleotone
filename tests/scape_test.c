@@ -76,6 +76,15 @@ int main(void)
     ck("its knobs: TRK RATE PTCH SPRD", song.g[G_SCTRK] == 2 && song.g[G_SCRATE] == 100 && song.g[G_SCNOTE] == -7 &&
        song.g[G_SCSPRD] == 8);
     press(B_HOME);
+    ck("then SCAPE DANGER", str_eq(cur_page()->title, "SCAPE DANGER") && song.g[G_SDNGR] == 0 && song.g[G_SDSIZ] == 1 &&
+       song.g[G_SDSTP] == 100 && song.g[G_SDROR] == 1);
+    turn(EN_K1, 100);
+    turn(EN_K2, 1);
+    turn(EN_K3, -20);
+    turn(EN_K4, 1);
+    ck("its knobs: DANGR SIZE STEP ROAR (HUGE, the roar on T1)", song.g[G_SDNGR] == 100 && song.g[G_SDSIZ] == 2 &&
+       song.g[G_SDSTP] == 80 && song.g[G_SDROR] == 2 && str_eq(GP[G_SDNGR].label, "DANGR") && str_eq(GP[G_SDROR].label, "ROAR"));
+    press(B_HOME);
     ck("then SCAPE LEVELS", str_eq(cur_page()->title, "SCAPE LEVELS"));
     turn(EN_K1, -10);
     turn(EN_K4, 3);
@@ -94,6 +103,7 @@ int main(void)
 
     song.g[G_SCAPE] = 100;
     song.g[G_SCTRK] = 0;
+    song.g[G_SDNGR] = 0;
     peak = 0;
     run(4.0, &peak);
     ck("on: it sounds (with the drone), well under full scale", sc.on && peak > 300 && peak < 16000);
@@ -118,6 +128,43 @@ int main(void)
         song.g[G_SCAPE] = 100;
         song.g[G_SCTRK] = 0;
     }
+    {   /* DANGER: a beast comes by: steps, the hush, the roar on its track (T2 here) at the nearest, no calls meanwhile */
+        uint32_t t, beasts = 0, steps = 0, roars = 0, calls = 0, was = 0, wasf = 0, wasr = 0;
+        int32_t o[2 * CTL], hush = 32767;
+        song.g[G_SDNGR] = 127;
+        song.g[G_SDSIZ] = 1;
+        song.g[G_SDROR] = 3;                              /* T2 */
+        song.g[G_SCTRK] = 2;
+        song.g[G_SCRATE] = 127;
+        for (t = 0; t < 90u * FS; t += CTL) {
+            mix_block(o, CTL);
+            beasts += sc.nlen && sc.nt == 1u;
+            steps += sc.fn && !wasf;
+            wasf = sc.fn;
+            roars += sc.rnote && !wasr && sc.rtrk == 1u && sc.rnote == 50 - 7 - 7;
+            wasr = sc.rnote;
+            calls += sc.cnote && !was && sc.nlen && sc.nt > 2u;
+            was = sc.cnote;
+            if (sc.nlen && sc.hush < hush)
+                hush = sc.hush;
+        }
+        ck("DANGER 127: beasts come by, each with steps and a roar on T2 (PTCH -7, BIG: a fifth down)",
+           beasts >= 1u && beasts <= 4u && steps >= beasts * 10u && roars == beasts);
+        ck("DANGER: the insects, frogs and birds hush; no calls start while it passes", hush < 4000 && calls == 0u);
+        while (!sc.rnote)
+            mix_block(o, CTL);
+        song.g[G_SCAPE] = 0;
+        mix_block(o, CTL);
+        ck("SCAPE off: a roar sounding let go", !sc.on && !sc.rnote);
+        song.g[G_SCAPE] = 100;
+        song.g[G_SDNGR] = 0;
+        song.g[G_SDSIZ] = 2;
+        song.g[G_SDROR] = 2;
+        song.g[G_SCTRK] = 0;
+        mix_block(o, CTL);
+        ck("DANGER 0: none", !sc.nlen && !sc.narm);
+        song.g[G_SDNGR] = 100;
+    }
 
     /* a project keeps it */
     memcpy(keep, song.g, sizeof keep);
@@ -127,7 +174,8 @@ int main(void)
     song.g[G_SCAPE] = 7;
     project_load(0);
     ck("loaded with slot A: every SCAPE value back (the drone, the calls: PTCH -7)",
-       !memcmp(&song.g[G_SCAPE], &keep[G_SCAPE], (G_SCSPRD - G_SCAPE + 1) * 2) && song.g[G_SCNOTE] == -7);
+       !memcmp(&song.g[G_SCAPE], &keep[G_SCAPE], (G_SDROR - G_SCAPE + 1) * 2) && song.g[G_SCNOTE] == -7 &&
+       song.g[G_SDNGR] == 100 && song.g[G_SDSIZ] == 2 && song.g[G_SDSTP] == 80 && song.g[G_SDROR] == 2);
     memset(scape_side[1], 0, sizeof scape_side[1]);       /* slot B: a project from before SCAPE */
     ck("saved in slot B", project_save(1) == 0);
     memset(scape_side[1], 0, sizeof scape_side[1]);
@@ -136,12 +184,13 @@ int main(void)
        song.g[G_SCTRK] == 0 && song.g[G_SCNOTE] == 0);
     project_load(0);
     scape_side[0][1u + 20u] = 0;                        /* slot A as the first SCAPE firmware wrote it: no drone, no */
-    memset(&scape_side[0][1u + 20u], 0, 8);             /* calls stored */
+    memset(&scape_side[0][1u + 20u], 0, 12);            /* calls, no DANGER stored */
     project_load(0);
     ck("an entry of the first SCAPE firmware: its twenty, the drone and calls at their defaults",
        song.g[G_SCAPE] == keep[G_SCAPE] && song.g[G_SL0] == keep[G_SL0] && song.g[G_SDRN] == 0 && song.g[G_SDTYP] == 0 &&
        song.g[G_SDKEY] == 0 && song.g[G_SDMOV] == 40 && song.g[G_SCTRK] == 0 && song.g[G_SCRATE] == 40 &&
-       song.g[G_SCNOTE] == 0 && song.g[G_SCSPRD] == 5);
+       song.g[G_SCNOTE] == 0 && song.g[G_SCSPRD] == 5 && song.g[G_SDNGR] == 0 && song.g[G_SDSIZ] == 1 &&
+       song.g[G_SDSTP] == 100 && song.g[G_SDROR] == 1);
     project_load(0);
 
     /* the autosave's */
