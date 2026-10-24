@@ -280,12 +280,13 @@ static void turn(uint32_t role, int32_t s)
     host_ticks += 200000u;                        /* (no knob acceleration between the turns) */
 }
 static void stop_transport(void) { transport_req = 0; song.playing = 0; }
-/* DINOBOX: HOME tapped on EPOCH goes through SCAPE's five pages (scape.c), then HOME. 1 = so */
+/* DINOBOX: HOME tapped on EPOCH goes through SCAPE's seven pages (scape.c), then HOME. 1 = so */
 static int home_through_scape(void)
 {
-    static const char *const T[5] = {"SCAPE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE DENSITY", "SCAPE DENSITY 2"};
+    static const char *const T[7] = {"SCAPE", "SCAPE DRONE", "SCAPE CALLS", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE DENSITY",
+                                     "SCAPE DENSITY 2"};
     int ok = 1;
-    for (uint32_t i = 0; i < 5u; i++) {
+    for (uint32_t i = 0; i < 7u; i++) {
         press(B_HOME);
         ok &= !ui.home && str_eq(cur_page()->title, T[i]);
     }
@@ -2974,7 +2975,7 @@ static int test_product_ux(void)
         memcpy(song.g, g0, sizeof g0);
     }
     ok &= home_through_scape();
-    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
+    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x7 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
                  "DREAM: EVOL DENS DRFT MOOD); elsewhere HOME", ok);
     hold(B_HOME);
     bad += check("1.2: HOME held still opens the menu", ui.menu == 1);
@@ -9234,7 +9235,7 @@ static int test_home_tracks(void)
     ok &= home_through_scape();
     frame();
     ok &= tr_px(3 + 22, tr_y(3) + 1) == T_THEME;
-    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (the rows back)", ok);
+    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x7 > HOME (the rows back)", ok);
 
     ui_prefs |= PREF_LARGE;                             /* MENU > LARGE: the cards as on a list page, the rows */
     ui.force = 1; frame();

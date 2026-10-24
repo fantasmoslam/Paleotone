@@ -1234,6 +1234,10 @@ static uint32_t chain_prepare(void)
  * object written after it), put back with it; a slot with none stored: SCAPE off, its defaults */
 #define SCAPE_SIDE_N (G_SD7 - G_SCAPE + 1u)
 _Static_assert(SCAPE_SIDE_N + 1u <= sizeof scape_side[0], "SCAPE's sidecar entry");
+/* (stage 2, the drone and the calls: G_SDRN .. G_SCSPRD, each stored as its value - min + 1 after the twenty, 0 = none
+ * stored, its default: an entry of the first SCAPE firmware holds 0 there) */
+#define SCAPE_SIDE_N2 (G_SCSPRD - G_SDRN + 1u)
+_Static_assert(1u + SCAPE_SIDE_N + SCAPE_SIDE_N2 <= sizeof scape_side[0], "SCAPE's sidecar entry, stage 2");
 static void scape_side_put(uint32_t s)
 {
     uint32_t i;
@@ -1242,6 +1246,9 @@ static void scape_side_put(uint32_t s)
     e[0] = 1;
     for (i = 0; i < SCAPE_SIDE_N; i++)
         e[1u + i] = (uint8_t)clamp(song.g[G_SCAPE + i], 0, GP[G_SCAPE + i].max);
+    for (i = 0; i < SCAPE_SIDE_N2; i++)
+        e[1u + SCAPE_SIDE_N + i] = (uint8_t)(clamp(song.g[G_SDRN + i], GP[G_SDRN + i].min, GP[G_SDRN + i].max) -
+                                             GP[G_SDRN + i].min + 1);
 #if FELUCCA_FLASH
     persist_pending = 1;                                /* (settings_poll writes it once the transport is free) */
 #endif
@@ -1252,6 +1259,11 @@ static void scape_side_get(uint32_t s)
     const uint8_t *e = scape_side[s % 5u];
     for (i = 0; i < SCAPE_SIDE_N; i++)
         song.g[G_SCAPE + i] = e[0] == 1u ? (int16_t)clamp(e[1u + i], 0, GP[G_SCAPE + i].max) : GP[G_SCAPE + i].def;
+    for (i = 0; i < SCAPE_SIDE_N2; i++) {
+        const uint8_t v = e[0] == 1u ? e[1u + SCAPE_SIDE_N + i] : 0u;
+        song.g[G_SDRN + i] = v ? (int16_t)clamp(GP[G_SDRN + i].min + v - 1, GP[G_SDRN + i].min, GP[G_SDRN + i].max)
+                               : GP[G_SDRN + i].def;
+    }
 }
 
 
