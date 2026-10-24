@@ -372,7 +372,7 @@ static void sc_danger(void)
             sc.rtrk = (uint8_t)(k - 1u);
             sc.rnote = (uint8_t)clamp(50 + song.g[G_SCNOTE] - DOWN[sc.nsize], 12, 108);
             trk_note_on(&trk[sc.rtrk], sc.rnote, 127u);
-            sc.rhold = SC_BPS * (20u + 5u * sc.nsize) / 10u;   /* 2, 2.5, 3 s */
+            sc.rhold = SC_BPS * (35u + 5u * sc.nsize) / 10u;   /* 3.5, 4, 4.5 s: a whole sampled roar too */
         }
     }
     if (t >= sc.nlen) {
