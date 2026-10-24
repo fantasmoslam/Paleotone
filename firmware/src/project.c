@@ -171,7 +171,8 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
  * defaults) or 1 + EVOL + 2 x (DENS - 1 + 8 x (DRFT - 1 + 8 x MOOD)), up to 768. Two bytes left below it */
 #define PROJ_DREAM_OFF (PROJ_KEYS_OFF - 2u)
 typedef union { uint32_t align; uint8_t raw[PROJ_STORE_SIZE]; } project_store_t;
-_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 10u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail");
+_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 30u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
+               "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store)");
 _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUN10 / FUN7 sizes");
 typedef struct {                               /* a track of format 4, read only */
     int16_t p[PROJ_NP_V4];
@@ -880,6 +881,9 @@ static void proj_fetch(uint32_t slot)
 }
 #endif
 
+static void scape_side_put(uint32_t s);              /* DINOBOX: SCAPE beside a project (below) */
+static void scape_side_get(uint32_t s);
+
 static void project_capture(project_t *p)
 {
     uint32_t i;
@@ -933,6 +937,7 @@ static int project_save_as(uint32_t slot, const char *name)
         proj_name_get(proj_name, (const uint8_t *)p->name);
         proj_cur = (uint8_t)(slot & 3u);
         pat_from_set((slot & 3u) + 1u);
+        scape_side_put(slot & 3u);                      /* DINOBOX: SCAPE, beside it */
         ui_message("SAVED");
         return 0;
     }
@@ -941,6 +946,7 @@ static int project_save_as(uint32_t slot, const char *name)
     proj_name_get(proj_name, (const uint8_t *)p->name);
     proj_cur = (uint8_t)(slot & 3u);
     pat_from_set((slot & 3u) + 1u);
+    scape_side_put(slot & 3u);
     ui_message("SAVED (RAM)");
     return 0;
 }
@@ -1120,6 +1126,7 @@ static void project_load(uint32_t slot)
     if (!project_restore_runtime(&proj_scratch)) {
         proj_cur = (uint8_t)(slot & 3u);
         pat_from_set((slot & 3u) + 1u);
+        scape_side_get(slot & 3u);                      /* DINOBOX: its SCAPE (none stored: off) */
     }
 }
 
@@ -1221,6 +1228,32 @@ static uint32_t chain_prepare(void)
     transport_req = 1;
     return 0;
 }
+
+/* DINOBOX: SCAPE's settings (G_SCAPE .. G_SD7) beside a project, in the settings' sidecar (settings_persist.c
+ * scape_side; s: slot 0..3, 4 the autosave): 1, then the values in G_ order. Saved with the project (the settings
+ * object written after it), put back with it; a slot with none stored: SCAPE off, its defaults */
+#define SCAPE_SIDE_N (G_SD7 - G_SCAPE + 1u)
+_Static_assert(SCAPE_SIDE_N + 1u <= sizeof scape_side[0], "SCAPE's sidecar entry");
+static void scape_side_put(uint32_t s)
+{
+    uint32_t i;
+    uint8_t *e = scape_side[s % 5u];
+    memset(e, 0, sizeof scape_side[0]);
+    e[0] = 1;
+    for (i = 0; i < SCAPE_SIDE_N; i++)
+        e[1u + i] = (uint8_t)clamp(song.g[G_SCAPE + i], 0, GP[G_SCAPE + i].max);
+#if FELUCCA_FLASH
+    persist_pending = 1;                                /* (settings_poll writes it once the transport is free) */
+#endif
+}
+static void scape_side_get(uint32_t s)
+{
+    uint32_t i;
+    const uint8_t *e = scape_side[s % 5u];
+    for (i = 0; i < SCAPE_SIDE_N; i++)
+        song.g[G_SCAPE + i] = e[0] == 1u ? (int16_t)clamp(e[1u + i], 0, GP[G_SCAPE + i].max) : GP[G_SCAPE + i].def;
+}
+
 
 static void settings_poll(void)
 {
@@ -1355,6 +1388,7 @@ static void autosave_poll(void)
     if (!as.err) {
         as.saved = sig;
         as.writes++;
+        scape_side_put(4);                              /* DINOBOX: SCAPE, beside the autosave */
     }
 #endif
 }
@@ -1373,6 +1407,7 @@ static int autosave_boot(int allowed)
         if (n > 0 && proj_import(&proj_scratch, &proj_wire, n)) {
             proj_bound(&proj_scratch);
             if (!project_restore_runtime(&proj_scratch)) {
+                scape_side_get(4);                      /* DINOBOX: its SCAPE */
                 ui_message("RESTORED");
                 rc = 1;
             }

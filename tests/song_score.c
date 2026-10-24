@@ -94,7 +94,7 @@ int main(int argc, char **argv)
             ;
         else if (sscanf(line, "scape %d %d", &a, &b) == 2) {   /* SCAPE: a biome at a level (scape.c) */
             scape_biome((uint32_t)a);
-            scape_cfg.master = (uint8_t)b;
+            song.g[G_SCAPE] = (int16_t)b;
         }
         else if (sscanf(line, "sound %d %d %95[^\n]", &k, &a, name) == 3) {
             track_t *tk = &trk[k & 3];

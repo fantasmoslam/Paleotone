@@ -26,21 +26,22 @@ int main(int argc, char **argv)
     song.g[G_TAPE] = 0;
     song.master_q12 = 1600;                               /* (as tests/stem.c) */
     scape_biome(b);
-    scape_cfg.master = (uint8_t)(argc > 4 ? atoi(argv[4]) : 100);
-    if (getenv("LAYER"))
+    song.g[G_SCAPE] = (int16_t)(argc > 4 ? atoi(argv[4]) : 100);
+    if (getenv("LAYER")) {
         for (k = 0; k < SC_NL; k++)
             if (k != (uint32_t)atoi(getenv("LAYER")))
-                scape_cfg.level[k] = 0;
+                song.g[G_SL0 + k] = 0;
             else {                                        /* LVL=, DENS=: that layer's (calibration) */
                 if (getenv("LVL"))
-                    scape_cfg.level[k] = (uint8_t)atoi(getenv("LVL"));
+                    song.g[G_SL0 + k] = (int16_t)atoi(getenv("LVL"));
                 if (getenv("DENS"))
-                    scape_cfg.density[k] = (uint8_t)atoi(getenv("DENS"));
+                    song.g[G_SD0 + k] = (int16_t)atoi(getenv("DENS"));
             }
+    }
     if (getenv("TIME"))
-        scape_cfg.time = (uint8_t)atoi(getenv("TIME"));
+        song.g[G_STIME] = (int16_t)atoi(getenv("TIME"));
     if (getenv("DIST"))
-        scape_cfg.dist = (uint8_t)atoi(getenv("DIST"));
+        song.g[G_SDIST] = (int16_t)atoi(getenv("DIST"));
     frames = (uint32_t)(secs * FS);
     if (!(f = fopen(argv[1], "wb")))
         return 1;

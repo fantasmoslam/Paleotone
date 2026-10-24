@@ -16,6 +16,8 @@ static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", 
                                     "PHDOM", "HUNG", "DHARM"};   /* (stored: append-only; GHOULBOX's from PHDOM, seq.c) */
 static const char *const N_ONOFF[] = {"OFF", "ON"};
 static const char *const N_DMOOD[] = {"MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"};   /* GHOULBOX 2.3: DREAM's (dream.c) */
+static const char *const N_BIOME[] = {"WATER", "JUNGL", "TUNDR", "FORST", "PLAIN", "MOUNT", "CANYN", "CALDR"};   /* DINOBOX:
+                                                     * SCAPE's biomes (scape.c SC_BIOME, in that order) */
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
 static const char *const N_QUANT[] = {"OFF", "SNAP", "WHITE", "SEQ"};
@@ -193,6 +195,20 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DDENS] = PD("DENS", F_INT, 1, 8, 4),
     [G_DDRFT] = PD("DRFT", F_INT, 1, 8, 6),        /* (a change every 3 passes: ~80 s at 72 BPM) */
     [G_DMOOD] = PE("MOOD", N_DMOOD, 0),
+    /* DINOBOX: SCAPE (scape.c), HOME > EPOCH tapped again. LEVEL 0 = off (nothing runs, as before); a BIOME turned on
+     * its page sets the layers, DIST and TIME (ui_input.c); the defaults are JUNGLE's (scape.c SC_BIOME[1]) */
+    [G_SCAPE] = PD("LEVEL", F_PCT, 0, 127, 0),
+    [G_SBIOME] = PE("BIOME", N_BIOME, 1),
+    [G_SDIST] = PD("DIST", F_PCT, 0, 127, 40),
+    [G_STIME] = PD("TIME", F_INT, 0, 127, 70),      /* 0 day .. 127 night */
+    [G_SL0] = PD("WIND", F_PCT, 0, 127, 25), [G_SL1] = PD("WATER", F_PCT, 0, 127, 40),
+    [G_SL2] = PD("RAIN", F_PCT, 0, 127, 50), [G_SL3] = PD("BUGS", F_PCT, 0, 127, 85),
+    [G_SL4] = PD("FROGS", F_PCT, 0, 127, 70), [G_SL5] = PD("BIRDS", F_PCT, 0, 127, 75),
+    [G_SL6] = PD("DRIPS", F_PCT, 0, 127, 30), [G_SL7] = PD("RUMBL", F_PCT, 0, 127, 50),
+    [G_SD0] = PD("WIND", F_PCT, 0, 127, 40), [G_SD1] = PD("WATER", F_PCT, 0, 127, 30),
+    [G_SD2] = PD("RAIN", F_PCT, 0, 127, 40), [G_SD3] = PD("BUGS", F_PCT, 0, 127, 70),
+    [G_SD4] = PD("FROGS", F_PCT, 0, 127, 50), [G_SD5] = PD("BIRDS", F_PCT, 0, 127, 55),
+    [G_SD6] = PD("DRIPS", F_PCT, 0, 127, 20), [G_SD7] = PD("RUMBL", F_PCT, 0, 127, 30),
 };
 
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
@@ -474,6 +490,12 @@ static const page_t PAGES[] = {
     {"KEYS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_KMODE, G_KTRK, G_KSPLIT, G_KOCT}},   /* GHOULBOX 2.1: CLOCK tapped again */
     {"EPOCH", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DREAM, G_DDENS, G_DDRFT, G_DMOOD}},   /* GHOULBOX 2.3: KEYS tapped again;
                                                                                     * a key composes (dream.c) */
+    /* DINOBOX: SCAPE, the soundscape (scape.c), EPOCH tapped again: the whole, then each layer's level and density */
+    {"SCAPE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCAPE, G_SBIOME, G_SDIST, G_STIME}},
+    {"SCAPE LEVELS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL0, G_SL1, G_SL2, G_SL3}},
+    {"SCAPE LEVELS 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL4, G_SL5, G_SL6, G_SL7}},
+    {"SCAPE DENSITY", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SD0, G_SD1, G_SD2, G_SD3}},
+    {"SCAPE DENSITY 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SD4, G_SD5, G_SD6, G_SD7}},
 };
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
