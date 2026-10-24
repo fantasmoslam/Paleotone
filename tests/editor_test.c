@@ -1106,10 +1106,27 @@ static int drum_kit_retired(void)
     return bad;
 }
 
+static int scape_descriptor(void)
+{
+    uint8_t a[2]={1,G_SC_L7K};
+    uint32_t n,p=14,i;
+    int ok=1;
+    reset(); n=request(ED_DESC,a,2);
+    p+=(uint32_t)strlen((const char *)host_wire+p)+1u;
+    p+=(uint32_t)strlen((const char *)host_wire+p)+1u;
+    for(i=0;i<25u;i++) {
+        if(p>=n-1u) { ok=0; break; }
+        if(i==24u) ok &= !strcmp((const char *)host_wire+p,"THUNDER");
+        p+=(uint32_t)strlen((const char *)host_wire+p)+1u;
+    }
+    ok &= i==25u && p==n-1u && host_wire[n-1u]==0xF7;
+    return check("DESC of SCAPE: all 25 sound choices, including final THUNDER, fit one frame",ok);
+}
+
 #ifndef EDITOR_TEST_NO_MAIN                              /* (robust_test.c, fuzz_*.c: this file is their base) */
 int main(void)
 {
-    int bad = preferences() + motion_locks() + framing() + uart_recovery() + steps() + samples() + song_protocol() + malformed_saves() +
+    int bad = scape_descriptor() + preferences() + motion_locks() + framing() + uart_recovery() + steps() + samples() + song_protocol() + malformed_saves() +
               fm6_patches() + user_preset_roundtrip() + live_sync() + usb_burst() + menu_protocol() + drum_kit_retired();
     printf("%s\n", bad ? "EDITOR TEST FAILED" : "editor test passed");
     return bad != 0;
