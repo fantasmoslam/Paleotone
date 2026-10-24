@@ -219,6 +219,7 @@ static uint32_t div_samples(uint32_t div)
 #include "perform.c"                                 /* the FX hold layer's effects (the master) */
 #include "tape.c"                                    /* GHOULBOX: TAPE / CRSH on the mix, before MASTER */
 #include "ambience.c"                                /* GHOULBOX: the ambience (AMB, CRKL) into the mix */
+#include "scape.c"                                   /* DINOBOX: SCAPE, the soundscape beside the tracks */
 #include "click.c"                                   /* the metronome's click (after the master: audio.c) */
 
 static uint32_t delay_samples(void)
@@ -605,6 +606,7 @@ static void mix_block(int32_t *out, uint32_t n)
     for (i = 0; i < NPART; i++)
         mix_part(&trk[i], n);
     amb_block(mix_l, mix_r, send_r, n);                 /* GHOULBOX: the ambience, with the tracks (no track's) */
+    scape_block(mix_l, mix_r, send_r, n);               /* DINOBOX: SCAPE, the soundscape (off: nothing runs) */
     if (perf)
         perf_pre(mix_l, mix_r, send_d, send_r, n);
     fx_buses(send_c, send_d, send_r, wet, n);

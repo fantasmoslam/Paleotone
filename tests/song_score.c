@@ -3,7 +3,7 @@
  * slots' steps and automation, the song chain (lanes, repeats), then played through mix_block like the FM-1 plays it.
  *   build/host/song_score OUT.wav < SCORE        (tools/riders_song.py writes RIDERS OF THE VALLEY's)
  * SCORE lines ('#' comments):
- *   bpm B | master Q12 | secs S
+ *   bpm B | master Q12 | secs S | scape BIOME LEVEL (SCAPE, firmware/src/scape.c)
  *   sound K ENGINE PRESET NAME        track K (0..3): an engine index and a factory preset (sends: DIST only)
  *   level K V | param K NAME V        the sound's own LEVEL or a parameter (E0..E7 ATK DEC SUS REL DST CHO DLY REV PAN RING)
  *   slot S                            start project slot S (0..3): every track's steps and automation cleared
@@ -92,6 +92,10 @@ int main(int argc, char **argv)
             song.master_q12 = (uint32_t)a;
         else if (sscanf(line, "secs %lf", &secs) == 1)
             ;
+        else if (sscanf(line, "scape %d %d", &a, &b) == 2) {   /* SCAPE: a biome at a level (scape.c) */
+            scape_biome((uint32_t)a);
+            scape_cfg.master = (uint8_t)b;
+        }
         else if (sscanf(line, "sound %d %d %95[^\n]", &k, &a, name) == 3) {
             track_t *tk = &trk[k & 3];
             host_preset(tk, (uint32_t)a, preset_of((uint32_t)a, name));
