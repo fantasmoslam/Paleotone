@@ -38,6 +38,22 @@ int main(int argc, char **argv)
                     song.g[G_SD0 + k] = (int16_t)atoi(getenv("DENS"));
             }
     }
+    if (getenv("CT")) {                                   /* the calls: CT="ENGINE PRESET" on track 1; CRATE CPT CSP */
+        const char *v = getenv("CT"), *sp = strchr(v, ' ');
+        uint32_t e = (uint32_t)atoi(v), pi;
+        for (pi = 0; pi < ENGINES[e]->npresets && strcmp(ENGINES[e]->presets[pi].name, sp + 1); pi++)
+            ;
+        host_preset(&trk[0], e, pi % ENGINES[e]->npresets);
+        trk[0].p[P_LEVEL] = (int16_t)(getenv("CLV") ? atoi(getenv("CLV")) : 104);
+        song.g[G_SCTRK] = 1;
+        song.g[G_SCRATE] = (int16_t)(getenv("CRATE") ? atoi(getenv("CRATE")) : 40);
+        song.g[G_SCNOTE] = (int16_t)(getenv("CPT") ? atoi(getenv("CPT")) : 0);
+        song.g[G_SCSPRD] = (int16_t)(getenv("CSP") ? atoi(getenv("CSP")) : 5);
+    }
+    if (getenv("DRN")) song.g[G_SDRN] = (int16_t)atoi(getenv("DRN"));   /* the drone: DRN level, DTYP, DKEY, DMOV */
+    if (getenv("DTYP")) song.g[G_SDTYP] = (int16_t)atoi(getenv("DTYP"));
+    if (getenv("DKEY")) song.g[G_SDKEY] = (int16_t)atoi(getenv("DKEY"));
+    if (getenv("DMOV")) song.g[G_SDMOV] = (int16_t)atoi(getenv("DMOV"));
     if (getenv("TIME"))
         song.g[G_STIME] = (int16_t)atoi(getenv("TIME"));
     if (getenv("DIST"))
