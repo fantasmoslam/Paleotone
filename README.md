@@ -1,14 +1,14 @@
-# DINOBOX: FM-1 Prehistoric Synth
+# PALEOTONE: FM-1 Prehistoric Synth
 
-![DINOBOX 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
+![PALEOTONE (then DINOBOX) 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
 
-**DINOBOX** is epic prehistoric firmware for the **M-VAVE FM-1**: roaring beasts, booming war drums, misty jungle
+**PALEOTONE** (formerly DINOBOX) is epic prehistoric firmware for the **M-VAVE FM-1**: roaring beasts, booming war drums, misty jungle
 pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth)
 2.3.2 by Jason Persinger, itself built on [Felucca](https://github.com/hugelton/Felucca) 1.4.1 by Leo Kuroshita,
 Hügelton Instruments. Everything GHOULBOX does (its composer, RING, KEYS, the hall reverb, tape and crush, twelve
 voices) works the same; the look, the names and the sounds are new.
 
-**Status: DINOBOX 1.0 has not been tested on a real FM-1 yet.** The host test suite passes, but install it at your
+**Status: PALEOTONE 1.0 has not been tested on a real FM-1 yet.** The host test suite passes, but install it at your
 own risk. Holding OCT− while switching on puts the FM-1 into USB rescue mode, from which any firmware (or M-VAVE's
 own, `FM-1.fwsc`) can be installed again.
 
@@ -19,12 +19,12 @@ own, `FM-1.fwsc`) can be installed again.
   too). The windows are green-screen glass with faint scanlines and amber corner brackets; the cursor is a prompt;
   electric fence posts with blinking warning lamps stand beside HOME's scope; the type is Share Tech Mono drawn as
   pixels (GHOULBOX: VT323). ROAR's icon is a T. rex head; MENU's DISPLAY tab is a reptile's eye.
-- **The boot screen and ABOUT page:** a Dilophosaurus skull, the DINOBOX title in big terminal pixels and "PREHISTORIC
+- **The boot screen and ABOUT page:** a Dilophosaurus skull, the PALEOTONE title in big terminal pixels and "PREHISTORIC
   SYNTH".
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
   controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
   HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
-- **107 sounds of its own, nothing inherited.** Every sound in PRESETS is DINOBOX's: GHOULBOX's slots hold new
+- **119 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
   prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 62 more join
   them (SAURUS's 20 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
 - **Its own sample material, synthesized**: a night jungle, a tropical storm, a lithophone and the ENCOUNTER kit
@@ -77,7 +77,7 @@ The sample material is made by `tools/gen_dino_samples.py` (no recordings), the 
 
 ## Building
 
-DINOBOX builds exactly as GHOULBOX and Felucca do: see [BUILDING.md](BUILDING.md). On Linux x86-64 (or macOS with
+PALEOTONE builds exactly as GHOULBOX and Felucca do: see [BUILDING.md](BUILDING.md). On Linux x86-64 (or macOS with
 Docker):
 
 ```
@@ -89,7 +89,7 @@ git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
 ```
 
 This repository also builds on GitHub: every push to `main` runs `.github/workflows/build-firmware.yml`, which puts
-`dinobox.fwsc` and the build's log on the `build-output` branch.
+`paleotone.fwsc` and the build's log on the `build-output` branch.
 
 Install `build/felucca.fwsc` with `python3 tools/fm1_install.py build/felucca.fwsc` (needs `pip3 install mido
 python-rtmidi`) or with the FM-1 Firmware Hub's installer.
@@ -107,10 +107,10 @@ icons `tools/gen_aa_icons.py` (`OWN`).
 
 ## Credits and licence
 
-DINOBOX is free software under the GNU GPL, version 3 only, like GHOULBOX and Felucca: see
+PALEOTONE is free software under the GNU GPL, version 3 only, like GHOULBOX and Felucca: see
 [LICENSING.md](LICENSING.md). Its source must stay available to anyone you give the firmware to.
 
-- [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth) by Jason Persinger: everything DINOBOX
+- [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth) by Jason Persinger: everything PALEOTONE
   is built on. Its README, with the history of all its versions, is in [docs/GHOULBOX-README.md](docs/GHOULBOX-README.md).
   To support its author: [Ko-fi](https://ko-fi.com/ghoulbox).
 - [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita, Hügelton Instruments.
