@@ -1,0 +1,89 @@
+# PALEOTONE on the M-Vave SMK-37 (smk37-port.yaml, SMK37.md): builds the three SMK packages (Pro, Elite, MKE-P37)
+# and checks that the FM-1 build is byte-identical to the base it branched from, built the same day in the same
+# job (the firmware embeds __DATE__). The packages and the log go to the branch smk37-output.
+name: smk37
+
+on:
+  push:
+    branches: [smk37]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # (the smk37-output branch)
+
+jobs:
+  smk37:
+    runs-on: ubuntu-24.04
+    container: debian:bookworm-slim
+    timeout-minutes: 45
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pip git curl xz-utils ca-certificates libraqm0 gcc libc6-dev
+          pip3 install --break-system-packages pillow==12.3.0 fonttools==4.61.1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: JieLi toolchain
+        run: tools/get_toolchain.sh "$HOME/.jieli"
+
+      - name: JieLi AC79 SDK
+        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+
+      - name: Base FM-1 build (the reference)
+        shell: bash
+        run: |
+          set -o pipefail
+          git config --global --add safe.directory "$PWD"
+          BASE=$(git merge-base HEAD origin/main)
+          echo "base $BASE" | tee smk.log
+          git worktree add ../base "$BASE"
+          (cd ../base && ./build.sh > ../base.log 2>&1) || { tail -40 ../base.log; exit 1; }
+          (cd ../base && sha256sum build/felucca.bin build/felucca.fwsc build/loader/ota.bin) | tee ../fm1-reference.sha256 | tee -a smk.log
+
+      - name: SMK-37 builds
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p out
+          for m in pro elite mke; do
+            BOARD=smk37 MODEL=$m ./build.sh 2>&1 | tee -a smk.log | tail -5
+            f=build/paleotone-smk37.fwsc; [ $m = pro ] || f=build/paleotone-smk37-$m.fwsc
+            cp "$f" out/
+            grep -E "image [0-9]+ B" build.log 2>/dev/null | tail -1 || true
+          done
+          sha256sum out/*.fwsc | tee -a smk.log
+
+      - name: FM-1 build, byte-identical to the base
+        shell: bash
+        run: |
+          set -o pipefail
+          ./build.sh 2>&1 | tail -5 | tee -a smk.log
+          sha256sum build/felucca.bin build/felucca.fwsc build/loader/ota.bin | tee -a smk.log
+          sha256sum -c ../fm1-reference.sha256 2>&1 | tee -a smk.log
+
+      - name: SMK host tests (flash map, owner tag, packages, update, loader)
+        shell: bash
+        run: |
+          set -o pipefail
+          cp out/*.fwsc build/
+          OUT=build/host; mkdir -p $OUT; CC=cc
+          $CC -DBOARD_SMK37=1 -Ifirmware/hal -o $OUT/smk_flash_test tests/smk_flash_test.c && $OUT/smk_flash_test | tail -3 | tee -a smk.log
+          $CC -DBOARD_SMK37=1 -Ifirmware/hal -o $OUT/smk_owner_test tests/smk_owner_test.c && $OUT/smk_owner_test | tail -3 | tee -a smk.log
+          for m in "paleotone-smk37.fwsc:SMK-37 Pro_900" "paleotone-smk37-elite.fwsc:SMK-37 Elite_900" "paleotone-smk37-mke.fwsc:MKE-P37_900"; do
+            python3 tests/smk_pkg_test.py "build/${m%%:*}" "${m#*:}" | tail -1 | tee -a smk.log
+          done
+
+      - name: Put the result on the smk37-output branch
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/o && cp smk.log /tmp/o/ 2>/dev/null; cp out/*.fwsc /tmp/o/ 2>/dev/null || true
+          cp ../base.log /tmp/o/ 2>/dev/null || true
+          echo "${{ github.sha }} ${{ job.status }}" > /tmp/o/RESULT
+          cd /tmp/o && git init -q -b smk37-output && git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "smk37 build of ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" smk37-output
