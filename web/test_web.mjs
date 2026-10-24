@@ -266,7 +266,7 @@ async function editorMock() {
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 14)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 5)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 0)));
-    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 37,
+    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 57,
       "editor: MIDI IN routing (ROUT CH1-4 / SEL / CH5-8 / CH9-12 / CH13-16, global id 14)");
   }
   {
@@ -278,7 +278,7 @@ async function editorMock() {
     const [d25, d26, d27, d28, d29, d30, d31, d32, d33, d34, d35, d36] = await Promise.all(tape);
     ok(rd.label === "TYPE" && rd.def === 2 && eq(rd.names, ["ROOM", "SPRING", "HALL"]) && r1.value === 2 && r0.value === 0 &&
        d25.label === "TAPE" && d26.label === "CRSH" && d25.max === 127 && d26.max === 127 && d25.def === 0 &&
-       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 37 &&
+       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 57 &&
        d29.label === "MODE" && eq(d29.names, ["OFF", "LAYER", "SPLIT"]) && d29.def === 0 && d30.label === "TRK" && d30.def === 3 &&
        d31.label === "SPLT" && d31.names.length === 24 && d31.names[d31.def] === "C4" && d32.label === "OCT" && d32.names[d32.def] === "0" &&
        d33.label === "EVOL" && d33.def === 0 && d34.label === "DENS" && d34.min === 1 && d34.max === 8 && d34.def === 4 &&
@@ -1382,7 +1382,7 @@ function fm6TabNoBank() {
     return out;
   };
   const all = (n, skip) => Array.from({ length: n }, (_, i) => i).filter((i) => !skip(i));
-  for (const [pc, pe0, gc, what] of [[113, 105, 37, "2.3"], [112, 104, 33, "2.1 / 2.2"], [112, 104, 29, "2.0"], [104, 96, 27, "1.2 .. 1.4.1"]]) {
+  for (const [pc, pe0, gc, what] of [[113, 105, 57, "DINOBOX SCAPE"], [113, 105, 37, "2.3"], [112, 104, 33, "2.1 / 2.2"], [112, 104, 29, "2.0"], [104, 96, 27, "1.2 .. 1.4.1"]]) {
     const p = ids(pe0, gc, 0), g = ids(pe0, gc, 1);
     const missP = all(pe0, (i) => (i >= 61 && i <= 80) || (i >= 96 && i <= 102)).filter((i) => !p.has(i));   /* (DIGITAL's
                                                          operator ENVs: a FELUCCA_FM4 firmware's; Felucca 1.5's seven: reserved) */
