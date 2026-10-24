@@ -492,7 +492,10 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
                 set_engine((uint32_t)clamp(ed_rv(a + 2), 0, NENGINES - 1));
                 ed_load_after(&b);
             } else if (d->max > d->min) {
-                *vp = (int16_t)enum_orig(d, clamp(ed_rv(a + 2), d->min, d->max));
+                int16_t nv = (int16_t)enum_orig(d, clamp(ed_rv(a + 2), d->min, d->max));
+                if (a[0] == 1 && a[1] == G_SBIOME && nv != *vp)   /* DINOBOX: a biome set sets SCAPE's layers, */
+                    scape_biome((uint32_t)nv);                    /* as its knob (scape.c) */
+                *vp = nv;
                 if (a[0] == 0) {
                     (void)motion_capture(TSEL, a[1], *vp);
                     load_extend(TSEL);                      /* (ui.c undo: an audition's values after G_ENGSEL) */
