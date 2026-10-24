@@ -22,11 +22,13 @@ typedef struct {
     panel_t panel;
     uint32_t bold;
     struct { uint8_t factory[16][32]; uint32_t user, filter; } favorites;
-    uint8_t scape[5][24];        /* DINOBOX: SCAPE of the project slots A..D and the autosave (project.c scape_side_*):
+    uint8_t scape[5][48];        /* DINOBOX: SCAPE of the project slots A..D and the autosave (project.c scape_side_*):
+                                  * 1, the 20 values, then 27 bytes kept 0 for SCAPE's later settings (each stored + 1:
+                                  * 0, as this version writes them, their defaults);
                                   * a project holds no room for it (FUN10's tail is full). Settings without it (572
                                   * bytes, every version before): none stored, SCAPE off */
 } persist_t;
-static uint8_t scape_side[5][24];   /* the RAM copy, saved with the settings (settings_poll) */
+static uint8_t scape_side[5][48];   /* the RAM copy, saved with the settings (settings_poll) */
 #define PERSIST_MAGIC 0x50455234u
 /* GHOULBOX: USB SERIAL OFF by default (MIDI host boxes and macOS's USB audio want no serial console). The MENU flag
  * is a bit of favorites.factory[15][30] (ui.c ui_prefs, PREF_SERIAL_OFF); byte [15][28] (no engine 15, unused by

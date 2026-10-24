@@ -124,7 +124,7 @@ int main(void)
            old.lowcut == full.lowcut && !memcmp(&old.favorites, &full.favorites, sizeof old.favorites) &&
            !memcmp(&old.panel, &full.panel, sizeof old.panel));
     }
-    ck("settings 572 + 120 bytes", sizeof(persist_t) == 572u + 120u);
+    ck("settings 572 + 240 bytes", sizeof(persist_t) == 572u + 240u);
 
     printf(bad ? "SCAPE TEST: %d FAILED\n" : "SCAPE TEST: ALL PASSED\n", bad);
     return bad != 0;
