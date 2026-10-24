@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DOMAIN = "ghoulbox.messy.quest"                     # GHOULBOX: GitHub Pages' custom domain (the CNAME file)
+DOMAIN = None                                       # PALEOTONE: no custom domain (GHOULBOX's was ghoulbox.messy.quest)
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F
 
 
@@ -56,7 +56,7 @@ def main(pkg, version, out):
     lib = strip_module((HERE / "fm1pkg.js").read_text(encoding="utf-8")) + "\n" + \
         strip_module((HERE / "fm1ota.js").read_text(encoding="utf-8")) + "\n" + \
         strip_module((HERE / "fm1backup.js").read_text(encoding="utf-8"))
-    name = f"felucca-{re.sub(r'[^A-Za-z0-9.-]', '-', version)}.fwsc"
+    name = f"paleotone-{re.sub(r'[^A-Za-z0-9.-]', '-', version)}.fwsc"
     meta = json.dumps({"version": version, "product": product, "pkg": "../../firmware/" + name})
     for mark in ("/*LIB*/", "/*META*/"):
         if html.count(mark) != 1:
@@ -65,7 +65,7 @@ def main(pkg, version, out):
     inst, ed, fw = out / "webapp" / "installer", out / "webapp" / "editor", out / "firmware"
     for d in (inst, ed, fw):
         d.mkdir(parents=True, exist_ok=True)
-    for old in fw.glob("felucca-*.fwsc"):          # one package: the current one
+    for old in list(fw.glob("felucca-*.fwsc")) + list(fw.glob("paleotone-*.fwsc")):          # one package: the current one
         old.unlink()
     (inst / "index.html").write_text(html, encoding="utf-8")
     shutil.copy(pkg, fw / name)
@@ -100,12 +100,15 @@ def main(pkg, version, out):
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
-    (out / "CNAME").write_text(DOMAIN, encoding="utf-8")   # (as GitHub writes it: no newline)
+    if DOMAIN:
+        (out / "CNAME").write_text(DOMAIN, encoding="utf-8")   # (as GitHub writes it: no newline)
+    elif (out / "CNAME").exists():
+        (out / "CNAME").unlink()
     home = "webapp/emu/" if (out / "webapp/emu/index.html").exists() else "webapp/installer/"   # GHOULBOX: the emulator
     (out / "index.html").write_text(                                                          # first, when it is there
-        '<!doctype html><meta charset="utf-8"><title>GHOULBOX</title>'
+        '<!doctype html><meta charset="utf-8"><title>PALEOTONE</title>'
         f'<meta http-equiv="refresh" content="0; url={home}">'
-        f'<a href="{home}">GHOULBOX</a>\n', encoding="utf-8")
+        f'<a href="{home}">PALEOTONE</a>\n', encoding="utf-8")
     print(f"site: {out}: webapp/installer ({len(html)} B), webapp/editor, firmware/{name} ({len(raw)} B, {product})")
 
 

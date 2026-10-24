@@ -114,7 +114,7 @@ def main():
     site = out / "site"
     run([sys.executable, "web/make_site.py", rel, f"gb{ver}", site], quiet=True)
     run([sys.executable, "tools/make_sound_page.py", site], quiet=True)
-    if (site / f"firmware/felucca-gb{ver}.fwsc").read_bytes() != rel.read_bytes():
+    if (site / f"firmware/paleotone-gb{ver}.fwsc").read_bytes() != rel.read_bytes():
         die("the site's package is not the release's")
     sha = hashlib.sha256(rel.read_bytes()).hexdigest()
     (out / "SHA256SUMS").write_text(f"{sha}  {rel.name}\n")

@@ -1,0 +1,69 @@
+# PALEOTONE: the website, on GitHub Pages (the gh-pages branch): the browser emulator (the whole firmware in
+# WebAssembly, played in the browser), the installer and the editor, as GHOULBOX's site. Runs after every
+# firmware build of main, and on request (Actions tab: "Run workflow"). The emulator is checked against the
+# native build bit for bit (web/emu/emu_test.mjs) before anything is published; the installer carries the
+# package the firmware build put on the build-output branch.
+name: website
+
+on:
+  workflow_run:
+    workflows: [build firmware]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # (the gh-pages branch)
+
+jobs:
+  site:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Tools
+        run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.74
+
+      - name: Generated tables
+        run: python3 tools/build.py --gen-only
+
+      - name: Emulator
+        run: |
+          set -o pipefail
+          EMU_PREVIEW=0 sh web/emu/build.sh
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/emu/native_check web/emu/native_check.c -lm
+          build/emu/native_check build/emu/native.f32
+          BENCH_MAX=2 node web/emu/emu_test.mjs build/emu/felucca.wasm build/emu/native.f32
+
+      - name: The package from the firmware build
+        run: |
+          git fetch origin build-output
+          git show origin/build-output:RESULT
+          git show origin/build-output:paleotone.fwsc > paleotone.fwsc
+          sha256sum paleotone.fwsc
+
+      - name: Site
+        run: |
+          VER=$(git rev-parse --short HEAD)
+          python3 web/make_site.py paleotone.fwsc "$VER" site
+          touch site/.nojekyll
+
+      - name: Publish on gh-pages
+        run: |
+          cd site
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "site of ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" gh-pages
