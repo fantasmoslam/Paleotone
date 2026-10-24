@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* DINOBOX: a song built in the firmware's own sequencer from a text score: the four tracks' sounds, the four project
  * slots' steps and automation, the song chain (lanes, repeats), then played through mix_block like the FM-1 plays it.
- *   build/host/song_score OUT.wav < SCORE        (tools/riders_song.py writes RIDERS OF THE VALLEY's)
+ *   build/host/song_score OUT.wav < SCORE        (a song in four slots, through the firmware)
  * SCORE lines ('#' comments):
  *   bpm B | master Q12 | secs S | scape BIOME LEVEL (SCAPE, firmware/src/scape.c)
  *   sound K ENGINE PRESET NAME        track K (0..3): an engine index and a factory preset (sends: DIST only)

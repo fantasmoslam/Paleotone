@@ -243,7 +243,8 @@ static const uint8_t TRK_DEF[NPART][3] = {{0, 4, 0}, {ENGI_FM6, 4, 0}, {3, 0, 0}
  * minor, 1/8 steps, HALL (ui.c gb_scene_load). 1.3: MENU > SYSTEM > SCENE picks one (ui_scene; append-only: a saved
  * value keeps its scene, an unknown one plays JUNGLE, DINOBOX's DUNGEON). The patterns are GHOULBOX's nine (PATTERNS[n - 1]) */
 #define GB_NSCENE 6u
-static const struct { const char *name; uint8_t bpm, tape, part[NPART][3]; } GB_SCENES[GB_NSCENE] = {
+static const struct { const char *name; uint8_t bpm, tape, part[NPART][4]; } GB_SCENES[GB_NSCENE] = {   /* part: engine,
+                                    * preset, pattern, DINOBOX: LEVEL (0: the default, as every scene before) */
     {"JUNGLE", 72, 40, {{ENGI_PHYS, 9, 20}, {0, 12, 14}, {ENGI_SAMPLE, 5, 17}, {ENGI_DRUM, 1, 22}}},   /* DINOBOX: LOG
                                     * MARIMBA ARPEGGIO, JUNGLE PAD DIRGE, JUNGLE NIGHT PEDAL, TRIBAL KIT STOMP */
     {"VOLCANO", 60, 55, {{11, 4, 17}, {5, 5, 14}, {ENGI_SAURUS, 1, 17}, {ENGI_DRUM, 2, 22}}},   /* VOLCANO PEDAL, EPIC
@@ -254,10 +255,10 @@ static const struct { const char *name; uint8_t bpm, tape, part[NPART][3]; } GB_
                                     * EPIC STRINGS DIRGE, VALLEY HARP ARPEGGIO, SPIRIT VOX LAMENT */
     {"BLANK", 72, 40, {{ENGI_PHYS, 9, 0}, {0, 12, 0}, {ENGI_SAMPLE, 5, 0}, {ENGI_DRUM, 1, 0}}},   /* JUNGLE's sounds, no
                                     * notes: a clean start */
-    {"RIDERS", 84, 0, {{ENGI_GURDY, 0, 0}, {ENGI_GURDY, 2, 0}, {ENGI_FM6, 8, 0}, {ENGI_DRUM, 2, 0}}},   /* DINOBOX: the
-                                    * demo song RIDERS OF THE VALLEY (ui.c riders.c): PRIMEVAL, STAMPEDE, TAR PIT BASS,
-                                    * WAR DRUMS; PLAY plays the song, its theme in the tracks */
+    {"HERD", 84, 30, {{ENGI_GURDY, 2, 17, 108}, {ENGI_SAURUS, 0, 17, 81}, {6, 6, 14, 117}, {5, 8, 16, 88}}},   /* DINOBOX: the herd
+                                    * on the move: STAMPEDE PEDAL, BRACHIO CALL PEDAL, BRONTO HORN DIRGE, DEEP CHANT
+                                    * CHANT (2026-10-23, in place of RIDERS: a saved 5 plays it) */
 };
-#define GB_SCENE_RIDERS 5u
+#define GB_SCENE_HERD 5u
 #define GB_SCENE (GB_SCENES[0].part)   /* (the scene up to 1.2: tests/descdump.c, tests/ghoulbox_shots.c) */
 static uint32_t trk_def_engine(uint32_t i) { return TRK_DEF[i % NPART][0]; }
