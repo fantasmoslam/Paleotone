@@ -97,6 +97,10 @@ def main(pkg, version, out):
         shutil.copytree(emu, out / "webapp/emu", ignore=shutil.ignore_patterns("native*"))
     else:
         print("site: no build/emu (web/emu/build.sh): webapp/emu left as it was")
+    man = HERE / "manual"                           # PALEOTONE: the user manual (tools/make_manual.py)
+    if (man / "index.html").exists():
+        shutil.rmtree(out / "manual", ignore_errors=True)
+        shutil.copytree(man, out / "manual")
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
