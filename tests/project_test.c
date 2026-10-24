@@ -487,6 +487,8 @@ int main(void)
             a.t[k].engine = ENGI_FM6;
             a.t[k].p[P_E7] = (int16_t)(k * 2u);
         }
+        /* New controls need their defaults for this explicitly legacy FUNA fixture. */
+        for (i=G_SC_BIO;i<G_COUNT;i++) a.g[i]=GP[i].def;
         memcpy(a.name, "FM SONG", 7);
         a.sum = proj_sum(&a);
         ok = proj_pack(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E41u && proj_import(&c, &st, sizeof st);

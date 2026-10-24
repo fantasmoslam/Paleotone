@@ -37,7 +37,7 @@ enum { MC_TEXT, MC_TITLE, MC_URL };
 typedef struct { const char *text; uint8_t kind; } menu_credit_t;
 static const menu_credit_t MENU_CREDITS[] = {
     {"GHOULBOX", MC_TITLE},                   /* DINOBOX is a fork of it */
-    {"Jason Persinger: DINOBOX is built on GHOULBOX " GHOULBOX_VERSION ", GPL-3.0", MC_TEXT},
+    {"Jason Persinger: PALEOTONE is built on GHOULBOX " GHOULBOX_VERSION ", GPL-3.0", MC_TEXT},
     {"https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth", MC_URL},
     {"", MC_TEXT},
     {"H\xFCgelton Instruments", MC_TITLE},  /* Felucca's own: above; these are ours too */
@@ -535,7 +535,10 @@ static void menu_input(uint32_t oct)                  /* oct: ui_input.c oct_tap
         if (s)
             menu_put(ui.menu_sel, menu_step(ui.menu_sel, s));
     } else if (up) {
-        if (ui.menu_sel == MI_PANEL) {
+        if (ui.menu_sel == MI_SCAPE) {
+            ui.menu=0; ui.home=0; ui.page=(uint8_t)page_first(FAM_SCAPE);
+            page_entered(); ui.force=1;
+        } else if (ui.menu_sel == MI_PANEL) {
             panel_setup();
             scrn.idle = fm1_ms;                         /* (SCREEN OFF: its own loop had the input) */
             ui.force = 1;

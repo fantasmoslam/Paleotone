@@ -19,61 +19,18 @@ from gen_aa_font import huff_pack, huff_unpack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FONT = ROOT / "assets/fonts/ShareTechMono-Regular.ttf"
-WORD = "DINOBOX"
+WORD = "PALEOTONE"
 SS = 4                                                  # supersampling of the drawn art
 
 
 def logo(max_w, max_h, k=2):
-    """the word drawn crisp at the largest size whose k x blow-up (square pixels, as a terminal draws a title) fits
-    max_w x max_h, cropped to its ink"""
-    for px in range(40, 8, -1):
-        f = ImageFont.truetype(str(FONT), px)
-        im = Image.new("1", (px * 8, px * 2), 0)
-        d = ImageDraw.Draw(im)
-        d.fontmode = "1"
-        d.text((2, 2), WORD, font=f, fill=1)
-        im = im.crop(im.getbbox())
-        if im.size[0] * k <= max_w and im.size[1] * k <= max_h:
-            return im.resize((im.size[0] * k, im.size[1] * k), Image.NEAREST).convert("L")
-    raise SystemExit("gen_ghoulbox_art: the title does not fit")
+    im=Image.open(ROOT/"assets/paleotone-wordmark.png").convert("L")
+    scale=min(max_w//im.width,max_h//im.height)
+    return im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
 
 
-def skull(w, h):
-    """a Dilophosaurus skull in side view, facing left: the long low skull with its notch behind the nostril, the two
-    thin crests arching over it, the slender jaw and teeth; the nostril, the windows before and behind the eye, the
-    eye and the jaw's window cut out, and a gap between the two crests"""
-    W, H = w * SS, h * SS
-    im = Image.new("L", (W, H), 0)
-    d = ImageDraw.Draw(im)
-    ux, uy = W / 120.0, H / 64.0
-    P = lambda pts: [(x * ux, y * uy) for x, y in pts]
-    def arc(cx, cy, rx, ry, a0, a1, n=24):
-        return [(cx + rx * math.cos(math.radians(a0 + (a1 - a0) * k / n)), cy - ry * math.sin(math.radians(a0 + (a1 - a0) * k / n))) for k in range(n + 1)]
-    # the crests: an arch over the snout and eye, rising to row 3
-    d.polygon(P(arc(48, 27, 30, 19, 172, 10) + [(78, 26), (18, 27)]), fill=255)   # (a plate on the skull roof)
-    # the skull
-    d.polygon(P([(2, 33), (6, 28), (14, 26), (24, 25), (40, 25), (60, 24), (80, 23), (96, 22), (108, 24), (116, 30),
-                 (117, 38), (112, 43), (100, 42), (80, 41), (60, 41), (36, 41), (26, 41), (22, 37), (18, 41), (8, 41),
-                 (3, 39)]), fill=255)
-    # the jaw, slender, a little open
-    d.polygon(P([(9, 47), (30, 46), (60, 46), (88, 47), (106, 46), (114, 44), (116, 50), (108, 55), (88, 55), (60, 52),
-                 (30, 50), (12, 50)]), fill=255)
-    for k in range(5):                                   # upper teeth: before the notch, then along the jaw
-        x = 4 + k * 3.6
-        d.polygon(P([(x, 40), (x + 2.4, 40), (x + 1.4, 45.5)]), fill=255)
-    for k in range(9):
-        x = 28 + k * 7.5
-        d.polygon(P([(x, 40.5), (x + 3, 40.5), (x + 1.8, 45.5 - k * 0.15)]), fill=255)
-    for k in range(9):                                   # lower teeth
-        x = 14 + k * 8
-        d.polygon(P([(x, 46.5), (x + 3, 46.5), (x + 1.4, 42.5)]), fill=255)
-    d.ellipse(P([(5, 29), (12, 33)]), fill=0)            # the nostril
-    d.polygon(P([(30, 29), (52, 27), (58, 29), (56, 37), (34, 37)]), fill=0)   # the window before the eye
-    d.ellipse(P([(64, 26), (74, 35)]), fill=0)           # the eye
-    d.polygon(P([(84, 26), (100, 25), (106, 34), (88, 37)]), fill=0)   # the window behind it
-    d.polygon(P([(84, 49), (98, 48), (100, 51), (88, 52)]), fill=0)    # the jaw's window
-    d.polygon(P(arc(48, 27, 25.5, 15.2, 160, 20) + arc(48, 27, 24.3, 14.0, 20, 160)), fill=0)   # between the crests
-    return im.resize((w, h), Image.LANCZOS)
+def skull(w,h):
+    return Image.open(ROOT/"assets/paleotone-oviraptor.png").convert("L").resize((80,96),Image.Resampling.NEAREST)
 
 
 def main():

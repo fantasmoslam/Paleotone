@@ -1,0 +1,166 @@
+name: PALEOTONE generator integration
+on:
+  push:
+    branches: [codex/paleotone-generator]
+permissions:
+  contents: read
+jobs:
+  host-tests:
+    if: "!contains(github.event.head_commit.message, '[package-only]')"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
+      - run: python3 tools/build.py --gen-only
+      - name: Generator storage and priority tests
+        if: "!contains(github.event.head_commit.message, '[web-only]') && !contains(github.event.head_commit.message, '[protocol-only]')"
+        run: |
+          mkdir -p build/host
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/scape_integration_test.c -lm -o build/host/scape_integration
+          build/host/scape_integration
+          cc -O1 -g -fsanitize=address,undefined -fno-sanitize=signed-integer-overflow,shift,bounds,object-size,pointer-overflow -w -Ibuild/gen -Ifirmware/src tests/scape_integration_test.c -lm -o build/host/scape_san
+          ASAN_OPTIONS=detect_leaks=0 build/host/scape_san
+      - name: Full regression suite
+        if: "!contains(github.event.head_commit.message, '[web-only]') && !contains(github.event.head_commit.message, '[protocol-only]')"
+        run: HOST_ONLY=1 tests/run_tests.sh
+      - name: Browser compatibility recheck against real firmware tables
+        if: contains(github.event.head_commit.message, '[web-only]') || contains(github.event.head_commit.message, '[protocol-only]')
+        run: |
+          mkdir -p build/host
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/descdump.c -lm -o build/host/descdump
+          build/host/descdump > build/host/desc.json
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/editor_test.c -lm -o build/host/editor_test
+          MENU_JSON=build/host/menu.json build/host/editor_test
+          node web/test_web.mjs
+          node web/test_backup.mjs
+          node web/emu/io_test.mjs
+          node web/emu/audio_export_test.mjs
+          node web/emu/audio_encode_test.mjs
+          node web/emu/audio_session_test.mjs
+  firmware:
+    if: "!contains(github.event.head_commit.message, '[web-only]')"
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    container: debian:bookworm-slim
+    timeout-minutes: 30
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pip git curl xz-utils ca-certificates libraqm0   # (Pillow's shaping: tnum)
+          pip3 install --break-system-packages pillow==12.3.0 fonttools==4.61.1   # (as host-tests.yml: the same pixels)
+
+      - uses: actions/checkout@v4
+
+      - name: JieLi toolchain
+        run: tools/get_toolchain.sh "$HOME/.jieli"
+
+      - name: JieLi AC79 SDK
+        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          ./build.sh 2>&1 | tee build.log
+          cp build/felucca.fwsc dinobox.fwsc
+          sha256sum dinobox.fwsc | tee -a build.log
+
+      - name: Image tests (the update entry, the loader from another app, the render loops' cost)
+        shell: bash
+        run: |
+          set -eo pipefail
+          export AC79_SDK="$HOME/fw-AC79_AIoT_SDK"
+          apt-get install -y --no-install-recommends gcc libc6-dev > /dev/null
+          python3 tools/build.py --gen-only > /dev/null
+          mkdir -p build/host
+          cc -O1 -w -DOWN_PKG=1 -o build/host/ota_test tests/ota_test.c && build/host/ota_test build/felucca.fwsc | tail -1 | tee -a build.log
+          head -c 200000 build/felucca.bin > build/host/old_app.bin
+          python3 tools/fm1pkg_make.py build/host/old_app.bin build/loader/ota.bin build/host/old.fwsc > /dev/null
+          cc -O1 -w -o build/host/ldr_test tests/ldr_test.c && build/host/ldr_test build/host/old.fwsc build/felucca.fwsc | tail -1 | tee -a build.log
+          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt | tail -1 | tee -a build.log
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dinobox-firmware
+          path: |
+            dinobox.fwsc
+            build.log
+            build/felucca.dis
+          if-no-files-found: error
+
+
+
+
+
+      - name: Preserve candidate download separately from installed firmware
+        shell: bash
+        run: |
+          mkdir -p /tmp/paleo-package
+          cp dinobox.fwsc build.log /tmp/paleo-package/
+          printf '%s success\n' "$GITHUB_SHA" > /tmp/paleo-package/RESULT
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if git ls-remote --exit-code --heads origin paleotone-candidate-output >/dev/null 2>&1; then
+            git fetch origin paleotone-candidate-output
+            git worktree add --detach /tmp/paleo-publish FETCH_HEAD
+          else
+            git worktree add --detach /tmp/paleo-publish HEAD
+            git -C /tmp/paleo-publish checkout --orphan paleo-publish
+          fi
+          git -C /tmp/paleo-publish rm -rf --ignore-unmatch .
+          cp /tmp/paleo-package/* /tmp/paleo-publish/
+          git -C /tmp/paleo-publish add -- dinobox.fwsc build.log RESULT
+          git -C /tmp/paleo-publish commit -m "PALEOTONE candidate $GITHUB_SHA"
+          git -C /tmp/paleo-publish push origin HEAD:refs/heads/paleotone-candidate-output
+  audio:
+    if: "!contains(github.event.head_commit.message, '[web-only]')"
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3 imageio-ffmpeg==0.6.0
+      - run: python3 tools/build.py --gen-only
+      - name: Render real integrated generator and all four tracks
+        run: |
+          mkdir -p build/host
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/paleotone_preview.c -lm -o build/host/paleotone_preview
+          python3 tools/paleotone_preview.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paleotone-integrated-audio
+          path: build/paleotone-audio
+      - name: Preserve audition for connected download
+        run: |
+          mkdir -p /tmp/paleo-audio
+          cp build/paleotone-audio/*.b64 build/paleotone-audio/*.mp3 build/paleotone-audio/cues.txt /tmp/paleo-audio/
+          printf '%s\n' "$GITHUB_SHA" > /tmp/paleo-audio/SOURCE
+          sha256sum build/paleotone-audio/paleotone-integrated.mp3 > /tmp/paleo-audio/SHA256
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if git ls-remote --exit-code --heads origin paleotone-audio-output >/dev/null 2>&1; then
+            git fetch origin paleotone-audio-output
+            git worktree add --detach /tmp/paleo-audio-publish FETCH_HEAD
+          else
+            git worktree add --detach /tmp/paleo-audio-publish HEAD
+            git -C /tmp/paleo-audio-publish checkout --orphan paleo-audio-publish
+          fi
+          git -C /tmp/paleo-audio-publish rm -rf --ignore-unmatch .
+          cp /tmp/paleo-audio/* /tmp/paleo-audio-publish/
+          git -C /tmp/paleo-audio-publish add -- SOURCE SHA256 cues.txt paleotone-integrated.mp3 'audio-*.b64'
+          git -C /tmp/paleo-audio-publish commit -m "PALEOTONE integrated audition $GITHUB_SHA"
+          git -C /tmp/paleo-audio-publish push origin HEAD:refs/heads/paleotone-audio-output

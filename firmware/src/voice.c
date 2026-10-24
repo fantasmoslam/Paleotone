@@ -104,7 +104,7 @@ static uint32_t voices_busy(void)                       /* sounding voices of al
     for (p = 0; p < NPART; p++)
         for (i = 0; i < NVOICE; i++)
             n += trk[p].v[i].active && trk[p].v[i].stage != 4u;
-    return n;
+    return n + scape_busy();
 }
 
 static uint32_t lowest_held(const track_t *t)           /* index of the lowest held note (the bass), NVOICE = none */
@@ -174,6 +174,7 @@ static void voice_kill(voice_t *v)                      /* fade out over the nex
 /* the budget is full: free a voice for part t. 0 = nothing to take (soft) */
 static int voice_room(track_t *t, int soft)
 {
+    if (voices_busy() >= NVOICE) scape_yield();
     track_t *vp = 0;
     uint32_t k;
     if (voices_busy() < NVOICE)
@@ -203,6 +204,7 @@ static voice_t *voice_reuse(track_t *t, voice_t *v)
  * in place instead. */
 static voice_t *voice_alloc(track_t *t, uint32_t note)
 {
+    if (voices_busy() >= NVOICE) scape_yield();
     uint32_t i, np = trk_nvoice(t), best = np, low = np, nfree = 0;
     int32_t bd = 0x7FFFFFFF;
     if (t->engine == ENGI_DRUM) {

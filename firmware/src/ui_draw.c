@@ -1189,9 +1189,9 @@ static void draw_columns(void)
 static void draw_splash(void)
 {
     lcd_fill(0, 0, 240, 240, T_BG);
-    draw_art_box(42, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);    /* DINOBOX: a Dilophosaurus skull in bone */
-    draw_art_box(116, GB_LOGO_W, GB_LOGO_H, GB_LOGO, T_THEME);
-    draw_text_box(0, 166, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
+    draw_art_box(14, GB_SKULL_W, GB_SKULL_H, GB_SKULL, T_TEXT);    /* DINOBOX: a Dilophosaurus skull in bone */
+    draw_art_box(128, GB_LOGO_W, GB_LOGO_H, GB_LOGO, T_THEME);
+    draw_text_box(0, 190, 240, &AF_S, "PREHISTORIC SYNTH", T_MID, 1);
     lcd_sync();
 }
 

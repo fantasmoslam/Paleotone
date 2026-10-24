@@ -112,8 +112,16 @@ enum {                          /* global parameters */
                                  * KOCT KTRK's octave (0..4: -2..+2). Appended: FUN10's tail (project.c PROJ_KEYS_OFF) */
     G_DREAM, G_DDENS, G_DDRFT, G_DMOOD,   /* GHOULBOX 2.3: HOME > DREAM (dream.c): EVOL OFF / ON, DENS 1..8, DRFT 1..8,
                                  * MOOD. Appended: FUN10's tail (project.c PROJ_DREAM_OFF) */
+    G_SC_BIO, G_SC_LEVEL, G_SC_DENS, G_SC_DANGER, G_SC_TIME, G_SC_WEATHER, G_SC_KEY, G_SC_SEND, G_SC_DTYPE, G_SC_DLEVEL, G_SC_DMOVE, G_SC_L0K, G_SC_L0V, G_SC_L0N, G_SC_L0D, G_SC_L1K, G_SC_L1V, G_SC_L1N, G_SC_L1D, G_SC_L2K, G_SC_L2V, G_SC_L2N, G_SC_L2D, G_SC_L3K, G_SC_L3V, G_SC_L3N, G_SC_L3D, G_SC_L4K, G_SC_L4V, G_SC_L4N, G_SC_L4D, G_SC_L5K, G_SC_L5V, G_SC_L5N, G_SC_L5D, G_SC_L6K, G_SC_L6V, G_SC_L6N, G_SC_L6D, G_SC_L7K, G_SC_L7V, G_SC_L7N, G_SC_L7D,
     G_COUNT
 };
+#define SC_PARAM_COUNT 43u
+static uint32_t scape_busy(void);
+static void scape_yield(void);
+static int scape_reduce(void);
+static void scape_select(uint32_t b);
+static void scape_restart(void);
+
 
 /* stored parameters of an older layout -> today's P_* order. A store keeps np = the P_COUNT it was
  * written with; common parameters are only ever added just before P_E0, so the first np - 8 are
