@@ -1635,7 +1635,7 @@ static void ui_input(void)
                 transport_req = 2;
             else if (!ui.home && cur_page()->graph == GR_SONG)
                 chain_play_ui();
-            else if (!riders_play())                    /* DINOBOX: the RIDERS scene plays its song (riders.c) */
+            else
                 transport_req = 1;
             break;
         case B_SEQ:
