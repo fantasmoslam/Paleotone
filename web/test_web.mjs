@@ -266,7 +266,7 @@ async function editorMock() {
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 14)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 5)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 0)));
-    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 37,
+    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 80,
       "editor: MIDI IN routing (ROUT CH1-4 / SEL / CH5-8 / CH9-12 / CH13-16, global id 14)");
   }
   {
@@ -278,12 +278,20 @@ async function editorMock() {
     const [d25, d26, d27, d28, d29, d30, d31, d32, d33, d34, d35, d36] = await Promise.all(tape);
     ok(rd.label === "TYPE" && rd.def === 2 && eq(rd.names, ["ROOM", "SPRING", "HALL"]) && r1.value === 2 && r0.value === 0 &&
        d25.label === "TAPE" && d26.label === "CRSH" && d25.max === 127 && d26.max === 127 && d25.def === 0 &&
-       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 37 &&
+       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 80 &&
        d29.label === "MODE" && eq(d29.names, ["OFF", "LAYER", "SPLIT"]) && d29.def === 0 && d30.label === "TRK" && d30.def === 3 &&
        d31.label === "SPLT" && d31.names.length === 24 && d31.names[d31.def] === "C4" && d32.label === "OCT" && d32.names[d32.def] === "0" &&
        d33.label === "EVOL" && d33.def === 0 && d34.label === "DENS" && d34.min === 1 && d34.max === 8 && d34.def === 4 &&
        d35.label === "DRFT" && d35.def === 6 && d36.label === "MOOD" && eq(d36.names, ["MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"]),
       "editor: REVERB TYPE (24); TAPE / CRSH (25, 26); GHOULBOX's AMB / CRKL (27, 28), 2.1's KEYS (29..32), 2.3's DREAM (33..36)");
+  }
+  {
+    const [bio,level,key,kind,dist] = await Promise.all([37,38,43,76,79].map(async id =>
+      E.parse[E.CMD.DESC](await rq(E.req.desc(1,id)))));
+    ok(info.gcount === 80 && bio.label === "BIOME" && bio.names.length === 8 &&
+      level.label === "LEVEL" && level.def === 0 && key.names[0] === "FOLLOW" &&
+      kind.label === "SOUND" && kind.names[24] === "THUNDER" && dist.label === "DIST" && dist.max === 127,
+      "editor: PALEOTONE's 43 SCAPE globals append after stable legacy IDs; eight editable layers");
   }
   const st = E.parse[E.CMD.STEP_SET](await rq(E.req.stepSet(5, { n: 2, notes: [60, 64], time: 0, flags: 1, vel: 100 })));
   ok(st.n === 2 && st.notes[1] === 64 && st.vel === 100, "editor: STEP_SET");

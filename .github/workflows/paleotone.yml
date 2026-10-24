@@ -20,6 +20,7 @@ jobs:
       - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
       - run: python3 tools/build.py --gen-only
       - name: Generator storage and priority tests
+        if: "!contains(github.event.head_commit.message, '[web-only]')"
         run: |
           mkdir -p build/host
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/scape_integration_test.c -lm -o build/host/scape_integration
@@ -27,8 +28,24 @@ jobs:
           cc -O1 -g -fsanitize=address,undefined -fno-sanitize=signed-integer-overflow,shift,bounds,object-size,pointer-overflow -w -Ibuild/gen -Ifirmware/src tests/scape_integration_test.c -lm -o build/host/scape_san
           ASAN_OPTIONS=detect_leaks=0 build/host/scape_san
       - name: Full regression suite
+        if: "!contains(github.event.head_commit.message, '[web-only]')"
         run: HOST_ONLY=1 tests/run_tests.sh
+      - name: Browser compatibility recheck against real firmware tables
+        if: contains(github.event.head_commit.message, '[web-only]')
+        run: |
+          mkdir -p build/host
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/descdump.c -lm -o build/host/descdump
+          build/host/descdump > build/host/desc.json
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/editor_test.c -lm -o build/host/editor_test
+          MENU_JSON=build/host/menu.json build/host/editor_test
+          node web/test_web.mjs
+          node web/test_backup.mjs
+          node web/emu/io_test.mjs
+          node web/emu/audio_export_test.mjs
+          node web/emu/audio_encode_test.mjs
+          node web/emu/audio_session_test.mjs
   firmware:
+    if: "!contains(github.event.head_commit.message, '[web-only]')"
     permissions:
       contents: write
     runs-on: ubuntu-24.04
@@ -106,6 +123,7 @@ jobs:
           git -C /tmp/paleo-publish commit -m "PALEOTONE candidate $GITHUB_SHA"
           git -C /tmp/paleo-publish push origin HEAD:refs/heads/paleotone-candidate-output
   audio:
+    if: "!contains(github.event.head_commit.message, '[web-only]')"
     runs-on: ubuntu-24.04
     permissions:
       contents: write
