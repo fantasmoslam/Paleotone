@@ -35,9 +35,9 @@ panel_t panel __attribute__((section(".noinit")));
 
 #if BOARD_SMK37
 /* SMK-37 Pro (smk_input.h button ids, confirmed on a unit; the printed SMK label -> the FM-1 function):
- * FX = FX, SCALE = SEL, CHORD = ENV, NOTE REPEAT = LFO, PARA = EDIT, GLOBE = GLO, PATCH = HOME, BT = SAVE,
- * ARP, SEQ as printed, SEQ PLAY = PLAY, SEQ REC = REC, OCTAVE- / + as printed. KNOB BANK (the menu), FADER BANK,
- * < and > (pages) keep SMK functions (ui_input.c). Knobs as the FM-1's top row: K1 = MASTER (smk_input.h: the FM-1's MASTER pot, as a virtual one),
+ * FX = FX, SCALE = SCL, CHORD = ENV, NOTE REPEAT = LFO, PARA = EDIT, GLOBE = GLO, PATCH = HOME, BT = SAVE,
+ * ARP, SEQ as printed, SEQ PLAY = PLAY, SEQ REC = REC, OCTAVE- / + as printed. KNOB BANK (the pads STEPS / CALLS), FADER BANK
+ * (fader banks A..E), < and > (pages) keep SMK functions (ui_input.c). Knobs as the FM-1's top row: K1 = MASTER (smk_input.h: the FM-1's MASTER pot, as a virtual one),
  * K2 = SELECT, K3 = ALGORITHM (track), K4 = PRESETS; K5..K8 = KNOB 1..4 (the screen's four dials).
  * HARDWARE CALIBRATION (OCT- + OCT+ at power-on) re-teaches all of it. */
 static const panel_t PANEL_DEFAULT = {
