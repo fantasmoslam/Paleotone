@@ -10,7 +10,8 @@
  * take LED_KEY0 + k: ui_leds shows the white keys F3..G5 on the 16 RGB pads (smk_input.h SMK_WHITE_NOTE) */
 #define LED_BUF 64u
 #define LED_KEY0 32u
-static uint8_t smk_fbank, smk_fbank_new;           /* FADER BANK: 0 LEVEL, 1 PAN, 2 REV, 3 DLY (main.c smk_faders) */
+static uint8_t smk_fbank, smk_fbank_new;           /* FADER BANK: A LEVEL, B REV, C D SCAPE's layers, E SCAPE (main.c smk_faders) */
+#define SMK_NFBANK 5u
 static void led_pos_init(void) {}
 static void led_put(uint8_t *nl, uint32_t id, int on)
 {
@@ -404,9 +405,25 @@ static void smk_leds(const uint8_t *nl, const uint8_t *nb, const uint8_t *nm, co
         fm1_led[c] = (uint8_t)(nl[c] | nb[c]);
     fm1_led[SMK_BTN_FADER_BANK] = smk_fbank != 0u;      /* FADER BANK lit off bank A */
     if (smk_btn_free(SMK_BTN_KNOB_BANK))
-        fm1_led[SMK_BTN_KNOB_BANK] = ui.menu != 0;      /* KNOB BANK lit while the menu is up */
+        fm1_led[SMK_BTN_KNOB_BANK] = smk_pad_calls != 0u;   /* PALEOTONE: KNOB BANK lit while the pads are CALLS */
     if ((int32_t)(fm1_ms - padled_hold_until) < 0)      /* (console padtest has them) */
         return;
+    if (smk_pad_calls) {                                /* PALEOTONE: CALLS: the calling track's colour, a pad held */
+        uint32_t tr = song.g[G_SCTRK] > 0 ? (uint32_t)(song.g[G_SCTRK] - 1) % NTRK : song.sel % NTRK;
+        uint32_t tc = ux_trk_col(tr), cnt = 0, i;          /* full, each octave's root a quarter, the rest a sixteenth */
+        uint32_t m = SCALE_MASK[clamp(trk[tr].p[P_SCALE], 0, sizeof SCALE_MASK / sizeof SCALE_MASK[0] - 1)];
+        uint32_t cr = (tc >> 11) << 3 | (tc >> 13), cg = ((tc >> 5) & 0x3Fu) << 2 | ((tc >> 9) & 3u);
+        uint32_t cb = (tc & 0x1Fu) << 3 | ((tc >> 2) & 7u);
+        for (i = 0; i < 12u; i++)
+            cnt += (m >> i) & 1u;
+        if (!cnt)
+            cnt = 12u;
+        for (c = 0; c < SMK_NPAD; c++) {
+            uint32_t d = c >= 8u ? c - 8u : c + 8u, lv = smk_call_held[c] ? 256u : d % cnt == 0u ? 64u : 16u;
+            padled_set(c, (uint8_t)(cr * lv >> 8), (uint8_t)(cg * lv >> 8), (uint8_t)(cb * lv >> 8));
+        }
+        return;
+    }
     for (c = 0; c < SMK_NPAD; c++) {                    /* white key c on its pad (the top row first) */
         uint32_t id = LED_KEY0 + SMK_WHITE_NOTE[c];
         uint32_t lv = nl[id] ? 256u : nb[id] ? br + 2u : nm[id] ? 64u : og[id] | sg[id] ? 16u : 0u;
@@ -1537,15 +1554,20 @@ static void ui_input(void)
     int32_t s, sel = 0, ks[4] = {0, 0, 0, 0};
     static uint32_t lock_ms;                            /* BPM LOCK: the last locked SELECT turn (fm1_ms | 1; 0 none) */
 #if BOARD_SMK37
-    /* KNOB BANK: what holding HOME does (the menu, or leave it); < / >: a page back / forward (in the menu: a row) */
+    /* KNOB BANK: the pads STEPS / CALLS (PALEOTONE); < / >: a page back / forward (in the menu: a row) */
     uint32_t smk_kb = ((pressed >> SMK_BTN_KNOB_BANK) & 1u) && smk_btn_free(SMK_BTN_KNOB_BANK);
     int32_t smk_lr = ((pressed >> SMK_BTN_RIGHT) & 1u) && smk_btn_free(SMK_BTN_RIGHT) ? 1 :
                      ((pressed >> SMK_BTN_LEFT) & 1u) && smk_btn_free(SMK_BTN_LEFT) ? -1 : 0;
     if (pressed & 1u << SMK_BTN_FADER_BANK) {           /* SMK-37 Pro FADER BANK: what the four faders set */
-        static const char *const FB[4] = {"A  LEVEL", "B  PAN", "C  REV", "D  DLY"};
-        smk_fbank = (uint8_t)((smk_fbank + 1u) % 4u);
+        static const char *const FB[SMK_NFBANK] = {"A LEVEL", "B REV", "C SCAPE 1-4", "D SCAPE 5-8", "E SCAPE"};
+        smk_fbank = (uint8_t)((smk_fbank + 1u) % SMK_NFBANK);
         smk_fbank_new = 1;
-        ui_say("FADER BANK ", FB[smk_fbank]);
+        ui_say("FADERS ", FB[smk_fbank]);
+    }
+    if (smk_kb) {                                       /* PALEOTONE: KNOB BANK: the pads STEPS / CALLS */
+        smk_pad_calls = (uint8_t)!smk_pad_calls;
+        ui_say("PADS ", smk_pad_calls ? "CALLS" : "STEPS");
+        smk_kb = 0;
     }
 #endif
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
@@ -1637,10 +1659,6 @@ static void ui_input(void)
             ui.hot_t = 40;
         }
     song.grid = (uint8_t)keys_mode();                 /* (the menu, a dialog: the keys play again; NAME: silent) */
-#if BOARD_SMK37
-    if (smk_kb && !lay && home == BT_NONE && !ui.home_t0)
-        home = BT_HOLD;                                 /* SMK-37 Pro KNOB BANK: as HOME held */
-#endif
     if (home == BT_TAP && ui.menu) {                    /* HOME (pressed, or held) closes the menu, from ABOUT too; */
         menu_close();                                   /* the release of the hold that opened it is no tap */
         home = BT_NONE;                                 /* (menu_close went HOME already) */

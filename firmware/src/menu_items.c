@@ -13,7 +13,11 @@
  * nothing of theirs is in the settings record (MI_PROJECT: menu_get / menu_put read and write song.g) */
 enum { MI_COLOR, MI_STYLE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_SCOPE, MI_HOME, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED,
        MI_PREVIEW, MI_CHADD, MI_NAMES, MI_LOWCUT, MI_USB,
-       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TUNE, MI_MIDIIN, MI_OUT1, MI_OUT2, MI_OUT3, MI_OUT4, MI_CLKOUT, MI_SCENE, MI_SERIAL, MI_RESTORE, MI_PANEL, MI_INFO, MI_ABOUT, MI_COUNT };
+       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TUNE, MI_MIDIIN, MI_OUT1, MI_OUT2, MI_OUT3, MI_OUT4, MI_CLKOUT,
+#if BOARD_SMK37
+       MI_KEYVEL,                                     /* PALEOTONE, SMK-37 only: KEY VELOCITY (MIDI tab) */
+#endif
+       MI_SCENE, MI_SERIAL, MI_RESTORE, MI_PANEL, MI_INFO, MI_ABOUT, MI_COUNT };
                                                        /* (1.1: the metronome's rows in AUDIO; 1.2: RESTORE LAST in
                                                         * SYSTEM, SCALE LEDS STEP PREVIEW CHORD ENTRY in CONTROL, SCOPE in
                                                         * DISPLAY, TUNE in AUDIO, MIDI IN in MIDI, INFO in SYSTEM;
@@ -23,7 +27,11 @@ enum { MI_COLOR, MI_STYLE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_SCOPE, MI_H
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "STYLE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "SCOPE", "HOME", "HOLD", "KNOB ACCEL",
                                               "FX LATCH", "BPM LOCK", "SCALE LEDS", "STEP PREVIEW", "CHORD ENTRY", "NOTE NAMES",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TUNE",
-                                              "MIDI IN", "T1 OUT", "T2 OUT", "T3 OUT", "T4 OUT", "CLOCK OUT", "SCENE", "USB SERIAL", "RESTORE LAST", "CALIBRATION", "INFO", "ABOUT"};
+                                              "MIDI IN", "T1 OUT", "T2 OUT", "T3 OUT", "T4 OUT", "CLOCK OUT",
+#if BOARD_SMK37
+                                              "KEY VELOCITY",
+#endif
+                                              "SCENE", "USB SERIAL", "RESTORE LAST", "CALIBRATION", "INFO", "ABOUT"};
 /* 1.0.5: the MENU's tabs (ui_menu.c: ALGORITHM steps between them, PRESETS among one tab's rows; the editor gets a
  * row's tab after its MENU_DESC reply). A tab's rows follow each other in MI order (tests/ui_test.c checks it); at
  * most MTAB_ROWS each (the page does not scroll: ui_menu.c fits them; 1.2: 7, the rows of such a tab 21 px; 1.3: 8,
@@ -47,6 +55,9 @@ static const uint8_t MI_TAB[MI_COUNT] = {
     MTAB_AUDIO,                                                             /* TUNE (1.2) */
     MTAB_MIDI,                                                              /* MIDI IN (1.2) */
     MTAB_MIDI, MTAB_MIDI, MTAB_MIDI, MTAB_MIDI, MTAB_MIDI,                  /* DINOBOX: T1..T4 OUT, CLOCK OUT */
+#if BOARD_SMK37
+    MTAB_MIDI,                                                              /* PALEOTONE: KEY VELOCITY */
+#endif
     MTAB_SYSTEM,                                                            /* SCENE (GHOULBOX) */
     MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM,        /* USB SERIAL, RESTORE LAST, CALIBRATION,
                                                                              * INFO (1.2), ABOUT */
@@ -79,6 +90,10 @@ static const char *const STYLE_N[2] = {"FLAT", "LINE"};
  * FM6 and cleared on import, settings_persist.c): a track's code 0 AUTO (every older setting), 1..16 its channel,
  * MO_OFF; byte 5 bit 0 CLOCK OUT. The menu steps OFF AUTO CH 1 .. CH 16 (0 .. 17) */
 #define MO_BYTES (favorites.factory[ENGI_DIGITAL])
+#if BOARD_SMK37
+/* PALEOTONE, SMK-37: KEY VELOCITY, how the keys' and pads' velocity is played (smk_input.h smk_vel_apply) */
+static const char *const KEYVEL_N[6] = {"DYNAMIC", "SOFT", "HARD", "FIXED 64", "FIXED 100", "FIXED 127"};
+#endif
 static uint32_t mo_code_of(uint32_t v) { return v == 0u ? MO_OFF : v == 1u ? MO_AUTO : v - 1u; }   /* menu -> stored */
 static uint32_t mo_menu_of(uint32_t c) { return c == MO_OFF || c > 17u ? 0u : c == MO_AUTO ? 1u : c + 1u; }
 static void midi_out_load(void)                        /* the settings' bytes -> seq.c (at import, after a change) */
@@ -87,6 +102,11 @@ static void midi_out_load(void)                        /* the settings' bytes ->
     for (i = 0; i < NTRK; i++)
         mo_ch[i] = (uint8_t)(MO_BYTES[1u + i] <= MO_OFF ? MO_BYTES[1u + i] : MO_AUTO);
     mo_clk = (uint8_t)(MO_BYTES[5] & 1u);
+#if BOARD_SMK37
+    smk_keyvel = (uint8_t)((MO_BYTES[5] >> 1) & 7u);   /* PALEOTONE: KEY VELOCITY (6 and 7: DYNAMIC) */
+    if (smk_keyvel >= NELEM(KEYVEL_N))
+        smk_keyvel = 0;
+#endif
 }
 
 /* the two-valued rows: a bit of ui_prefs (PREF_REC: of ui_rec_prefs, ui.c PREF_SCALE_LEDS) and its names (bit clear =
@@ -161,7 +181,11 @@ static uint32_t menu_n(uint32_t row)
     return row == MI_COLOR ? NPALETTES : row == MI_LOWCUT || (row >= MI_CLICK && row <= MI_COUNTIN) ? 3u :
            row == MI_HOLD ? 4u : row == MI_LEDS ? LEDS_COUNT : row == MI_SCROFF ? NELEM(SCROFF_N) :
            row == MI_TUNE ? TUNE_N : row == MI_MIDIIN ? NELEM(N_ROUTE) : row == MI_ANIM ? 3u :
-           row == MI_SCENE ? GB_NSCENE : row >= MI_OUT1 && row <= MI_OUT4 ? 18u : 2u;
+           row == MI_SCENE ? GB_NSCENE : row >= MI_OUT1 && row <= MI_OUT4 ? 18u :
+#if BOARD_SMK37
+           row == MI_KEYVEL ? NELEM(KEYVEL_N) :
+#endif
+           2u;
 }
 static uint32_t menu_get(uint32_t row)
 {
@@ -183,6 +207,9 @@ static uint32_t menu_get(uint32_t row)
     case MI_MIDIIN: return (uint32_t)clamp(song.g[G_ROUTE], 0, (int32_t)NELEM(N_ROUTE) - 1);
     case MI_OUT1: case MI_OUT2: case MI_OUT3: case MI_OUT4: return mo_menu_of(mo_ch[row - MI_OUT1]);
     case MI_CLKOUT: return mo_clk & 1u;
+#if BOARD_SMK37
+    case MI_KEYVEL: return smk_keyvel % NELEM(KEYVEL_N);
+#endif
     case MI_LEDS:
         while (i + 1u < LEDS_COUNT && LEDS_MENU[i] != settings_leds)
             i++;
@@ -210,6 +237,9 @@ static const char *menu_vname(uint32_t row, uint32_t v)
     case MI_LEDS: return LEDS_NAME[LEDS_MENU[v % LEDS_COUNT]];
     case MI_MIDIIN: return N_ROUTE[v % NELEM(N_ROUTE)];
     case MI_CLKOUT: return v & 1u ? "ON" : "OFF";
+#if BOARD_SMK37
+    case MI_KEYVEL: return KEYVEL_N[v % NELEM(KEYVEL_N)];
+#endif
     case MI_OUT1: case MI_OUT2: case MI_OUT3: case MI_OUT4: {
         static char b[8];
         if (v % 18u < 2u)
@@ -277,6 +307,12 @@ static void menu_put(uint32_t row, uint32_t v)
         MO_BYTES[5] = (uint8_t)((MO_BYTES[5] & ~1u) | (v & 1u));
         midi_out_load();
         break;
+#if BOARD_SMK37
+    case MI_KEYVEL:                                    /* (bits 1..3 of the MIDI OUT byte; 0 = DYNAMIC, older settings) */
+        MO_BYTES[5] = (uint8_t)((MO_BYTES[5] & ~0x0Eu) | (v % NELEM(KEYVEL_N)) << 1);
+        midi_out_load();
+        break;
+#endif
     }
 }
 /* the menu's step, any of KNOB 1..4 or OCT+ (s > 0) / OCT- (s < 0): the next / previous value, stopping at the ends;

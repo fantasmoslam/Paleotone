@@ -80,8 +80,8 @@ static void smk_grid(void)
     smk_pad_grid = (uint8_t)(grid_on() || (name_on() && !ui.menu) || (l && l != LAYER_SCL));
 }
 
-/* the SMK-37 Pro's 4 faders, tracks 1..4, by FADER BANK (ui_input.c smk_fbank), as the MIXER page: A LEVEL,
- * B PAN (the middle centre), C REV send, D DLY send. A fader takes over only once it moves (also after a bank
+/* the SMK-37's 4 faders by FADER BANK (ui_input.c smk_fbank): PALEOTONE's banks A LEVEL and B REV (tracks 1..4),
+ * C and D SCAPE's eight layers, E SCAPE's LEVEL, DRONE, DIST, TIME. A fader takes over only once it moves (also after a bank
  * change), so nothing jumps. */
 static void smk_faders(void)
 {
@@ -102,9 +102,14 @@ static void smk_faders(void)
         if (v == last[i])
             continue;
         last[i] = (uint8_t)v;
-        pv = smk_fbank == 1 ? &trk[i].p[P_PAN] : smk_fbank == 2 ? &trk[i].p[P_REV] :
-             smk_fbank == 3 ? &trk[i].p[P_DLY] : &trk[i].p[P_LEVEL];
-        *pv = (int16_t)(smk_fbank == 1 ? (int32_t)v - 64 : (int32_t)v);   /* (PAN -64..63) */
+        {   /* PALEOTONE: A LEVEL, B REV of tracks 1..4; C D SCAPE's layers (LEVELS, LEVELS 2); E SCAPE's LEVEL,
+             * DRONE, DIST and TIME. Every one 0..127, as its knob */
+            static const uint8_t SCAPE_G[3][4] = {{G_SL0, G_SL1, G_SL2, G_SL3}, {G_SL4, G_SL5, G_SL6, G_SL7},
+                                                  {G_SCAPE, G_SDRN, G_SDIST, G_STIME}};
+            pv = smk_fbank == 1 ? &trk[i].p[P_REV] : smk_fbank >= 2 ? &song.g[SCAPE_G[(smk_fbank - 2u) % 3u][i]] :
+                 &trk[i].p[P_LEVEL];
+        }
+        *pv = (int16_t)v;
         ui.force = 1;
     }
 }

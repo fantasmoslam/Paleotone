@@ -143,6 +143,29 @@ static volatile struct {
 #define SMK_EXTQ 32u
 static volatile uint16_t smk_extq[SMK_EXTQ];
 static volatile uint8_t smk_extq_w, smk_extq_r;
+/* PALEOTONE: the pads' CALLS bank (KNOB BANK, ui_input.c): a hit or release goes here (pad << 8 | velocity, 0 =
+ * release) instead of a white key, and the UI plays it (seq.c calls_block). A pad keeps the bank it was hit in until
+ * it is released */
+static volatile uint8_t smk_pad_calls;   /* set by the UI: 1 = CALLS */
+/* PALEOTONE: KEY VELOCITY (MENU > MIDI, menu_items.c): 0 DYNAMIC (as played), 1 SOFT, 2 HARD (curves on the played
+ * velocity), 3..5 FIXED 64 / 100 / 127. Applied where the UI reads a key's or a pad's velocity (seq.c) */
+static uint8_t smk_keyvel;
+static uint32_t smk_vel_apply(uint32_t v)
+{
+    v = v < 1u ? 1u : v > 127u ? 127u : v;
+    switch (smk_keyvel) {
+    case 1: return 1u + (v * v) / 128u;                       /* SOFT: more of the range on the light end */
+    case 2: return 127u - ((127u - v) * (127u - v)) / 128u;   /* HARD: louder sooner */
+    case 3: return 64u;
+    case 4: return 100u;
+    case 5: return 127u;
+    }
+    return v;
+}
+static volatile uint16_t smk_callq[SMK_EXTQ];
+static volatile uint8_t smk_callq_w, smk_callq_r;
+static uint8_t smk_pad_incall[16];       /* the pad was hit in CALLS (its release goes to the calls queue too) */
+static volatile uint8_t smk_call_held[16];   /* the pads held in CALLS, for their LEDs */
 
 static uint8_t fm1_led[SMK_NLED];     /* 1 = lit (button LED i = button i) */
 static volatile uint32_t smk_ledw[2]; /* per LED group: 0xFFFF0000 | low half (LED lines active low) */
@@ -437,8 +460,23 @@ static void fm1__frame(void)
 #define SMK_PAD_OFF 12u           /* below base + this: released */
 #define SMK_PAD_PEAKN 3u          /* samples (2.4 ms apart) for the peak */
 
+static void smk__callq(uint32_t pad, uint32_t vel)
+{
+    uint8_t w = smk_callq_w;
+    if ((uint8_t)(w + 1u) % SMK_EXTQ == smk_callq_r)
+        return;
+    smk_callq[w] = (uint16_t)(pad << 8 | vel);
+    smk_callq_w = (uint8_t)((w + 1u) % SMK_EXTQ);
+}
+
 static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or release (0): its white key */
 {
+    if (vel ? smk_pad_calls && !smk_pad_note[pad] : smk_pad_incall[pad]) {   /* PALEOTONE: the CALLS bank */
+        smk_pad_incall[pad] = (uint8_t)(vel != 0u);
+        smk_call_held[pad] = (uint8_t)(vel != 0u);
+        smk__callq(pad, vel);
+        return;
+    }
     int32_t n0 = smk_pad_piano ? SMK_PIANO_NOTE[pad] : (int32_t)SMK_WHITE_NOTE[SMK_WHITE_OF_PAD(pad)];
     uint32_t n, bit;
     if (vel) {
@@ -641,6 +679,17 @@ static int32_t smk_extkey_take(void)
     if (smk_extq_r != smk_extq_w) {
         v = smk_extq[smk_extq_r];
         smk_extq_r = (uint8_t)((smk_extq_r + 1u) % SMK_EXTQ);
+    }
+    return v;
+}
+
+/* PALEOTONE: the next CALLS pad event (hardware pad << 8 | velocity, 0 = release), -1 if none */
+static int32_t smk_call_take(void)
+{
+    int32_t v = -1;
+    if (smk_callq_r != smk_callq_w) {
+        v = smk_callq[smk_callq_r];
+        smk_callq_r = (uint8_t)((smk_callq_r + 1u) % SMK_EXTQ);
     }
     return v;
 }

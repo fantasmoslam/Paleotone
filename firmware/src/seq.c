@@ -731,7 +731,7 @@ static uint32_t key_on_v = 100u;
 static uint32_t key_vel(uint32_t k)
 {
     uint32_t v = fm1_in.key_vel[SMK_KEY_F3 + k];
-    return v ? v : 100u;
+    return smk_vel_apply(v ? v : 100u);                 /* PALEOTONE: KEY VELOCITY */
 }
 #define KEY_ON_VEL key_on_v
 #else
@@ -845,7 +845,7 @@ static void ext_keys_block(void)
         }
         if (ext_trk[x] || ext_trk2[x] || kb_boot_hold || kb_asleep || song.grid || (fm1_in.buttons & kb_mask) || kb_lock)
             continue;
-        key_on_v = v;
+        key_on_v = smk_vel_apply(v);
         tr = song.sel % NTRK;
         if (rel < 0 && song.g[G_KMODE] == 2 && keys_on()) {      /* KEYS SPLIT: below the split */
             tr = keys_trk();
@@ -866,6 +866,46 @@ static void ext_keys_block(void)
         }
     }
 }
+
+/* PALEOTONE: the pads' CALLS bank (smk_input.h smk_pad_calls, KNOB BANK): the herd on the pads. Each pad plays the
+ * SCAPE CALLS track (TRK; the selected track while it is OFF) at its velocity, with the track's chord and drone latch
+ * as a key: the track's scale from its ROOT, the bottom row's left pad the lowest (C3 + ROOT + TRN, the octave),
+ * then along the bottom row and on along the top. Held while held; silent where the keys are (as ext_keys_block) */
+static uint8_t call_trk[16], call_chord[16][CHORD_MAX], call_chn[16];
+static uint32_t call_note(const track_t *t, uint32_t d)
+{
+    uint32_t mask = scale_mask(t), count = 0, i, s;
+    int32_t n;
+    for (i = 0; i < 12u; i++)
+        count += (mask >> i) & 1u;
+    if (!count)
+        count = 12u, mask = 0xFFFu;
+    for (i = 0, s = 0; i < 12u; i++)                    /* the scale's d % count-th note above the root */
+        if (((mask >> i) & 1u) && s++ == d % count)
+            break;
+    n = 48 + t->p[P_ROOT] + t->p[P_TRANS] + 12 * song.octave + (int32_t)(12u * (d / count) + i);
+    return (uint32_t)clamp(n, 0, 127);
+}
+static void calls_block(void)
+{
+    int32_t e;
+    while ((e = smk_call_take()) >= 0) {
+        uint32_t pad = ((uint32_t)e >> 8) & 15u, v = (uint32_t)e & 0x7Fu, tr, d;
+        if (!v) {
+            if (call_trk[pad])
+                key_off_from(&trk[(call_trk[pad] - 1u) % NTRK], call_chord[pad], &call_chn[pad]);
+            call_trk[pad] = 0;
+            continue;
+        }
+        if (call_trk[pad] || kb_boot_hold || kb_asleep || song.grid || (fm1_in.buttons & kb_mask) || kb_lock)
+            continue;
+        tr = song.g[G_SCTRK] > 0 ? (uint32_t)(song.g[G_SCTRK] - 1) % NTRK : song.sel % NTRK;
+        d = pad >= 8u ? pad - 8u : pad + 8u;            /* reading order: bottom row 0..7, top row 8..15 */
+        key_on_v = smk_vel_apply(v);
+        call_trk[pad] = (uint8_t)(tr + 1u);
+        key_on_to(&trk[tr], call_note(&trk[tr], d), call_chord[pad], &call_chn[pad]);
+    }
+}
 #endif
 
 static void keyboard_block(void)
@@ -874,6 +914,7 @@ static void keyboard_block(void)
     uint32_t lay, fx, mute;
 #if BOARD_SMK37
     ext_keys_block();
+    calls_block();
 #endif
     ch = cur ^ kb_prev;                          /* keys also sound while entering steps */
     if (perf_remap)
