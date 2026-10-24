@@ -60,6 +60,22 @@ int main(void)
     turn(EN_K4, 7);
     ck("KNOB 3 DIST, KNOB 4 TIME", song.g[G_SDIST] == SC_BIOME[6].dist - 5 && song.g[G_STIME] == SC_BIOME[6].time + 7);
     press(B_HOME);
+    ck("then SCAPE DRONE", str_eq(cur_page()->title, "SCAPE DRONE") && song.g[G_SDRN] == 0);
+    turn(EN_K1, 90);
+    turn(EN_K2, 2);
+    turn(EN_K3, 4);
+    turn(EN_K4, -10);
+    ck("its knobs: DRONE TYPE KEY MOVE (CHOIR in D#)", song.g[G_SDRN] == 90 && song.g[G_SDTYP] == 2 && song.g[G_SDKEY] == 4 &&
+       song.g[G_SDMOV] == 30);
+    press(B_HOME);
+    ck("then SCAPE CALLS", str_eq(cur_page()->title, "SCAPE CALLS") && song.g[G_SCTRK] == 0);
+    turn(EN_K1, 2);
+    turn(EN_K2, 60);
+    turn(EN_K3, -7);
+    turn(EN_K4, 3);
+    ck("its knobs: TRK RATE PTCH SPRD", song.g[G_SCTRK] == 2 && song.g[G_SCRATE] == 100 && song.g[G_SCNOTE] == -7 &&
+       song.g[G_SCSPRD] == 8);
+    press(B_HOME);
     ck("then SCAPE LEVELS", str_eq(cur_page()->title, "SCAPE LEVELS"));
     turn(EN_K1, -10);
     turn(EN_K4, 3);
@@ -77,9 +93,31 @@ int main(void)
     ck("then HOME", ui.home);
 
     song.g[G_SCAPE] = 100;
+    song.g[G_SCTRK] = 0;
     peak = 0;
     run(4.0, &peak);
-    ck("on: it sounds, well under full scale", sc.on && peak > 300 && peak < 16000);
+    ck("on: it sounds (with the drone), well under full scale", sc.on && peak > 300 && peak < 16000);
+    {   /* the calls: T2 calls (a SAURUS creature), a note at D3 + PTCH +- SPRD, let go when it ends and when SCAPE stops */
+        uint32_t calls = 0, was = 0, t;
+        int32_t o[2 * CTL];
+        host_preset(&trk[1], ENGI_SAURUS, 0);
+        song.g[G_SCTRK] = 2;
+        song.g[G_SCRATE] = 127;
+        for (t = 0; t < 40u * FS; t += CTL) {
+            mix_block(o, CTL);
+            if (sc.cnote && !was)
+                calls += sc.ctrk == 1u && sc.cnote >= 50 - 7 - 8 && sc.cnote <= 50 - 7 + 8;
+            was = sc.cnote;
+        }
+        ck("calls: T2 played now and then, the notes round D3 + PTCH", calls >= 3u && calls <= 14u);
+        while (!sc.cnote)
+            mix_block(o, CTL);
+        song.g[G_SCAPE] = 0;
+        mix_block(o, CTL);
+        ck("SCAPE off: a call sounding let go", !sc.on);
+        song.g[G_SCAPE] = 100;
+        song.g[G_SCTRK] = 0;
+    }
 
     /* a project keeps it */
     memcpy(keep, song.g, sizeof keep);
@@ -88,12 +126,22 @@ int main(void)
     scape_biome(4);
     song.g[G_SCAPE] = 7;
     project_load(0);
-    ck("loaded with slot A: every SCAPE value back", !memcmp(&song.g[G_SCAPE], &keep[G_SCAPE], (G_SD7 - G_SCAPE + 1) * 2));
+    ck("loaded with slot A: every SCAPE value back (the drone, the calls: PTCH -7)",
+       !memcmp(&song.g[G_SCAPE], &keep[G_SCAPE], (G_SCSPRD - G_SCAPE + 1) * 2) && song.g[G_SCNOTE] == -7);
     memset(scape_side[1], 0, sizeof scape_side[1]);       /* slot B: a project from before SCAPE */
     ck("saved in slot B", project_save(1) == 0);
     memset(scape_side[1], 0, sizeof scape_side[1]);
     project_load(1);
-    ck("a project with none stored: SCAPE off, its defaults", song.g[G_SCAPE] == 0 && biome_is(1));
+    ck("a project with none stored: SCAPE off, its defaults", song.g[G_SCAPE] == 0 && biome_is(1) && song.g[G_SDRN] == 0 &&
+       song.g[G_SCTRK] == 0 && song.g[G_SCNOTE] == 0);
+    project_load(0);
+    scape_side[0][1u + 20u] = 0;                        /* slot A as the first SCAPE firmware wrote it: no drone, no */
+    memset(&scape_side[0][1u + 20u], 0, 8);             /* calls stored */
+    project_load(0);
+    ck("an entry of the first SCAPE firmware: its twenty, the drone and calls at their defaults",
+       song.g[G_SCAPE] == keep[G_SCAPE] && song.g[G_SL0] == keep[G_SL0] && song.g[G_SDRN] == 0 && song.g[G_SDTYP] == 0 &&
+       song.g[G_SDKEY] == 0 && song.g[G_SDMOV] == 40 && song.g[G_SCTRK] == 0 && song.g[G_SCRATE] == 40 &&
+       song.g[G_SCNOTE] == 0 && song.g[G_SCSPRD] == 5);
     project_load(0);
 
     /* the autosave's */

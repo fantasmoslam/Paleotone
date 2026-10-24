@@ -99,7 +99,7 @@ int main(void)
     ok = !ui.home && str_eq(cur_page()->title, "EPOCH") && cur_page()->fam == FAM_TRK && cur_page()->id[0] == G_DREAM &&
          cur_page()->id[3] == G_DMOOD && str_eq(GP[G_DREAM].label, "EVOL") && str_eq(GP[G_DDENS].label, "DENS") &&
          str_eq(GP[G_DDRFT].label, "DRFT") && str_eq(GP[G_DMOOD].label, "MOOD") && GP[G_DMOOD].max == 5 &&
-         GP[G_DREAM].def == 0 && GP[G_DDENS].def == 4 && GP[G_DDRFT].def == 6 && G_COUNT == 57;   /* (DINOBOX: + SCAPE's 20) */
+         GP[G_DREAM].def == 0 && GP[G_DDENS].def == 4 && GP[G_DDRFT].def == 6 && G_COUNT == 65;   /* (DINOBOX: + SCAPE's 28) */
     bad += check("DREAM: HOME's fourth tap (after MIXER CLOCK KEYS), EVOL DENS DRFT MOOD", ok);
     {
         project_t q;

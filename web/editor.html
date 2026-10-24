@@ -1753,6 +1753,12 @@ function makeMockDevice(opt = {}) {
     D("FROGS", F.PCT, 0, 127, 70), D("BIRDS", F.PCT, 0, 127, 75), D("DRIPS", F.PCT, 0, 127, 30), D("RUMBL", F.PCT, 0, 127, 50),
     D("WIND", F.PCT, 0, 127, 40), D("WATER", F.PCT, 0, 127, 30), D("RAIN", F.PCT, 0, 127, 40), D("BUGS", F.PCT, 0, 127, 70),
     D("FROGS", F.PCT, 0, 127, 50), D("BIRDS", F.PCT, 0, 127, 55), D("DRIPS", F.PCT, 0, 127, 20), D("RUMBL", F.PCT, 0, 127, 30),
+    /* SCAPE's drone and calls (ids 57..64): DRONE (0 none) TYPE KEY (AUTO: track 1's ROOT) MOVE; TRK (OFF, T1..T4) RATE PTCH
+     * (D3 + semitones) SPRD */
+    D("DRONE", F.PCT, 0, 127, 0), E("TYPE", ["HUM", "WIND", "CHOIR", "EARTH"], 0),
+    E("KEY", ["AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], 0), D("MOVE", F.PCT, 0, 127, 40),
+    E("TRK", ["OFF", "T1", "T2", "T3", "T4"], 0), D("RATE", F.PCT, 0, 127, 40), D("PTCH", F.SEMI, -24, 24, 0),
+    D("SPRD", F.INT, 0, 24, 5),
   ];
   const NONE = D("-", F.INT, 0, 0, 0);
   const RATIO = [".5", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "14", "16"];
@@ -1899,7 +1905,7 @@ function makeMockDevice(opt = {}) {
   TP.push(D("-", F.INT, 0, 8, 0), D("-", F.INT, 0, 127, 64), D("-", F.INT, 0, 127, 96), D("-", F.INT, 0, 127, 96),   /* GHOULBOX: */
     D("-", F.INT, 0, 127, 127), D("-", F.INT, 0, 2, 0), D("-", F.INT, 0, 1, 0),   /* Felucca 1.5's 96..102, reserved */
     E("TEMP", ["EQUAL", "PYTH", "MEAN", "JUST"], 0), E("RING", ["OFF", "ON"], 0));   /* TEMP (103), RING (104, 2.3) */
-  const P_COUNT = 113, G_COUNT = 57, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
+  const P_COUNT = 113, G_COUNT = 65, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */
@@ -2938,7 +2944,7 @@ const stepEdit = new Map(); /* index -> time of the last edit */
    2.3.1: 1.2 .. 1.4.1 (103 / 104 with SPREAD, P_E0 95 / 96), GHOULBOX 2.0 .. 2.2 (112, 104: TEMP) and 2.3 (113, 105:
    RING); globals 27, GHOULBOX's 29 (AMB CRKL), 33 (KEYS), 37 (DREAM). Felucca 1.5 (111) keeps the id-order list: its
    INSERT (96..102) has no group here */
-const knownLayout = (info) => [27, 29, 33, 37, 57].includes(info.gcount) &&
+const knownLayout = (info) => [27, 29, 33, 37, 57, 65].includes(info.gcount) &&
   [[113, 105], [112, 104], [104, 96], [103, 95], [99, 91], [91, 83], [89, 81], [69, 61], [57, 49]].some(([c, e]) => info.pcount === c && info.pe0 === e);
 const P = { LEVEL: 0, SLEN: 29 };
 const LAYOUT = (pe0, gc = 27) => [
@@ -2962,7 +2968,8 @@ const LAYOUT = (pe0, gc = 27) => [
   /* 1.2: as the device shows them: HOME > CLOCK (BPM SWG; CLK not here), MENU > AUDIO TUNE, MENU > MIDI > MIDI IN (G_ROUTE) */
   { t: "GLOBAL", tab: "setgroups", pages: [["CLOCK", 1, [0, 1, 2]], ["AUDIO", 1, [3]], ["MIDI", 1, [14]],
     ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["EPOCH", 1, [33, 34, 35, 36]]] : []),
-    ...(gc >= 57 ? [["SCAPE", 1, [37, 38, 39, 40]], ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]],
+    ...(gc >= 57 ? [["SCAPE", 1, [37, 38, 39, 40]], ...(gc >= 65 ? [["SCAPE DRONE", 1, [57, 58, 59, 60]],
+                    ["SCAPE CALLS", 1, [61, 62, 63, 64]]] : []), ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]],
                     ["SCAPE DENSITY", 1, [49, 50, 51, 52, 53, 54, 55, 56]]] : [])] },   /* GHOULBOX; DINOBOX: SCAPE */
 ];
 /* globals that are actions or placeholders on the device: buttons instead, or hidden */
