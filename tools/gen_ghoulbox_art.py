@@ -19,7 +19,7 @@ from gen_aa_font import huff_pack, huff_unpack  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FONT = ROOT / "assets/fonts/ShareTechMono-Regular.ttf"
-WORD = "DINOBOX"
+WORD = "PALEOTONE"
 SS = 4                                                  # supersampling of the drawn art
 
 

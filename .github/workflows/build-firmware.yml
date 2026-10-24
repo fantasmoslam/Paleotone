@@ -1,5 +1,5 @@
 # DINOBOX: build the firmware package on GitHub's machines, on every push to main and on request (Actions tab:
-# "Run workflow"). The result, dinobox.fwsc, is attached to the run as an artifact, and with the build's log it is
+# "Run workflow"). The result, paleotone.fwsc, is attached to the run as an artifact, and with the build's log it is
 # also put on the branch build-output (one commit, replaced each time), where it can be fetched with git alone.
 # The JieLi toolchain is Linux x86-64; it runs in debian:bookworm-slim, the image tools/build.py uses on a Mac.
 name: build firmware
@@ -37,8 +37,8 @@ jobs:
         run: |
           set -o pipefail
           ./build.sh 2>&1 | tee build.log
-          cp build/felucca.fwsc dinobox.fwsc
-          sha256sum dinobox.fwsc | tee -a build.log
+          cp build/felucca.fwsc paleotone.fwsc
+          sha256sum paleotone.fwsc | tee -a build.log
 
       - name: Image tests (the update entry, the loader from another app, the render loops' cost)
         shell: bash
@@ -56,8 +56,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dinobox-firmware
-          path: dinobox.fwsc
+          name: paleotone-firmware
+          path: paleotone.fwsc
           if-no-files-found: error
 
       - name: Put the result on the build-output branch
@@ -66,7 +66,7 @@ jobs:
         run: |
           git config --global --add safe.directory "$PWD"
           mkdir -p /tmp/out && cp build.log /tmp/out/ 2>/dev/null || echo "no build log" > /tmp/out/build.log
-          [ -f dinobox.fwsc ] && cp dinobox.fwsc /tmp/out/ || true
+          [ -f paleotone.fwsc ] && cp paleotone.fwsc /tmp/out/ || true
           for f in felucca.bin loader/ota.bin felucca.dis; do [ -f "build/$f" ] && cp "build/$f" /tmp/out/ || true; done   # (the image tests)
           echo "${{ github.sha }} ${{ job.status }}" > /tmp/out/RESULT
           cd /tmp/out && git init -q -b build-output && git add -A
