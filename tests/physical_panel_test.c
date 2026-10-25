@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-#define main remote_baseline_main
-#include "remote_render_test.c"
-#undef main
+#include "../web/emu/felucca_web.c"
+#include <assert.h>
+static uint8_t ed_test_out[664];
+static uint32_t ed_test_n;
+static void ed_b(uint32_t v) { assert(ed_test_n < sizeof ed_test_out); ed_test_out[ed_test_n++] = v & 127u; }
+#include "../firmware/src/editor_remote.c"
 int main(void)
 {
     web_nor_erase(); web_boot();
