@@ -1,6 +1,11 @@
 # PALEOTONE: FM-1 Prehistoric Synth
 
-![PALEOTONE (then DINOBOX) 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
+<p>
+  <img src="docs/paleotone-splash.png" width="240" alt="PALEOTONE boot artwork">
+  <img src="docs/paleotone-home.png" width="240" alt="PALEOTONE home screen">
+  <img src="docs/paleotone-saurus.png" width="240" alt="SAURUS creature voices">
+  <img src="docs/paleotone-scape.png" width="240" alt="SCAPE MUSIC">
+</p>
 
 **PALEOTONE** (formerly DINOBOX) is epic prehistoric firmware for the **M-VAVE FM-1**: roaring beasts, booming war drums, misty jungle
 pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth)
