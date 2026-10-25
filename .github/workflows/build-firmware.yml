@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/paleotone-remote-screen]
   workflow_dispatch:
 
 permissions:
@@ -61,7 +61,7 @@ jobs:
           if-no-files-found: error
 
       - name: Put the result on the build-output branch
-        if: always()
+        if: always() && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config --global --add safe.directory "$PWD"
