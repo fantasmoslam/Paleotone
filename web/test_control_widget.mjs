@@ -7,8 +7,9 @@ assert.doesNotMatch(html,/ControlTarget|inputCommand|\.turn\(|\.tap\(|shiftTarge
   'page swapping must not synthesize instrument input from browser or keyboard');
 assert.match(html,/await focus.poll\(enabled\)/);
 assert.match(html,/focus.snapshot\(\)/);
-assert.match(html,/contextSnapshot\(sync.bytes,second.layout,state.left\)/);
-assert.match(html,/contextSnapshot\(sync.bytes,second.layout,state.right\)/);
+assert.match(html,/contextSnapshot\(bytes,second.layout,state\[otherIndex/);
+assert.match(html,/panes\[activeIndex\].update\(active\)/);
+assert.match(html,/focusDue=performance.now\(\)\+750/);
 assert.match(html,/focus.configure\(view/);
 const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
 new Function(script.replace(/^import .*?;\s*$/mg,'')); // parse the complete inline module body
