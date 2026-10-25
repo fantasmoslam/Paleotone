@@ -351,6 +351,9 @@ static int ed_flash_stop(void)
 #include "editor_fm6.c"
 #include "editor_menu.c"
 #include "editor_screen.c"
+#if FELUCCA_REMOTE_STATE
+#include "editor_remote.c"
+#endif
 
 /* MOTION's reply: the records of track k as (step, id, v14), a lock's id without its MOTION_LOCK bit (a 7-bit SysEx
  * byte); kinds (1.1: the ops 5..7): then one byte per record, in the same order, 0 automation, 1 lock. The query and
@@ -383,6 +386,9 @@ static void ed_motion_reply(uint32_t k, uint32_t rc, uint32_t kinds, uint32_t fu
 }
 static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
+    #if FELUCCA_REMOTE_STATE
+    if (!ed_remote_args(cmd, a, n)) return 0;
+    #endif
     switch (cmd) {
     case ED_INFO: case ED_DUMP: case ED_SMP_INFO: case ED_PING:
     case ED_UI_STATE: case ED_UI_PALETTES: case ED_SCREEN:
@@ -428,6 +434,9 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     uint32_t na = n - 4u;
     int16_t *vp;
     const param_desc_t *d;
+    #if FELUCCA_REMOTE_STATE
+    if (cmd >= ED_REMOTE && cmd <= ED_REMOTE_INPUT && so_w - so_r > 4u) return;
+    #endif
     if (!ed_args_ok(cmd, a, na))
         return;
     if ((cmd >= ED_SMP_BEGIN && cmd <= ED_SMP_INFO) || (cmd >= ED_BACKUP_LIST && cmd <= ED_BACKUP_PUT) ||
@@ -439,6 +448,9 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     if (ed_fm6_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_menu_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_screen_handle(cmd, a, na)) { ed_send(); return; }
+    #if FELUCCA_REMOTE_STATE
+    if (ed_remote_handle(cmd, a, na)) { ed_send(); return; }
+    #endif
     switch (cmd) {
     case ED_MOTION: {
         track_t *t = &trk[a[0]]; uint32_t rc = 0;
