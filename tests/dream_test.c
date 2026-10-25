@@ -102,9 +102,10 @@ int main(void)
     for(sc=0,ok=1;sc<NELEM(SCALE_MASK);sc++) {
         scene(0);for(t=0;t<NTRK;t++)trk[t].p[P_SCALE]=(int16_t)sc;
         dream_forget();dr_rebuild();rng_state=0;
+        for(t=0;t<NTRK;t++)memcpy(before[t],trk[t].step,sizeof before[t]);
         for(k=0;k<40;k++)dream_evolve();
         for(t=0;t<NTRK;t++)for(i=16;i<64;i++)
-            if(trk[t].step[i].time==ST_NOTE)for(d=0;d<trk[t].step[i].n;d++)
+            if(memcmp(&before[t][i],&trk[t].step[i],sizeof(step_t)) && trk[t].step[i].time==ST_NOTE)for(d=0;d<trk[t].step[i].n;d++)
                 ok&=(SCALE_MASK[sc]>>(trk[t].step[i].note[d]+120-dream.root)%12&1u)!=0;
     }
     alarm(0);
