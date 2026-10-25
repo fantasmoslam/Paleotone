@@ -32,7 +32,12 @@ static uint32_t rs_io(uint32_t v, uint32_t n)
 #define RS8(v) RS(v,1)
 #define RS16(v) RS(v,2)
 #define RS32(v) RS(v,4)
-#define RSA8(v) do { for (uint32_t zz = 0; zz < sizeof(v); zz++) RS8(((uint8_t *)&(v))[zz]); } while (0)
+static void rs_bytes(void *p,uint32_t n){
+    if(rs_pos+n>RS_MAX){rs_error=1;return;}
+    if(rs_read)memcpy(p,rs_buf+rs_pos,n);else memcpy(rs_buf+rs_pos,p,n);
+    rs_pos+=n;
+}
+#define RSA8(v) rs_bytes((void *)&(v),sizeof(v))
 static void rs_walk(void)
 {
     uint32_t i, j, k;

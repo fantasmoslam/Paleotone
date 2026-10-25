@@ -386,7 +386,9 @@ static void ed_motion_reply(uint32_t k, uint32_t rc, uint32_t kinds, uint32_t fu
 }
 static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
+#if FELUCCA_REMOTE_STATE
     if(!ed_remote_args(cmd,a,n))return 0;
+#endif
     switch (cmd) {
     case ED_INFO: case ED_DUMP: case ED_SMP_INFO: case ED_PING:
     case ED_UI_STATE: case ED_UI_PALETTES:
@@ -442,7 +444,9 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     if (ed_backup_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_fm6_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_menu_handle(cmd, a, na)) { ed_send(); return; }
+#if FELUCCA_REMOTE_STATE
     if(ed_remote_handle(cmd,a,na)){ed_send();return;}
+#endif
     switch (cmd) {
     case ED_MOTION: {
         track_t *t = &trk[a[0]]; uint32_t rc = 0;
