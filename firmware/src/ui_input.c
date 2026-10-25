@@ -61,7 +61,7 @@ static int layer_set_open(void);                       /* (ui_layer.c) */
  * turned opened LFO's page on release before, and edited the page under it for good. The values: ui.c mom */
 static int mom_down(void)                              /* LFO held where its turns are momentary */
 {
-    return ((fm1_in.buttons >> panel.btn[B_LFO]) & 1u) && !ui.menu && !ui.confirm && !name_on() && !ui.layer && !ui.uboot;
+    return ((panel_buttons() >> panel.btn[B_LFO]) & 1u) && !ui.menu && !ui.confirm && !name_on() && !ui.layer && !ui.uboot;
 }
 /* KNOB k turned s with LFO held: 1 = taken (a momentary value, or refused full), 0 = not a momentary value (the turn
  * goes as ever: the column picks, steps, acts) */
@@ -312,7 +312,7 @@ static int idle_leds(void)
 {
     int due = (ui_idle & 1u) && !(ui_prefs & PREF_ANIM_OFF) && !song.playing && !seq_counting() && !chain_busy() &&
               !song.rec && !transport_req && !ui.layer && !ui.lock && !ui.menu && !ui.confirm && !ui.uboot && !name_on() &&
-              !(fm1_in.notes | fm1_in.buttons) && !panel_moved && !play_leds() && fm1_ms - scrn.idle >= IDLE_LEDS_MS;
+              !(fm1_in.notes | panel_buttons()) && !panel_moved && !play_leds() && fm1_ms - scrn.idle >= IDLE_LEDS_MS;
     if (!due) {
         if (fm1_led_idle_on())
             fm1_led_anim_stop();
@@ -998,7 +998,7 @@ static uint32_t oct_taps(uint32_t pressed, int here)
 {
     static uint8_t down, chord;
     uint32_t dn = panel.btn[B_OCTDN], up = panel.btn[B_OCTUP];
-    uint32_t now = ((fm1_in.buttons >> dn) & 1u) | ((fm1_in.buttons >> up) & 1u) << 1, tap;
+    uint32_t now = ((panel_buttons() >> dn) & 1u) | ((panel_buttons() >> up) & 1u) << 1, tap;
     if (here)
         down |= (uint8_t)(((pressed >> dn) & 1u) | ((pressed >> up) & 1u) << 1);
     if (now == 3u)
@@ -1137,7 +1137,7 @@ enum { BT_NONE, BT_TAP, BT_HOLD };
 static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok)
 {
     uint32_t tap;
-    if ((fm1_in.buttons >> panel.btn[label]) & 1u) {
+    if ((panel_buttons() >> panel.btn[label]) & 1u) {
         if (!*t0)
             *t0 = (now | 1u) & ~2u;
         else if (hold_ok && !(*t0 & 2u) && now - (*t0 & ~3u) > 700u * 1000u * FM1_TICKS_PER_US) {
@@ -1401,12 +1401,15 @@ static int crank_select(void)
     return 1;
 }
 
+#include "ui_panel_views.c"
+
 static void ui_input(void)
 {
+    panel_remote_tick();
     midi_cc_apply();                                  /* GHOULBOX: MIDI CCs, in the main loop */
     crank_idle(fm1_in.frames);                        /* GHOULBOX: the crank slows and stops (every pass) */
     dream_tick();                                     /* GHOULBOX 2.3: DREAM's EVOL (every pass) */
-    uint32_t pressed = fm1_input_edges(0), notes = fm1_input_note_edges(), now = fm1_ticks(), id, b, k;
+    uint32_t pressed = fm1_input_edges(0) | panel_remote_edges(), notes = fm1_input_note_edges(), now = fm1_ticks(), id, b, k;
     uint32_t home, rec, save;
     uint32_t oct;
     uint32_t lay, combo = 0, lytap, lkeys, glo, kq = 0;
@@ -1432,6 +1435,23 @@ static void ui_input(void)
         scene_tick();                                   /* (GHOULBOX 2.4: a SCENES switch, once faded out) */
         if (eaten)
             return;                                     /* (before the buttons' timers: no tap or hold after it) */
+    }
+    /* Expanded companion focus: HOME first, then OCT-/OCT+. Physical events only.
+     * The chord is hidden from ordinary HOME/octave handling until every button is up. */
+    {
+        panel_views_capture();
+        uint32_t old_side=panel_screen.side,old_serial=panel_screen.serial;
+        int blocked=panel_view_blocked();
+        uint32_t mask = panel_screen_gesture(&panel_screen, fm1_in.buttons, pressed,
+            1u << panel.btn[B_HOME], 1u << panel.btn[B_OCTDN], 1u << panel.btn[B_OCTUP],
+            panel_screen.enabled && fm1_ms - panel_screen.last_ms < 3000u && panel_screen.resets == usb.resets,
+            0);
+        if(panel_screen.serial!=old_serial&&blocked){
+            panel_screen.side=(uint8_t)old_side;panel_screen.serial=(uint16_t)old_serial;
+            ui_message("FINISH CURRENT EDIT");
+        }else if(old_side!=panel_screen.side)panel_view_switch(old_side);
+        pressed &= ~mask;
+        if (mask) { ui.home_t0 = 0; ui.pg_down &= (uint16_t)~mask; }
     }
     if (mom.n && !mom_down()) {                         /* MOMENTARY: LFO let go (or the menu, a layer ..): back */
         mom_restore();
@@ -1635,7 +1655,7 @@ static void ui_input(void)
             uint32_t both = (1u << panel.btn[B_OCTDN]) | (1u << panel.btn[B_OCTUP]);
             if (act_cols() || layer_set_open())         /* action pages: enter / back (below); SET layers: OCT- */
                 break;
-            if ((fm1_in.buttons & both) == both)
+            if ((panel_buttons() & both) == both)
                 song.octave = 0;
             else
                 song.octave += b == B_OCTDN ? (song.octave > -3 ? -1 : 0) : (song.octave < 3 ? 1 : 0);
@@ -1647,7 +1667,7 @@ static void ui_input(void)
             break;
         }
     }
-    b = ui.pg_down & ~fm1_in.buttons;
+    b = ui.pg_down & ~panel_buttons();
     ui.pg_down &= (uint16_t)~b;
     for (id = 0; b; id++, b >>= 1)
         if (b & 1u)
@@ -1775,7 +1795,7 @@ static void panel_setup(void)
     uint32_t i, used = 0, t0 = fm1_ms;
     const panel_t old = panel;
     setup_title();
-    while (fm1_in.buttons) {                             /* wait for OCT-/OCT+ release */
+    while (panel_buttons()) {                             /* wait for OCT-/OCT+ release */
         fm1_wdt_feed();
         if (SETUP_GIVE_UP(t0))
             goto timeout;

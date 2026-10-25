@@ -981,6 +981,18 @@ static uint32_t proj_density(const proj_trk_t *t, uint8_t *n)
 /* .. and, den not 0, each track's picture (proj_density: den[k], its cells n[k]; 0 for an empty slot) */
 static int project_info(uint32_t slot, char *b, uint16_t *len48, uint32_t *den, uint8_t *n)
 {
+#if FELUCCA_REMOTE
+    if (remote_display) {
+        const remote_project_t *p = &remote_projects[slot & 3u];
+        memcpy(b, p->name, 13);
+        for (uint32_t j = 0; j < NTRK; j++) {
+            if (len48) len48[j] = p->len[j];
+            if (den) den[j] = p->density[j];
+            if (n) n[j] = p->cells[j];
+        }
+        return p->used;
+    }
+#endif
     uint32_t k;
     b[0] = 0;
     if (len48)

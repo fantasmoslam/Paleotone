@@ -478,6 +478,9 @@ static uint32_t sample_wave_zone(const track_t *t)
 
 static void sample_wave_tick(const track_t *t)
 {
+#if FELUCCA_REMOTE
+    if(remote_display)return;
+#endif
     uint32_t zi = sample_wave_zone(t), key = zi + ((uint32_t)last_note << 16), i;
     if (key != sample_wave.key || sample_wave.gen != smp_user_gen || !sample_wave.zone) {
         sample_wave.key = key; sample_wave.gen = smp_user_gen;

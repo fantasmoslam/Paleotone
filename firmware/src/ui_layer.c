@@ -109,7 +109,7 @@ static struct {
 
 static int layer_allowed(void) { return !ui.menu && !ui.confirm && !ui.uboot && !name_on(); }
 static uint32_t ly_bit(uint32_t l) { return 1u << panel.btn[LAYERS[l].btn]; }
-static uint32_t ly_down(uint32_t l) { return l && ((fm1_in.buttons & ly_bit(l)) != 0u || ui.lock == l); }   /* (locked: held) */
+static uint32_t ly_down(uint32_t l) { return l && ((panel_buttons() & ly_bit(l)) != 0u || ui.lock == l); }   /* (locked: held) */
 static uint32_t layer_bits(void)
 {
     uint32_t l, m = 0;
@@ -133,7 +133,7 @@ static uint32_t layer_held(void) { return ui.ly && ly_down(ui.ly) && layer_allow
 static void layer_masks(void)
 {
     uint32_t m = !layer_allowed() || (ui.ly && (ui.ly_t0 & LY_DEAD)) ? 0u
-               : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~fm1_in.buttons;
+               : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~panel_buttons();
     kb_mask = m;
     perf_mask = m & ly_bit(LAYER_FX);
     kb_lock = (uint8_t)(m && ui.lock ? 1u | (ui.lock == LAYER_FX ? 2u : 0u) : 0u);   /* (no button held: the ISR's) */
@@ -726,7 +726,7 @@ static void layer_knob(uint32_t k, int32_t s)
  * held: PLAY starts and stops there as in every layer (#183: locked, PLAY restarted and never stopped) */
 static int layer_play(void)
 {
-    if (layer_open() != LAYER_GLO || !(fm1_in.buttons & ly_bit(LAYER_GLO)) || chain_busy())
+    if (layer_open() != LAYER_GLO || !(panel_buttons() & ly_bit(LAYER_GLO)) || chain_busy())
         return 0;
     if (song.g[G_CLOCK] && song.playing) {
         ui_message("RESTART: CLK IS EXT");
@@ -806,7 +806,7 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
             ui_message("SCALE PUT BACK");
         }
     }
-    lys.oct &= (uint8_t)(((fm1_in.buttons >> dn) & 1u) | ((fm1_in.buttons >> up) & 1u) << 1);
+    lys.oct &= (uint8_t)(((panel_buttons() >> dn) & 1u) | ((panel_buttons() >> up) & 1u) << 1);
     return oct & ~mine;
 }
 

@@ -252,7 +252,7 @@ static void scr_wake_now(void)                         /* main.c: the crash scre
 /* ui_input, every pass: 1 = the pass is swallowed (the screen dark or waking, or the wake gesture going on) */
 static int scr_input(uint32_t pressed, uint32_t notes)
 {
-    uint32_t held = fm1_in.buttons | fm1_in.notes, k;
+    uint32_t held = panel_buttons() | fm1_in.notes, k;
     int32_t moved = 0;
     if (pressed | notes | held | panel_moved)
         scrn.idle = fm1_ms;
