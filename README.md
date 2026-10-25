@@ -35,9 +35,9 @@ messages 90/91 and is not a replacement for the graphics companion.
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
   controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **SCAPE MUSIC** is GHOULBOX's DREAM: tap
   HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
-- **119 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
-  prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 62 more join
-  them (SAURUS's 20 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
+- **121 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
+  prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 64 more join
+  them (SAURUS's 22 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
 - **Its own sample material, synthesized**: a night jungle, a tropical storm, a lithophone and the ENCOUNTER kit
   (footfalls near and far, a mud stomp, a claw tap, a branch snap, a falling tree, a splash, a rock fall, leaves,
   bone clacks, a ground ripple, thunder, a huff), in the place of GHOULBOX's four recordings, 12 KB smaller.
@@ -47,11 +47,11 @@ messages 90/91 and is not a replacement for the graphics companion.
 
 ### SAURUS, the creature voice
 
-An engine of its own (engine 15): one note is one call. A throat that buzzes, rasps and breathes, shaped by:
+An engine of its own (engine 15): one note is one call, with up to three layered throats. Four throat sets are shared across tracks. Controls:
 
 | Control | What it does |
 | --- | --- |
-| CALL | The call's shape over its length: HOLD (a drone), BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN, HISS, SNORT |
+| CALL | The call's shape over its length: HOLD (a drone), BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN, HISS, SNORT, SHRIEK, HONK, BOOM, RATTLE |
 | SIZE | The animal: small (high throat) to sauropod (formants two octaves down) |
 | SWOOP | How far the call's pitch moves (up to two octaves) |
 | LEN | How long the call takes (1 ms to 10 s); the ADSR still shapes and ends the note |
