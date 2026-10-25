@@ -42,3 +42,4 @@ jobs:
             build/emu/screen.html
             build/emu/remote_screen.js
             build/emu/felucca.wasm
+            web/REMOTE_SCREEN.md

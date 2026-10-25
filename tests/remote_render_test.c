@@ -47,6 +47,11 @@ int main(int argc, char **argv)
     assert(panel_buttons() & (1u << panel.btn[B_ENV]));
     assert(panel_remote_edges() & (1u << panel.btn[B_ENV]));
     assert(!panel_remote_edges());
+    assert(rs_capture()); n = rs_len;
+    memcpy(snapshot, rs_buf, n); panel_remote_clear(); fm1_in.buttons = 0;
+    memcpy(rs_buf, snapshot, n); assert(web_remote_apply(n));
+    assert(fm1_in.buttons & (1u << panel.btn[B_ENV]));
+    fm1_in.buttons = physical;
     panel_remote_turn(EN_K1, 1); assert(panel_enc(EN_K1) == 1);
     fm1_ms += 1501; panel_remote_tick(); assert(!remote_panel.held);
     uint8_t block[4] = {rs_rev & 127u, rs_rev >> 7, 0, 0};
