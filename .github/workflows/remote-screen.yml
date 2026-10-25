@@ -2,8 +2,7 @@ name: remote screen
 on:
   push:
     branches: [feature/paleotone-remote-screen]
-  pull_request:
-    paths: ["firmware/**", "web/**", "tools/remote_identity.py", "tests/remote_render_test.c", ".github/workflows/remote-screen.yml"]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

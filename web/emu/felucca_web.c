@@ -575,7 +575,8 @@ EXPORT uint32_t web_remote_apply(uint32_t n)
     ui.force = 1;
     /* The snapshots are taken after a hardware draw. Render the captured
      * frame without advancing animation counters or the instrument clock. */
-    lcd_fill(0, 0, 240, 240, T_BG);
+    lcd_fill(0, 0, 240, 240, scrn.st == SCR_OFF ? 0 : T_BG);
+    if (scrn.st == SCR_OFF) return 1;
     ui_draw_page(seq_counting());
     lcd_sync();
     return 1;
