@@ -14,7 +14,8 @@ globalThis.addEventListener=()=>{};globalThis.localStorage={getItem:()=>null,set
 const html=await readFile(new URL('./screen.html',import.meta.url),'utf8');
 assert.doesNotMatch(html,/id="target-(left|right|shift)"/);
 assert.match(html,/Hold HOME, tap OCT− for LEFT or OCT\+ for RIGHT/);
-assert.match(html,/await focus.poll\(wide&&!document.hidden\)/);
+assert.match(html,/if\(await focus.poll\(wide&&!document.hidden\)\)await sync.update\(\)/,
+  'refresh the hardware snapshot after a physical focus switch before painting');
 let script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
 script=script.replace(/from (["'])(\.\/[^"']+)\1/g,(_m,_q,path)=>'from '+JSON.stringify(new URL(path,import.meta.url).href));
 script+='\nexport {mode,effectiveTarget,chooseTarget,stop}; export function attachForTest(value){router=value;running=true;}';
