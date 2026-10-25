@@ -60,7 +60,7 @@ function stop(message='Disconnected'){
   generation++;running=false;link?.close();link=sync=focus=null;
   $('connect').disabled=false;$('disconnect').disabled=true;status.textContent=message;
 }
-function paint(bytes=sync?.bytes,force=false){
+function paint(bytes=sync?.frameBytes??sync?.bytes,force=false){
   if(!bytes)return;
   const began=performance.now(),state=focus.snapshot();
   const active=new Uint16Array(ex.memory.buffer,ex.web_screen(),240*240);
@@ -114,11 +114,11 @@ function mode(value){
   $('second-controls').hidden=$('target-controls').hidden=!wide;
   $('second-track-label').hidden=false;
   $('original').setAttribute('aria-pressed',!wide);$('expanded').setAttribute('aria-pressed',wide);
-  if(sync?.bytes)paint(sync.bytes,true);
+  if(sync?.bytes)paint(sync.frameBytes??sync.bytes,true);
 }
 $('original').onclick=()=>mode(false);$('expanded').onclick=()=>mode(true);
 $('compatible').setAttribute('aria-pressed',presenter.compatible);
-$('compatible').onclick=()=>{presenter.setCompatible(!presenter.compatible);$('compatible').setAttribute('aria-pressed',presenter.compatible);paint(sync?.bytes,true);};
+$('compatible').onclick=()=>{presenter.setCompatible(!presenter.compatible);$('compatible').setAttribute('aria-pressed',presenter.compatible);paint(sync?.frameBytes??sync?.bytes,true);};
 $('fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():$('stage').requestFullscreen?.();
 $('disconnect').onclick=()=>stop();
 async function start(input,output){

@@ -162,7 +162,7 @@ export class DisplaySync {
     metrics.transferMs=now()-began;
     const applyAt=now();
     if (!this.apply(next)) throw new Error("Renderer rejected the device state");
-    metrics.applyMs=now()-applyAt;
+    metrics.applyMs=now()-applyAt;this.frameBytes=next;
     // Present the complete, validated frozen frame before waiting for its acknowledgement.
     onFrame?.(next,metrics);
     const ackAt=now();

@@ -51,6 +51,7 @@ jobs:
           node web/test_remote_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_second_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_physical_focus.mjs
+          node web/test_display_paint.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_display_performance.mjs
           node web/test_frame_presenter.mjs
           node web/test_control_target.mjs

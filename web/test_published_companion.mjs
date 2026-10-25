@@ -9,6 +9,7 @@ assert.match(html,/remote_screen\.js/);assert.match(html,/second_screen\.js/);
 assert.match(html,/frame_presenter\.js/);assert.match(html,/presenter\.present/);assert.match(html,/presenter\.status/);
 assert.match(html,/Original/);assert.match(html,/Expanded/);
 assert.doesNotMatch(html,/src="\.\/screen\.js"/,'the lightweight display must not occupy the graphics URL');
+if(html.includes('display_performance.js'))assert.ok((await readFile(join(dir,'display_performance.js'))).length);
 const layout=JSON.parse(await readFile(join(dir,'remote_views.json'),'utf8'));
 const metadata=JSON.parse(await readFile(join(dir,'build.json'),'utf8'));
 const {instance}=await WebAssembly.instantiate(await readFile(join(dir,'felucca.wasm')),{});
