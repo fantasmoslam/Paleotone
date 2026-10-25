@@ -88,6 +88,13 @@ jobs:
           node web/test_published_companion.mjs site/webapp/screen
           touch site/.nojekyll
 
+      - name: Preserve the tested device-control release
+        run: |
+          git fetch origin gh-pages
+          git archive origin/gh-pages webapp/screen-device | tar -x -C site
+          node web/test_published_companion.mjs site/webapp/screen-device
+          node web/test_device_release.mjs site/webapp/screen-device
+
       - name: Publish on gh-pages
         run: |
           cd site
