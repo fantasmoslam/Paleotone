@@ -15,7 +15,12 @@ the FM-1 restarts and the installed identity is checked.
   fm1_install.py --info [--port NAME]
 
 If the FM-1 is still in update mode (an earlier install was cut off), the
-install finishes the write. Needs mido with python-rtmidi.
+install finishes the write using the SAME package. An error during writing
+can leave a partial application; it is not a successful update. Each install
+creates a timestamped JSON-lines log in the current folder (--log PATH changes
+the destination). Keep that log and package for diagnosis. Logs identify host
+requests and sent replies, not independently verified flash contents.
+Needs mido with python-rtmidi.
 
 Exit codes: 0 done, 1 cancelled or other error, 2 bad arguments or package,
 3 FM-1 not found, 4 connection lost or the device stopped, 5 timeout (no
@@ -26,10 +31,13 @@ markers are 0x7D); the count is detected and checked with the files' CRCs.
 """
 import argparse
 import hashlib
+import json
 import queue
 import re
 import sys
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 HS_QUERY = bytes([0xF0, 0x00, 0x32, 0x45, 0x00, 0x00, 0x00, 0x40, 0x7F, 0xF7])
 UPGRADE = bytes([0xF0, 0x22, 0x24, 0x35, 0x7F, 0xF7])
@@ -256,6 +264,7 @@ class MidoLink:
         import mido
         self.backend, self.name, self.mido = backend, in_name, mido
         self.q = queue.Queue()
+        self.last_error = None
         self.inp = mido.open_input(in_name, callback=self._rx)
         try:
             self.out = mido.open_output(out_name)
@@ -273,10 +282,12 @@ class MidoLink:
         return self.name not in self.backend.input_names()
 
     def send(self, pkt):
+        self.last_error = None
         try:
             self.out.send(self.mido.Message("sysex", data=pkt[1:-1]))
             return True
-        except Exception:
+        except Exception as e:
+            self.last_error = f"{type(e).__name__}: {e}"
             return False
 
     def read(self, timeout):
@@ -346,9 +357,10 @@ def handshake(link, tries=3):
 
 
 class Updater:
-    def __init__(self, backend, port=None):
+    def __init__(self, backend, port=None, trace=None):
         self.backend = backend
         self.port = port
+        self.trace = trace or (lambda *_a, **_k: None)
 
     def candidates(self, only_port):
         names = self.backend.input_names()
@@ -392,8 +404,10 @@ class Updater:
             pkt = link.read(DELAY["poll"])
             if pkt is None:
                 if link.lost:
+                    self.trace("transfer_lost", served=served)
                     return served, False, True
                 if time.monotonic() - last > idle:
+                    self.trace("transfer_idle", served=served, idle_seconds=idle)
                     return served, False, False
                 continue
             r = parse_request(pkt)
@@ -401,8 +415,12 @@ class Updater:
                 continue
             fl, addr, n = r
             last = time.monotonic()
+            self.trace("read_request", address=addr, length=n, flags=fl)
             if addr in (FINISH_CHECK, FINISH_WRITE):
-                link.send(response(addr, b"success\0"))
+                if not link.send(response(addr, b"success\0")):
+                    self.trace("finish_send_failed", address=addr, reason=getattr(link, "last_error", None))
+                    return served, False, True
+                self.trace("finish_reply_sent", address=addr)
                 if addr == finish:
                     return served, True, False
                 continue
@@ -410,13 +428,16 @@ class Updater:
                 raise InstallError("badreq", f"the device asked for {addr:#x}+{n}, outside the package")
             time.sleep(DELAY["reply"])
             if not link.send(response(addr, image[addr:addr + n], fl)):
+                self.trace("data_send_failed", address=addr, length=n, reason=getattr(link, "last_error", None))
                 return served, False, True
             served += 1
+            self.trace("data_reply_sent", address=addr, length=n, served=served)
             progress(served, addr + n)
 
     def check(self, dev, image, step):
         """step 1: the running firmware checks the package and starts the loader"""
         step("start", dev.id.text)
+        self.trace("stage_start", identity=dev.id.text, port=dev.name)
         dev.link.send(UPGRADE)
         time.sleep(DELAY["start"])
         served, finished, lost = self.serve(dev.link, image, FINISH_CHECK, DELAY["idle_check"],
@@ -437,6 +458,7 @@ class Updater:
     def write(self, ota, image, step):
         """step 2: the loader reads and writes the whole package, then restarts"""
         step("write", 0)
+        self.trace("write_start", identity=ota.id.text, port=ota.name)
         ota.link.send(UPGRADE)
         time.sleep(DELAY["start"])
         served, finished, lost = self.serve(ota.link, image, FINISH_WRITE, DELAY["idle_write"],
@@ -445,7 +467,10 @@ class Updater:
         if not finished:
             raise InstallError("lost" if lost else "stopped",
                                f"the loader {'was disconnected' if lost else 'stopped answering'} after "
-                               f"{served} requests. Replug the USB cable and run the install again to finish")
+                               f"{served} requests. The application may be only partly written; do not treat "
+                               "this as a completed firmware update. Replug the USB cable and run the install "
+                               "again with the SAME package to finish if the update loader answers. "
+                               "If it does not, use the established recovery procedure")
         step("write", 100)
 
     def verify(self, product, step):
@@ -458,6 +483,7 @@ class Updater:
         if back.id.text != product:
             raise InstallError("mismatch", f"written, but the FM-1 reports {back.id.text} (expected {product})")
         step("done", back.id.text)
+        self.trace("identity_verified", identity=back.id.text)
         return back.id.text
 
     def install(self, dev, image, product, step=lambda *a: None):
@@ -473,7 +499,7 @@ class Updater:
 
 # ------------------------------------------------------------------- CLI ---
 
-def load_package(path, force):
+def load_package(path, force, trace=None):
     try:
         raw = open(path, "rb").read()
     except OSError as e:
@@ -486,6 +512,9 @@ def load_package(path, force):
         raise InstallError("badpkg", f"{path}: no Felucca update loader in this package; only Felucca's own "
                                      "packages and the unmodified official V15 (FM-1.fwsc) or SMK-37 Pro V016 "
                                      "(SMK-37_Pro_016.fwsc) are installed (--force overrides)")
+    if trace:
+        trace("package", name=Path(path).name, sha256=hashlib.sha256(raw).hexdigest(),
+              size=len(raw), product=product)
     return product, deinterleave(raw)
 
 
@@ -521,8 +550,38 @@ class Progress:
             self.line = False
 
 
-def run(a, backend, out, ask):
-    up = Updater(backend, a.port)
+class SessionLog:
+    """A flushed JSON-lines trace; sent bytes are not proof of flash verification."""
+
+    def __init__(self, path):
+        self.started = time.monotonic()
+        self.file = open(path, "x", encoding="utf-8")
+        self.event("session_start", utc=datetime.now(timezone.utc).isoformat())
+
+    def event(self, event, **fields):
+        if self.file is None:
+            return
+        try:
+            self.file.write(json.dumps({"event": event,
+                                       "elapsed_ms": round((time.monotonic() - self.started) * 1000),
+                                       **fields}) + "\n")
+            self.file.flush()
+        except OSError as e:
+            # A full log disk must not interrupt an otherwise healthy flash transfer.
+            print(f"warning: install logging stopped: {e}", file=sys.stderr)
+            self.close()
+
+    def close(self):
+        if self.file is not None:
+            f, self.file = self.file, None
+            try:
+                f.close()
+            except OSError:
+                pass
+
+
+def run(a, backend, out, ask, trace=None):
+    up = Updater(backend, a.port, trace)
     if a.info:
         dev = up.find()
         if not dev:
@@ -531,7 +590,7 @@ def run(a, backend, out, ask):
         mode = "update loader (update not finished)" if dev.id.loader else "running"
         print(f"{dev.id.text}  [{mode}]  port: {dev.name}", file=out)
         return 0
-    product, image = load_package(a.package, a.force)
+    product, image = load_package(a.package, a.force, trace)
     print(f"package: {product}  ({a.package})", file=out)
     dev = up.find()
     if not dev:
@@ -589,22 +648,45 @@ def main(argv=None, backend=None, out=sys.stdout, ask=ask_tty):
     ap.add_argument("--uboot", action="store_true",
                     help="for a full flash backup before the first install: only the check step (nothing is written), "
                          "then the loader goes into the mask-ROM bootloader (a USB disk WL82 UBOOT) for jl-uboot-tool")
+    ap.add_argument("--log", metavar="PATH", help="new JSON-lines trace file (default: timestamped file in the current folder)")
     a = ap.parse_args(argv)
     if bool(a.info) == bool(a.package):
         ap.error("give a PACKAGE.fwsc or --info")
+    log = None
     try:
+        if not a.info:
+            log_path = a.log or ("fm1-install-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S-%fZ") + ".jsonl")
+            try:
+                log = SessionLog(log_path)
+            except OSError as e:
+                raise InstallError("usage", f"cannot create install log {log_path}: {e}")
+            print(f"install log: {log_path}", file=out, flush=True)
         if backend is None:
             try:
                 backend = MidoBackend()
             except ImportError:
                 raise InstallError("usage", "needs mido and python-rtmidi (pip install mido python-rtmidi)")
-        return run(a, backend, out, ask)
+        rc = run(a, backend, out, ask, log.event if log else None)
+        if log:
+            log.event("result", exit_code=rc)
+        return rc
     except InstallError as e:
+        if log:
+            log.event("error", code=e.code, message=str(e))
         print(f"error: {e}", file=sys.stderr)
         return EXIT.get(e.code, 1)
     except KeyboardInterrupt:
+        if log:
+            log.event("interrupted")
         print("\ninterrupted: if the FM-1 is in update mode, run the install again to finish", file=sys.stderr)
         return 130
+    except Exception as e:
+        if log:
+            log.event("unexpected_error", type=type(e).__name__, message=str(e))
+        raise
+    finally:
+        if log:
+            log.close()
 
 
 if __name__ == "__main__":

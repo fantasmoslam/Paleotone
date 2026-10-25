@@ -1296,7 +1296,7 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "CLEAR SONG ORDER?", 24);
         break;
     case CF_DREAM:                                   /* GHOULBOX 2.3: "DREAM IN D DOR?" */
-        str_cpy(a, "EPOCH IN ", 24);              /* (DINOBOX: EPOCH, GHOULBOX: DREAM) */
+        str_cpy(a, "SCAPE IN ", 24);              /* (DINOBOX: EPOCH, GHOULBOX: DREAM) */
         str_cpy(a + str_len(a), N_GURDY_DRN[k % 12u], 4);
         str_cpy(a + str_len(a), " ", 2);
         str_cpy(a + str_len(a), N_DMOOD[clamp(song.g[G_DMOOD], 0, 5)], 6);

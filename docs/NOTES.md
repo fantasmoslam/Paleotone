@@ -14,11 +14,11 @@ The soundscape maker needs biomes, and sounds to support them, water most of all
 ## The soundscape maker (planned, after the rhythms step)
 
 - An ambience layer beside the four tracks (not a fifth track): a SCAPE fader in the MIXER with its own send,
-  saved with the project, locked to the tempo and the EPOCH key.
+  saved with the project, locked to the tempo and the SCAPE MUSIC key.
 - 8 layers, each pointable at any sound (SAURUS, the sample sets, ROAR, ...): drone, insects, frogs, birds,
   rain / wind, distant creatures, footsteps / encounters (approach and pass), thunder. Per layer: level, density,
   distance.
-- The drone on its own page: type, key (C..B or follow EPOCH), movement.
+- The drone on its own page: type, key (C..B or follow SCAPE MUSIC), movement.
 - Globals: time of day, danger, weather, density; a biome picker.
 - A layer can be sent to a track (a SCAPE choice on a track) to sequence it.
 - Voices: shares the 12; the quietest layers give way first.

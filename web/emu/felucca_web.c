@@ -21,6 +21,8 @@
 #include <stdint.h>
 
 #define FELUCCA_WEB 1
+#define FELUCCA_REMOTE 1
+#include "../../firmware/src/remote_catalog.h"
 #ifndef FELUCCA_CDC
 #define FELUCCA_CDC 1                    /* as src/felucca.c: MENU > USB SERIAL is there (nothing behind it) */
 #endif
@@ -542,3 +544,83 @@ EXPORT uint32_t web_screen_draws(void) { return web_draws; }
 EXPORT uint32_t web_now_ms(void) { return fm1_ms; }
 EXPORT uint32_t web_playing(void) { return song.playing; }
 EXPORT uint32_t web_sample_rate(void) { return FS; }
+
+/* Display companion: no audio worklet, audio callback, ui_input, autosave or
+ * sequencer clock is run. Only device-authoritative snapshots feed ui_draw. */
+#include "../../firmware/src/remote_state.c"
+static uint16_t remote_wide[480 * 240];
+EXPORT uint32_t web_remote_id(void) { return PALEOTONE_RENDER_ID; }
+EXPORT uint32_t web_panel_side(void){return panel_screen.side&1u;}
+EXPORT uint32_t web_panel_context(uint32_t side,uint32_t field){
+    if(side>1u||field>7u)return 0;const panel_view_t *v=&panel_views[side];
+    switch(field){case 0:return v->home;case 1:return v->page;case 2:return v->track;case 3:return v->bank;
+    case 4:return v->cursor;case 5:return v->lane;case 6:return v->seq_mode;default:return v->grid;}
+}
+EXPORT uint32_t web_remote_schema(void) { return RS_SCHEMA; }
+EXPORT uint8_t *web_remote_buffer(void) { return rs_buf; }
+EXPORT uint32_t web_remote_capacity(void) { return RS_MAX; }
+EXPORT uint16_t *web_remote_wide(void) { return remote_wide; }
+EXPORT uint32_t web_remote_apply(uint32_t n)
+{
+    rs_read = 1; rs_pos = rs_error = 0;
+    rs_walk();
+    rs_read = 0;
+    if (rs_error || rs_pos != n || song.sel >= NTRK || ui.page >= NPAGES ||
+        ui.cursor >= NSTEP || ui.bank >= 4u || ui.layer >= LAYER_N ||
+        ui.menu > 3u || nm.len > NM_LEN || nm.cur > NM_LEN ||
+        motion.count > MOTION_MAX || settings.palette >= NPALETTES)
+        return 0;
+    remote_display = 1;
+    memcpy(remote_projects, rs_projects, sizeof remote_projects);
+    for (uint32_t k = 0; k < NTRK; k++) {
+        uint32_t lane = chain.lane[k];
+        if (lane < 4u) memcpy(chain.source[lane].step[k], trk[k].step, sizeof trk[k].step);
+    }
+    chain.config = chain_config;
+    page_over = 0;
+    palette_set(settings.palette);
+    ux_track(song.sel);
+    ui.force = 1;
+    /* The snapshots are taken after a hardware draw. Render the captured
+     * frame without advancing animation counters or the instrument clock. */
+    lcd_fill(0, 0, 240, 240, scrn.st == SCR_OFF ? 0 : T_BG);
+    if (scrn.st == SCR_OFF) return 1;
+    ui_draw_page(seq_counting());
+    lcd_sync();
+    return 1;
+}
+/* Expanded view preserves every original pixel on the left. The extra width
+ * uses the same firmware font, palette and canvas primitives for live tracks. */
+EXPORT void web_remote_expand(void)
+{
+    uint32_t x, y, k, j;
+    for (y = 0; y < 240u; y++) for (x = 0; x < 240u; x++) {
+        remote_wide[y * 480u + x] = web_fb[y * 240u + x];
+        remote_wide[y * 480u + 240u + x] = (uint16_t)((T_BG >> 8) | (T_BG << 8));
+    }
+    cv_begin(240, 24, T_BG);
+    cv_text_on(10, 3, &AF_M, "TRACKS / SEQUENCE", T_THEME, T_BG);
+    for (y = 0; y < 24u; y++) for (x = 0; x < 240u; x++)
+        remote_wide[y * 480u + 240u + x] = cv_px[y * 240u + x];
+    for (k = 0; k < NTRK; k++) {
+        track_t *t = &trk[k];
+        char name[32], value[8];
+        const step_t *steps = seq_steps(t);
+        uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
+        cv_begin(240, 50, T_BG);
+        str_cpy(name, "T1 ", sizeof name); name[1] = (char)('1' + k);
+        str_cpy(name + 3, ENGINES[t->eng_req % NENGINES]->name, 8);
+        fmt_int(value, t->p[P_LEVEL]);
+        cv_text_on(10, 1, &AF_M, name, k == song.sel ? T_ACCENT : T_TEXT, T_BG);
+        cv_text_r(230, 2, &AF_S, t->p[P_MUTE] ? "MUTE" : value, T_MID, T_BG);
+        cv_rect(10, 23, 220, 3, T_DIM);
+        cv_rect(10, 23, clamp(t->p[P_LEVEL], 0, 127) * 220 / 127, 3, T_THEME);
+        for (j = 0; j < len; j++) {
+            int32_t x0 = 10 + j * 220u / len, x1 = 10 + (j + 1u) * 220u / len;
+            uint16_t c = song.playing && j == t->seq_idx ? T_ACCENT : step_on(&steps[j]) ? T_THEME : T_RAISE;
+            cv_rect(x0, 33, x1 - x0 - 1, 8, c);
+        }
+        for (y = 0; y < 50u; y++) for (x = 0; x < 240u; x++)
+            remote_wide[(28u + 52u * k + y) * 480u + 240u + x] = cv_px[y * 240u + x];
+    }
+}
