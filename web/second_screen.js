@@ -32,7 +32,7 @@ export function contextSnapshot(bytes,layout,context) {
 
 export class SecondScreen {
   constructor(ex, layout) {
-    if (ex.web_remote_id() !== layout.rendererId || ex.web_remote_schema() !== layout.schema)
+    if ((ex.web_remote_id() >>> 0) !== layout.rendererId || ex.web_remote_schema() !== layout.schema)
       throw new Error('Second-screen layout does not match this renderer');
     this.ex = ex; this.layout = layout;
   }
