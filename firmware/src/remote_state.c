@@ -148,7 +148,7 @@ static uint32_t rs_capture(void)
     }
     rs_pos = rs_error = rs_read = 0;
     rs_walk();
-    if (rs_error) return 0;
+    if (rs_error || rs_pos >= RS_MAX) return 0;
     rs_len = rs_pos;
     rs_rev = (rs_rev + 1u) & 16383u;
     if (!rs_rev) rs_rev = 1;
