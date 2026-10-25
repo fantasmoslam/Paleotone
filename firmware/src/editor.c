@@ -353,6 +353,8 @@ static int ed_flash_stop(void)
 #include "editor_screen.c"
 #if FELUCCA_REMOTE_STATE
 #include "editor_remote.c"
+#include "editor_remote_queue.h"
+static ed_remote_queue_t ed_remote_queue;
 #endif
 
 /* MOTION's reply: the records of track k as (step, id, v14), a lock's id without its MOTION_LOCK bit (a 7-bit SysEx
@@ -434,9 +436,6 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     uint32_t na = n - 4u;
     int16_t *vp;
     const param_desc_t *d;
-    #if FELUCCA_REMOTE_STATE
-    if (cmd >= ED_REMOTE && cmd <= ED_REMOTE_INPUT && so_w - so_r > 4u) return;
-    #endif
     if (!ed_args_ok(cmd, a, na))
         return;
     if ((cmd >= ED_SMP_BEGIN && cmd <= ED_SMP_INFO) || (cmd >= ED_BACKUP_LIST && cmd <= ED_BACKUP_PUT) ||
@@ -917,10 +916,28 @@ static void ed_service(void)
 {
     const uint8_t *p;
     uint32_t n;
+#if FELUCCA_REMOTE_STATE
+    if (ed_remote_queue.len) {
+        int ready = edrq_ready(&ed_remote_queue, so_w - so_r, usb.resets, usb.config);
+        if (ready == 1) {
+            uint32_t count = ed_remote_queue.len;
+            ed_remote_queue.len = 0;                     /* take exactly once, before handling an input */
+            ed_handle(ed_remote_queue.frame, count);
+        }
+        return;                                         /* no WATCH pushes ahead of a waiting reply */
+    }
+#endif
     ed_sync();                                             /* v2 pushes (while watched) */
     if (!ota_frame_get(&p, &n) || n < 4u || p[0] != ED_HDR0 || p[1] != ED_HDR1 || p[2] != ED_HDR2)
         return;
     ed_w.last_ms = fm1_ms;                                 /* any request keeps WATCH alive */
+#if FELUCCA_REMOTE_STATE
+    if (p[3] >= ED_REMOTE && p[3] <= ED_REMOTE_INPUT) {
+        (void)edrq_offer(&ed_remote_queue, p, n, usb.resets);
+        ota_frame_done();                                /* queue owns its copy, including while USB is full */
+        return;
+    }
+#endif
     if (p[3] >= ED_SMP_BEGIN) {                            /* large frames: handled in place, then freed */
         ed_handle(p, n);
         ota_frame_done();

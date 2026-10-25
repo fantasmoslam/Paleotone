@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-import {DisplaySync,MidiLink,HEADER,u14,unpack7,parseStatus,rgb565} from "./remote_screen.js";
+import {DisplaySync,MidiLink,HEADER,u14,unpack7,parseStatus,rgb565,MidiTimeoutError} from "./remote_screen.js";
 assert.deepEqual([...unpack7([5,0,127,1],3)],[128,127,129]);
 assert.throws(()=>unpack7([4,0],1));
 assert.throws(()=>unpack7([0],1));
@@ -14,10 +14,14 @@ function status(op,rev,base,dirty=255){
 }
 assert.equal(parseStatus(status(1,2,1)).length,130);
 assert.throws(()=>parseStatus([]));
-let fakeRev=2, fakeBase=0, fakeDirty=255;
+let fakeRev=2, fakeBase=0, fakeDirty=255, dropBlock=false, dropAck=false;
 const calls=[], input={state:"connected"}, output={state:"connected",send(message){
   calls.push(message);
   const cmd=message[4], args=message.slice(5,-1);
+  if(cmd===93&&dropBlock){dropBlock=false;return;} // simulate a lost reply during sequencer MIDI traffic
+  if(cmd===92&&args[0]===2&&dropAck){dropAck=false;return;}
+  input.onmidimessage?.({data:[0xf8]}); // unrelated MIDI clock and notes must not resolve a read
+  input.onmidimessage?.({data:[0x90,60,100]});
   let payload;
   if(cmd===92)payload=status(args[0],fakeRev,args[0]===2?fakeRev:fakeBase,fakeDirty);
   else if(cmd===93){
@@ -40,11 +44,23 @@ assert.equal(applied[1][128],applied[0][128]);     // tail retained from acknowl
 fakeRev=4;fakeBase=0;fakeDirty=0;
 await sync.update();
 assert.equal(calls.filter(p=>p[4]===93).length,5); // reconnect/base loss forces both blocks
+let retried=0;link.onRetry=()=>retried++;
+fakeRev=5;fakeBase=0;dropBlock=true;dropAck=true;
+await sync.update();
+assert.equal(sync.rev,5);assert.equal(retried,2); // lost block and lost acknowledgement recovered
 assert.throws(()=>sync.check({...parseStatus(status(0,0,0)),id:2}),/versions do not match/);
 await link.inputCommand([1,0,65]);
 link.close();await assert.rejects(link.request(92,[0]),/disconnected/i);
-const silent=new MidiLink({state:"connected"},{state:"connected",send(){}},5);
-await assert.rejects(silent.status(0),/did not reply/);silent.close();
+let lostReads=0;
+const silent=new MidiLink({state:"connected"},{state:"connected",send(){lostReads++;}},5);
+await assert.rejects(silent.status(0),(e)=>e instanceof MidiTimeoutError);
+assert.equal(lostReads,3);silent.close();
+let turns=0;
+const lostInput=new MidiLink({state:"connected"},{state:"connected",send(){turns++;}},5);
+await assert.rejects(lostInput.inputCommand([1,3,65]),(e)=>e instanceof MidiTimeoutError);
+assert.equal(turns,1); // an encoder is NEVER retried after a lost acknowledgement
+await assert.rejects(lostInput.readRequest(94,[1,3,65]),/Only display/);
+assert.equal(turns,1);lostInput.close();
 if(process.argv[2]){
   const {instance}=await WebAssembly.instantiate(await readFile(process.argv[2]),{});
   const ex=instance.exports;ex._initialize();ex.web_nor_erase();ex.web_boot();

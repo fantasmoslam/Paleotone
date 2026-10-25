@@ -36,7 +36,7 @@ body.wide canvas{width:100%}#status{min-height:2em;color:#9cbca5}
 Original uses the firmware's screen renderer. Expanded adds live track levels and sequence activity.
 This page requires its matching companion firmware and felucca.wasm from the same build.</p>
 <script type="module">
-import {MidiLink,DisplaySync,rgb565,u14} from "./remote_screen.js";
+import {MidiLink,DisplaySync,rgb565,u14,recoverableScreenError} from "./remote_screen.js";
 const $ = (id) => document.getElementById(id), status = $("status"), canvas = $("screen"), ctx = canvas.getContext("2d");
 let access, ex, link, sync, running = false, wide = false, held = 0, lease, generation = 0;
 const controls = [];
@@ -110,6 +110,7 @@ async function start(input,output){
     await loadRenderer();await input.open();await output.open();
     if(own!==generation)return;
     link=new MidiLink(input,output);
+    link.onRetry=()=>{status.textContent="Screen data delayed · retrying automatically…";};
     sync=new DisplaySync(link,ex.web_remote_id(),ex.web_remote_schema(),(bytes)=>{
       if(bytes.length>ex.web_remote_capacity())return false;
       new Uint8Array(ex.memory.buffer,ex.web_remote_buffer(),bytes.length).set(bytes);
@@ -118,13 +119,22 @@ async function start(input,output){
     sync.check(await link.status(0));
     running=true;enabled(true);$("ports").hidden=true;
     lease=setInterval(()=>{if(held&&link)link.inputCommand([3]).catch((e)=>stop(e.message));},400);
+    let failures=0;
     while(running&&own===generation){
       const began=performance.now();
       try{
         const result=await sync.update();
         if(own!==generation)return;
-        paint();status.textContent=output.name+" · synchronized"+(result.full?" · full state":"");
-      }catch(e){throw e;}
+        failures=0;enabled(true);paint();status.textContent=output.name+" · synchronized"+(result.full?" · full state":"");
+      }catch(e){
+        if(own!==generation)return;
+        if(!recoverableScreenError(e)||++failures>=3)throw e;
+        release();
+        for(const b of controls)b.disabled=true;
+        sync.bytes=null;sync.rev=0; /* no unacknowledged base survives recovery */
+        status.textContent="Screen transfer interrupted · reconnecting automatically ("+failures+"/3)…";
+        await new Promise((resolve)=>setTimeout(resolve,250));
+      }
       await new Promise((resolve)=>setTimeout(resolve,Math.max(20,90-(performance.now()-began))));
     }
   }catch(e){if(own===generation)stop(e.message);}

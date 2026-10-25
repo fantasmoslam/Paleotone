@@ -22,6 +22,11 @@ jobs:
           version: 3.1.74
       - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1
       - run: python3 tools/build.py --gen-only
+      - name: Busy MIDI queue regression
+        run: |
+          mkdir -p build/remote
+          cc -std=c99 -Wall -Wextra -Werror -o build/remote/queue_test tests/remote_queue_test.c
+          build/remote/queue_test
       - name: Native renderer and original-screen fidelity
         run: |
           mkdir -p build/remote
