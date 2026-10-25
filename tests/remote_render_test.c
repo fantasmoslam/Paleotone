@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #include "../web/emu/felucca_web.c"
 #include <assert.h>
+static uint8_t ed_test_out[664];
+static uint32_t ed_test_n;
+static void ed_b(uint32_t v) { assert(ed_test_n < sizeof ed_test_out); ed_test_out[ed_test_n++] = v & 127u; }
+#include "../firmware/src/editor_remote.c"
 static uint8_t snapshot[RS_MAX];
 static uint16_t expected[240 * 240];
 int main(int argc, char **argv)
@@ -31,6 +35,23 @@ int main(int argc, char **argv)
         fwrite(expected, sizeof expected, 1, f);
         fwrite(remote_wide, sizeof remote_wide, 1, f); fclose(f);
     }
+    /* The protocol validates sizes before a[0]/a[1] are read, and controls
+     * merge with (rather than overwrite) the physical scanner state. */
+    uint8_t bad[3] = {0};
+    assert(!ed_remote_args(ED_REMOTE, bad, 0));
+    assert(!ed_remote_args(ED_REMOTE_INPUT, bad, 2));
+    uint32_t physical = fm1_in.buttons;
+    uint8_t press[3] = {0, 1u << B_ENV, 0};
+    ed_test_n = 0; assert(ed_remote_handle(ED_REMOTE_INPUT, press, 3));
+    assert(fm1_in.buttons == physical);
+    assert(panel_buttons() & (1u << panel.btn[B_ENV]));
+    assert(panel_remote_edges() & (1u << panel.btn[B_ENV]));
+    assert(!panel_remote_edges());
+    panel_remote_turn(EN_K1, 1); assert(panel_enc(EN_K1) == 1);
+    fm1_ms += 1501; panel_remote_tick(); assert(!remote_panel.held);
+    uint8_t block[4] = {rs_rev & 127u, rs_rev >> 7, 0, 0};
+    ed_test_n = 0; assert(ed_remote_handle(ED_REMOTE_BLOCK, block, 4));
+    assert(ed_test_n + 6u <= 192u); /* no blocking send for a snapshot block */
     rs_ack();
     assert(rs_base == rs_rev);
     assert(rs_capture());
@@ -38,6 +59,18 @@ int main(int argc, char **argv)
     for (uint32_t i = 0; i < sizeof rs_dirty; i++) dirty += rs_dirty[i] != 0;
     assert(dirty < sizeof rs_dirty); /* catalogs/steps stay reusable */
     assert(!web_remote_apply(1));
+    /* Representative square layouts, menus and dialogs use the same pixels.
+     * Animation OFF makes the comparison independent of polling cadence. */
+    for (uint32_t view = 0; view < 4u; view++) {
+        ui.menu = ui.confirm = ui.layer = 0; ui.home = view == 0u; ui.msg_t = ui.hot_t = 0;
+        ui.page = (uint8_t)page_first(view == 1u ? FAM_SEQ : FAM_ENV);
+        if (view == 2u) ui.menu = 1;
+        if (view == 3u) ui.confirm = CF_CLEAR_SEQ;
+        ui.force = 1; assert(rs_capture()); n = rs_len;
+        memcpy(snapshot, rs_buf, n); ui_draw_page(seq_counting()); memcpy(expected, web_fb, sizeof expected);
+        memcpy(rs_buf, snapshot, n); assert(web_remote_apply(n));
+        assert(!memcmp(expected, web_fb, sizeof expected));
+    }
     puts("remote renderer tests passed");
     return 0;
 }

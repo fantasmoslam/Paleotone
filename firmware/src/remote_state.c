@@ -1,3 +1,4 @@
+#pragma once
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Shared hardware -> browser display projection, encoded field by field.
  * Never copy track_t/voice_t or a native struct image: they contain pointers,
@@ -15,6 +16,8 @@ static uint8_t rs_old[RS_MAX] __attribute__((section(".pool")));
 static uint8_t rs_dirty[RS_BLOCKS / 8u];
 static uint32_t rs_pos, rs_len, rs_rev, rs_base, rs_read, rs_error;
 static remote_project_t rs_projects[4];
+static smp_zone_t rs_zone;
+static uint8_t rs_zone_valid;
 static uint32_t rs_io(uint32_t v, uint32_t n)
 {
     uint32_t k, out = 0;
@@ -82,6 +85,8 @@ static void rs_walk(void)
     RS32(settings.palette); RS32(settings.lowcut); RS32(settings.zoom); RS8(settings_hold); RS8(settings_leds);
     RS8(mod_ui_slot); RS8(last_note); RS8(fop_op); RS8(fop_stg);
     RS8(cin_left); RS8(cin_total);
+    RS8(usb.config); RS8(usb.suspended); RS8(usb.up); RS32(usb.setups); RS32(usb.sof_seen);
+    RS8(scrn.st);
     RS32(scope_w);
     for (i = 0; i < SCOPE_N; i++) RS16(scope_buf[i]);
     RS32(fm1_in.buttons); RS32(fm1_in.notes);
@@ -127,6 +132,15 @@ static void rs_walk(void)
         RS32(up_bank[i].magic); RS16(up_bank[i].rsize); RS16(up_bank[i].nslot);
         for (j = 0; j < UP_PER_BANK; j++) RSA8(up_bank[i].r[j]);
     }
+    if (!rs_read) {
+        rs_zone_valid = sample_wave.zone != 0;
+        if (sample_wave.zone) rs_zone = *sample_wave.zone;
+        else memset(&rs_zone, 0, sizeof rs_zone);
+    }
+    RS8(rs_zone_valid); RS32(rs_zone.n); RS32(rs_zone.ls); RS32(rs_zone.le); RS8(rs_zone.looped);
+    for (i = 0; i < SAMPLE_WAVE_COLS; i++) { RS16(sample_wave.lo[i]); RS16(sample_wave.hi[i]); }
+    RS32(sample_wave.key); RS32(sample_wave.gen); RS32(sample_wave.pos); RS32(sample_wave.peak); RS8(sample_wave.ready);
+    if (rs_read) sample_wave.zone = rs_zone_valid ? &rs_zone : 0;
     RSA8(proj_name); RS8(proj_cur);
     for (i = 0; i < 4u; i++) {
         remote_project_t *p = &rs_projects[i];
