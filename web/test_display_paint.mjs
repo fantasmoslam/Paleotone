@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
-import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import {performance} from 'node:perf_hooks';
+import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import {performance} from 'node:perf_hooks';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
 import {rgb565} from './remote_screen.js';import {PanePixels} from './display_performance.js';
 import {SecondScreen,contextSnapshot,joinScreens} from './second_screen.js';
 const html=fs.readFileSync(new URL('./screen.html',import.meta.url),'utf8'),code=html.slice(html.indexOf('function paint('),html.indexOf('async function loadRenderer()'));
 const mod=await WebAssembly.compile(fs.readFileSync(process.argv[2])),boot=()=>{const e=new WebAssembly.Instance(mod,{}).exports;e._initialize();e.web_nor_erase();e.web_boot();return e;};
-const ex=boot(),second=new SecondScreen(boot(),JSON.parse(fs.readFileSync(new URL('remote_views.json',new URL('file:///'+process.argv[2].replaceAll('\\','/'))),'utf8')));
+const ex=boot(),second=new SecondScreen(boot(),JSON.parse(fs.readFileSync(new URL('remote_views.json',pathToFileURL(resolve(process.argv[2]))),'utf8')));
 const f=fs.readFileSync(process.argv[3]),n=f.readUInt32LE(0),original=new Uint8Array(f.subarray(4,4+n));
 const apply=bytes=>{new Uint8Array(ex.memory.buffer,ex.web_remote_buffer(),bytes.length).set(bytes);assert.equal(ex.web_remote_apply(bytes.length),1);};
 const contexts=()=>Object.fromEntries([0,1].map(side=>[side?'right':'left',Object.fromEntries(['home','page','track','bank','cursor','lane','seqMode','grid'].map((k,i)=>[k,ex.web_panel_context(side,i)]))]));
