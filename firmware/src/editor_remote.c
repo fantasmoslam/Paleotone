@@ -2,13 +2,14 @@
 /* Firmware-side companion protocol, commands 92..94. Snapshot blocks fit in
  * one USB SysEx ring without waiting. No incoming payload can import state. */
 #include "remote_state.c"
-enum { ED_REMOTE = 92, ED_REMOTE_BLOCK, ED_REMOTE_INPUT };
+enum { ED_REMOTE = 92, ED_REMOTE_BLOCK, ED_REMOTE_INPUT, ED_PANEL_FOCUS = 96 };
 static void ed_u14(uint32_t v) { ed_b(v); ed_b(v >> 7); }
 static uint32_t ed_r14(const uint8_t *a) { return a[0] | (uint32_t)a[1] << 7; }
 static void ed_u32(uint32_t v) { for (uint32_t i = 0; i < 5u; i++) { ed_b(v); v >>= 7; } }
 static uint32_t ed_remote_resets;
 static int ed_remote_args(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
+    if (cmd == ED_PANEL_FOCUS) return n == 1u && a[0] <= 1u;
     if (cmd == ED_REMOTE) return (n == 1u && a[0] <= 1u) || (n == 3u && a[0] == 2u);
     if (cmd == ED_REMOTE_BLOCK) return n == 4u;
     if (cmd == ED_REMOTE_INPUT)
@@ -20,6 +21,14 @@ static int ed_remote_args(uint32_t cmd, const uint8_t *a, uint32_t n)
 static int ed_remote_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
     (void)n;
+    if (cmd == ED_PANEL_FOCUS) {
+        panel_screen.enabled = a[0];
+        panel_screen.last_ms = fm1_ms;
+        panel_screen.resets = usb.resets;
+        ed_b(1); ed_b(panel_screen.side); ed_u14(panel_screen.serial);
+        ed_b(panel_screen.suppress != 0u);
+        return 1;
+    }
     if (cmd == ED_REMOTE) {
         uint32_t rc = 0;
         if (a[0] == 1u) {

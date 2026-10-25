@@ -1450,6 +1450,17 @@ static void ui_input(void)
         usb_serial_apply();                             /* (MENU > USB SERIAL: when the menu has closed) */
     if (scr_input(pressed, notes))                      /* MENU > SCREEN OFF: dark, or the wake gesture: swallowed */
         return;                                         /* (before the buttons' timers: no tap or hold after it) */
+    /* Expanded companion focus: HOME first, then OCT-/OCT+. Physical events only.
+     * The chord is hidden from ordinary HOME/octave handling until every button is up. */
+    {
+        uint32_t mask = panel_screen_gesture(&panel_screen, fm1_in.buttons, pressed,
+            1u << panel.btn[B_HOME], 1u << panel.btn[B_OCTDN], 1u << panel.btn[B_OCTUP],
+            panel_screen.enabled && fm1_ms - panel_screen.last_ms < 3000u && panel_screen.resets == usb.resets,
+            ui.menu || ui.confirm || ui.layer || ui.ly || ui.lock || name_on() || ui.uboot ||
+            mom.n || fm1_in.notes || remote_panel.held);
+        pressed &= ~mask;
+        if (mask) { ui.home_t0 = 0; ui.pg_down &= (uint16_t)~mask; }
+    }
     if (mom.n && !mom_down()) {                         /* MOMENTARY: LFO let go (or the menu, a layer ..): back */
         mom_restore();
         ui_message("BACK");

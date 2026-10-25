@@ -39,14 +39,10 @@ body.target-right #screen{border-color:#ffbf53}body.target-left #screen{border-c
 <label>Second screen <select id="second-view"><option value="overview">Tracks / sequence overview</option></select></label>
 <label id="second-track-label" hidden>Track <select id="second-track"><option value="follow">Follow FM-1</option><option value="0">Track 1</option><option value="1">Track 2</option><option value="2">Track 3</option><option value="3">Track 4</option></select></label>
 <small id="second-help">Live overview of all four tracks.</small></div>
-<div id="target-controls" class="target-controls" hidden aria-label="Control target">
-<button class="side" id="target-left" aria-pressed="true">Control LEFT</button>
-<button class="side" id="target-right" aria-pressed="false">Control RIGHT</button>
-<button id="target-shift" aria-pressed="false">Hold Shift: other side</button>
-<output id="target-status" aria-live="polite">Controls: LEFT</output></div>
+<div id="target-controls" class="target-controls" hidden><output id="target-status" aria-live="polite">FM-1 controls: LEFT</output><span>Hold HOME, tap OCT− for LEFT or OCT+ for RIGHT, then release.</span></div>
 <div id="stage"><canvas id="screen" width="240" height="240" aria-label="PALEOTONE device screen"></canvas></div>
-<div id="buttons" aria-label="FM-1 buttons"></div><div id="encoders" aria-label="FM-1 encoders"></div>
-<p class="help">Hold a screen button as you would on the FM-1. Use − / + for encoder turns.
+
+<p class="help">Use the FM-1’s physical buttons and knobs. In Expanded mode, hold HOME and tap OCT− for the left side or OCT+ for the right, then release both buttons.
 Original uses the firmware's screen renderer. Expanded can show the track overview or an independent live firmware page, with its own track selection.
 This page requires its matching companion firmware and felucca.wasm from the same build.</p>
 <script type="module">
@@ -54,10 +50,11 @@ import {MidiLink,DisplaySync,rgb565,u14,recoverableScreenError} from "./remote_s
 import {SecondScreen,joinScreens} from "./second_screen.js";
 import {contextSnapshot,readContext} from "./second_screen.js";
 import {ControlTarget} from "./control_target.js";
+import {PhysicalFocus} from "./physical_focus.js";
 const $ = (id) => document.getElementById(id), status = $("status"), canvas = $("screen"), ctx = canvas.getContext("2d");
 let access, ex, link, sync, running = false, wide = false, held = 0, lease, generation = 0;
 let second, secondView='overview', secondTrack='follow';
-let router,baseTarget='left',shiftHeld=false,inputEpoch=0;
+let router,focus,baseTarget='left',inputEpoch=0;
 try{secondView=localStorage.getItem('fm1-second-view')||'overview';secondTrack=localStorage.getItem('fm1-second-track')||'follow';}catch{}
 if(!['follow','0','1','2','3'].includes(secondTrack))secondTrack='follow';
 const controls = [];
@@ -68,14 +65,12 @@ function release(){
 }
 function stop(message="Disconnected"){
   generation++;running=false;release();clearInterval(lease);
-  if(link)link.close();link=null;sync=null;router=null;shiftHeld=false;baseTarget='left';enabled(false);$("connect").disabled=false;status.textContent=message;targetUI();
+  if(link)link.close();link=null;sync=null;router=null;focus=null;baseTarget='left';enabled(false);$("connect").disabled=false;status.textContent=message;targetUI();
 }
-function effectiveTarget(){return !wide?'left':shiftHeld?(baseTarget==='left'?'right':'left'):baseTarget;}
+function effectiveTarget(){return !wide?'left':baseTarget;}
 function targetUI(){
   const side=effectiveTarget();
-  $("target-left").setAttribute('aria-pressed',side==='left');$("target-right").setAttribute('aria-pressed',side==='right');
-  $("target-shift").setAttribute('aria-pressed',shiftHeld);
-  $("target-status").textContent=router?.busy?'Switching to '+side.toUpperCase()+'…':'Controls: '+side.toUpperCase();
+  $("target-status").textContent=router?.busy?'Switching to '+side.toUpperCase()+'…':'FM-1 controls: '+side.toUpperCase();
   document.body.classList.toggle('target-left',side==='left');document.body.classList.toggle('target-right',side==='right');
   enabled(running&&!router?.busy);
 }
@@ -88,24 +83,13 @@ function configureRight(){
   router.configureRight(rightView(),secondTrack,sync.bytes);
   $("second-track-label").hidden=false;
 }
-function chooseTarget(side,temporary=false){
-  if(!temporary)baseTarget=side;
-  const target=effectiveTarget();
-  release();
-  if(target==='right'&&!router?.contexts.right)configureRight();
-  if(target==='right'&&secondTrack==='follow'&&router?.contexts.right&&sync?.bytes)router.contexts.right.track=readContext(sync.bytes,second.layout).track;
+async function chooseTarget(side){
+  baseTarget=side;release();
+  if(side==='right'&&!router?.contexts.right)configureRight();
+  if(side==='right'&&secondTrack==='follow'&&router?.contexts.right&&sync?.bytes)router.contexts.right.track=readContext(sync.bytes,second.layout).track;
   targetUI();
-  router?.select(target).catch(e=>{shiftHeld=false;baseTarget=router?.active||'left';targetUI();status.textContent=e.message;});
+  try{await router?.select(side);}catch(e){baseTarget=router?.active||'left';status.textContent=e.message;}finally{targetUI();}
 }
-function shiftTarget(on){if(shiftHeld===on||!wide)return;shiftHeld=on;chooseTarget(baseTarget,true);}
-$("target-left").onclick=()=>chooseTarget('left');$("target-right").onclick=()=>chooseTarget('right');
-$("target-shift").onpointerdown=e=>{$("target-shift").setPointerCapture(e.pointerId);shiftTarget(true);};
-for(const event of ['pointerup','pointercancel','lostpointercapture'])$("target-shift").addEventListener(event,()=>shiftTarget(false));
-$("target-shift").onkeydown=e=>{if([' ','Enter'].includes(e.key)&&!e.repeat){e.preventDefault();shiftTarget(true);}};
-$("target-shift").onkeyup=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();shiftTarget(false);}};
-$("target-shift").onblur=()=>shiftTarget(false);
-addEventListener('keydown',e=>{if(e.key==='Shift'&&!e.repeat&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))shiftTarget(true);});
-addEventListener('keyup',e=>{if(e.key==='Shift')shiftTarget(false);});
 function paint(){
   if(!ex)return;
   if(sync?.bytes&&router){
@@ -144,7 +128,7 @@ function mode(value){
   wide=value;document.body.classList.toggle("wide",wide);
   $("second-controls").hidden=!wide;
   $("target-controls").hidden=!wide;
-  if(!wide){shiftHeld=false;chooseTarget('left');}else targetUI();
+  if(!wide){chooseTarget('left');}else targetUI();
   $("original").setAttribute("aria-pressed",!wide);$("expanded").setAttribute("aria-pressed",wide);
   if(sync?.bytes)paint();
 }
@@ -152,7 +136,7 @@ $("original").onclick=()=>mode(false);$("expanded").onclick=()=>mode(true);
 function secondChoice(){
   secondView=$("second-view").value;secondTrack=$("second-track").value;
   $("second-track-label").hidden=secondView==='overview';
-  $("second-help").textContent=secondView==='overview'?'Choose Control RIGHT to open the editable Mixer.':'The FM-1 and its knobs follow the active side. Hold Shift to temporarily switch sides.';
+  $("second-help").textContent=secondView==='overview'?'HOME + OCT+ on the FM-1 opens the editable Mixer on the right.':'Hold HOME and tap OCT− for LEFT or OCT+ for RIGHT, then release both buttons.';
   try{localStorage.setItem('fm1-second-view',secondView);localStorage.setItem('fm1-second-track',secondTrack);}catch{}
   if(router&&sync?.bytes){
     if(secondView==='overview'&&router.active==='left')router.contexts.right=null;
@@ -163,36 +147,8 @@ function secondChoice(){
 $("second-view").onchange=secondChoice;$("second-track").onchange=secondChoice;
 $("fullscreen").onclick=()=>document.fullscreenElement?document.exitFullscreen():$("stage").requestFullscreen?.();
 $("disconnect").onclick=()=>stop();
-const labels=["FX","SCL","ENV","LFO","EDIT","GLO","HOME","SAVE","ARP","SEQ","PLAY","REC","OCT−","OCT+"];
-labels.forEach((name,id)=>{
-  const b=document.createElement("button");b.textContent=name;b.disabled=true;b.type="button";controls.push(b);$("buttons").append(b);
-  let downAt=0, releaseTimer=0,pressSide='left',pressEpoch=0;
-  function down(){
-    if(!link||router?.busy||held&(1<<id))return;
-    clearTimeout(releaseTimer);downAt=performance.now();held|=1<<id;b.classList.add("held");
-    pressSide=effectiveTarget();pressEpoch=inputEpoch;
-    router.buttons(held,pressSide).catch((e)=>stop(e.message));
-  }
-  function up(){
-    if(!(held&(1<<id)))return;
-    releaseTimer=setTimeout(()=>{if(pressEpoch!==inputEpoch)return;held&=~(1<<id);b.classList.remove("held");
-      router?.buttons(held,pressSide).catch((e)=>stop(e.message));},Math.max(0,45-(performance.now()-downAt)));
-  }
-  b.onpointerdown=(e)=>{b.setPointerCapture(e.pointerId);down();};b.onpointerup=up;b.onpointercancel=up;b.onlostpointercapture=up;
-  b.onkeydown=(e)=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();down();}};
-  b.onkeyup=(e)=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();up();}};
-  b.onblur=up;
-});
-["SELECT","ALGORITHM","PRESETS","KNOB 1","KNOB 2","KNOB 3","KNOB 4"].forEach((name,role)=>{
-  const box=document.createElement("div"),label=document.createElement("span");label.textContent=name;box.append(label);
-  for(const delta of [-1,1]){
-    const b=document.createElement("button");b.textContent=delta<0?"−":"+";b.disabled=true;b.setAttribute("aria-label",name+(delta<0?" down":" up"));
-    b.onclick=()=>router?.turn(role,delta,effectiveTarget()).catch((e)=>stop(e.message));controls.push(b);box.append(b);
-  }
-  $("encoders").append(box);
-});
-addEventListener("blur",()=>{release();if(shiftHeld){shiftHeld=false;chooseTarget(baseTarget,true);}});
-document.addEventListener("visibilitychange",()=>{if(document.hidden){release();if(shiftHeld){shiftHeld=false;chooseTarget(baseTarget,true);}}});
+addEventListener("blur",()=>release());
+document.addEventListener("visibilitychange",()=>{if(document.hidden)release();});
 addEventListener("pagehide",()=>{release();link?.close();});
 async function loadRenderer(){
   if(ex&&second)return;
@@ -217,6 +173,7 @@ async function start(input,output){
     if(own!==generation)return;
     link=new MidiLink(input,output);
     router=new ControlTarget(link,second.layout,{changed:targetUI});
+    focus=new PhysicalFocus(link,chooseTarget);
     link.onRetry=()=>{status.textContent="Screen data delayed · retrying automatically…";};
     sync=new DisplaySync(link,ex.web_remote_id(),ex.web_remote_schema(),(bytes)=>{
       if(bytes.length>ex.web_remote_capacity())return false;
@@ -231,6 +188,7 @@ async function start(input,output){
       const began=performance.now();
       try{
         const result=await sync.update();
+        await focus.poll(wide&&!document.hidden);
         if(own!==generation)return;
         failures=0;enabled(!router.busy);paint();status.textContent=output.name+" · synchronized"+(result.full?" · full state":"");
       }catch(e){

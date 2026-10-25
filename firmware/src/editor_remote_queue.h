@@ -9,7 +9,7 @@ static int edrq_offer(ed_remote_queue_t *q, const uint8_t *p, uint32_t n, uint32
 {
     if (q->len || n < 4u || n > EDRQ_MAX ||
         p[0] != 0x7Du || p[1] != 0x46u || p[2] != 0x4Cu ||
-        p[3] < 92u || p[3] > 94u) return 0;
+        !((p[3] >= 92u && p[3] <= 94u) || p[3] == 96u)) return 0;
     for (uint32_t i = 0; i < n; i++) q->frame[i] = p[i];
     q->resets = resets;
     q->len = (uint8_t)n;

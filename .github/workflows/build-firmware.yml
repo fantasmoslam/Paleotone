@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main, feature/paleotone-remote-screen]
+    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus]
   workflow_dispatch:
 
 permissions:

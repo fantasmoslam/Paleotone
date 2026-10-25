@@ -77,7 +77,9 @@ static void panel_remote_tick(void)
 {
     if (fm1_ms - remote_panel.last_ms > 1500u) panel_remote_clear();
 }
-static uint32_t panel_buttons(void) { return fm1_in.buttons | remote_panel.held; }
+#include "panel_screen_gesture.h"
+static panel_screen_gesture_t panel_screen;
+static uint32_t panel_buttons(void) { return (fm1_in.buttons & ~panel_screen.suppress) | remote_panel.held; }
 static uint32_t panel_remote_edges(void)
 {
     uint32_t v = remote_panel.edges;
@@ -92,6 +94,7 @@ static int32_t panel_enc(uint32_t role)
     int32_t s = fm1_enc_take(panel.enc[role]) * panel.dir[role];
     s += remote_panel.enc[role];
     remote_panel.enc[role] = 0;
+    if (panel_screen.suppress) return 0; /* a knob moved during the focus chord edits neither screen */
     if (s)
         panel_moved = 1;
     return s;

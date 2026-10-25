@@ -1,7 +1,7 @@
 name: remote screen
 on:
   push:
-    branches: [feature/paleotone-remote-screen]
+    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus]
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,6 +24,13 @@ jobs:
           version: 3.1.74
       - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1
       - run: python3 tools/build.py --gen-only
+      - name: Physical FM-1 focus gesture
+        run: |
+          mkdir -p build/remote
+          cc -std=c99 -Wall -Wextra -Werror -o build/remote/gesture_test tests/panel_screen_gesture_test.c
+          build/remote/gesture_test
+          cc -O1 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/physical_test tests/physical_panel_test.c -lm
+          build/remote/physical_test
       - name: Busy MIDI queue regression
         run: |
           mkdir -p build/remote
@@ -39,6 +46,7 @@ jobs:
           sh web/emu/build.sh
           node web/test_remote_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_second_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
+          node web/test_physical_focus.mjs
           node web/test_control_target.mjs
           node web/test_control_widget.mjs
       - name: Existing editor regression
@@ -53,6 +61,7 @@ jobs:
             build/emu/remote_screen.js
             build/emu/second_screen.js
             build/emu/control_target.js
+            build/emu/physical_focus.js
             build/emu/remote_views.json
             build/emu/felucca.wasm
             web/REMOTE_SCREEN.md
