@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import assert from 'node:assert/strict';
-import {classifyFirmware,inspectDevice,inspectPackage} from './firmware_support.js';
+import {classifyFirmware,inspectDevice,inspectPackage,openMidi} from './firmware_support.js';
 import {sha256hex} from './fm1pkg.js';
+assert.equal(await openMidi(async()=>42,50),42);await assert.rejects(openMidi(()=>new Promise(()=>{}),5),/permission is still pending/);
 const pkg=new Uint8Array([1,2,3]),old=new Uint8Array([4,5,6]);
 const release={rendererId:2540340739,schema:2,previousRenderers:[695244803],firmware:{sha256:await sha256hex(pkg)},previousPackages:[await sha256hex(old)]};
 const identity={model:'FM-1',version:900,text:'FM-1_900'};

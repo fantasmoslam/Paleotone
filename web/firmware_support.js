@@ -3,6 +3,10 @@ import {Updater} from './fm1ota.js';
 import {MidiLink} from './remote_screen.js';
 import {sha256hex} from './fm1pkg.js';
 
+export async function openMidi(request=()=>navigator.requestMIDIAccess({sysex:true}),timeout=20000){
+  let timer;try{return await Promise.race([request(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('MIDI permission is still pending. Allow USB MIDI and SysEx in your browser, then try again.')),timeout);})]);}finally{clearTimeout(timer);}
+}
+
 export function classifyFirmware(identity,status,release){
   if(identity.model!=='FM-1')return {kind:'wrong-model',message:'This release is for the FM-1.'};
   if(status?.id===release.rendererId&&status.schema===release.schema)

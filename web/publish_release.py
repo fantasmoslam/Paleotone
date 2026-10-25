@@ -19,6 +19,11 @@ def main():
       'firmware':{'file':'firmware/paleotone-current.fwsc','sha256':hashlib.sha256(raw).hexdigest(),'size':len(raw)},
       'previousRenderers':[695244803,2964915361,2036782920],
       'previousPackages':['d9793366201d5c3d7af6e45343099e65f76adf12c6f4fcb22901e280c0ddff4d','000532c1cc17fcac1aba297356a5d78e865bfa22d8df00ede242022e41544462']}
+    prior_path=out/'release.json'
+    if prior_path.exists():
+        prior=json.loads(prior_path.read_text(encoding='utf-8'))
+        for key in ('supportedBuilds','patchSources'):
+            if key in prior:manifest[key]=prior[key]
     token=manifest['firmware']['sha256'][:12]
     inst=out/'webapp/installer';setup=out/'webapp/app-setup';destemu=out/'webapp/emu'
     for d in (inst,setup,out/'firmware',destemu):d.mkdir(parents=True,exist_ok=True)
