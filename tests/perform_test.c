@@ -69,7 +69,6 @@ static void perf_reset(void)
     perf_kill = 0;
     memcpy((void *)perf_map, PF_DEF, sizeof PF_DEF);
     memset((void *)perf_k, 0, sizeof perf_k);
-    memset(sl, 0, sizeof sl);
 }
 /* the stage alone on the test signal: samples [t0, t1); ev: press (+e + 1) / let go (-(e + 1)) at block bt */
 typedef struct { uint32_t t; int e; } ev_t;
