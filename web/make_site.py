@@ -101,6 +101,10 @@ def main(pkg, version, out):
     if (man / "index.html").exists():
         shutil.rmtree(out / "manual", ignore_errors=True)
         shutil.copytree(man, out / "manual")
+    scr = HERE / "screen"                           # the second screen: an installable web app (web/screen)
+    if (scr / "index.html").exists():
+        shutil.rmtree(out / "webapp/screen", ignore_errors=True)
+        shutil.copytree(scr, out / "webapp/screen")
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
