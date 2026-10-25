@@ -6,6 +6,9 @@ import {pathToFileURL} from 'node:url';
 import {SecondScreen,viewSnapshot,joinScreens} from './second_screen.js';
 const layoutFile=process.argv[2]?new URL('remote_views.json',pathToFileURL(resolve(process.argv[2]))):new URL('./remote_views.json',import.meta.url);
 const layout=JSON.parse(await readFile(layoutFile,'utf8'));
+assert.doesNotThrow(()=>new SecondScreen({web_remote_id:()=>-2147483648,web_remote_schema:()=>1},{rendererId:2147483648,schema:1}),
+  'WASM returns signed i32 while the renderer descriptor stores unsigned identity');
+assert.throws(()=>new SecondScreen({web_remote_id:()=>-2147483648,web_remote_schema:()=>1},{rendererId:2147483649,schema:1}),/does not match/);
 const bytes=new Uint8Array(16384).fill(5), pristine=bytes.slice();
 for(const view of layout.views){
   const copy=viewSnapshot(bytes,layout,view.id,'2');
