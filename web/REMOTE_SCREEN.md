@@ -12,7 +12,9 @@ commit on `feature/paleotone-remote-screen`.
 1. Download `paleotone-firmware` from the successful firmware run. Install
    its real `.fwsc` with the existing FM-1 installer.
 2. Download `paleotone-screen-companion` from the successful remote screen run.
-   Extract `screen.html`, `remote_screen.js` and `felucca.wasm` together.
+   Keep all files from `build/emu` together, including `screen.html`,
+   `remote_screen.js`, `second_screen.js`, `control_target.js`,
+   `remote_views.json` and `felucca.wasm`.
 3. In that folder run `python -m http.server 8000 --bind 127.0.0.1`.
 4. Open `http://localhost:8000/screen.html` in the desktop browser used for
    the earlier successful MIDI test. Click **Connect FM-1**, permit SysEx,
@@ -20,8 +22,22 @@ commit on `feature/paleotone-remote-screen`.
 5. Compare HOME, ENV, EDIT, SEQ, MENU and a confirmation dialog against the
    device. Test physical knobs first, then the browser's button and encoder
    controls. Check that notes/audio and transport continue normally.
-6. Switch to **Expanded**. The left 240x240 area remains the firmware screen;
-   the extra 240 pixels show four track levels and full-pattern activity.
+6. Switch to **Expanded**. Use **Second screen** to select the overview or
+   a live Home, Mixer, Sequencer, Envelope, LFO, FX, Arpeggiator, Scale, Clock,
+   or Soundscape page. Choose Follow FM-1 or a particular track.
+   **Control LEFT / RIGHT** chooses the editable side. Hold the onscreen
+   **Shift** button or the keyboard Shift key to temporarily control the other
+   side; releasing it restores the selected side. Clicking Original returns
+   control to the left.
+   The real FM-1 navigates to the active side's page and track, so its physical
+   knobs and the webpage controls both operate that side. The inactive panel
+   retains its page and track while its parameter values remain live.
+   Choosing Control RIGHT from the overview opens the editable Mixer.
+   The browser serializes context switches and gestures, releases held keys
+   before changing sides, and never retries encoder actions. Close a device
+   menu/dialog and release hardware buttons before changing sides.
+   These browser controls work with the already installed companion firmware;
+   this addition does not require a firmware update.
 7. Hold a browser button, then unplug USB or close the tab. Remote held states
    expire after 1.5 seconds; physical buttons must still work normally.
 

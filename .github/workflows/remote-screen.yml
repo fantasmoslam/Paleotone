@@ -38,6 +38,8 @@ jobs:
         run: |
           sh web/emu/build.sh
           node web/test_remote_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
+          node web/test_second_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
+          node web/test_control_target.mjs
       - name: Existing editor regression
         run: |
           cc -O1 -w -Ibuild/gen -Ifirmware/src -o build/remote/editor_test tests/editor_test.c -lm
@@ -48,5 +50,8 @@ jobs:
           path: |
             build/emu/screen.html
             build/emu/remote_screen.js
+            build/emu/second_screen.js
+            build/emu/control_target.js
+            build/emu/remote_views.json
             build/emu/felucca.wasm
             web/REMOTE_SCREEN.md
