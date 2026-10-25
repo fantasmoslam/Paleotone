@@ -60,11 +60,6 @@ jobs:
         run: |
           cc -O1 -w -Ibuild/gen -Ifirmware/src -o build/remote/editor_test tests/editor_test.c -lm
           build/remote/editor_test
-      - name: Current manual screens
-        run: |
-          cc -O1 -w -Ibuild/gen -Ifirmware/src -o build/remote/manual_shots tests/manual_shots.c -lm
-          mkdir -p build/remote/manual
-          build/remote/manual_shots build/remote/manual
       - uses: actions/upload-artifact@v4
         with:
           name: ghoulbox-display-companion
@@ -80,4 +75,3 @@ jobs:
             build/emu/remote_views.json
             build/emu/felucca.wasm
             web/REMOTE_SCREEN.md
-            build/remote/manual/

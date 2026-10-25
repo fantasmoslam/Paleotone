@@ -28,7 +28,14 @@ static uint32_t rs_io(uint32_t v, uint32_t n)
     }
     return rs_read ? out : v;
 }
-#define RS(v,n) do { if (rs_read) (v) = rs_io(0,n); else (void)rs_io((uint32_t)(v),n); } while (0)
+/* Addressed scalar capture keeps the field order/width explicit and reads
+ * each physical scalar once; no native structs or padding are transferred. */
+static void rs_scalar(const void *p,uint32_t n){
+    uint32_t v=n==4u?*(const uint32_t *)p:n==2u?*(const uint16_t *)p:*(const uint8_t *)p;
+    if(rs_pos+n>RS_MAX){rs_error=1;return;}
+    for(uint32_t k=0;k<n;k++){rs_buf[rs_pos++]=(uint8_t)v;v>>=8;}
+}
+#define RS(v,n) do { if (rs_read) (v) = rs_io(0,n); else rs_scalar(&(v),n); } while (0)
 #define RS8(v) RS(v,1)
 #define RS16(v) RS(v,2)
 #define RS32(v) RS(v,4)
