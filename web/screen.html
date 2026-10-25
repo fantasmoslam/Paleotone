@@ -1,154 +1,156 @@
 <!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PALEOTONE second screen</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PALEOTONE · FM-1 screen</title>
 <style>
-:root{--page:#0b0f0c;--ink:#33ff66;--edge:#0f5a22}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--page);color:var(--ink);font:15px "Share Tech Mono",ui-monospace,Menlo,Consolas,monospace}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
-  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
-canvas{width:min(94vw,calc(100vh - 90px));aspect-ratio:1;image-rendering:pixelated;background:#000;border:2px solid var(--edge);border-radius:6px}
-.bar{display:flex;gap:12px;align-items:center}
-button{font:inherit;color:#000;background:var(--ink);border:0;padding:8px 16px;border-radius:4px;cursor:pointer}
-button:focus-visible{outline:2px solid #ffb000;outline-offset:2px}
-#st{opacity:.8}
+:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#07100b;color:#c4fac8}
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;padding:20px;max-width:1200px;margin:auto}
+header,.toolbar,.ports{display:flex;gap:12px;align-items:center;flex-wrap:wrap}header{justify-content:space-between}
+h1{font:600 20px ui-monospace,monospace;letter-spacing:.06em}
+button,select{font:inherit;padding:10px 14px;border:1px solid #355941;background:#14271b;color:inherit;border-radius:5px}
+button{cursor:pointer;touch-action:none;user-select:none}button:disabled{opacity:.45;cursor:default}
+button[aria-pressed=true],button.held{background:#46e874;color:#07100b}
+button:focus-visible,select:focus-visible{outline:2px solid #ffb020;outline-offset:3px}
+#stage{display:flex;justify-content:center;margin:20px 0}
+canvas{display:block;max-width:100%;width:min(100%,75vh);height:auto;image-rendering:pixelated;background:#000;border:1px solid #355941}
+body.wide canvas,body.wide #screen-image{width:100%}#screen-image{display:block;max-width:100%;width:min(100%,75vh);height:auto;image-rendering:pixelated;background:#000;border:1px solid #355941}#status{min-height:2em;color:#9cbca5}
+.second-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;border:1px solid #355941;border-radius:5px}
+.second-controls label{display:flex;gap:8px;align-items:center}.second-controls small{color:#9cbca5}
+.target-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.target-controls .side{flex:1;min-width:120px}.target-controls output{min-width:150px;color:#ffbf53}
+body.target-right #screen{border-color:#ffbf53}body.target-left #screen{border-color:#46e874}
+#buttons,#encoders{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#encoders>div{border:1px solid #284632;padding:8px;border-radius:5px;text-align:center}
+#encoders span{display:block;font:12px ui-monospace,monospace;margin-bottom:8px}
+.help{color:#9cbca5;font-size:13px;line-height:1.5}.ports{margin:12px 0}
 </style>
 </head>
 <body>
-<canvas id="s" width="240" height="240" aria-label="FM-1 second screen"></canvas>
-<div class="bar"><button id="go">Connect FM-1</button><span id="st">not connected</span></div>
-<script>
-"use strict";
-/* Read-only second screen. Needs firmware with editor_screen.c (cmds 90, 91). Never sends anything that changes the FM-1. */
-const C = {bg:"#000", fg:"#33ff66", dim:"#0f5a22", am:"#ffb000"};
-const cv = document.getElementById("s"), g = cv.getContext("2d"), st = document.getElementById("st");
-let out = null, info = null, dump = null, scr = null, pages = [], desc = {}, asked = {}, names = {}, menu = [], menuAsked = false, hot = {};
-const q = [];
-const tx = (cmd, ...a) => q.push([0xF0, 0x7D, 0x46, 0x4C, cmd, ...a, 0xF7]);
-setInterval(() => { if (out && q.length) out.send(q.shift()); }, 8);
-setInterval(() => { if (out) tx(25); }, 1000);                 /* PING: keeps WATCH alive (it ends after 3 s) */
-const v14 = (a, i) => (a[i] | a[i + 1] << 7) - 8192;
-function str(a, i) { let s = ""; while (a[i]) s += String.fromCharCode(a[i++]); return [s, i + 1]; }
+<header><h1>PALEOTONE / FM-1 SCREEN</h1><div class="toolbar">
+<button id="connect">Connect FM-1</button><button id="disconnect" disabled>Disconnect</button>
+<button id="original" aria-pressed="true">Original</button><button id="expanded" aria-pressed="false">Expanded</button>
+<button id="fullscreen">Fullscreen</button><button id="compatible" aria-pressed="false">Compatible display</button></div></header>
+<div class="ports" id="ports" hidden><label>MIDI input <select id="input"></select></label>
+<label>MIDI output <select id="output"></select></label><button id="use">Use selected ports</button></div>
+<p id="status" role="status">Connect the FM-1 with a USB data cable. Sound runs on the instrument.</p>
+<div class="second-controls" id="second-controls" hidden>
+<label>Second screen <select id="second-view"><option value="overview">Tracks / sequence overview</option></select></label>
+<label id="second-track-label" hidden>Track <select id="second-track"><option value="follow">Follow FM-1</option><option value="0">Track 1</option><option value="1">Track 2</option><option value="2">Track 3</option><option value="3">Track 4</option></select></label>
+<small id="second-help">Both pages are remembered on the FM-1. Swap sides with HOME + OCT− / OCT+.</small></div>
+<div id="target-controls" class="target-controls" hidden><output id="target-status" aria-live="polite">FM-1 controls: LEFT</output><span>Hold HOME, tap OCT− for LEFT or OCT+ for RIGHT, then release.</span></div>
+<div id="stage"><canvas id="screen" width="240" height="240" aria-label="PALEOTONE device screen"></canvas></div>
 
-/* ---- incoming ---- */
-function onMsg(e) {
-  const d = e.data;
-  if (d[0] !== 0xF0 || d[1] !== 0x7D || d[2] !== 0x46 || d[3] !== 0x4C) return;
-  const cmd = d[4], p = Array.from(d.slice(5, d.length - 1));
-  if (cmd === 1) {                                              /* INFO */
-    let [ver, i] = str(p, 0);
-    info = {ver, ne: p[i], pc: p[i + 1], gc: p[i + 2], ns: p[i + 3], e0: p[i + 4], eng: []};
-    i += 5;
-    for (let k = 0; k < info.ne; k++) { let n; [n, i] = str(p, i); info.eng.push(n); }
-    tx(22, 1); tx(4); tx(91, 0); tx(90);
-  } else if (cmd === 91) {                                      /* PAGE_DESC */
-    const k = p[0], n = p[1];
-    if (k < n) {
-      const [t, j] = str(p, 2);
-      pages[k] = {t, fam: p[j], sc: p[j + 1], gr: p[j + 2], id: p.slice(j + 3, j + 7).map(x => x === 127 ? -1 : x)};
-      tx(91, k + 1);
+<p class="help">Use the FM-1’s physical buttons and knobs. In Expanded mode, hold HOME and tap OCT− for the left side or OCT+ for the right, then release both buttons.
+Original uses the firmware's screen renderer. Expanded can show the track overview or an independent live firmware page, with its own track selection.
+This page requires its matching companion firmware and felucca.wasm from the same build.</p>
+<script type="module">
+import {MidiLink,DisplaySync,rgb565,recoverableScreenError} from './remote_screen.js';
+import {SecondScreen,contextSnapshot,joinScreens} from './second_screen.js';
+import {PhysicalFocus} from './physical_focus.js';
+import {FramePresenter} from './frame_presenter.js';
+const $=id=>document.getElementById(id),canvas=$('screen'),status=$('status');
+const presenter=new FramePresenter(canvas);
+let access,ex,second,link,sync,focus,running=false,wide=false,generation=0,loading;
+function stop(message='Disconnected'){
+  generation++;running=false;link?.close();link=sync=focus=null;
+  $('connect').disabled=false;$('disconnect').disabled=true;status.textContent=message;
+}
+function paint(){
+  if(!sync?.bytes)return;
+  const state=focus.snapshot();
+  let rgba;
+  if(!wide)rgba=rgb565(new Uint16Array(ex.memory.buffer,ex.web_screen(),240*240));
+  else{
+    const left=state.side==='left'?sync.bytes:contextSnapshot(sync.bytes,second.layout,state.left);
+    const right=state.side==='right'?sync.bytes:contextSnapshot(sync.bytes,second.layout,state.right);
+    // Copy each result before applying the next context to the isolated renderer.
+    const lp=rgb565(second.rawPixels(left)),rp=rgb565(second.rawPixels(right));rgba=joinScreens(lp,rp);
+    const current=second.layout.views.find(v=>v.home===state.right.home&&(v.home||v.page===state.right.page));
+    if(current)$('second-view').value=current.id;
+    $('second-track').value=String(state.right.track);
+  }
+  presenter.present(rgba,wide?480:240,240);
+  $('target-status').textContent='FM-1 controls: '+state.side.toUpperCase();
+  document.body.classList.toggle('target-left',state.side==='left');
+  document.body.classList.toggle('target-right',state.side==='right');
+}
+async function loadRenderer(){
+  if(ex&&second)return;
+  if(loading)return loading;
+  loading=(async()=>{
+    const response=await fetch('felucca.wasm');if(!response.ok)throw new Error('The matching graphics renderer could not be loaded.');
+    const {instance,module}=await WebAssembly.instantiate(await response.arrayBuffer(),{});ex=instance.exports;
+    if(!ex.web_panel_context)throw new Error('This page needs the matching device-switching renderer.');
+    ex._initialize();ex.web_nor_erase();ex.web_boot();
+    const r=await fetch('remote_views.json');if(!r.ok)throw new Error('The screen layout could not be loaded.');
+    const layout=await r.json(),other=new WebAssembly.Instance(module,{}).exports;
+    other._initialize();other.web_nor_erase();other.web_boot();second=new SecondScreen(other,layout);
+    $('second-view').replaceChildren(...layout.views.map(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.label;return o;}));
+    $('second-track').replaceChildren(...[0,1,2,3].map(t=>{const o=document.createElement('option');o.value=String(t);o.textContent='Track '+(t+1);return o;}));
+  })();
+  try{await loading;}finally{loading=null;}
+}
+async function assignRight(){
+  if(!running||!focus)return;
+  const view=second.layout.views.find(v=>v.id===$('second-view').value);if(!view)return;
+  try{await focus.configure(view,$('second-track').value);}
+  catch(e){status.textContent=e.message;}
+}
+$('second-view').onchange=assignRight;$('second-track').onchange=assignRight;
+function mode(value){
+  wide=value;document.body.classList.toggle('wide',wide);
+  $('second-controls').hidden=$('target-controls').hidden=!wide;
+  $('second-track-label').hidden=false;
+  $('original').setAttribute('aria-pressed',!wide);$('expanded').setAttribute('aria-pressed',wide);
+  if(sync?.bytes)paint();
+}
+$('original').onclick=()=>mode(false);$('expanded').onclick=()=>mode(true);
+$('compatible').setAttribute('aria-pressed',presenter.compatible);
+$('compatible').onclick=()=>{presenter.setCompatible(!presenter.compatible);$('compatible').setAttribute('aria-pressed',presenter.compatible);paint();};
+$('fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():$('stage').requestFullscreen?.();
+$('disconnect').onclick=()=>stop();
+async function start(input,output){
+  stop('Connecting…');const own=++generation;$('connect').disabled=true;
+  try{
+    await loadRenderer();await input.open();await output.open();if(own!==generation)return;
+    link=new MidiLink(input,output,2500);focus=new PhysicalFocus(link,ex);
+    sync=new DisplaySync(link,ex.web_remote_id(),ex.web_remote_schema(),bytes=>{
+      if(bytes.length>ex.web_remote_capacity())return false;
+      new Uint8Array(ex.memory.buffer,ex.web_remote_buffer(),bytes.length).set(bytes);return !!ex.web_remote_apply(bytes.length);
+    });
+    sync.check(await link.status(0));running=true;$('disconnect').disabled=false;$('ports').hidden=true;
+    let failures=0;
+    while(running&&own===generation){
+      const began=performance.now();
+      try{
+        await focus.poll(wide&&!document.hidden);
+        await sync.update();if(own!==generation)return;
+        paint();failures=0;status.textContent=output.name+' · synchronized'+presenter.status();
+      }catch(e){
+        if(own!==generation)return;
+        if(!recoverableScreenError(e)||++failures>=3)throw e;
+        sync.bytes=null;sync.rev=0;status.textContent='Screen transfer interrupted · retrying…';
+      }
+      await new Promise(resolve=>setTimeout(resolve,Math.max(20,120-(performance.now()-began))));
     }
-  } else if (cmd === 90) { scr = p.slice(0, 12); if (scr[2] === 1 && !menuAsked) { menuAsked = true; menu = []; tx(72, 0); } if (scr[2] !== 1) menuAsked = false; }
-  else if (cmd === 4) {                                         /* DUMP */
-    dump = {eng: p[0], pre: p[1], v: [], g: []};
-    for (let i = 0; i < info.pc; i++) dump.v.push(v14(p, 2 + 2 * i));
-    for (let i = 0; i < info.gc; i++) dump.g.push(v14(p, 2 + 2 * info.pc + 2 * i));
-    if (!names[dump.eng]) tx(10, dump.eng);
-  } else if (cmd === 10) {                                      /* NAMES */
-    let i = 2; const n = [];
-    for (let k = 0; k < p[1]; k++) { let s; [s, i] = str(p, i); n.push(s); }
-    names[p[0]] = n;
-  } else if (cmd === 5) {                                       /* DESC */
-    const fmt = p[2], mn = v14(p, 3), mx = v14(p, 5);
-    let [label, j] = str(p, 9), unit; [unit, j] = str(p, j);
-    const en = [];
-    if (fmt === 8) for (let k = mn; k <= mx && k - mn < 24; k++) { let s; [s, j] = str(p, j); en.push(s); }
-    desc[p[0] + ":" + p[1]] = {fmt, mn, mx, label, unit, en};
-  } else if (cmd === 23 && dump) {                              /* CHANGED */
-    const sc = p[0], id = p[1], v = v14(p, 2);
-    (sc ? dump.g : dump.v)[id] = v;
-    hot[sc + ":" + id] = performance.now();
-  } else if (cmd === 24) { desc = {}; asked = {}; tx(4); }      /* RELOAD */
-  else if (cmd === 72) {                                        /* MENU_DESC */
-    if (p[1] === 127) return;
-    const kind = p[2], mn = v14(p, 5), mx = v14(p, 7);
-    let [name, j] = str(p, 9), vn = [], unit = "";
-    if (kind === 0) for (let k = mn; k <= mx; k++) { let s; [s, j] = str(p, j); vn.push(s); } else [unit, j] = str(p, j);
-    menu[p[0]] = {name, kind, val: v14(p, 3), vn, unit, tab: p[j]};
-    tx(72, p[0] + 1);
-  }
+  }catch(e){if(own===generation)stop(e.message);}
 }
-
-/* ---- value text ---- */
-function need(sc, id) { const k = sc + ":" + id; if (!desc[k] && !asked[k]) { asked[k] = 1; tx(5, sc, id); } return desc[k]; }
-function fmtVal(d, v) {
-  if (!d) return "";
-  if (d.fmt === 8) return d.en[v - d.mn] || String(v);
-  if (d.fmt === 11) return v ? "ON" : "OFF";
-  return v + (d.unit || "");
-}
-const txt = (s, x, y, c = C.fg, a = "left", sz = 12) => { g.fillStyle = c; g.textAlign = a; g.font = sz + "px 'Share Tech Mono',monospace"; g.fillText(s, x, y); };
-
-/* ---- drawing: the layout of ui.c (cards x=3+59c y=28 57x44, panel y=76 h=122, footer y=202) ---- */
-function draw() {
-  g.fillStyle = C.bg; g.fillRect(0, 0, 240, 240);
-  if (!info || !dump || !scr || !pages.length) { txt(out ? "WAITING FOR FM-1..." : "PALEOTONE", 120, 124, C.dim, "center", 14); return; }
-  const [home, pg, mnu, msel, conf, lay, bank, cur] = scr, P = pages[pg];
-  const title = mnu ? "MENU" : home ? "HOME" : P ? P.t : "";
-  txt(title, 6, 18, C.fg, "left", 14);
-  txt((info.eng[dump.eng] || "") + " " + ((names[dump.eng] || [])[dump.pre] || ""), 234, 18, C.dim, "right", 11);
-  g.fillStyle = C.dim; g.fillRect(3, 24, 234, 1);
-  if (mnu === 1) drawMenu(msel);
-  else if (!home && P && (P.sc === 0 || P.sc === 1)) drawPage(P);
-  else txt(home ? "HOME" : title, 120, 140, C.dim, "center", 18);
-  if (P && P.fam === 9 && !home && !mnu) txt("STEP " + (cur + 1) + "   BANK " + (bank + 1), 6, 226, C.am, "left", 12);
-  if (lay) txt("LAYER " + lay, 234, 226, C.am, "right", 12);
-  if (conf) { g.fillStyle = "#000"; g.fillRect(30, 90, 180, 56); g.strokeStyle = C.am; g.strokeRect(30.5, 90.5, 179, 55); txt("CONFIRM", 120, 122, C.am, "center", 16); }
-}
-function drawPage(P) {
-  const now = performance.now();
-  for (let c = 0; c < 4; c++) {
-    const x = 3 + 59 * c, id = P.id[c];
-    g.strokeStyle = C.dim; g.strokeRect(x + .5, 28.5, 56, 43);
-    if (id < 0) continue;
-    const d = need(P.sc, id), v = (P.sc ? dump.g : dump.v)[id], on = now - (hot[P.sc + ":" + id] || -1e9) < 600;
-    txt(d ? d.label.slice(0, 6) : "", x + 28, 42, on ? C.am : C.dim, "center", 11);
-    txt(fmtVal(d, v).slice(0, 7), x + 28, 62, on ? C.am : C.fg, "center", 14);
-  }
-  g.strokeStyle = C.dim; g.strokeRect(3.5, 76.5, 233, 121);
-  if (P.gr === 1) {                                             /* GR_ADSR: A D S R from the four values */
-    const [a, d, s, r] = P.id.map(i => (dump.v[i] || 0)), m = (n) => Math.max(0, Math.min(1, n / 127));
-    const w = 55, y0 = 190, h = 100, x0 = 14, sx = x0 + w * m(a), dx = sx + w * m(d), rx = dx + 40, ex = rx + w * m(r);
-    g.strokeStyle = C.fg; g.beginPath(); g.moveTo(x0, y0); g.lineTo(sx, y0 - h); g.lineTo(dx, y0 - h * m(s)); g.lineTo(rx, y0 - h * m(s)); g.lineTo(ex, y0); g.stroke();
-  } else txt(P.t, 120, 142, C.dim, "center", 16);
-}
-function drawMenu(sel) {
-  const it = menu[sel], tab = it ? it.tab : 0, list = [];
-  menu.forEach((m, i) => { if (m && m.tab === tab) list.push(i); });
-  const first = Math.max(0, Math.min(list.indexOf(sel) - 5, list.length - 11));
-  list.slice(first, first + 11).forEach((i, k) => {
-    const m = menu[i], y = 44 + k * 16, on = i === sel;
-    if (on) { g.fillStyle = C.dim; g.fillRect(4, y - 12, 232, 15); }
-    txt((on ? "> " : "  ") + m.name, 8, y, on ? C.fg : C.dim, "left", 12);
-    txt(m.kind === 0 ? (m.vn[m.val] || "") : m.val + m.unit, 232, y, on ? C.fg : C.dim, "right", 12);
-  });
-}
-setInterval(draw, 60);
-
-/* ---- connect ---- */
-document.getElementById("go").onclick = async () => {
-  try {
-    const m = await navigator.requestMIDIAccess({sysex: true});
-    const pick = l => [...l.values()].find(x => /fm-?1|felucca|paleotone|ghoul/i.test(x.name)) || [...l.values()][0];
-    const i = pick(m.inputs); out = pick(m.outputs);
-    if (!i || !out) { st.textContent = "no MIDI device found"; out = null; return; }
-    i.onmidimessage = onMsg; st.textContent = out.name; tx(1);
-  } catch (e) { st.textContent = "MIDI blocked: " + e.message; }
+$('connect').onclick=async()=>{
+  try{
+    if(!navigator.requestMIDIAccess)throw new Error('This browser does not offer USB MIDI. Open the page in Chrome on Android or a compatible desktop browser.');
+    access=await navigator.requestMIDIAccess({sysex:true});
+    const inputs=[...access.inputs.values()],outputs=[...access.outputs.values()],fm=p=>/fm-?1|felucca|paleotone|ghoul/i.test(p.name||'');
+    const a=inputs.filter(fm),b=outputs.filter(fm);
+    if(a.length===1&&b.length===1){start(a[0],b[0]);return;}
+    if(!inputs.length||!outputs.length)throw new Error('No FM-1 MIDI ports found. Check the USB data cable.');
+    for(const [id,list] of [['input',inputs],['output',outputs]])$(''+id).replaceChildren(...list.map(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name||p.id;return o;}));
+    $('ports').hidden=false;status.textContent='Select the FM-1 input and output.';
+  }catch(e){status.textContent=e.message;}
 };
+$('use').onclick=()=>start(access.inputs.get($('input').value),access.outputs.get($('output').value));
+addEventListener('pagehide',()=>stop());
+
 </script>
-</body>
-</html>
+</body></html>

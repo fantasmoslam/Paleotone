@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus]
   workflow_dispatch:
 
 permissions:
@@ -57,11 +57,17 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: paleotone-firmware
-          path: paleotone.fwsc
+          path: |
+            paleotone.fwsc
+            build.log
+            build/felucca.bin
+            build/felucca.elf
+            build/felucca.dis
+            build/loader/loader.dis
           if-no-files-found: error
 
       - name: Put the result on the build-output branch
-        if: always()
+        if: always() && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config --global --add safe.directory "$PWD"
