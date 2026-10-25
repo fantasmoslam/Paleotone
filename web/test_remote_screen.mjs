@@ -14,11 +14,12 @@ function status(op,rev,base,dirty=255){
 }
 assert.equal(parseStatus(status(1,2,1)).length,130);
 assert.throws(()=>parseStatus([]));
+let fakeRev=2, fakeBase=0, fakeDirty=255;
 const calls=[], input={state:"connected"}, output={state:"connected",send(message){
   calls.push(message);
   const cmd=message[4], args=message.slice(5,-1);
   let payload;
-  if(cmd===92)payload=status(args[0],2,args[0]===2?2:0);
+  if(cmd===92)payload=status(args[0],fakeRev,args[0]===2?fakeRev:fakeBase,fakeDirty);
   else if(cmd===93){
     const block=args[2]|args[3]<<7,n=block?2:128,data=Array.from({length:n},(_,i)=>(i+block)&255),packed=[];
     for(let i=0;i<n;i+=7){const part=data.slice(i,i+7);packed.push(part.reduce((a,v,j)=>a|v>>7<<j,0),...part.map(v=>v&127));}
@@ -31,6 +32,14 @@ const sync=new DisplaySync(link,1,1,(bytes)=>{applied.push(bytes.slice());return
 await sync.update();
 assert.equal(applied[0].length,130);assert.equal(applied[0][128],1);
 assert.equal(sync.rev,2);assert.equal(calls.filter(p=>p[4]===93).length,2);
+fakeRev=3;fakeBase=2;fakeDirty=1;
+await sync.update();
+assert.equal(sync.rev,3);
+assert.equal(calls.filter(p=>p[4]===93).length,3); // only the changed block
+assert.equal(applied[1][128],applied[0][128]);     // tail retained from acknowledged base
+fakeRev=4;fakeBase=0;fakeDirty=0;
+await sync.update();
+assert.equal(calls.filter(p=>p[4]===93).length,5); // reconnect/base loss forces both blocks
 assert.throws(()=>sync.check({...parseStatus(status(0,0,0)),id:2}),/versions do not match/);
 await link.inputCommand([1,0,65]);
 link.close();await assert.rejects(link.request(92,[0]),/disconnected/i);

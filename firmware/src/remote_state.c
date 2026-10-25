@@ -89,7 +89,12 @@ static void rs_walk(void)
     RS8(scrn.st);
     RS32(scope_w);
     for (i = 0; i < SCOPE_N; i++) RS16(scope_buf[i]);
-    RS32(fm1_in.buttons); RS32(fm1_in.notes);
+    {
+        uint32_t buttons = panel_buttons();
+        RS32(buttons);
+        if (rs_read) fm1_in.buttons = buttons;
+    }
+    RS32(fm1_in.notes);
     RSA8(panel.btn); RSA8(panel.enc); RSA8(panel.dir);
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
