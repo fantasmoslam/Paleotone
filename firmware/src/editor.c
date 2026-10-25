@@ -204,6 +204,7 @@ static void ed_known(uint32_t k, uint32_t id)            /* the editor's own cha
             ed_w.tv[k * 3u + j] = trk[k].p[id];
 }
 
+static void ed_screen_push(void);                        /* editor_screen.c */
 static void ed_sync(void)                                /* main loop */
 {
     uint32_t i, n = 0, now = fm1_ms;
@@ -214,6 +215,7 @@ static void ed_sync(void)                                /* main loop */
         ed_w.on = 0;                                     /* no host, USB reset, or 3 s without a request */
         return;
     }
+    ed_screen_push();                                    /* second screen: what the screen shows */
     if (sync_reload || ed_eng(TSEL) != ed_w.eng || TSEL->preset != ed_w.preset || song.sel != ed_w.sel) {
         if (!ed_room())
             return;
@@ -348,6 +350,7 @@ static int ed_flash_stop(void)
 #include "editor_backup.c"
 #include "editor_fm6.c"
 #include "editor_menu.c"
+#include "editor_screen.c"
 
 /* MOTION's reply: the records of track k as (step, id, v14), a lock's id without its MOTION_LOCK bit (a 7-bit SysEx
  * byte); kinds (1.1: the ops 5..7): then one byte per record, in the same order, 0 automation, 1 lock. The query and
@@ -382,7 +385,7 @@ static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
     switch (cmd) {
     case ED_INFO: case ED_DUMP: case ED_SMP_INFO: case ED_PING:
-    case ED_UI_STATE: case ED_UI_PALETTES:
+    case ED_UI_STATE: case ED_UI_PALETTES: case ED_SCREEN:
         return !n;
     case ED_GET: case ED_DESC: case ED_PRESET: case ED_PROJECT: case ED_UP_LIST:
     case ED_TRACK_PARAM:
@@ -390,7 +393,7 @@ static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
     case ED_SET:
         return n == 4u;
     case ED_STEP_GET: case ED_NAMES: case ED_SMP_BEGIN: case ED_SMP_ERASE:
-    case ED_UP_GET: case ED_UP_LOAD: case ED_UP_ERASE: case ED_WATCH: case ED_TRACK_DUMP: case ED_MENU_DESC:
+    case ED_UP_GET: case ED_UP_LOAD: case ED_UP_ERASE: case ED_WATCH: case ED_TRACK_DUMP: case ED_MENU_DESC: case ED_PAGE_DESC:
         return n == 1u;
     case ED_MENU_SET:
         return n == 3u;
@@ -435,6 +438,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     if (ed_backup_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_fm6_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_menu_handle(cmd, a, na)) { ed_send(); return; }
+    if (ed_screen_handle(cmd, a, na)) { ed_send(); return; }
     switch (cmd) {
     case ED_MOTION: {
         track_t *t = &trk[a[0]]; uint32_t rc = 0;
