@@ -47,6 +47,7 @@ jobs:
           node web/test_remote_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_second_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_physical_focus.mjs
+          node web/test_frame_presenter.mjs
           node web/test_control_target.mjs
           node web/test_control_widget.mjs
       - name: Existing editor regression
@@ -62,6 +63,7 @@ jobs:
             build/emu/second_screen.js
             build/emu/control_target.js
             build/emu/physical_focus.js
+            build/emu/frame_presenter.js
             build/emu/remote_views.json
             build/emu/felucca.wasm
             web/REMOTE_SCREEN.md

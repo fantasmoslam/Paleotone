@@ -1423,6 +1423,8 @@ static int crank_select(void)
     return 1;
 }
 
+#include "ui_panel_views.c"
+
 static void ui_input(void)
 {
     panel_remote_tick();
@@ -1453,11 +1455,17 @@ static void ui_input(void)
     /* Expanded companion focus: HOME first, then OCT-/OCT+. Physical events only.
      * The chord is hidden from ordinary HOME/octave handling until every button is up. */
     {
+        panel_views_capture();
+        uint32_t old_side=panel_screen.side,old_serial=panel_screen.serial;
+        int blocked=panel_view_blocked();
         uint32_t mask = panel_screen_gesture(&panel_screen, fm1_in.buttons, pressed,
             1u << panel.btn[B_HOME], 1u << panel.btn[B_OCTDN], 1u << panel.btn[B_OCTUP],
             panel_screen.enabled && fm1_ms - panel_screen.last_ms < 3000u && panel_screen.resets == usb.resets,
-            ui.menu || ui.confirm || ui.layer || ui.ly || ui.lock || name_on() || ui.uboot ||
-            mom.n || fm1_in.notes || remote_panel.held);
+            0);
+        if(panel_screen.serial!=old_serial&&blocked){
+            panel_screen.side=(uint8_t)old_side;panel_screen.serial=(uint16_t)old_serial;
+            ui_message("FINISH CURRENT EDIT");
+        }else if(old_side!=panel_screen.side)panel_view_switch(old_side);
         pressed &= ~mask;
         if (mask) { ui.home_t0 = 0; ui.pg_down &= (uint16_t)~mask; }
     }

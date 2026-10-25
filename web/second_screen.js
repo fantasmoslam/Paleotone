@@ -26,6 +26,8 @@ export function contextSnapshot(bytes,layout,context) {
   const copy=bytes.slice();
   for(const key of ['home','page','bank','cursor','lane']) copy[layout.ui[key]]=context[key];
   copy[layout.selectedTrack]=context.track;
+  if(context.seqMode!==undefined)copy[layout.seqMode]=context.seqMode;
+  if(context.grid!==undefined)copy[layout.grid]=context.grid;
   for(const key of ['menu','confirm','layer','uboot','msg_t','hot_t'])copy[layout.ui[key]]=0;
   return copy;
 }

@@ -49,7 +49,7 @@ def generate():
               ('scape', 'Soundscape', 'SCAPE')]
     views = [{'id': key, 'label': label, 'home': int(title is None),
               'page': 0 if title is None else pages.index(title)} for key, label, title in wanted]
-    return {'rendererId': render_id(), 'schema': 1, 'selectedTrack': 4 + 2 * count + 4, 'grid': 4 + 2 * count + 2,
+    return {'rendererId': render_id(), 'schema': int(re.search(r'#define RS_SCHEMA (\d+)u', (ROOT / 'firmware/src/remote_state.c').read_text()).group(1)), 'seqMode': 4 + 2 * count + 1, 'selectedTrack': 4 + 2 * count + 4, 'grid': 4 + 2 * count + 2,
             'ui': ui, 'views': views,
             'pages': [{'page': i, 'label': title, 'button': buttons[families[i][4:]]} for i,title in enumerate(pages)]}
 
