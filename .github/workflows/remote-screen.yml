@@ -31,6 +31,12 @@ jobs:
           build/remote/gesture_test
           cc -O1 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/physical_test tests/physical_panel_test.c -lm
           build/remote/physical_test
+      - name: SCAPE pages and held-layer navigation
+        run: |
+          cc -O1 -w -Ibuild/gen -Ifirmware/src -o build/remote/scape_nav tests/scape_navigation_test.c -lm
+          build/remote/scape_nav
+          cc -O1 -w -DFELUCCA_FM4=1 -Ibuild/gen -Ifirmware/src -o build/remote/scape_nav_fm4 tests/scape_navigation_test.c -lm
+          build/remote/scape_nav_fm4
       - name: Shared SCAPE director and project compatibility
         run: |
           cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/director_test tests/scape_director_test.c -lm

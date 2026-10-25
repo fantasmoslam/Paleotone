@@ -1,11 +1,40 @@
-# SCAPE redesign candidate
+# SCAPE: shared music and habitat
 
-This branch starts by retiring the SLICER insert and its FX/editor page. Numeric track parameter slots 45..48 remain reserved so projects, presets, MIDI descriptors and automation keep their existing layout. Stored insert values are ignored by the audio path. The performance layer retains its own 32 KiB stereo buffer and all existing effects. Removing SLICER therefore does not reclaim that buffer.
+HOME cycles MIXER, CLOCK, KEYS, then three SCAPE pages before returning home.
 
-## Next implementation
+| Page | Knob 1 | Knob 2 | Knob 3 | Knob 4 |
+| --- | --- | --- | --- | --- |
+| SCAPE MUSIC | ACTV: note density | EVOL: variation speed | MOTN: breathing depth | HOLD: chord time |
+| SCAPE MIX | Bed | Melody | Bass | Pulse |
+| SCAPE | Biome | Day/night | Distance | Creature call activity |
 
-Replace the disconnected composition/environment workflow with one musical director: shared key, chord and slow activity arc; explicit bed, melody, bass and pulse roles; coordinated spaces between calls and musical phrases. Retain normal transport and instrument editing. Keep environmental layers procedural on the device and preserve the native dual-screen renderer.
+Choose sounds first. Open SCAPE MUSIC and press a physical key to compose in that key. OCT+ confirms replacement of existing patterns; OCT− cancels. Composing enables evolution and starts playback. These remain ordinary editable sequences using the existing twelve-voice budget.
 
-Proposed overview: Activity, Evolution, Motion, Chord time. Music: Bed, Melody, Bass, Pulse levels. Habitat: Biome, Day/night, Distance, Creature activity. Detailed environmental mixing remains accessible. The shared director, role assignment and these pages are design targets, not implemented behavior in the SLICER-removal commit.
+The musical roles use independent 1/8-note loops: bed 29 beats, melody 13, bass 23, pulse 17. BEAST uses a held 64-step phrase. They follow one four-chord progression; HOLD selects 20, 30, 45, 60, 90, 120, 180 or 300 seconds. Chord changes transpose existing notes, preserving their rhythms and velocities. Held notes finish naturally; new notes adopt the new harmony. AUTO drone follows the current chord. A separate fixed drone key remains available.
 
-Define backward-compatible storage before adding controls. Do not reinterpret old global IDs as new controls. Validate unchanged ordinary sequences and sounds, deterministic evolution, rests/phrase boundaries, project round trips, voice budgets, target headroom and matched native/WASM rendering before installing a new candidate.
+MOTN gives layers separate breathing periods inside a shared two-minute sparse/full arc. Zero removes breathing. Mix controls attenuate each role without rewriting track levels, with smoothed gain changes. Bed also controls the held BEAST role. ACTV changes phrase density on the next loop; EVOL changes later material on each track's own loop boundary, keeping its opening motif. The pulse distributes hits across its loop. Melody notes leave real rests; new calls and wildlife events wait for these gaps. Calls follow the current chord root. Existing calls finish naturally.
+
+## Detailed settings under GLO
+
+Tap GLO through SONG to the SCAPE pages. Normal PLAY, REC and instrument editing keep their existing behavior.
+
+| Page | Knob 1 | Knob 2 | Knob 3 | Knob 4 |
+| --- | --- | --- | --- | --- |
+| SCAPE SETUP | Evolution on/off | Mood | Environment level | Extra drone level |
+| SCAPE ROLES | T1 role | T2 role | T3 role | T4 role |
+| SCAPE DRONE | Extra drone level | Fixed key / AUTO | Drone movement | Creature pitch |
+| SCAPE LIFE | Creature track / OFF | Passing-beast activity | Beast size | Creature pitch |
+| SCAPE LEVELS | Wind | Water | Rain | Insects |
+| SCAPE LEVELS 2 | Frogs | Birds | Drips | Rumble |
+
+Roles: AUTO, BED, MELO, BASS, PULSE, BEAST. AUTO uses T1 bass, T2 bed, T3 melody and T4 pulse, with SAURUS/ROAR as BEAST and drum kits as PULSE. Kits always use PULSE. No preset-name guesses. Changing a role takes effect on that track's next loop. Selecting a different scene clears the cached director.
+
+Evolution OFF freezes progression, variation and breathing clocks; playback and layer levels continue. Stopping transport pauses generation. Song-chain playback suspends the director. With no active composition the mix is an exact bypass. Environment-only use remains available: raise the environment level under GLO; creature track OFF prevents track-triggered calls and roars.
+
+Expanded companion: HOME+OCT− selects the left page, HOME+OCT+ the right. An effective pairing is SCAPE MUSIC on one side and SCAPE MIX on the other; both use the real firmware renderer.
+
+## Storage and compatibility
+
+Existing globals 0..68 and track parameter IDs are unchanged. Ten new globals 69..78 occupy previously unused bytes 33..42 of each existing 48-byte SCAPE settings sidecar. Old tails load defaults; project slots A–D and autosave retain new values. The sidecar is included in a full editor backup; a standalone legacy project payload does not contain these SCAPE settings. The transient chord position and phase restart after loading.
+
+SLICER is retired in this candidate. Its four stored track slots remain reserved and ignored by DSP. Repeat, reverse, tape stop, freeze, octave, flanger and phaser remain. Their dedicated 32 KiB buffer remains allocated. Older firmware can still be managed by the editor using its legacy layout.
