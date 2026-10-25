@@ -274,7 +274,6 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <p>To hear a scene you have just picked, set RESTORE LAST to OFF and switch off and on. Set it back to ON afterwards if you want your music remembered.</p>
 <h2 id="how-the-synth-is-built">How the synth is built</h2>
 <p>PALEOTONE is four tracks playing at once, like four musicians. Each track has its own engine and sound, its own notes in the sequencer and its own settings; together they share 12 voices, the effects and the master.</p>
-<figure><img class="diagram" src="img/signal.png" alt="the signal path · 4 tracks into one master" loading="lazy"><figcaption>the signal path · 4 tracks into one master</figcaption></figure>
 <p>Read it left to right. Notes come from the track's steps, your keys, MIDI or SCAPE's calls; the engine turns them into sound with voices from the shared 12. Then the track's own DIST, LEVEL, PAN and SPRD, and sends into the three shared effects. Everything meets in the mix, with the ambience and SCAPE added there, and leaves through TAPE and MASTER.</p>
 <h3 id="tracks-and-voices">Tracks and voices</h3>
 <ul>
@@ -1113,7 +1112,6 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <h3 id="recording-to-a-computer">Recording to a computer</h3>
 <p>The FM-1 is a USB audio input on a computer, no driver needed: the master in stereo at 44.1 kHz. MENU › AUDIO › USB LEVEL FIXED records at full level whatever MASTER says. Keep SPEAKER EQ on FLAT.</p>
 <h2 id="reference-every-page-and-knob">Reference: every page and knob</h2>
-<figure><img class="diagram" src="img/pages.png" alt="the page map · 10 page buttons, in tap order" loading="lazy"><figcaption>the page map · 10 page buttons, in tap order</figcaption></figure>
 <p><strong>Track</strong> pages change the selected track only; <strong>shared</strong> pages change the whole instrument and are saved with the project. EDIT 1 and 2 are the engine's own (see the engines table and PALEOTONE's sounds).</p>
 <table>
 <thead>
