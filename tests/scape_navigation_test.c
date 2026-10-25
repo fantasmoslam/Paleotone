@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #define UI_TEST_NO_MAIN 1
+#define UI_TEST_WITH_CASES 1
 #include "ui_test.c"
 int main(void)
 {

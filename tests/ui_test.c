@@ -4982,7 +4982,7 @@ static int test_bughunt_ui2(void)
     return bad;
 }
 
-#ifndef UI_TEST_NO_MAIN
+#if !defined(UI_TEST_NO_MAIN) || defined(UI_TEST_WITH_CASES)
 /* L is a sparse face (tools/gen_aa_font.py L_CHARS): every string drawn in it has all its glyphs */
 static int test_large_face(void)
 {
@@ -9953,4 +9953,5 @@ int main(void)
     printf(bad ? "ui: %d FAILED\n" : "ui: all passed\n", bad);
     return bad ? 1 : 0;
 }
+#endif /* UI_TEST_NO_MAIN */
 #endif
