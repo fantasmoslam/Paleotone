@@ -38,6 +38,7 @@ html=(HERE/'index_pkg.html').read_text(encoding="utf-8").replace('/*LIB*/',lib).
 html=html.replace('href="../../"','href="../"').replace('href="../app-setup/"','href="../screen/"').replace('href="../screen-unified/"','href="../screen/"').replace('href="../emu/"','href="../"').replace('href="../../manual/"','href="../manual/"').replace('href="../../firmware/','href="../firmware/').replace('href="../../firmwares/"','href="https://fantasmoslam.github.io/dinobox-fm1/firmwares/"')
 html=html.replace('<body>','<body><p style="text-align:center">SCAPE candidate firmware — use the paired candidate display after installing.</p>',1)
 html=html.replace('href="../firmware/LICENSES/"','href="https://github.com/fantasmoslam/dinobox-fm1/tree/'+source+'/LICENSES"')
+html=html.replace('This PALEOTONE build has been tested on an FM-1 with compressed dual-screen display.','This SCAPE candidate passed automated firmware and display checks; it has not yet been tested on a physical FM-1.')
 (installer/'index.html').write_text(html,encoding="utf-8")
 path=editor/'index.html';path.write_text(path.read_text(encoding="utf-8").replace('href="../emu/"','href="../"'),encoding="utf-8")
 path=out/'manual/index.html';path.write_text(path.read_text(encoding="utf-8").replace('href="../webapp/emu/"','href="../"').replace('href="../webapp/installer/"','href="../installer/"').replace('href="../webapp/editor/"','href="../editor/"'),encoding="utf-8")

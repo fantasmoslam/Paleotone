@@ -28,6 +28,7 @@ for(const page of ['index.html','installer/index.html','editor/index.html','manu
 }
 const installer=await read('installer/index.html'),meta=JSON.parse(installer.match(/const meta = (\{[^\n]+\});/)[1]);
 assert.equal(meta.sha256,build.firmware.sha256);assert.match(meta.pkg,/^\.\.\/paleotone-scape\.fwsc\?v=/);
+assert.match(installer,/has not yet been tested on a physical FM-1/);assert.doesNotMatch(installer,/has been tested on an FM-1 with compressed/);
 const script=installer.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)[1];new vm.Script(script);
 for(const bytes of [pkg,new Uint8Array([1,2,3])]) {
   const elements=new Map(),el=id=>{if(!elements.has(id))elements.set(id,{disabled:true,addEventListener(){},textContent:''});return elements.get(id);};let midi=0;
