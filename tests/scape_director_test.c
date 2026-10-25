@@ -18,23 +18,23 @@ int main(void)
     rng_state=42;dream_compose(2);
     for(t=0;t<NTRK;t++)assert(!memcmp(patterns[t],trk[t].step,sizeof patterns[t]));
     assert(trk[0].p[P_SLEN]==46 && trk[1].p[P_SLEN]==58 && trk[2].p[P_SLEN]==26 && trk[3].p[P_SLEN]==34);
-    assert(sd.role[0]==DR_BASS && sd.role[1]==DR_PAD && sd.role[2]==DR_MELODY && sd.role[3]==DR_PERC);
+    assert(scape_music.role[0]==DR_BASS && scape_music.role[1]==DR_PAD && scape_music.role[2]==DR_MELODY && scape_music.role[3]==DR_PERC);
     song.playing=1;transport_req=0;check_key();
-    old=sd.chord_pc;sd.elapsed=FS*60u;dream_tick();
-    assert(dream.chord==1 && sd.elapsed==0 && old!=sd.chord_pc);check_key();
+    old=scape_music.chord_pc;scape_music.elapsed=FS*60u;dream_tick();
+    assert(dream.chord==1 && scape_music.elapsed==0 && old!=scape_music.chord_pc);check_key();
     /* Chord changes transpose the motif, preserving rhythm and velocities. */
     for(t=0;t<NTRK;t++)for(i=0;i<NSTEP;i++)assert(patterns[t][i].time==trk[t].step[i].time && patterns[t][i].vel==trk[t].step[i].vel);
     for(i=0;i<48;i++){dr_chord();check_key();}
     song.g[G_SCAPE]=80;song.g[G_SCTRK]=1;song.g[G_SCRATE]=127;sc.cwait=0;sc.cnote=0;sc.nlen=0;
     trk[2].seq_idx=0;sc_calls();assert(!sc.cnote);
-    trk[2].seq_idx=3;sc_calls();assert(sc.cnote && sc.cnote%12u==sd.chord_pc);
+    trk[2].seq_idx=3;sc_calls();assert(sc.cnote && sc.cnote%12u==scape_music.chord_pc);
     trk_note_off(&trk[sc.ctrk],sc.cnote);sc.cnote=0;
     song.g[G_SMOTION]=0;for(i=G_SBED;i<=G_SPULSE;i++)song.g[i]=127;
-    for(i=0;i<512;i++)sd_block(CTL);
-    for(i=0;i<NTRK;i++)assert(sd.gain[i]==32768);
-    song.g[G_SMELO]=0;for(i=0;i<512;i++)sd_block(CTL);assert(sd.gain[2]==0);
-    old=sd.elapsed;song.g[G_DREAM]=0;for(i=0;i<30;i++){sd_block(CTL);dream_tick();}assert(sd.elapsed==old);
-    song.g[G_DREAM]=1;chain.armed=1;dream_tick();sd_block(CTL);assert(sd.elapsed==old);chain.armed=0;dream_tick();
+    for(i=0;i<512;i++)scm_block(CTL);
+    for(i=0;i<NTRK;i++)assert(scape_music.gain[i]==32768);
+    song.g[G_SMELO]=0;for(i=0;i<512;i++)scm_block(CTL);assert(scape_music.gain[2]==0);
+    old=scape_music.elapsed;song.g[G_DREAM]=0;for(i=0;i<30;i++){scm_block(CTL);dream_tick();}assert(scape_music.elapsed==old);
+    song.g[G_DREAM]=1;chain.armed=1;dream_tick();scm_block(CTL);assert(scape_music.elapsed==old);chain.armed=0;dream_tick();
     /* Append-only, byte-bounded settings; the older 33 bytes remain untouched. */
     for(i=0;i<10;i++)song.g[G_SMOTION+i]=GP[G_SMOTION+i].max;
     memcpy(keep,&song.g[G_SMOTION],sizeof keep);scape_side_put(0);
@@ -50,7 +50,7 @@ int main(void)
         assert(voices_busy()<=NVOICE);
         for(i=0;i<CTL*2;i++){uint32_t a=out[i]<0?-out[i]:out[i];assert(a<=32768);if(a>peak)peak=a;}
     }
-    assert(peak>100 && dream.chord>=1);dream_forget();assert(!sd.active);
+    assert(peak>100 && dream.chord>=1);dream_forget();assert(!scape_music.active);
     puts("SCAPE director: deterministic unequal loops, shared harmony/rests, smooth level controls, freeze/chain guard, old/new sidecars and 35-second bounded mix passed");
     return 0;
 }

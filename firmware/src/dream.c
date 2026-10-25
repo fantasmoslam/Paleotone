@@ -10,7 +10,7 @@ static struct {
     uint8_t valid,asked,root,scl,deg[4],role[NTRK],passes[NTRK],last[NTRK],chord,density[NTRK];
     uint32_t seed;
 } dream;
-static void dream_forget(void) { dream.valid=0; dream.asked=0; sd.active=0; }
+static void dream_forget(void) { dream.valid=0; dream.asked=0; scape_music.active=0; }
 static uint32_t dr_rnd(uint32_t n) { return n ? noise32(&dream.seed)%n : 0; }
 static uint32_t dr_note(int32_t degree,int32_t oct)
 {
@@ -29,7 +29,7 @@ static void dr_put(track_t *t,uint32_t at,int32_t degree,uint32_t oct,uint32_t v
 }
 static void dr_roles(void)
 {
-    uint32_t i; for(i=0;i<NTRK;i++)sd.role[i]=dream.role[i]=(uint8_t)sd_role(i);
+    uint32_t i; for(i=0;i<NTRK;i++)scape_music.role[i]=dream.role[i]=(uint8_t)scm_role(i);
 }
 static void dr_phrase(uint32_t ti,int evolve)
 {
@@ -68,9 +68,9 @@ static void dr_phrase(uint32_t ti,int evolve)
 }
 static void dr_arm(void)
 {
-    uint32_t i; sd.elapsed=sd.phase=0; sd.chord_pc=(uint8_t)(dr_note(dream.deg[dream.chord],3)%12u);
-    for(i=0;i<NTRK;i++)sd.gain[i]=32768;
-    sd.suspended=0;sd.active=1;
+    uint32_t i; scape_music.elapsed=scape_music.phase=0; scape_music.chord_pc=(uint8_t)(dr_note(dream.deg[dream.chord],3)%12u);
+    for(i=0;i<NTRK;i++)scape_music.gain[i]=32768;
+    scape_music.suspended=0;scape_music.active=1;
 }
 static void dream_compose(uint32_t root)
 {
@@ -111,7 +111,7 @@ static void dr_chord(void)
         for(k=0;k<n && pc[k]!=(uint32_t)(note%12);k++);
         if(k<n)trk[t].step[i].note[j]=(uint8_t)dr_note((int32_t)k+delta,oct);
     }
-    sd.chord_pc=(uint8_t)(dr_note(dream.deg[dream.chord],3)%12u);sd.elapsed=0;
+    scape_music.chord_pc=(uint8_t)(dr_note(dream.deg[dream.chord],3)%12u);scape_music.elapsed=0;
 }
 static void dream_go(uint32_t root)
 {
@@ -129,19 +129,19 @@ static void dream_tick(void)
 {
     static const uint16_t SECONDS[8]={20,30,45,60,90,120,180,300};
     uint32_t i,every=9u-(uint32_t)clamp(song.g[G_DDRFT],1,8);
-    sd.suspended=(uint8_t)chain_busy();
-    if(!song.g[G_DREAM] || !song.playing || sd.suspended)return;
+    scape_music.suspended=(uint8_t)chain_busy();
+    if(!song.g[G_DREAM] || !song.playing || scape_music.suspended)return;
     if(!dream.valid)dr_rebuild();
-    if(sd.elapsed >= FS*(uint32_t)SECONDS[clamp(song.g[G_SCHORD],0,7)])dr_chord();
+    if(scape_music.elapsed >= FS*(uint32_t)SECONDS[clamp(song.g[G_SCHORD],0,7)])dr_chord();
     for(i=0;i<NTRK;i++) {
         uint32_t idx=trk[i].seq_idx;
         if(idx<dream.last[i]) {
-            uint32_t role=sd_role(i);
-            if(role!=dream.role[i]) {sd.role[i]=dream.role[i]=(uint8_t)role;dr_phrase(i,0);}
+            uint32_t role=scm_role(i);
+            if(role!=dream.role[i]) {scape_music.role[i]=dream.role[i]=(uint8_t)role;dr_phrase(i,0);}
             else if(dream.density[i]!=(uint32_t)song.g[G_DDENS])dr_phrase(i,0);
             else if(++dream.passes[i]>=every) {
                 dream.passes[i]=0;
-                if(dream.role[i]!=DR_DRONE && sd_activity()>60u && dr_rnd(3u)==0u)dr_phrase(i,1);
+                if(dream.role[i]!=DR_DRONE && scm_activity()>60u && dr_rnd(3u)==0u)dr_phrase(i,1);
             }
         }
         dream.last[i]=(uint8_t)idx;
