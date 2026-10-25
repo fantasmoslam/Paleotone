@@ -6,7 +6,7 @@ const link={async request(cmd,args,match){calls.push([cmd,...args]);assert.ok(ma
 const focus=new PhysicalFocus(link,async side=>{targets.push(side);if(fail)throw new Error('navigation interrupted');});
 await focus.poll(true);assert.deepEqual(targets,[]);
 response=[1,1,1,0,1];await focus.poll(true);assert.deepEqual(targets,[]);
-response[4]=0;await focus.poll(true);assert.deepEqual(targets,['right']);
+response[4]=0;assert.equal(await focus.poll(true),true);assert.deepEqual(targets,['right']);
 await focus.poll(true);assert.deepEqual(targets,['right']);
 response=[1,0,2,0,0];await focus.poll(true);assert.deepEqual(targets,['right','left']);
 response=[1,1,3,0,0];fail=true;await assert.rejects(focus.poll(true),/navigation interrupted/);

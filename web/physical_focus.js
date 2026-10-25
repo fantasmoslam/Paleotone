@@ -9,5 +9,6 @@ export class PhysicalFocus {
     if(serial===this.serial||p[4])return; // wait until HOME and OCT are both released
     this.serial=serial;
     await this.select(p[1]?'right':'left');
+    return true; // the caller must obtain a fresh snapshot after device navigation
   }
 }

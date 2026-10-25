@@ -88,7 +88,7 @@ async function chooseTarget(side){
   if(side==='right'&&!router?.contexts.right)configureRight();
   if(side==='right'&&secondTrack==='follow'&&router?.contexts.right&&sync?.bytes)router.contexts.right.track=readContext(sync.bytes,second.layout).track;
   targetUI();
-  try{await router?.select(side);}catch(e){baseTarget=router?.active||'left';status.textContent=e.message;}finally{targetUI();}
+  try{await router?.select(side);}catch(e){baseTarget=router?.active||'left';status.textContent=e.message;throw e;}finally{targetUI();}
 }
 function paint(){
   if(!ex)return;
@@ -128,7 +128,7 @@ function mode(value){
   wide=value;document.body.classList.toggle("wide",wide);
   $("second-controls").hidden=!wide;
   $("target-controls").hidden=!wide;
-  if(!wide){chooseTarget('left');}else targetUI();
+  if(!wide){chooseTarget('left').catch(e=>{status.textContent=e.message;});}else targetUI();
   $("original").setAttribute("aria-pressed",!wide);$("expanded").setAttribute("aria-pressed",wide);
   if(sync?.bytes)paint();
 }
@@ -188,7 +188,7 @@ async function start(input,output){
       const began=performance.now();
       try{
         const result=await sync.update();
-        await focus.poll(wide&&!document.hidden);
+        if(await focus.poll(wide&&!document.hidden))await sync.update();
         if(own!==generation)return;
         failures=0;enabled(!router.busy);paint();status.textContent=output.name+" · synchronized"+(result.full?" · full state":"");
       }catch(e){

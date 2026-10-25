@@ -20,8 +20,7 @@ commit on `feature/fm1-physical-screen-focus`.
    the earlier successful MIDI test. Click **Connect FM-1**, permit SysEx,
    and select the FM-1 ports if requested.
 5. Compare HOME, ENV, EDIT, SEQ, MENU and a confirmation dialog against the
-   device. Test physical knobs first, then the browser's button and encoder
-   controls. Check that notes/audio and transport continue normally.
+   device. Test physical knobs and buttons. Check that notes/audio and transport continue normally.
 6. Switch to **Expanded**. Use **Second screen** to select the overview or
    a live Home, Mixer, Sequencer, Envelope, LFO, FX, Arpeggiator, Scale, Clock,
    or Soundscape page. Choose Follow FM-1 or a particular track.
@@ -78,9 +77,7 @@ editor regression also runs.
 This is a development build, not a claim of complete hardware-tested 1:1
 coverage. Polling cadence can change animation timing; live telemetry is
 sampled, not a frame-locked video feed. Custom SLICE source/marker metadata
-and all engine-specific navigation cases still need coverage. Browser controls
-currently expose panel buttons and encoders; the layer keyboard is not yet
-a touch keyboard. Expanded is a companion dashboard, not a reflow of every
+and all engine-specific navigation cases still need coverage. Input comes from the FM-1 panel; the companion displays the inactive page alongside it. Expanded is a companion dashboard, not a reflow of every
 original screen. Hardware audio performance, reconnection and phone operation
 must be tested on the real instrument before a release.
 
