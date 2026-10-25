@@ -18,19 +18,11 @@ def prepare(source, destination, revision):
     destination.mkdir(parents=True, exist_ok=True)
     for name in required:
         shutil.copyfile(source / name, destination / ("index.html" if name == "screen.html" else name))
-    page = (destination / "index.html").read_text()
-    # Retire the lightweight app's worker, which previously owned this same URL.
-    cleanup = '''<script>
-if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(registrations => {
-  const scope = new URL('./', location.href).href;
-  for (const registration of registrations) if (registration.scope === scope) registration.unregister();
-}).catch(() => {});
-</script>
-'''
-    page = page.replace('</head>', cleanup + '</head>')
+    page = Path(__file__).with_name("companion_page.html").read_text()
+    shutil.copyfile(Path(__file__).with_name("frame_presenter.js"), destination / "frame_presenter.js")
     (destination / "index.html").write_text(page)
     (destination / "build.json").write_text(json.dumps({"source": revision,
-        "rendererId": layout["rendererId"], "kind": "firmware-graphics-companion"}, indent=2) + "\n")
+        "rendererId": layout["rendererId"], "kind": "firmware-graphics-companion", "presentation": "android-compatible-v1"}, indent=2) + "\n")
 
 
 if __name__ == "__main__":

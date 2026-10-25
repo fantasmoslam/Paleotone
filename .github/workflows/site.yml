@@ -33,7 +33,9 @@ jobs:
         run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
 
       - name: Second-screen app checks
-        run: node web/test_screen_app.mjs
+        run: |
+          node web/test_screen_app.mjs
+          node web/test_frame_presenter.mjs
 
       - uses: mymindstorm/setup-emsdk@v14
         with:
