@@ -577,7 +577,6 @@ EXPORT uint32_t web_remote_apply(uint32_t n)
     chain.config = chain_config;
     page_over = 0;
     palette_set(settings.palette);
-    ux_track(song.sel);
     ui.force = 1;
     /* The snapshots are taken after a hardware draw. Render the captured
      * frame without advancing animation counters or the instrument clock. */
