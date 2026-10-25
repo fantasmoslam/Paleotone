@@ -78,6 +78,7 @@
     <img class="skull" src="../art/skull.png" alt="">
     <img class="logo" src="../art/logo.png" alt="PALEOTONE">
   </header>
+  <nav><a href="../../">Home</a> · <a href="../app-setup/">Check display compatibility</a> · <a href="../screen-unified/">Open hardware display</a></nav>
   <p class="tagline" data-t="tagline"></p>
   <div class="stage">
   <div class="torch" aria-hidden="true"></div>
@@ -206,6 +207,7 @@ let lang = (navigator.language || "en").toLowerCase().startsWith("ja") ? "ja" : 
 const t = (k) => TEXT[lang][k];
 let lastKey = null, lastArg = "";
 const meta = /*META*/;
+const RESUME_KEY="paleotone-resume-"+(meta.sha256||meta.version), RELOAD_KEY=RESUME_KEY+"-reloads";
 const VER = String(meta.version).replace(/^gb/, "");   // GHOULBOX: the release's number (make_site.py's "gbX.Y")
 function applyLang() {
   document.documentElement.lang = lang;
@@ -230,12 +232,13 @@ window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault
     const r = await fetch(meta.pkg);
     if (!r.ok) throw new Error(`${meta.pkg}: HTTP ${r.status}`);
     const pkg = new Uint8Array(await r.arrayBuffer());
+    if (meta.sha256 && await sha256hex(pkg) !== meta.sha256) throw new Error("Firmware SHA-256 verification failed. Reload before installing.");
     if (productOf(pkg) !== meta.product) { sayK("badpkg"); return; }
     image = logicalImage(pkg);
     say(`PALEOTONE ${VER}`);
     $("go").disabled = false;
     let resume = null;
-    try { resume = sessionStorage.getItem("ghoulbox-resume"); sessionStorage.removeItem("ghoulbox-resume"); } catch (_) {}
+    try { resume = sessionStorage.getItem(RESUME_KEY); sessionStorage.removeItem(RESUME_KEY); } catch (_) {}
     if (resume) { resumed = true; sayK("resuming"); $("go").click(); }   // (GHOULBOX: back from the "reload" below)
   } catch (e) { sayK("loadfail", e.message); }
 })();
@@ -261,7 +264,7 @@ $("go").addEventListener("click", async () => {
     if (resumed) {                                   // GHOULBOX: reloaded to reach the loader: wait for it (its ports can be
       resumed = false;                               // listed a moment late), never fall back to looking for a running FM-1
       const ok = await up.resume(image, step, meta.product, 15000);
-      if (ok) { try { sessionStorage.removeItem("ghoulbox-reloads"); } catch (_) {} }
+      if (ok) { try { sessionStorage.removeItem(RELOAD_KEY); } catch (_) {} }
       sayK(ok ? "done" : "noloader");
       lockInstaller(false);
       return;
@@ -275,9 +278,9 @@ $("go").addEventListener("click", async () => {
     }
   } catch (e) {
     let reloads = 0;
-    try { reloads = +(sessionStorage.getItem("ghoulbox-reloads") || 0); } catch (_) {}
+    try { reloads = +(sessionStorage.getItem(RELOAD_KEY) || 0); } catch (_) {}
     if (e && e.code === "reload" && reloads >= 2) {   // GHOULBOX: two reloads did not reach it: the cable, not the page
-      try { sessionStorage.removeItem("ghoulbox-reloads"); } catch (_) {}
+      try { sessionStorage.removeItem(RELOAD_KEY); } catch (_) {}
       sayK("noloader");
       log(String(e && e.stack || e));
       lockInstaller(false);
@@ -285,7 +288,7 @@ $("go").addEventListener("click", async () => {
     }
     if (e && e.code === "reload") {                    // GHOULBOX: Chrome on Linux hides the loader's input from this page;
       sayK("reload");                                  // a reloaded page sees it and resumes (the loader waits for us)
-      try { sessionStorage.setItem("ghoulbox-resume", "1"); sessionStorage.setItem("ghoulbox-reloads", String(reloads + 1)); } catch (_) {}
+      try { sessionStorage.setItem(RESUME_KEY, "1"); sessionStorage.setItem(RELOAD_KEY, String(reloads + 1)); } catch (_) {}
       writing = false;                                 // (no "leave this page?" prompt)
       setTimeout(() => location.reload(), 500);
       return;

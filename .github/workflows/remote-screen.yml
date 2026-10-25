@@ -1,7 +1,7 @@
 name: remote screen
 on:
   push:
-    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency]
+    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/site-installer]
   workflow_dispatch:
 permissions:
   contents: read
@@ -59,6 +59,13 @@ jobs:
           node web/test_frame_presenter.mjs
           node web/test_control_target.mjs
           node web/test_control_widget.mjs
+      - name: Browser instrument fidelity and site flow
+        run: |
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/emu/native_check web/emu/native_check.c -lm
+          build/emu/native_check build/emu/native.f32
+          BENCH_MAX=2 node web/emu/emu_test.mjs build/emu/felucca.wasm build/emu/native.f32
+          node web/test_firmware_support.mjs
+          node web/emu/audio_session_test.mjs
       - name: Existing editor regression
         run: |
           cc -O1 -w -Ibuild/gen -Ifirmware/src -o build/remote/editor_test tests/editor_test.c -lm
@@ -72,7 +79,8 @@ jobs:
         with:
           name: paleotone-screen-companion
           path: |
-            build/emu/screen.html
+            build/emu/
+            !build/emu/native*
             build/emu/remote_screen.js
             build/emu/second_screen.js
             build/emu/control_target.js
