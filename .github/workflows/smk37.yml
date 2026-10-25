@@ -84,6 +84,11 @@ jobs:
             python3 tests/smk_pkg_test.py "build/${m%%:*}" "${m#*:}" | tail -1 | tee -a smk.log
           done
 
+      - name: Installer model and diagnostic tests
+        run: python3 tests/install_test.py
+      - name: Collect reference log
+        if: always()
+        run: cp ../base.log base.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -91,9 +96,9 @@ jobs:
           path: |
             out/*.fwsc
             smk.log
-            ../base.log
+            base.log
       - name: Put the result on the smk37-output branch
-        if: always() && github.ref == 'refs/heads/smk37' 
+        if: always() && github.ref == 'refs/heads/smk37'
         shell: bash
         run: |
           mkdir -p /tmp/o && cp smk.log /tmp/o/ 2>/dev/null; cp out/*.fwsc /tmp/o/ 2>/dev/null || true
