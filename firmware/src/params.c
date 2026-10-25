@@ -16,11 +16,9 @@ static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", 
                                     "PHDOM", "HUNG", "DHARM"};   /* (stored: append-only; GHOULBOX's from PHDOM, seq.c) */
 static const char *const N_ONOFF[] = {"OFF", "ON"};
 static const char *const N_DMOOD[] = {"MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"};   /* GHOULBOX 2.3: DREAM's (dream.c) */
-static const char *const N_DTYPE[] = {"HUM", "WIND", "CHOIR", "EARTH"};   /* DINOBOX: SCAPE's drone (scape.c) */
 static const char *const N_SKEY[] = {"AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const N_SCTRK[] = {"OFF", "T1", "T2", "T3", "T4"};   /* .. the track its calls play */
 static const char *const N_DSIZE[] = {"SMALL", "BIG", "HUGE"};   /* .. DANGER's beast (scape.c sc_danger) */
-static const char *const N_DROAR[] = {"OFF", "CALLS", "T1", "T2", "T3", "T4"};   /* .. the track that roars */
 static const char *const N_BIOME[] = {"WATER", "JUNGL", "TUNDR", "FORST", "PLAIN", "MOUNT", "CANYN", "CALDR"};   /* DINOBOX:
                                                      * SCAPE's biomes (scape.c SC_BIOME, in that order) */
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
