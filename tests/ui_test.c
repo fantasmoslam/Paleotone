@@ -9855,6 +9855,7 @@ static int test_midi_cc(void)
     return bad;
 }
 
+#ifndef UI_TEST_NO_MAIN
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
