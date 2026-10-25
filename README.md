@@ -1,3 +1,5 @@
+> Integration branch: [Unified SCAPE, SAURUS 2 and dual screens](docs/UNIFIED-SCAPE.md).
+
 # PALEOTONE: FM-1 Prehistoric Synth
 
 ![PALEOTONE (then DINOBOX) 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
@@ -31,7 +33,7 @@ messages 90/91 and is not a replacement for the graphics companion.
 - **The boot screen and ABOUT page:** a Dilophosaurus skull, the PALEOTONE title in big terminal pixels and "PREHISTORIC
   SYNTH".
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
-  controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
+  controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **SCAPE MUSIC** is GHOULBOX's DREAM: tap
   HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
 - **119 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
   prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 62 more join

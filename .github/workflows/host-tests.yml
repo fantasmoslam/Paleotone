@@ -6,6 +6,8 @@
 name: host tests
 
 on:
+  push:
+    branches: [feature/paleotone-unified]
   workflow_dispatch:     # DINOBOX: on request only (about 40 minutes; a private repository's minutes are limited)
 
 permissions:

@@ -1,3 +1,5 @@
+> The published build described below is the earlier verified installation. For this integration, use its matching companion artifact; see [UNIFIED-SCAPE.md](UNIFIED-SCAPE.md).
+
 # FM-1 device-controlled dual screens
 
 This build swaps the instrument's control focus directly in firmware. Both pages stay visible; only the selected side responds to the FM-1's navigation and knobs.

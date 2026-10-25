@@ -49,7 +49,7 @@ typedef struct {
 #include "saurus_calls.h"
 _Static_assert(NELEM(SAUR_CALL) == SC_COUNT, "a recipe for every CALL");
 
-#define SAUR_SLOTS 6u
+#define SAUR_SLOTS 4u
 typedef struct {
     uint32_t ph, gs, gph, vph;   /* the saw; the period's gain (0..14), weak toggle (15), jitter (16..23); growl; vibrato */
     int32_t lp, lq, y[6], f1, f2; /* tilt (two poles: a throat's -12 dB an octave); resonators; the cut */
