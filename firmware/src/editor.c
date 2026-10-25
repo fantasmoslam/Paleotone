@@ -932,7 +932,7 @@ static void ed_service(void)
         return;
     ed_w.last_ms = fm1_ms;                                 /* any request keeps WATCH alive */
 #if FELUCCA_REMOTE_STATE
-    if (p[3] >= ED_REMOTE && p[3] <= ED_REMOTE_INPUT) {
+    if ((p[3] >= ED_REMOTE && p[3] <= ED_REMOTE_INPUT) || p[3] == ED_PANEL_FOCUS) {
         (void)edrq_offer(&ed_remote_queue, p, n, usb.resets);
         ota_frame_done();                                /* queue owns its copy, including while USB is full */
         return;

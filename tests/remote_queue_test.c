@@ -34,5 +34,11 @@ int main(void)
         q.len = 0;
         assert(edrq_ready(&q, 0, 8, 1) == 0);
     }
+    uint8_t focus[5] = {0x7D, 0x46, 0x4C, 96, 1};
+    assert(edrq_offer(&q, focus, sizeof focus, 8));
+    assert(edrq_ready(&q, 32, 8, 1) == 0);
+    assert(edrq_ready(&q, 0, 8, 1) == 1 && q.frame[3] == 96);
+    q.len = 0;
+    focus[3] = 95; assert(!edrq_offer(&q, focus, sizeof focus, 8));
     puts("remote busy-queue and request ownership tests passed");
 }
