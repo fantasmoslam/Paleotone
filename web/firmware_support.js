@@ -7,6 +7,8 @@ export function classifyFirmware(identity,status,release){
   if(identity.model!=='FM-1')return {kind:'wrong-model',message:'This release is for the FM-1.'};
   if(status?.id===release.rendererId&&status.schema===release.schema)
     return {kind:'ready',message:'Your firmware is ready for the display app. No installation is needed.'};
+  const supported=status&&release.supportedBuilds?.find(b=>b.rendererId===status.id&&b.schema===status.schema);
+  if(supported)return {kind:'ready',message:supported.name+' is ready for its display app.',displayPath:supported.display};
   if(status&&release.previousRenderers.includes(status.id))
     return {kind:'upgrade',message:'An earlier PALEOTONE display build is installed. Update PALEOTONE to use the current app.'};
   return {kind:'unsupported',message:'This firmware is not a supported display build. Installing PALEOTONE replaces the current firmware; it does not add display support to another firmware.'};
@@ -29,6 +31,10 @@ export async function inspectDevice(access,release,{UpdaterClass=Updater,LinkCla
 export async function inspectPackage(bytes,release){
   const hash=await sha256hex(bytes);
   if(hash===release.firmware.sha256)return {kind:'ready',hash,message:'This is the current app-compatible PALEOTONE package.'};
+  const supported=release.supportedBuilds?.find(b=>b.firmwareSha256===hash);
+  if(supported)return {kind:'ready',hash,message:'This is the app-compatible '+supported.name+' package.'};
   if(release.previousPackages.includes(hash))return {kind:'upgrade',hash,message:'This is an earlier tested PALEOTONE package. Use the current PALEOTONE installer to update.'};
+  const patch=release.patchSources?.find(b=>b.sha256===hash);
+  if(patch)return {kind:'patch',hash,message:patch.name+' is supported. Use the GHOULBOX package patcher above to add the display app.'};
   return {kind:'unsupported',hash,message:'This package is not a supported build. It has not been modified. Supporting it requires its source and a matching display renderer.'};
 }

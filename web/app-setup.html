@@ -9,13 +9,14 @@
 <p>Check the firmware on your FM-1, then open the display app or update to the supported PALEOTONE build.</p>
 <section><h2>1. Check your FM-1</h2><p>Connect the powered-on FM-1 with a USB data cable. Disconnect other display or editor pages first.</p>
 <button id="check">Check connected FM-1</button><p id="status" role="status">Checking does not change the instrument.</p><pre id="details"></pre>
-<div id="ready" hidden><a class="button" href="../screen-unified/">Open display app</a></div>
+<div id="ready" hidden><a id="display-link" class="button" href="../screen-unified/">Open display app</a></div>
 <div id="upgrade" hidden><p>Save your music with the <a href="../editor/">editor’s backup tool</a> before updating. The installer shows progress and verifies the device after reboot.</p><a class="button" href="../installer/">Update PALEOTONE</a></div>
 <div id="unsupported" hidden><p>You can install PALEOTONE to use this app. This replaces the existing firmware. To keep another firmware’s features, its author must integrate the display support first.</p><a href="../installer/">Review PALEOTONE installation</a></div>
 </section>
 <section><h2>2. Use the display</h2><p>The app renders the firmware’s graphics locally. Sound stays on the instrument. Expanded mode has two independent pages; hold HOME and tap OCT− for the left side or OCT+ for the right.</p><p class="muted">Use a browser with USB MIDI and SysEx support, such as desktop Chrome/Edge or Android Chrome.</p></section>
+<section><h2>Keep GHOULBOX</h2><p>Add display support to the exact official GHOULBOX 2.4 package while keeping its own features and appearance.</p><a href="../ghoulbox-setup/">Prepare GHOULBOX for the display app →</a></section>
 <details><summary>Have a firmware file instead?</summary><p>Check a .fwsc package locally. The file stays in your browser. This does not patch or install it.</p><input id="file" type="file" accept=".fwsc"><p id="file-status" role="status"></p></details>
-<details><summary>Why can’t any firmware be patched automatically?</summary><p>The device sends structured state, not screen images. Each supported firmware needs state-export hooks and an app-side copy of its renderer. The USB updater cannot read back an arbitrary installed firmware image. An identity number alone does not identify all custom firmware variants.</p><p><a href="https://github.com/fantasmoslam/dinobox-fm1/blob/feature/site-installer/web/REMOTE_SCREEN.md">Display integration documentation</a></p></details>
+<details><summary>Why can’t any firmware be patched automatically?</summary><p>The device sends structured state, not screen images. Each supported firmware needs changes to its source code: state-export hooks and an app-side copy of its renderer. The USB updater cannot read back an arbitrary installed firmware image. An identity number alone does not identify all custom firmware variants.</p><p><a href="https://github.com/fantasmoslam/dinobox-fm1/blob/feature/site-installer/web/REMOTE_SCREEN.md">Display integration documentation</a></p></details>
 <script type="module">
 import {inspectDevice,inspectPackage} from './firmware_support.js';
 const $=id=>document.getElementById(id);let release;
@@ -24,7 +25,7 @@ $('check').onclick=async()=>{
  $('check').disabled=true;for(const id of ['ready','upgrade','unsupported'])$(id).hidden=true;$('details').textContent='';
  try{if(!navigator.requestMIDIAccess)throw new Error('This browser does not offer USB MIDI. Use a compatible browser to check the FM-1.');
  const build=await load(),access=await navigator.requestMIDIAccess({sysex:true});$('status').textContent='Checking firmware…';
- const result=await inspectDevice(access,build);$('status').textContent=result.message;
+ const result=await inspectDevice(access,build);$('display-link').href=result.displayPath?'../../'+result.displayPath:'../screen-unified/';$('status').textContent=result.message;
  $('details').textContent='Device identity: '+result.identity.text+(result.status?'\nDisplay renderer: '+result.status.id+' · schema '+result.status.schema:'\nNo supported display status was returned.');
  if(['ready','upgrade','unsupported'].includes(result.kind))$(result.kind).hidden=false;
  }catch(e){$('status').textContent=e.message;}finally{$('check').disabled=false;}

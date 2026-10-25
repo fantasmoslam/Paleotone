@@ -65,6 +65,7 @@ jobs:
           build/emu/native_check build/emu/native.f32
           BENCH_MAX=2 node web/emu/emu_test.mjs build/emu/felucca.wasm build/emu/native.f32
           node web/test_firmware_support.mjs
+          node web/test_firmware_patch.mjs
           node web/emu/audio_session_test.mjs
       - name: Existing editor regression
         run: |

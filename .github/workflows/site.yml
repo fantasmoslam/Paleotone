@@ -106,6 +106,9 @@ jobs:
         run: |
           if git cat-file -e origin/gh-pages:release.json; then
             git archive origin/gh-pages index.html release.json firmware/paleotone-current.fwsc webapp/installer webapp/app-setup webapp/emu | tar -x -C site
+            if git cat-file -e origin/gh-pages:webapp/ghoulbox-setup/recipe.json; then
+              git archive origin/gh-pages webapp/ghoulbox-setup webapp/screen-ghoulbox | tar -x -C site
+            fi
             node web/test_site_release.mjs site
           fi
 

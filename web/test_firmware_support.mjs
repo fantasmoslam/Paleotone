@@ -24,4 +24,7 @@ assert.equal((await inspectDevice({},release,{...deps,LinkClass:SilentLink})).ki
 device={...device,id:{...identity,model:'SMK-37'}};queries=[];
 assert.equal((await inspectDevice({},release,deps)).kind,'wrong-model');assert.deepEqual(queries,[]);
 device=null;await assert.rejects(inspectDevice({},release,deps),/No FM-1/);
+release.supportedBuilds=[{name:'GHOULBOX 2.4 + display',rendererId:777,schema:2,display:'webapp/screen-ghoulbox/',firmwareSha256:await sha256hex(new Uint8Array([8]))}];
+assert.equal(classifyFirmware(identity,{id:777,schema:2},release).displayPath,'webapp/screen-ghoulbox/');
+assert.equal((await inspectPackage(new Uint8Array([8]),release)).kind,'ready');
 console.log('firmware support: exact identity, schema, package hashes, unknown builds, wrong model and strictly read-only detection passed');
