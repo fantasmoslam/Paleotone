@@ -14,9 +14,12 @@ An earlier experimental screen-companion build required Flipper-assisted recover
 insufficient. Keep a known-good firmware package and recovery instructions before trying experimental firmware.
 
 The [USB second-screen app](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen/) follows the FM-1's controls.
-Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. It provides a lightweight view of
-parameters and menus, rather than a complete pixel mirror. Phone support remains untested. Installing this
-web app does not install firmware on the instrument.
+Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. This is the graphics companion:
+it uses the firmware's C screen renderer and provides Original and Expanded views. It is pinned to the
+working companion source `19727a9` and requires the matching firmware already used with that companion.
+Opening the webpage does not install firmware. Phone support remains untested.
+The separate [lightweight display](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen-lite/) uses screen-state
+messages 90/91 and is not a replacement for the graphics companion.
 
 ## What's different from GHOULBOX
 
