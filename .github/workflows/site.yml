@@ -100,6 +100,15 @@ jobs:
             node web/test_device_release.mjs site/webapp/screen-unified
           fi
 
+      # The release hub is promoted explicitly after paired firmware/emulator/device tests.
+      # A routine main build must not roll it back to an older package or browser instrument.
+      - name: Preserve the tested release hub
+        run: |
+          if git cat-file -e origin/gh-pages:release.json; then
+            git archive origin/gh-pages index.html release.json firmware/paleotone-current.fwsc webapp/installer webapp/app-setup webapp/emu | tar -x -C site
+            node web/test_site_release.mjs site
+          fi
+
       - name: Publish on gh-pages
         run: |
           cd site

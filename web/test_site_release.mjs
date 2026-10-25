@@ -6,7 +6,7 @@ const release=JSON.parse(await read('release.json')),pkg=await fs.readFile(join(
 assert.equal(createHash('sha256').update(pkg).digest('hex'),release.firmware.sha256);assert.equal(pkg.length,release.firmware.size);assert.equal(productOf(pkg),release.product);assert.ok(logicalImage(pkg).length);
 const inst=await read('webapp/installer/index.html');assert.doesNotMatch(inst,/\/\*(LIB|META)\*\//);assert.match(inst,/await sha256hex\(pkg\)/);assert.match(inst,/const RESUME_KEY=/);
 const meta=JSON.parse(inst.match(/const meta = (\{[^\n]+\});/)[1]);assert.equal(meta.sha256,release.firmware.sha256);assert.equal(meta.product,release.product);assert.equal(meta.pkg.split('?')[0],'../../'+release.firmware.file);
-new vm.Script(inst.match(/<script>([\s\S]*?)<\/script>/)[1]);
+new vm.Script(inst.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)[1]);
 const emu=await read('webapp/emu/index.html');assert.match(emu,/unified SCAPE \+ SAURUS 2/);assert.match(emu,/felucca\.wasm\?v=/);assert.match(emu,/worklet\.js\?v=/);assert.match(emu,/app-setup/);assert.doesNotMatch(emu,/@GBVERSION@|@VERSION@/);
 const {instance}=await WebAssembly.instantiate(await fs.readFile(join(root,'webapp/emu/felucca.wasm')),{});assert.equal(instance.exports.web_remote_id()>>>0,release.rendererId);assert.equal(instance.exports.web_remote_schema(),release.schema);
 const companion=JSON.parse(await read('webapp/screen-unified/build.json'));assert.equal(companion.rendererId,release.rendererId);assert.equal(companion.firmware.sha256,release.firmware.sha256);
