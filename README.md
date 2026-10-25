@@ -8,9 +8,15 @@ pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpe
 Hügelton Instruments. Everything GHOULBOX does (its composer, RING, KEYS, the hall reverb, tape and crush, twelve
 voices) works the same; the look, the names and the sounds are new.
 
-**Status: PALEOTONE 1.0 has not been tested on a real FM-1 yet.** The host test suite passes, but install it at your
-own risk. Holding OCT− while switching on puts the FM-1 into USB rescue mode, from which any firmware (or M-VAVE's
-own, `FM-1.fwsc`) can be installed again.
+**Hardware status:** the owner has tested PALEOTONE on an FM-1, including the lightweight USB second-screen
+messages (90 and 91). This does not establish hardware coverage of every feature or development branch.
+An earlier experimental screen-companion build required Flipper-assisted recovery; USB rescue alone was
+insufficient. Keep a known-good firmware package and recovery instructions before trying experimental firmware.
+
+The [USB second-screen app](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen/) follows the FM-1's controls.
+Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. It provides a lightweight view of
+parameters and menus, rather than a complete pixel mirror. Phone support remains untested. Installing this
+web app does not install firmware on the instrument.
 
 ## What's different from GHOULBOX
 
