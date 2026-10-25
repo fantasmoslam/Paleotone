@@ -16,7 +16,7 @@
  * steps come closer, a roar (a track's note) as it passes nearest, the steps go away on the other side. */
 #define SC_NL 8
 enum { SC_WIND, SC_WATER, SC_RAIN, SC_INSECT, SC_FROG, SC_BIRD, SC_DRIP, SC_RUMBLE };
-#define SC_NEV 6u
+#define SC_NEV 4u
 #define SC_DIV 4u                                       /* the noise beds' rate: FS / 4 */
 
 /* the settings: the globals of HOME > SCAPE (core.h G_SCAPE .., params.c), stored with the project (project.c) */
@@ -52,7 +52,7 @@ static struct {
     uint16_t hold[SC_NEV];                              /* a slot's wait before its next repeat (blocks) */
     sc_ev_t ev[SC_NEV];
     uint32_t dph[3];                                    /* DRONE: its partials' phases (quarter rate) */
-    int32_t dmv, dmv_to, d1[2][2], dlp;                 /* .. its movement's walk, formant / whistle states, a low-pass */
+    int32_t dmv, dmv_to;                 /* .. its movement's walk, formant / whistle states, a low-pass */
     uint32_t cwait, chold;                              /* CALLS: blocks to the next call, to this one's end */
     uint8_t cnote, ctrk;                                /* .. the note sounding (0: none) and its track */
     uint32_t nwait, nt, nlen, nstep, rhold;             /* DANGER: blocks to the next beast; into it; its length; the
@@ -212,52 +212,20 @@ static inline int32_t sc_ev_run(sc_ev_t *e, int32_t *r)
     return mulq15(s, e->gl);
 }
 
-/* THE DRONE (G_SDRN .. G_SDMOV): a tone in a key under the layers, worked out with the beds at a quarter of the rate.
- * KEY AUTO follows track 1's ROOT (as EPOCH does); the drone sits in octave 2 (C2 .. B2). MOVE: how far its slow walk
- * (brightness, level, a little pitch) goes.
- *   HUM    a fundamental, its octave a little detuned, its twelfth: a low organ hum, beating
- *   WIND   noise through a resonant band-pass two octaves up: the wind whistling in key
- *   CHOIR  a saw and its fifth through two formants ("oo" .. "oh" as it moves): low voices
- *   EARTH  a sub an octave down, and low noise throbbing with it */
-static const uint16_t SC_DRONE_TRIM[4] = {3015, 3843, 7227, 1675};   /* each type at DRONE 127 as loud as a layer
-                                                    * at LEVEL 127 (measured: tests/scape_render.c) */
+/* The shared SCAPE drone: one harmonic bed, keyed to the composition (or a fixed key).
+ * No second formant/noise synth. Legacy TYPE values are retained in projects but use this bed. */
+static const uint16_t SC_DRONE_TRIM[4] = {3015, 3015, 3015, 3015};
 static int32_t sc_drone(int32_t g)
 {
     uint32_t key = song.g[G_SDKEY] ? (uint32_t)(song.g[G_SDKEY] - 1) : (uint32_t)trk[0].p[P_ROOT] % 12u;
-    int32_t note = 36 + (int32_t)key, mv = sc.dmv, mov = clamp(song.g[G_SDMOV], 0, 127), x = 0, y;
-    uint32_t inc = pitch_inc((uint32_t)clamp((note << 4) + (mulq15(mv, mov) >> 9), 0, 2047)) << 2;   /* (x4: quarter rate) */
-    tsvf_t f1, f2;
-    switch (song.g[G_SDTYP]) {
-    case 0:                                             /* HUM */
-        sc.dph[0] += inc;
-        sc.dph[1] += (inc << 1) + (inc >> 9);
-        sc.dph[2] += inc * 3u;
-        x = sine_i(sc.dph[0]) + (sine_i(sc.dph[1]) >> 1) + mulq15(sine_i(sc.dph[2]), 6000 + mulq15(mv + 32768, mov * 100));
-        x >>= 1;
-        break;
-    case 1:                                             /* WIND: a whistle two octaves up */
-        tsvf_coef(&f1, (28 << 8) + 4035 + (note - 36 + 24) * 299 + (mulq15(mv, mov) >> 2), 118);
-        x = gurdy_bp(&f1, (int32_t)(noise32(&sc.rng) >> 17) - 16384, &sc.d1[0][0], &sc.d1[0][1]) * 2;
-        break;
-    case 2: {                                           /* CHOIR: two formants on a saw and its fifth */
-        int32_t s, open = mulq15(mv + 32768, mov * 258) >> 7;   /* 0 .. 256: "oo" .. "oh" */
-        sc.dph[0] += inc;
-        sc.dph[1] += inc + (inc >> 1);
-        s = ((int32_t)(sc.dph[0] >> 17) - 16384) + (((int32_t)(sc.dph[1] >> 17) - 16384) >> 1);
-        tsvf_coef(&f1, ((28 + 54) << 8) + open * 8, 90);     /* ~400 .. ~550 Hz */
-        tsvf_coef(&f2, ((28 + 70) << 8) + open * 12, 90);    /* ~800 .. ~1100 Hz */
-        x = gurdy_bp(&f1, s, &sc.d1[0][0], &sc.d1[0][1]) + (gurdy_bp(&f2, s, &sc.d1[1][0], &sc.d1[1][1]) >> 1);
-        break;
-    }
-    default:                                            /* EARTH: a sub and its throb */
-        sc.dph[0] += inc >> 1;
-        sc.dph[1] += inc >> 7;                          /* (the throb: a few a second) */
-        y = (int32_t)(noise32(&sc.rng) >> 17) - 16384;
-        sc.dlp += (y - sc.dlp) >> 5;
-        x = sine_i(sc.dph[0]) + mulq15(sc.dlp * 3, 16384 + (sine_i(sc.dph[1]) >> 1));
-        break;
-    }
-    return mulq15(clamp(x, -32767, 32767), mulq15(g, 32767 - mulq15(mv > 0 ? mv : -mv, mov * 100)));
+    int32_t mv = sc.dmv, mov = clamp(song.g[G_SDMOV], 0, 127), x;
+    uint32_t inc = pitch_inc((uint32_t)clamp(((36 + (int32_t)key) << 4) + (mulq15(mv, mov) >> 9), 0, 2047)) << 2;
+    sc.dph[0] += inc;
+    sc.dph[1] += (inc << 1) + (inc >> 9);
+    sc.dph[2] += inc * 3u;
+    x = (sine_i(sc.dph[0]) + (sine_i(sc.dph[1]) >> 1) +
+         mulq15(sine_i(sc.dph[2]), 6000 + mulq15(mv + 32768, mov * 100))) >> 1;
+    return mulq15(x, mulq15(g, 32767 - mulq15(mv > 0 ? mv : -mv, mov * 100)));
 }
 
 /* THE CALLS (G_SCTRK .. G_SCSPRD): now and then the track picked (its sound: a SAURUS creature, a horn, anything) is
@@ -365,7 +333,7 @@ static void sc_danger(void)
         sc.nstep = t + STEP_MS[sc.nsize] * (92u + sc_rnd(16u)) / 100u * SC_BPS / 1000u;
     }
     if (t == half) {                                    /* nearest: the roar */
-        uint32_t ro = (uint32_t)clamp(song.g[G_SDROR], 0, 5), k = ro == 1u ? (uint32_t)clamp(song.g[G_SCTRK], 0, 4) : ro ? ro - 1u : 0u;
+        uint32_t k = (uint32_t)clamp(song.g[G_SCTRK], 0, 4);
         if (k) {
             static const int8_t DOWN[3] = {0, 7, 12};
             sc_roar_off();

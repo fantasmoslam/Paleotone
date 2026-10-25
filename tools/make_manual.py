@@ -21,7 +21,7 @@ PICS = [
     ("FM6's OPS page", "edit_fm6_mammoth.png"), ("VOICE's first page", "edit_voice_chant.png"), ("The FX page", "fx.png"),
     ("The REVERB page", "reverb.png"), ("The TAPE page", "tape.png"), ("The PHRASES page", "phrases.png"),
     ("The STEP page", "step_mammoth.png"), ("The AUTOMATION page", "automation.png"), ("The SONG page", "song.png"),
-    ("MIXER with HERD", "mixer.png"), ("CLOCK:", "clock.png"), ("KEYS:", "keys.png"), ("EPOCH:", "epoch.png"),
+    ("MIXER with HERD", "mixer.png"), ("CLOCK:", "clock.png"), ("KEYS:", "keys.png"), ("SCAPE MUSIC:", "epoch.png"),
     ("The SCAPE page", "scape.png"), ("SCAPE DRONE", "scape_drone.png"), ("SCAPE CALLS", "scape_calls.png"),
     ("SCAPE LEVELS 2", "scape_levels2.png"), ("SCAPE LEVELS", "scape_levels.png"), ("SCAPE DENSITY 2", "scape_density2.png"),
     ("SCAPE DENSITY", "scape_density.png"), ("SAVE › PROJECT", "project.png"), ("Naming", "x_name_typing.png"),

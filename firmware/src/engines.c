@@ -257,7 +257,7 @@ static const struct { const char *name; uint8_t bpm, tape, part[NPART][4]; } GB_
                                     * notes: a clean start */
     {"HERD", 84, 30, {{ENGI_GURDY, 2, 17, 108}, {ENGI_SAURUS, 0, 17, 81}, {ENGI_FM6, 10, 14, 115}, {5, 8, 16, 88}}},   /* DINOBOX: the herd
                                     * on the move: STAMPEDE PEDAL, BRACHIO CALL PEDAL, MAMMOTH DIRGE, DEEP CHANT
-                                    * CHANT (2026-10-23, in place of RIDERS: a saved 5 plays it) */
+                                    * CHANT (2026-10-23, a saved scene 5 plays it) */
 };
 #define GB_SCENE_HERD 5u
 #define GB_SCENE (GB_SCENES[0].part)   /* (the scene up to 1.2: tests/descdump.c, tests/ghoulbox_shots.c) */
