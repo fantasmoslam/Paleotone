@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>PALEOTONE · FM-1 screen</title>
+<title>GHOULBOX · FM-1 screen</title>
 <style>
 :root{color-scheme:dark;font:15px system-ui,sans-serif;background:#07100b;color:#c4fac8}
 [hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;padding:20px;max-width:1200px;margin:auto}
@@ -28,7 +28,7 @@ body.target-right #screen{border-color:#ffbf53}body.target-left #screen{border-c
 </style>
 </head>
 <body>
-<header><h1>PALEOTONE / FM-1 SCREEN</h1><div class="toolbar">
+<header><h1>GHOULBOX / FM-1 SCREEN</h1><div class="toolbar">
 <button id="connect">Connect FM-1</button><button id="disconnect" disabled>Disconnect</button>
 <button id="original" aria-pressed="true">Original</button><button id="expanded" aria-pressed="false">Expanded</button>
 <button id="fullscreen">Fullscreen</button><button id="compatible" aria-pressed="false">Compatible display</button></div></header>
@@ -41,7 +41,7 @@ body.target-right #screen{border-color:#ffbf53}body.target-left #screen{border-c
 <label id="second-track-label" hidden>Track <select id="second-track"><option value="follow">Follow FM-1</option><option value="0">Track 1</option><option value="1">Track 2</option><option value="2">Track 3</option><option value="3">Track 4</option></select></label>
 <small id="second-help">Both pages are remembered on the FM-1. Swap sides with HOME + OCT− / OCT+.</small></div>
 <div id="target-controls" class="target-controls" hidden><output id="target-status" aria-live="polite">FM-1 controls: LEFT</output><span>Hold HOME, tap OCT− for LEFT or OCT+ for RIGHT, then release.</span></div>
-<div id="stage"><canvas id="screen" width="240" height="240" aria-label="PALEOTONE device screen"></canvas></div>
+<div id="stage"><canvas id="screen" width="240" height="240" aria-label="GHOULBOX device screen"></canvas></div>
 
 <p class="help">Use the FM-1’s physical buttons and knobs. In Expanded mode, hold HOME and tap OCT− for the left side or OCT+ for the right, then release both buttons.
 Original uses the firmware's screen renderer. Expanded can show the track overview or an independent live firmware page, with its own track selection.

@@ -103,6 +103,16 @@ int main(int argc, char **argv)
         memcpy(rs_buf, snapshot, n); assert(web_remote_apply(n));
         assert(!memcmp(expected, web_fb, sizeof expected));
     }
+    for(uint32_t page=0;page<NPAGES;page++){
+        remote_display=0;ui.home=0;ui.page=(uint8_t)page;ui.menu=ui.confirm=ui.layer=ui.ly=0;
+        ui.msg_t=ui.hot_t=0;ui.cursor=ui.bank=0;song.sel=0;ui.force=1;scene_cur=3;scene_req=0xff;
+        assert(rs_capture());n=rs_len;memcpy(snapshot,rs_buf,n);
+        ui_draw_page(seq_counting());memcpy(expected,web_fb,sizeof expected);
+        scene_cur=0;memcpy(rs_buf,snapshot,n);assert(web_remote_apply(n));
+        if(memcmp(expected,web_fb,sizeof expected)){fprintf(stderr,"page pixels differ: %u %s\n",page,PAGES[page].title);return 1;}
+        assert(scene_cur==3);
+    }
+    puts("GHOULBOX all-page snapshot pixel fidelity passed");
     puts("remote renderer tests passed");
     return 0;
 }

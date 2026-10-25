@@ -152,6 +152,7 @@ static void rs_walk(void)
         RS8(p->used); RSA8(p->name);
         for (k = 0; k < 4u; k++) { RS16(p->len[k]); RS32(p->density[k]); RS8(p->cells[k]); }
     }
+    RS8(scene_req);RS8(scene_cur);
     RS8(panel_screen.side);
     for(i=0;i<2u;i++){
         panel_view_t *v=&panel_views[i];
