@@ -82,3 +82,11 @@ original screen. Hardware audio performance, reconnection and phone operation
 must be tested on the real instrument before a release.
 
 - **96 PANEL_FOCUS**: `[enabled]` (0 Original/hidden, 1 Expanded) renews a three-second gesture-reporting lease. Reply: `1, side, serial14, held`. HOME + OCT− / OCT+ emits an absolute left/right event. The browser waits for `held=0`, deduplicates the serial, and uses the existing serialized panel-navigation path. This adds 16 bytes of device state and no display buffers. Hardware validation is still required; do not treat a passing build as a tested image.
+
+## Display latency
+
+The companion renders the original C screen code locally in WebAssembly; graphics are already app-side. Only compact instrument state crosses USB. Measured before optimization on the connected FM-1: cold snapshot 514 ms; seven dirty blocks took 38–48 ms; the three-render Expanded path took about 1.9 ms on the host. The older loop imposed a 120 ms minimum update interval. These are measurements on this machine, not input-to-photon guarantees.
+
+The updated page targets up to 30 updates/s, presents a completed frame before waiting for ACK, renews focus at 750 ms intervals rather than on every frame, reuses the active C rendering, caches exact pane pixels, and reuses pixel/ImageData buffers. Canvas is the default on Android too; Compatible display remains available, at up to 15 updates/s. The status area reports observed transfer/draw timing.
+
+New firmware advertises four-block read bursts. Each reply is emitted only when the existing USB ring has enough space for a complete ordinary block; no extra snapshot buffer, audio ISR work or busy wait is added. The page continues to support older 46-byte status replies and single-block reads.

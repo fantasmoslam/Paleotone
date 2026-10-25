@@ -927,12 +927,20 @@ static void ed_service(void)
         return;                                         /* no WATCH pushes ahead of a waiting reply */
     }
 #endif
+#if FELUCCA_REMOTE_STATE
+    {
+        uint8_t block[4];
+        if(ed_stream_take(block,so_w-so_r,usb.resets,usb.config)) {
+            ed_begin(ED_REMOTE_BLOCK);ed_remote_handle(ED_REMOTE_BLOCK,block,4);ed_send();return;
+        }
+    }
+#endif
     ed_sync();                                             /* v2 pushes (while watched) */
     if (!ota_frame_get(&p, &n) || n < 4u || p[0] != ED_HDR0 || p[1] != ED_HDR1 || p[2] != ED_HDR2)
         return;
     ed_w.last_ms = fm1_ms;                                 /* any request keeps WATCH alive */
 #if FELUCCA_REMOTE_STATE
-    if ((p[3] >= ED_REMOTE && p[3] <= ED_REMOTE_INPUT) || p[3] == ED_PANEL_FOCUS) {
+    if ((p[3] >= ED_REMOTE && p[3] <= ED_REMOTE_BATCH) || p[3] == ED_PANEL_FOCUS) {
         (void)edrq_offer(&ed_remote_queue, p, n, usb.resets);
         ota_frame_done();                                /* queue owns its copy, including while USB is full */
         return;

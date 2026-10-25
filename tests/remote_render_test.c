@@ -57,6 +57,22 @@ int main(int argc, char **argv)
     uint8_t block[4] = {rs_rev & 127u, rs_rev >> 7, 0, 0};
     ed_test_n = 0; assert(ed_remote_handle(ED_REMOTE_BLOCK, block, 4));
     assert(ed_test_n + 6u <= 192u); /* no blocking send for a snapshot block */
+    uint8_t burst[7]={rs_rev&127u,rs_rev>>7,4,0,1,2,3}, args[4];
+    assert(ed_remote_args(ED_REMOTE_BATCH,burst,sizeof burst));
+    ed_test_n=0;assert(ed_remote_handle(ED_REMOTE_BATCH,burst,sizeof burst));
+    assert(ed_test_n==4 && ed_test_out[3]==0);
+    for(uint32_t used=64;used>4;used--)assert(!ed_stream_take(args,used,usb.resets,1));
+    for(uint32_t j=0;j<4;j++){
+        assert(ed_stream_take(args,4,usb.resets,1) && args[2]==j);
+        ed_test_n=0;assert(ed_remote_handle(ED_REMOTE_BLOCK,args,4));
+        assert(ed_test_n+6<=180 && !ed_test_out[4]);
+    }
+    assert(!ed_stream_take(args,0,usb.resets,1));
+    burst[4]=0;assert(!ed_remote_args(ED_REMOTE_BATCH,burst,sizeof burst));burst[4]=1;
+    ed_test_n=0;ed_remote_handle(ED_REMOTE_BATCH,burst,sizeof burst);
+    assert(!ed_stream_take(args,0,usb.resets+1,1) && !ed_stream.count);
+    ed_test_n=0;ed_remote_handle(ED_REMOTE_BATCH,burst,sizeof burst);
+    assert(!ed_stream_take(args,0,usb.resets,0) && !ed_stream.count);
     rs_ack();
     assert(rs_base == rs_rev);
     assert(rs_capture());

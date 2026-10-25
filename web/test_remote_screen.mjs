@@ -61,6 +61,35 @@ await assert.rejects(lostInput.inputCommand([1,3,65]),(e)=>e instanceof MidiTime
 assert.equal(turns,1); // an encoder is NEVER retried after a lost acknowledgement
 await assert.rejects(lostInput.readRequest(94,[1,3,65]),/Only display/);
 assert.equal(turns,1);lostInput.close();
+
+// Optional firmware bursts: out-of-order/duplicate replies, lost bursts, stale snapshots and legacy fallback.
+{
+ let drop=1,burstCalls=0,bad=false;
+ const input={state:'connected'},output={state:'connected',send(message){
+   const cmd=message[4],args=message.slice(5,-1);
+   const reply=(c,p)=>setTimeout(()=>input.onmidimessage?.({data:[...HEADER,c,...p,0xF7]}),0);
+   if(cmd===92){reply(92,[...status(args[0],9,args[0]===2?9:0),4]);return;}
+   if(cmd===95){
+     burstCalls++;if(drop-- > 0)return;
+     reply(93,[...u14(8),...u14(args[3]),1]); // stale revision must be ignored
+     for(const b of args.slice(3).reverse()){
+       const count=b?2:128,raw=Array.from({length:count},(_,i)=>(i+b)&255),packed=[];
+       for(let i=0;i<count;i+=7){const group=raw.slice(i,i+7);packed.push(group.reduce((v,x,j)=>v|(x>>7)<<j,0),...group.map(x=>x&127));}
+       const payload=[...u14(9),...u14(b),bad?1:0,...u14(count),...packed];
+       reply(93,payload);reply(93,payload);
+     }
+     reply(95,[...u14(9),args[2],0]);
+   }
+ }};
+ const link=new MidiLink(input,output,20),seen=[];
+ const sync=new DisplaySync(link,1,1,bytes=>{seen.push(bytes.slice());return true;});
+ let painted=false;
+ await sync.update(()=>{painted=true;assert.equal(sync.rev,0,'present before waiting for ACK');});
+ assert.ok(painted);assert.equal(sync.rev,9);assert.equal(burstCalls,2);assert.equal(seen[0][128],1);
+ bad=true;await assert.rejects(sync.update(),e=>e.code==='SNAPSHOT_STALE');
+ await assert.rejects(link.readBlocks(9,[0,0]),/Invalid/);
+ link.close();
+}
 if(process.argv[2]){
   const {instance}=await WebAssembly.instantiate(await readFile(process.argv[2]),{});
   const ex=instance.exports;ex._initialize();ex.web_nor_erase();ex.web_boot();

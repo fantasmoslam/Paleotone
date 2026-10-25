@@ -18,14 +18,14 @@ export function unpack7(a, count) {
   return out;
 }
 export function parseStatus(p) {
-  if (p.length !== 46 || p[1]) throw new Error("Device could not capture its display state");
+  if (![46,47].includes(p.length) || p[1]) throw new Error("Device could not capture its display state");
   if (p[7] > 15) throw new Error("Invalid renderer identity");
   const id = (p[3] | p[4] << 7 | p[5] << 14 | p[6] << 21 | p[7] << 28) >>> 0;
   const dirty = Uint8Array.from({length: 16}, (_, i) => {
     if (p[15 + 2 * i] > 1) throw new Error("Invalid dirty-block mask");
     return p[14 + 2 * i] | p[15 + 2 * i] << 7;
   });
-  const status = {op: p[0], schema: p[2], id, rev: r14(p, 8), base: r14(p, 10), length: r14(p, 12), dirty};
+  const status = {op: p[0], schema: p[2], id, rev: r14(p, 8), base: r14(p, 10), length: r14(p, 12), dirty, batchMax:p.length===47?Math.min(4,p[46]):0};
   if (status.length > 16384) throw new Error("Display state exceeds capacity");
   return status;
 }
@@ -49,6 +49,17 @@ export class MidiLink {
     if (d.length < 6 || !HEADER.every((v, i) => d[i] === v) || d.at(-1) !== 0xF7 ||
         d.slice(1, -1).some((v) => !Number.isInteger(v) || v < 0 || v > 127)) return;
     const p = d.slice(5, -1), pending = this.pending;
+    if(pending?.batch) {
+      if(d[4]===93 && p.length>=5 && r14(p)===pending.rev && pending.blocks.includes(r14(p,2))){
+        if(p[4]) { const e=new Error("Display snapshot changed");e.code="SNAPSHOT_STALE";pending.finish(e);return; }
+        pending.received.set(r14(p,2),p);
+      } else if(d[4]===95 && p.length===4 && r14(p)===pending.rev && p[2]===pending.blocks.length) {
+        if(p[3]){const e=new Error("Display snapshot changed");e.code="SNAPSHOT_STALE";pending.finish(e);return;}
+        pending.ack=true;
+      } else return;
+      if(pending.ack && pending.received.size===pending.blocks.length)pending.finish();
+      return;
+    }
     if (pending && d[4] === pending.cmd && pending.match(p)) {
       clearTimeout(pending.timer); this.pending = null; pending.resolve(p);
     }
@@ -69,6 +80,27 @@ export class MidiLink {
     const result = this.tail.then(run, run);
     this.tail = result.catch(() => {});
     return result;
+  }
+  async readBlocks(rev,blocks) {
+    if(!blocks.length||blocks.length>4||new Set(blocks).size!==blocks.length||
+       blocks.some(b=>!Number.isInteger(b)||b<0||b>=128))throw new Error("Invalid display burst");
+    for(let attempt=0;;attempt++){
+      const run=()=>new Promise((resolve,reject)=>{
+        if(this.closed) return reject(new Error("FM-1 disconnected"));
+        const pending={batch:true,rev,blocks,received:new Map(),ack:false,reject};
+        pending.finish=(error)=>{
+          if(this.pending!==pending)return;
+          clearTimeout(pending.timer);this.pending=null;
+          if(error)reject(error);else resolve(blocks.map(b=>pending.received.get(b)));
+        };
+        pending.timer=setTimeout(()=>pending.finish(new MidiTimeoutError(95)),this.timeout);
+        this.pending=pending;
+        try{this.output.send([...HEADER,95,...u14(rev),blocks.length,...blocks,0xF7]);}
+        catch(e){pending.finish(e);}
+      });
+      const result=this.tail.then(run,run);this.tail=result.catch(()=>{});
+      try{return await result;}catch(e){if(e.code!=="MIDI_TIMEOUT"||attempt>=2||this.closed)throw e;this.onRetry?.({command:95,attempt:attempt+1});}
+    }
   }
   /* Read/capture/acknowledge operations affect only the display transfer.
    * Never retry an input command: a lost encoder acknowledgement must not
@@ -101,41 +133,58 @@ export class DisplaySync {
     if (s.id !== this.id || s.schema !== this.schema)
       throw new Error("Firmware and webpage versions do not match. Use the screen page supplied with this firmware build.");
   }
-  async update() {
+  async update(onFrame) {
+    const now=()=>performance.now(),began=now();
     const s = await this.link.status(1); this.check(s);
+    const metrics={captureMs:now()-began,blocks:0,bytes:0};
     if (!s.length || !s.rev) throw new Error("Empty device snapshot");
     const full = !this.bytes || this.bytes.length !== s.length || this.rev !== s.base;
     const next = full ? new Uint8Array(s.length) : this.bytes.slice();
-    for (let block = 0; block * 128 < next.length; block++) {
-      if (!full && !(s.dirty[block >> 3] & 1 << (block & 7))) continue;
-      const p = await this.link.readRequest(93, [...u14(s.rev), ...u14(block)],
-        (p) => p.length >= 5 && r14(p) === s.rev && r14(p, 2) === block);
-      if (p[4] || p.length < 7) {
-        const e = new Error("Display snapshot changed; requesting a fresh screen");
-        e.code = "SNAPSHOT_STALE"; throw e;
+    const blocks=[];
+    for(let block=0;block*128<next.length;block++)
+      if(full||(s.dirty[block>>3]&1<<(block&7)))blocks.push(block);
+    const take=(p,block)=>{
+      if(p[4]||p.length<7){const e=new Error("Display snapshot changed; requesting a fresh screen");e.code="SNAPSHOT_STALE";throw e;}
+      const count=r14(p,5),expected=Math.min(128,next.length-block*128);
+      if(count!==expected)throw new Error("Wrong display block size");
+      next.set(unpack7(p.slice(7),count),block*128);metrics.blocks++;metrics.bytes+=count;
+    };
+    if(s.batchMax && this.link.readBlocks){
+      for(let i=0;i<blocks.length;i+=s.batchMax){
+        const group=blocks.slice(i,i+s.batchMax),replies=await this.link.readBlocks(s.rev,group);
+        replies.forEach((p,j)=>take(p,group[j]));
       }
-      const count = r14(p, 5), expected = Math.min(128, next.length - block * 128);
-      if (count !== expected) throw new Error("Wrong display block size");
-      next.set(unpack7(p.slice(7), count), block * 128);
+    }else for(const block of blocks){
+      const p=await this.link.readRequest(93,[...u14(s.rev),...u14(block)],
+        p=>p.length>=5&&r14(p)===s.rev&&r14(p,2)===block);
+      take(p,block);
     }
+    metrics.transferMs=now()-began;
+    const applyAt=now();
     if (!this.apply(next)) throw new Error("Renderer rejected the device state");
+    metrics.applyMs=now()-applyAt;
+    // Present the complete, validated frozen frame before waiting for its acknowledgement.
+    onFrame?.(next,metrics);
+    const ackAt=now();
     const ack = await this.link.status(2, s.rev); this.check(ack);
     if (ack.base !== s.rev) {
       const e = new Error("Display synchronization was interrupted");
       e.code = "SNAPSHOT_STALE"; throw e;
     }
+    metrics.ackMs=now()-ackAt;this.metrics=metrics;
     this.bytes = next; this.rev = s.rev;
     return {bytes: next.length, full};
   }
 }
-export function rgb565(pixels) {
-  const rgba = new Uint8ClampedArray(pixels.length * 4);
-  for (let i = 0; i < pixels.length; i++) {
-    const sw = pixels[i], c = (sw >>> 8 | sw << 8) & 65535;
-    rgba[4*i] = Math.round((c >> 11) * 255 / 31);
-    rgba[4*i+1] = Math.round((c >> 5 & 63) * 255 / 63);
-    rgba[4*i+2] = Math.round((c & 31) * 255 / 31);
-    rgba[4*i+3] = 255;
-  }
+const LITTLE_ENDIAN = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+const RGB565 = new Uint32Array(65536);
+for (let sw=0;sw<65536;sw++) {
+  const c=(sw>>>8|sw<<8)&65535,r=Math.round((c>>11)*255/31),g=Math.round((c>>5&63)*255/63),b=Math.round((c&31)*255/31);
+  RGB565[sw]=LITTLE_ENDIAN?(255<<24|b<<16|g<<8|r):(r<<24|g<<16|b<<8|255);
+}
+export function rgb565(pixels,rgba=new Uint8ClampedArray(pixels.length*4)) {
+  if(rgba.length!==pixels.length*4||rgba.byteOffset%4)throw new Error('Invalid RGB output buffer');
+  const words=new Uint32Array(rgba.buffer,rgba.byteOffset,pixels.length);
+  for(let i=0;i<pixels.length;i++)words[i]=RGB565[pixels[i]];
   return rgba;
 }
