@@ -1,3 +1,5 @@
+> Current scope is [Unified SCAPE](UNIFIED-SCAPE.md): one environment/music/creature feature, SAURUS 2 and physical dual screens. The older proposals below are historical exploration, not an implementation queue.
+
 # DINOBOX: notes for later steps
 
 ## Biomes and water (asked 2026-10-23)
@@ -11,7 +13,7 @@ The soundscape maker needs biomes, and sounds to support them, water most of all
   something big surfacing, wading footsteps.
 - Each biome: which layers, which sounds, how dense, which creatures, which drone.
 
-## The soundscape maker (planned, after the rhythms step)
+## Earlier soundscape exploration (superseded by Unified SCAPE)
 
 - An ambience layer beside the four tracks (not a fifth track): a SCAPE fader in the MIXER with its own send,
   saved with the project, locked to the tempo and the SCAPE MUSIC key.
