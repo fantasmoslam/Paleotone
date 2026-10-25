@@ -29,6 +29,15 @@ export function parseStatus(p) {
   if (status.length > 16384) throw new Error("Display state exceeds capacity");
   return status;
 }
+export class MidiTimeoutError extends Error {
+  constructor(cmd) {
+    super("FM-1 did not reply to MIDI request " + cmd + ". Check the USB connection.");
+    this.name = "MidiTimeoutError"; this.code = "MIDI_TIMEOUT"; this.command = cmd;
+  }
+}
+export function recoverableScreenError(e) {
+  return e?.code === "MIDI_TIMEOUT" || e?.code === "SNAPSHOT_STALE";
+}
 export class MidiLink {
   constructor(input, output, timeout = 1200) {
     this.input = input; this.output = output; this.timeout = timeout;
@@ -51,7 +60,7 @@ export class MidiLink {
       const pending = {cmd, match, resolve, reject};
       pending.timer = setTimeout(() => {
         if (this.pending === pending) this.pending = null;
-        reject(new Error("FM-1 did not reply. Check its firmware and USB connection."));
+        reject(new MidiTimeoutError(cmd));
       }, this.timeout);
       this.pending = pending;
       try { this.output.send([...HEADER, cmd, ...args, 0xF7]); }
@@ -61,8 +70,21 @@ export class MidiLink {
     this.tail = result.catch(() => {});
     return result;
   }
+  /* Read/capture/acknowledge operations affect only the display transfer.
+   * Never retry an input command: a lost encoder acknowledgement must not
+   * turn the knob twice. Each block matcher rejects stale/duplicate replies. */
+  async readRequest(cmd, args, match = () => true) {
+    if (cmd !== 92 && cmd !== 93) throw new Error("Only display transfers may be retried");
+    for (let attempt = 0; ; attempt++) {
+      try { return await this.request(cmd, args, match); }
+      catch (e) {
+        if (e?.code !== "MIDI_TIMEOUT" || attempt >= 2 || this.closed) throw e;
+        this.onRetry?.({command: cmd, attempt: attempt + 1});
+      }
+    }
+  }
   async status(op, rev) {
-    return parseStatus(await this.request(92, [op, ...(rev === undefined ? [] : u14(rev))], (p) => p[0] === op));
+    return parseStatus(await this.readRequest(92, [op, ...(rev === undefined ? [] : u14(rev))], (p) => p[0] === op));
   }
   inputCommand(args) { return this.request(94, args, (p) => p.length === 2 && p[0] === args[0] && p[1] === 0); }
   close() {
@@ -86,16 +108,22 @@ export class DisplaySync {
     const next = full ? new Uint8Array(s.length) : this.bytes.slice();
     for (let block = 0; block * 128 < next.length; block++) {
       if (!full && !(s.dirty[block >> 3] & 1 << (block & 7))) continue;
-      const p = await this.link.request(93, [...u14(s.rev), ...u14(block)],
+      const p = await this.link.readRequest(93, [...u14(s.rev), ...u14(block)],
         (p) => p.length >= 5 && r14(p) === s.rev && r14(p, 2) === block);
-      if (p[4] || p.length < 7) throw new Error("Display snapshot changed; reconnect or close other FM-1 screen tabs");
+      if (p[4] || p.length < 7) {
+        const e = new Error("Display snapshot changed; requesting a fresh screen");
+        e.code = "SNAPSHOT_STALE"; throw e;
+      }
       const count = r14(p, 5), expected = Math.min(128, next.length - block * 128);
       if (count !== expected) throw new Error("Wrong display block size");
       next.set(unpack7(p.slice(7), count), block * 128);
     }
     if (!this.apply(next)) throw new Error("Renderer rejected the device state");
     const ack = await this.link.status(2, s.rev); this.check(ack);
-    if (ack.base !== s.rev) throw new Error("Display synchronization was interrupted");
+    if (ack.base !== s.rev) {
+      const e = new Error("Display synchronization was interrupted");
+      e.code = "SNAPSHOT_STALE"; throw e;
+    }
     this.bytes = next; this.rev = s.rev;
     return {bytes: next.length, full};
   }
