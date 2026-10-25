@@ -1908,7 +1908,7 @@ function makeMockDevice(opt = {}) {
   TP.push(D("-", F.INT, 0, 8, 0), D("-", F.INT, 0, 127, 64), D("-", F.INT, 0, 127, 96), D("-", F.INT, 0, 127, 96),   /* GHOULBOX: */
     D("-", F.INT, 0, 127, 127), D("-", F.INT, 0, 2, 0), D("-", F.INT, 0, 1, 0),   /* Felucca 1.5's 96..102, reserved */
     E("TEMP", ["EQUAL", "PYTH", "MEAN", "JUST"], 0), E("RING", ["OFF", "ON"], 0));   /* TEMP (103), RING (104, 2.3) */
-  const P_COUNT = 113, G_COUNT = 69, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
+  const P_COUNT = 113, G_COUNT = 79, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */
@@ -2970,9 +2970,9 @@ const LAYOUT = (pe0, gc = 27) => [
   { t: "SEQ PATTERN", tab: "seqgroups", pages: [["PATTERN", 0, pe0 >= 95 ? [29, 30, 31, 32, 94] : [29, 30, 31, 32]]] },   /* QNTZ 94 */
   /* 1.2: as the device shows them: HOME > CLOCK (BPM SWG; CLK not here), MENU > AUDIO TUNE, MENU > MIDI > MIDI IN (G_ROUTE) */
   { t: "GLOBAL", tab: "setgroups", pages: [["CLOCK", 1, [0, 1, 2]], ["AUDIO", 1, [3]], ["MIDI", 1, [14]],
-    ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["SCAPE MUSIC", 1, [33, 34, 35, 36]]] : []),
-    ...(gc >= 57 ? [["SCAPE", 1, [37, 38, 39, 40]], ...(gc >= 65 ? [["SCAPE DRONE", 1, [57, 59, 60, 63]],
-                    ["SCAPE LIFE", 1, gc >= 69 ? [61, 62, 65, 66] : [61, 62, 63, 64]]] : []),
+    ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 79 ? [["SCAPE MUSIC", 1, [34, 35, 69, 70]], ["SCAPE MIX", 1, [71, 72, 73, 74]], ["SCAPE SETUP", 1, [33, 36, 37, 57]], ["SCAPE ROLES", 1, [75, 76, 77, 78]]] : gc >= 37 ? [["SCAPE MUSIC", 1, [33, 34, 35, 36]]] : []),
+    ...(gc >= 57 ? [["SCAPE", 1, gc >= 79 ? [38, 40, 39, 62] : [37, 38, 39, 40]], ...(gc >= 65 ? [["SCAPE DRONE", 1, [57, 59, 60, 63]],
+                    ["SCAPE LIFE", 1, gc >= 79 ? [61, 65, 66, 63] : gc >= 69 ? [61, 62, 65, 66] : [61, 62, 63, 64]]] : []),
                     ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]],
                     ["SCAPE DETAIL", 1, [49, 50, 51, 52, 53, 54, 55, 56, ...(gc >= 65 ? [58, 64] : []), ...(gc >= 69 ? [67, 68] : [])]]] : [])] },   /* device pages stay compact; editor retains imported fine settings */
 ];

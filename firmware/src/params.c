@@ -15,6 +15,8 @@ static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", 
                                     "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH",
                                     "PHDOM", "HUNG", "DHARM"};   /* (stored: append-only; GHOULBOX's from PHDOM, seq.c) */
 static const char *const N_ONOFF[] = {"OFF", "ON"};
+static const char *const N_SHOLD[] = {"20S", "30S", "45S", "60S", "90S", "120S", "180S", "300S"};
+static const char *const N_SROLE[] = {"AUTO", "BED", "MELO", "BASS", "PULSE", "BEAST"};
 static const char *const N_DMOOD[] = {"MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"};   /* GHOULBOX 2.3: DREAM's (dream.c) */
 static const char *const N_SKEY[] = {"AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const N_SCTRK[] = {"OFF", "T1", "T2", "T3", "T4"};   /* .. the track its calls play */
@@ -195,8 +197,8 @@ static const param_desc_t GP[G_COUNT] = {
     [G_KSPLIT] = PE("SPLT", N_KSPLIT, 4),          /* (C4: F3..B3 below, seven keys) */
     [G_KOCT] = PE("OCT", N_KOCT, 2),               /* (0) */
     [G_DREAM] = PE("EVOL", N_ONOFF, 0),            /* GHOULBOX 2.3: HOME > DREAM (dream.c) */
-    [G_DDENS] = PD("DENS", F_INT, 1, 8, 4),
-    [G_DDRFT] = PD("DRFT", F_INT, 1, 8, 6),        /* (a change every 3 passes: ~80 s at 72 BPM) */
+    [G_DDENS] = PD("ACTV", F_INT, 1, 8, 4),
+    [G_DDRFT] = PD("EVOL", F_INT, 1, 8, 6),        /* (a change every 3 passes: ~80 s at 72 BPM) */
     [G_DMOOD] = PE("MOOD", N_DMOOD, 0),
     /* DINOBOX: SCAPE (scape.c), HOME > SCAPE MUSIC tapped again. LEVEL 0 = off (nothing runs, as before); a BIOME turned on
      * its page sets the layers, DIST and TIME (ui_input.c); the defaults are JUNGLE's (scape.c SC_BIOME[1]) */
@@ -223,6 +225,14 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SDNGR] = PD("DANGR", F_PCT, 0, 127, 0),      /* DANGER: 0 never .. 127 a beast every ~40 s */
     [G_SDSIZ] = PE("SIZE", N_DSIZE, 1),
     [G_SDSTP] = PD("STEP", F_PCT, 0, 127, 100),     /* the footsteps' level */
+    [G_SMOTION] = PD("MOTN", F_PCT, 0, 127, 64),
+    [G_SCHORD] = PE("HOLD", N_SHOLD, 3),
+    [G_SBED] = PD("BED", F_PCT, 0, 127, 100),
+    [G_SMELO] = PD("MELO", F_PCT, 0, 127, 90),
+    [G_SBASS] = PD("BASS", F_PCT, 0, 127, 100),
+    [G_SPULSE] = PD("PULSE", F_PCT, 0, 127, 80),
+    [G_SROLE0] = PE("T1", N_SROLE, 0), [G_SROLE1] = PE("T2", N_SROLE, 0),
+    [G_SROLE2] = PE("T3", N_SROLE, 0), [G_SROLE3] = PE("T4", N_SROLE, 0),
     [G_SDROR] = PD("LEGACY", F_INT, 0, 5, 1),             /* CALLS: the SCAPE CALLS track */
 };
 
@@ -505,12 +515,15 @@ static const page_t PAGES[] = {
     {"KEYS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_KMODE, G_KTRK, G_KSPLIT, G_KOCT}},   /* GHOULBOX 2.1: CLOCK tapped again */
     /* One SCAPE feature: music, habitat, drone, creatures and layer mix.
      * Retired fine controls keep their stored IDs; the editor can import older projects. */
-    {"SCAPE MUSIC", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DREAM, G_DDENS, G_DDRFT, G_DMOOD}},
-    {"SCAPE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCAPE, G_SBIOME, G_SDIST, G_STIME}},
-    {"SCAPE DRONE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SDRN, G_SDKEY, G_SDMOV, G_SCNOTE}},
-    {"SCAPE LIFE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCTRK, G_SCRATE, G_SDNGR, G_SDSIZ}},
-    {"SCAPE LEVELS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL0, G_SL1, G_SL2, G_SL3}},
-    {"SCAPE LEVELS 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL4, G_SL5, G_SL6, G_SL7}},
+    {"SCAPE MUSIC", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DDENS, G_DDRFT, G_SMOTION, G_SCHORD}},
+    {"SCAPE MIX", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SBED, G_SMELO, G_SBASS, G_SPULSE}},
+    {"SCAPE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SBIOME, G_STIME, G_SDIST, G_SCRATE}},
+    {"SCAPE SETUP", FAM_GLO, SC_GLOBAL, GR_NONE, {G_DREAM, G_DMOOD, G_SCAPE, G_SDRN}},
+    {"SCAPE ROLES", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SROLE0, G_SROLE1, G_SROLE2, G_SROLE3}},
+    {"SCAPE DRONE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SDRN, G_SDKEY, G_SDMOV, G_SCNOTE}},
+    {"SCAPE LIFE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SCTRK, G_SDNGR, G_SDSIZ, G_SCNOTE}},
+    {"SCAPE LEVELS", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SL0, G_SL1, G_SL2, G_SL3}},
+    {"SCAPE LEVELS 2", FAM_GLO, SC_GLOBAL, GR_NONE, {G_SL4, G_SL5, G_SL6, G_SL7}},
 };
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */

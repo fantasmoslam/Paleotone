@@ -219,6 +219,7 @@ static uint32_t div_samples(uint32_t div)
 #include "perform.c"                                 /* the FX hold layer's effects (the master) */
 #include "tape.c"                                    /* GHOULBOX: TAPE / CRSH on the mix, before MASTER */
 #include "ambience.c"                                /* GHOULBOX: the ambience (AMB, CRKL) into the mix */
+#include "scape_director.c"
 #include "scape.c"                                   /* DINOBOX: SCAPE, the soundscape beside the tracks */
 #include "click.c"                                   /* the metronome's click (after the master: audio.c) */
 
@@ -477,7 +478,7 @@ static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_
 {
     int32_t *d = spread_buf;
     uint32_t i;
-    int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127], pan = t->p[P_PAN], s = (t->p[P_SPRD] + 1) >> 1;
+    int32_t lvl = sd_level(t, LEVEL_Q12[t->p[P_LEVEL] & 127]), pan = t->p[P_PAN], s = (t->p[P_SPRD] + 1) >> 1;
     int32_t pa = clamp(pan - s, -64, 63), pb = clamp(pan + s, -64, 63);
     int32_t gla = 4096 - (pa > 0 ? pa * 64 : 0), gra = 4096 + (pa < 0 ? pa * 64 : 0);
     int32_t glb = 4096 - (pb > 0 ? pb * 64 : 0), grb = 4096 + (pb < 0 ? pb * 64 : 0);
@@ -602,6 +603,7 @@ static void mix_block(int32_t *out, uint32_t n)
     for (i = 0; i < n; i++)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
     events_block(n);
+    sd_block(n);
     perf = perf_begin(n);                               /* the FX hold layer at work (perform.c) */
     for (i = 0; i < NPART; i++)
         mix_part(&trk[i], n);

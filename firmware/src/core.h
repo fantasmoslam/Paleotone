@@ -122,6 +122,8 @@ enum {                          /* global parameters */
                                  * the spread of notes round it */
     G_SDNGR, G_SDSIZ, G_SDSTP, G_SDROR,   /* .. DANGER: how often a beast comes by (0: never), its SIZE, its STEPs'
                                  * level, the track that ROARs as it passes (OFF, the CALLS track, T1..T4) */
+    G_SMOTION, G_SCHORD, G_SBED, G_SMELO, G_SBASS, G_SPULSE,
+    G_SROLE0, G_SROLE1, G_SROLE2, G_SROLE3, /* append-only: director controls in SCAPE sidecar */
     G_COUNT
 };
 

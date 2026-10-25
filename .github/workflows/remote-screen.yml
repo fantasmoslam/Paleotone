@@ -31,15 +31,23 @@ jobs:
           build/remote/gesture_test
           cc -O1 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/physical_test tests/physical_panel_test.c -lm
           build/remote/physical_test
+      - name: Shared SCAPE director and project compatibility
+        run: |
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/director_test tests/scape_director_test.c -lm
+          build/remote/director_test
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/dream_test tests/dream_test.c -lm
+          build/remote/dream_test
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/scape_test tests/scape_test.c -lm
+          build/remote/scape_test
       - name: Combined SCAPE and SAURUS scene
         run: |
           cc -O1 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/unified_test tests/unified_scene_test.c -lm
           build/remote/unified_test
       - name: Retired SLICER and preserved performance effects
         run: |
-          cc -O1 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/sound14_test tests/sound14_test.c -lm
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/sound14_test tests/sound14_test.c -lm
           build/remote/sound14_test
-          cc -O1 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/perform_test tests/perform_test.c -lm
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/remote/perform_test tests/perform_test.c -lm
           build/remote/perform_test
       - name: Busy MIDI queue regression
         run: |

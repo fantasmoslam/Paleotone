@@ -481,7 +481,7 @@ static void page_entered(void)
     ui.hot_t = 0;                                /* clear the previous page's emphasis */
     ui.act = pg->graph == GR_USER ? 4u : 0u;     /* the save screen is ready for OCT+ */
     ui.force = 1;
-    if (!ui.home && pg->scope == SC_GLOBAL && pg->id[0] == G_DREAM)
+    if (!ui.home && pg->scope == SC_GLOBAL && pg->id[0] == G_DDENS)
         ui_message("A KEY: SCAPE MUSIC");           /* GHOULBOX 2.3: DREAM's keys (DINOBOX: EPOCH) */
 }
 
@@ -511,7 +511,7 @@ static int song_keys_on(void) { return !ui.home && !ui.menu && !ui.confirm && !u
 /* GHOULBOX 2.3: HOME > DREAM, its keys compose (dream.c dream_keys) */
 static int dream_keys_on(void)
 {
-    return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->scope == SC_GLOBAL && cur_page()->id[0] == G_DREAM;
+    return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->scope == SC_GLOBAL && cur_page()->id[0] == G_DDENS;
 }
 
 /* black key place p (seq.c key_place) held, 0 = not */
@@ -1271,6 +1271,7 @@ static void track_defaults(track_t *t)
 static void gb_scene_load(uint32_t s)
 {
     uint32_t i;
+    dream_forget();
     if (s >= GB_NSCENE)
         s = 0;
     for (i = 0; i < G_COUNT; i++)

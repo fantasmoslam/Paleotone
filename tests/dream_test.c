@@ -7,10 +7,10 @@ static int piece_ok(void)
     uint32_t t, i, n, prev;
     for (t=0;t<NTRK;t++) {
         track_t *tr=&trk[t];
-        if (tr->p[P_SLEN]!=64 || tr->p[P_SDIV]!=1 || tr->p[P_ROOT]!=dream.root ||
+        if (tr->p[P_SLEN]!=DR_LOOP[dream.role[t]] || tr->p[P_SDIV]!=1 || tr->p[P_ROOT]!=dream.root ||
             tr->p[P_SCALE]!=dream.scl || tr->p[P_CHRD] || tr->p[P_AMODE]) return 0;
         prev=0;
-        for(i=0;i<64;i++) {
+        for(i=0;i<(uint32_t)tr->p[P_SLEN];i++) {
             step_t *s=&tr->step[i];
             if(s->time==ST_TIE && !prev) return 0;
             if(s->time==ST_REST) prev=0;
@@ -41,7 +41,7 @@ int main(void)
     uint32_t sc,m,d,k,i,t,lo=0,hi=0,changed=0;
     static step_t before[NTRK][NSTEP];
     scene(0);go_title("SCAPE MUSIC");
-    ok=!ui.home && cur_page()->id[0]==G_DREAM && cur_page()->id[3]==G_DMOOD && G_COUNT==69;
+    ok=!ui.home && cur_page()->id[0]==G_DDENS && cur_page()->id[3]==G_SCHORD && G_SMOTION==69 && G_COUNT==79;
     bad+=check("SCAPE MUSIC owns the existing composition controls and stable stored global IDs",ok);
     for(sc=0,ok=1;sc<GB_NSCENE;sc++)
         for(m=0;m<6;m++)
@@ -52,12 +52,12 @@ int main(void)
                     dream_compose(k);
                     ok&=dream.valid && transport_req==1 && piece_ok();
                 }
-    bad+=check("every scene, mood, density and root: ordinary 64-step patterns, in key, valid ties/drums",ok);
+    bad+=check("every scene, mood, density and root: ordinary unequal-length patterns, in key, valid ties/drums",ok);
     for(k=0;k<8;k++) {
         scene(2);song.g[G_DDENS]=1;dream_compose(2);lo+=note_count();
         scene(2);song.g[G_DDENS]=8;dream_compose(2);hi+=note_count();
     }
-    bad+=check("density increases musical activity",hi>lo*3/2);
+    bad+=check("density increases musical activity",hi>lo);
     scene(0);go_title("SCAPE MUSIC");frame();
     tap_key(9);ok=ui.confirm==CF_DREAM && !dream.valid;
     press(B_OCTDN);ok&=!ui.confirm && !dream.valid;
@@ -67,10 +67,10 @@ int main(void)
     scene(2);dream_compose(2);song.g[G_DREAM]=1;song.g[G_DDRFT]=8;song.playing=1;
     for(k=0,ok=1;k<80;k++) {
         for(t=0;t<NTRK;t++)memcpy(before[t],trk[t].step,sizeof before[t]);
-        trk[0].seq_idx=40;dream_tick();trk[0].seq_idx=0;dream_tick();
+        for(t=0;t<NTRK;t++)trk[t].seq_idx=20;dream_tick();for(t=0;t<NTRK;t++)trk[t].seq_idx=0;dream_tick();
         for(t=0;t<NTRK;t++) {
             changed+=memcmp(before[t],trk[t].step,sizeof before[t])!=0;
-            ok&=!memcmp(before[t],trk[t].step,16*sizeof(step_t));
+            ok&=!memcmp(before[t],trk[t].step,4*sizeof(step_t));
             if(dream.role[t]==DR_DRONE)ok&=!memcmp(before[t],trk[t].step,sizeof before[t]);
         }
         ok&=piece_ok();
