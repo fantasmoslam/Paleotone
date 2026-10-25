@@ -40,6 +40,8 @@ jobs:
           mkdir -p build/remote
           cc -std=c99 -Wall -Wextra -Werror -o build/remote/queue_test tests/remote_queue_test.c
           build/remote/queue_test
+          cc -std=c99 -Wall -Wextra -Werror -Ifirmware/src -o build/remote/codec_test tests/remote_codec_test.c
+          build/remote/codec_test build/remote/codec.bin
       - name: Native renderer and original-screen fidelity
         run: |
           mkdir -p build/remote
@@ -52,6 +54,7 @@ jobs:
           node web/test_second_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_physical_focus.mjs
           node web/test_display_paint.mjs build/emu/felucca.wasm build/remote/fixture.bin
+          node web/test_remote_compression.mjs build/remote/fixture.bin.compact build/remote/codec.bin
           node web/test_display_performance.mjs
           node web/test_frame_presenter.mjs
           node web/test_control_target.mjs

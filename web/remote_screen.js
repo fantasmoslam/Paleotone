@@ -25,9 +25,36 @@ export function parseStatus(p) {
     if (p[15 + 2 * i] > 1) throw new Error("Invalid dirty-block mask");
     return p[14 + 2 * i] | p[15 + 2 * i] << 7;
   });
-  const status = {op: p[0], schema: p[2], id, rev: r14(p, 8), base: r14(p, 10), length: r14(p, 12), dirty, batchMax:p.length===47?Math.min(4,p[46]):0};
+  const status = {op: p[0], schema: p[2], id, rev: r14(p, 8), base: r14(p, 10), length: r14(p, 12), dirty, batchMax:p.length===47?Math.min(4,p[46]&63):0, compact:p.length===47&&!!(p[46]&64)};
   if (status.length > 16384) throw new Error("Display state exceeds capacity");
   return status;
+}
+export function unpackCompressedBlock(p) {
+  if(p.length<10||p[4])throw new Error('Invalid compressed state block');
+  const count=r14(p,5),encoded=r14(p,8);
+  if(count<1||count>128||encoded<1||encoded>128||p[7]>1)
+    throw new Error('Invalid compressed state size or encoding');
+  const bytes=unpack7(p.slice(10),encoded);
+  if(!p[7]){
+    if(encoded!==count)throw new Error('Wrong raw state size');
+    return bytes;
+  }
+  if(encoded>=count)throw new Error('Compressed state must be smaller');
+  const out=new Uint8Array(count);let i=0,j=0;
+  while(i<bytes.length){
+    const token=bytes[i++],n=(token&127)+1;
+    if(j+n>count)throw new Error('Compressed state overrun');
+    if(token&128){
+      if(i>=bytes.length)throw new Error('Truncated repeat');
+      out.fill(bytes[i++],j,j+n);
+    }else{
+      if(i+n>bytes.length)throw new Error('Truncated literal');
+      out.set(bytes.subarray(i,i+n),j);i+=n;
+    }
+    j+=n;
+  }
+  if(j!==count)throw new Error('Incomplete compressed state');
+  return out;
 }
 export class MidiTimeoutError extends Error {
   constructor(cmd) {
@@ -53,7 +80,7 @@ export class MidiLink {
       if(d[4]===93 && p.length>=5 && r14(p)===pending.rev && pending.blocks.includes(r14(p,2))){
         if(p[4]) { const e=new Error("Display snapshot changed");e.code="SNAPSHOT_STALE";pending.finish(e);return; }
         pending.received.set(r14(p,2),p);
-      } else if(d[4]===95 && p.length===4 && r14(p)===pending.rev && p[2]===pending.blocks.length) {
+      } else if(d[4]===95 && p.length===4 && r14(p)===pending.rev && p[2]===(pending.blocks.length|(pending.compact?64:0))) {
         if(p[3]){const e=new Error("Display snapshot changed");e.code="SNAPSHOT_STALE";pending.finish(e);return;}
         pending.ack=true;
       } else return;
@@ -81,13 +108,13 @@ export class MidiLink {
     this.tail = result.catch(() => {});
     return result;
   }
-  async readBlocks(rev,blocks) {
+  async readBlocks(rev,blocks,compact=false) {
     if(!blocks.length||blocks.length>4||new Set(blocks).size!==blocks.length||
        blocks.some(b=>!Number.isInteger(b)||b<0||b>=128))throw new Error("Invalid display burst");
     for(let attempt=0;;attempt++){
       const run=()=>new Promise((resolve,reject)=>{
         if(this.closed) return reject(new Error("FM-1 disconnected"));
-        const pending={batch:true,rev,blocks,received:new Map(),ack:false,reject};
+        const pending={batch:true,rev,blocks,compact,received:new Map(),ack:false,reject};
         pending.finish=(error)=>{
           if(this.pending!==pending)return;
           clearTimeout(pending.timer);this.pending=null;
@@ -95,7 +122,7 @@ export class MidiLink {
         };
         pending.timer=setTimeout(()=>pending.finish(new MidiTimeoutError(95)),this.timeout);
         this.pending=pending;
-        try{this.output.send([...HEADER,95,...u14(rev),blocks.length,...blocks,0xF7]);}
+        try{this.output.send([...HEADER,95,...u14(rev),blocks.length|(compact?64:0),...blocks,0xF7]);}
         catch(e){pending.finish(e);}
       });
       const result=this.tail.then(run,run);this.tail=result.catch(()=>{});
@@ -143,16 +170,16 @@ export class DisplaySync {
     const blocks=[];
     for(let block=0;block*128<next.length;block++)
       if(full||(s.dirty[block>>3]&1<<(block&7)))blocks.push(block);
-    const take=(p,block)=>{
+    const take=(p,block,compact=false)=>{
       if(p[4]||p.length<7){const e=new Error("Display snapshot changed; requesting a fresh screen");e.code="SNAPSHOT_STALE";throw e;}
       const count=r14(p,5),expected=Math.min(128,next.length-block*128);
       if(count!==expected)throw new Error("Wrong display block size");
-      next.set(unpack7(p.slice(7),count),block*128);metrics.blocks++;metrics.bytes+=count;
+      next.set(compact?unpackCompressedBlock(p):unpack7(p.slice(7),count),block*128);metrics.blocks++;metrics.bytes+=count;
     };
     if(s.batchMax && this.link.readBlocks){
       for(let i=0;i<blocks.length;i+=s.batchMax){
-        const group=blocks.slice(i,i+s.batchMax),replies=await this.link.readBlocks(s.rev,group);
-        replies.forEach((p,j)=>take(p,group[j]));
+        const group=blocks.slice(i,i+s.batchMax),replies=await this.link.readBlocks(s.rev,group,s.compact);
+        replies.forEach((p,j)=>take(p,group[j],s.compact));
       }
     }else for(const block of blocks){
       const p=await this.link.readRequest(93,[...u14(s.rev),...u14(block)],
