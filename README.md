@@ -34,7 +34,7 @@ messages 90/91 and is not a replacement for the graphics companion.
   SYNTH".
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
   controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **SCAPE MUSIC** coordinates four unequal musical loops with one chord progression and a shared breathing arc.
-  Three HOME pages cover movement, role levels and habitat; GLO holds detailed settings and explicit track roles.
+  All SCAPE controls stay in one HOME group: movement, role levels, habitat, setup and detailed track roles.
   See [SCAPE controls](docs/UNIFIED-SCAPE.md).
 - **121 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
   prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 64 more join

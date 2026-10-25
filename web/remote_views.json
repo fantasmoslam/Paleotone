@@ -1,5 +1,5 @@
 {
-  "rendererId": 2492556422,
+  "rendererId": 945076996,
   "schema": 2,
   "seqMode": 163,
   "selectedTrack": 166,
@@ -341,32 +341,32 @@
     {
       "page": 46,
       "label": "SCAPE SETUP",
-      "button": 5
+      "button": 6
     },
     {
       "page": 47,
       "label": "SCAPE ROLES",
-      "button": 5
+      "button": 6
     },
     {
       "page": 48,
       "label": "SCAPE DRONE",
-      "button": 5
+      "button": 6
     },
     {
       "page": 49,
       "label": "SCAPE LIFE",
-      "button": 5
+      "button": 6
     },
     {
       "page": 50,
       "label": "SCAPE LEVELS",
-      "button": 5
+      "button": 6
     },
     {
       "page": 51,
       "label": "SCAPE LEVELS 2",
-      "button": 5
+      "button": 6
     }
   ]
 }

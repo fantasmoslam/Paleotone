@@ -1,6 +1,6 @@
 # SCAPE: shared music and habitat
 
-HOME cycles MIXER, CLOCK, KEYS, then three SCAPE pages before returning home.
+HOME cycles MIXER, CLOCK and KEYS, then every SCAPE page in one continuous group before returning home. The first three pages cover movement, role mixing and habitat; keep tapping HOME for setup and detail.
 
 | Page | Knob 1 | Knob 2 | Knob 3 | Knob 4 |
 | --- | --- | --- | --- | --- |
@@ -14,9 +14,9 @@ The musical roles use independent 1/8-note loops: bed 29 beats, melody 13, bass 
 
 MOTN gives layers separate breathing periods inside a shared two-minute sparse/full arc. Zero removes breathing. Mix controls attenuate each role without rewriting track levels, with smoothed gain changes. Bed also controls the held BEAST role. ACTV changes phrase density on the next loop; EVOL changes later material on each track's own loop boundary, keeping its opening motif. The pulse distributes hits across its loop. Melody notes leave real rests; new calls and wildlife events wait for these gaps. Calls follow the current chord root. Existing calls finish naturally.
 
-## Detailed settings under GLO
+## More settings in the same SCAPE group
 
-Tap GLO through SONG to the SCAPE pages. Normal PLAY, REC and instrument editing keep their existing behavior.
+Keep tapping HOME after the habitat page for SETUP, ROLES, DRONE, LIFE and the two layer-level pages. All SCAPE settings stay together; GLO remains SONG. Normal PLAY, REC and instrument editing keep their existing behavior.
 
 | Page | Knob 1 | Knob 2 | Knob 3 | Knob 4 |
 | --- | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ Tap GLO through SONG to the SCAPE pages. Normal PLAY, REC and instrument editing
 
 Roles: AUTO, BED, MELO, BASS, PULSE, BEAST. AUTO uses T1 bass, T2 bed, T3 melody and T4 pulse, with SAURUS/ROAR as BEAST and drum kits as PULSE. Kits always use PULSE. No preset-name guesses. Changing a role takes effect on that track's next loop. Selecting a different scene clears the cached director.
 
-Evolution OFF freezes progression, variation and breathing clocks; playback and layer levels continue. Stopping transport pauses generation. Song-chain playback suspends the director. With no active composition the mix is an exact bypass. Environment-only use remains available: raise the environment level under GLO; creature track OFF prevents track-triggered calls and roars.
+Evolution OFF freezes progression, variation and breathing clocks; playback and layer levels continue. Stopping transport pauses generation. Song-chain playback suspends the director. With no active composition the mix is an exact bypass. Environment-only use remains available: raise the environment level on SCAPE SETUP; creature track OFF prevents track-triggered calls and roars.
 
 Expanded companion: HOME+OCT− selects the left page, HOME+OCT+ the right. An effective pairing is SCAPE MUSIC on one side and SCAPE MIX on the other; both use the real firmware renderer.
 

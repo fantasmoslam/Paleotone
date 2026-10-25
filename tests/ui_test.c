@@ -283,7 +283,7 @@ static void stop_transport(void) { transport_req = 0; song.playing = 0; }
 /* DINOBOX: HOME tapped on SCAPE MUSIC goes through SCAPE's remaining five pages (scape.c), then HOME. 1 = so */
 static int home_through_scape(void)
 {
-    static const char *const T[] = {"SCAPE MIX", "SCAPE"};
+    static const char *const T[] = {"SCAPE MIX", "SCAPE", "SCAPE SETUP", "SCAPE ROLES", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2"};
     int ok = 1;
     for (uint32_t i = 0; i < NELEM(T); i++) {
         press(B_HOME);
@@ -2763,7 +2763,7 @@ static int test_page_cycles(void)
     for (i = 0; i < NPAGES; i++) {                       /* every page in a family its button reaches, and its LED */
         uint32_t f = PAGES[i].fam;
         ok &= f != FAM_SEQ || PAGES[i].graph == GR_ROLL || PAGES[i].graph == GR_EVENTS;
-        ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG || !memcmp(PAGES[i].title, "SCAPE", 5);   /* (1.2: GLO's only page) */
+        ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG;   /* SONG stays GLO's only page. */
         ok &= f != FAM_TRK || PAGES[i].graph == GR_TRK || str_eq(PAGES[i].title, "CLOCK") ||
               str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "SCAPE MUSIC") ||   /* HOME's: MIXER CLOCK KEYS (2.1)
                                                                                      * DREAM (2.3) */
@@ -2807,8 +2807,8 @@ static int test_page_cycles(void)
     open_family(FAM_ENV); ok &= str_eq(cur_page()->title, "ENV");
     open_family(FAM_SAVE); ok &= str_eq(cur_page()->title, "USER");
     open_family(FAM_GLO); open_family(FAM_GLO);
-    ok &= str_eq(cur_page()->title, "SCAPE SETUP");
-    go_home(); open_family(FAM_GLO); ok &= str_eq(cur_page()->title, "SCAPE SETUP");
+    ok &= str_eq(cur_page()->title, "SONG");
+    go_home(); open_family(FAM_GLO); ok &= str_eq(cur_page()->title, "SONG");
     for (i = 0; i < 256u; i++) {                         /* any remembered index (the old GLOBAL 25, SYSTEM 27, ..) */
         go_home(); ui.fam_last[FAM_GLO] = (uint8_t)i; open_family(FAM_GLO);
         ok &= (i < NPAGES && PAGES[i].fam == FAM_GLO ? ui.page == i : str_eq(cur_page()->title, "SONG")) && ui.fam_last[FAM_GLO] == ui.page;
@@ -2981,8 +2981,8 @@ static int test_product_ux(void)
     ui_power_on();
     frames(320);                                       /* (taps further apart than a double tap: #83) */
     press(B_GLO); frames(320); ok = cur_page()->fam == FAM_GLO && str_eq(cur_page()->title, "SONG");
-    press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "SCAPE SETUP") && cur_page()->fam == FAM_GLO && !ui.home;
-    go_title("CLOCK"); press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "SCAPE SETUP");
+    press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "SONG") && cur_page()->fam == FAM_GLO && !ui.home;
+    go_title("CLOCK"); press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "SONG");
     bad += check("1.2: GLO opens SONG directly, again SONG (no GLOBAL, no SYSTEM, no MIXER)", ok);
     go_home(); btn_down(B_SEQ); frames(500);
     ok = ui.layer == LAYER_SEQ && ui.home;
@@ -7053,7 +7053,7 @@ static int test_layer_lock(void)
     btn_down(B_GLO); frames(500);
     ok &= ui.layer == LAYER_GLO && !ui.lock;
     btn_up(B_GLO); frame();
-    ok &= !ui.layer && !ui.lock && str_eq(cur_page()->title, "SCAPE SETUP");
+    ok &= !ui.layer && !ui.lock && str_eq(cur_page()->title, "SONG");
     press(B_SCL);
     lay_combo(B_SCL, white(2));
     key_up(white(2)); btn_up(B_SCL); frame(); frames(400);
