@@ -103,7 +103,8 @@ $("target-shift").onpointerdown=e=>{$("target-shift").setPointerCapture(e.pointe
 for(const event of ['pointerup','pointercancel','lostpointercapture'])$("target-shift").addEventListener(event,()=>shiftTarget(false));
 $("target-shift").onkeydown=e=>{if([' ','Enter'].includes(e.key)&&!e.repeat){e.preventDefault();shiftTarget(true);}};
 $("target-shift").onkeyup=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();shiftTarget(false);}};
-addEventListener('keydown',e=>{if(e.key==='Shift'&&!e.repeat&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))shiftTarget(true);});
+$("target-shift").onblur=()=>shiftTarget(false);
+addEventListener('keydown',e=>{if(e.key==='Shift'&&!e.repeat&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))shiftTarget(true);});
 addEventListener('keyup',e=>{if(e.key==='Shift')shiftTarget(false);});
 function paint(){
   if(!ex)return;
