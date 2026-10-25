@@ -9,6 +9,9 @@ const manifest=JSON.parse(await readFile(new URL('manifest.webmanifest',here),'u
 assert.equal(manifest.start_url,'./');assert.equal(manifest.scope,'./');
 for(const file of ['screen.js','sw.js','icon.svg','manifest.webmanifest'])assert.ok((await readFile(new URL(file,here))).length);
 assert.match(html,/src="\.\/screen.js"/);assert.doesNotMatch(html,/fonts.googleapis/);
+assert.match(html,/<script src="\.\/screen\.js" defer><\/script>/);
+assert.equal((html.match(/<script/g)||[]).length,1);
+assert.doesNotMatch(html,/const C =|<!--/,'only the external tested script belongs in the page shell');
 let now=100,intervals=[],sent=[],elements=new Map();
 const element=id=>{
   if(!elements.has(id))elements.set(id,{textContent:'',hidden:true,value:'',children:[],append(o){this.children.push(o);},replaceChildren(){this.children=[];},getContext(){return new Proxy({},{get:()=>()=>{}});}});
