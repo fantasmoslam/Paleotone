@@ -58,6 +58,6 @@ its own target image/OTA/loader/CPU checks before generating a releasable packag
 
 The isolated preview is `/webapp/scape-preview/`, with its own `installer/`, `screen/`, `editor/` and `manual/`. It does not replace the release manifest or the existing companion. Browser saves use the `paleotone-scape-preview-` prefix.
 
-Firmware/renderer source: `2e3547a1a62702ebf2edb653eb418b3cf85f9857`. Renderer `2492556422`, schema 2; package SHA-256 `279f889927f1a509dcd413dbb579bbeb15e89b96b96f3c0c6b56ca893ccb5c35`. Target image 564176 bytes, data+BSS 90292/98304, pool 332900/344064. The 16 KiB application reserve remains required. This candidate has not been flashed to the physical FM-1.
+Firmware/renderer source: `c0897f1cd14849f6be91aa7329438c9f5c9c9f75`. Renderer `945076996`, schema 2; package SHA-256 `f03fa1fabaeb13ad5210a14cc97e60d0484eba85bffbdbb20117943138212f6b`. Target image 564176 bytes, data+BSS 90292/98304, pool 332900/344064. The 16 KiB application reserve remains required. This candidate has not been flashed to the physical FM-1.
 
 Rebuild staging with `python web/prepare_scape_preview.py EMULATOR PACKAGE OUT SOURCE`, then run `node web/test_scape_preview.mjs OUT` and `node web/test_published_companion.mjs OUT/screen`. Only publish that output inside the dedicated preview folder. Use its paired display after installing this candidate.
