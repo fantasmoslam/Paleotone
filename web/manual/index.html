@@ -275,7 +275,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <h2 id="how-the-synth-is-built">How the synth is built</h2>
 <p>PALEOTONE is four tracks playing at once, like four musicians. Each track has its own engine and sound, its own notes in the sequencer and its own settings; together they share 12 voices, the effects and the master.</p>
 <figure><img class="diagram" src="img/signal.png" alt="the signal path · 4 tracks into one master" loading="lazy"><figcaption>the signal path · 4 tracks into one master</figcaption></figure>
-<p>Read it left to right. Notes come from the track's steps, your keys, MIDI or SCAPE's calls; the engine turns them into sound with voices from the shared 12. Then the track's own DIST, SLICER, LEVEL, PAN and SPRD, and sends into the three shared effects. Everything meets in the mix, with the ambience and SCAPE added there, and leaves through TAPE and MASTER.</p>
+<p>Read it left to right. Notes come from the track's steps, your keys, MIDI or SCAPE's calls; the engine turns them into sound with voices from the shared 12. Then the track's own DIST, LEVEL, PAN and SPRD, and sends into the three shared effects. Everything meets in the mix, with the ambience and SCAPE added there, and leaves through TAPE and MASTER.</p>
 <h3 id="tracks-and-voices">Tracks and voices</h3>
 <ul>
 <li><strong>Four tracks.</strong> ALGORITHM picks the one you edit; the header shows its number and colour.</li>
@@ -758,7 +758,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <figure><img class="screen" src="img/edit_voice_chant.png" alt="VOICE&#x27;s first page on DEEP CHANT" loading="lazy"><figcaption>VOICE&#x27;s first page on DEEP CHANT</figcaption></figure>
 <p><strong>VOICE</strong> sings vowels: the chants and choirs. <strong>DRUM</strong> plays eight lanes; the TRIBE kit (KIT TRIBE) has BOOM, SKIN, CLAP, SEEDS, RATTL, LOG, BONE and ROCK. The keys follow the General MIDI drum map, as on any drum machine: C is BOOM, D is SKIN. LANES and LANES 2 set each lane's level, and on a DRUM track the STEP page becomes a drum grid. The <strong>ENCOUNTER</strong> kit (SAMPLE) puts one sound on each key from F3: footfalls near and far, a mud stomp, a claw tap, a branch snap, a falling tree, a splash, a rock fall, leaves, bone clacks, a ground ripple, thunder and a huff. All of PALEOTONE's sample material is synthesized; nothing is a recording.</p>
 <h2 id="effects">Effects</h2>
-<p>Effects put the herd somewhere: a canyon, a swamp at night, a valley before a storm. PALEOTONE has one delay, one reverb and one chorus shared by all four tracks, like four players in one hall, plus per-track drive and slicer, a worn-tape master and hands-on performance effects.</p>
+<p>Effects put the herd somewhere: a canyon, a swamp at night, a valley before a storm. PALEOTONE has one delay, one reverb and one chorus shared by all four tracks, like four players in one hall, plus per-track drive, a worn-tape master and hands-on performance effects.</p>
 <h3 id="sends-the-fx-page">Sends: the FX page</h3>
 <figure><img class="screen" src="img/fx.png" alt="The FX page: DST, CHO, DLY and REV for the selected track" loading="lazy"><figcaption>The FX page: DST, CHO, DLY and REV for the selected track</figcaption></figure>
 <p>Tap <strong>FX</strong>. KNOB 1–4 are the selected track's own amounts: <strong>DST</strong> (drive, on the track itself), and how much it sends into <strong>CHO</strong>, <strong>DLY</strong> and <strong>REV</strong>. A dry, close lead in front of a pad drowned in hall is the classic picture. Tap FX again to step through the rest of the family:</p>
@@ -776,11 +776,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <td>DST, CHO, DLY, REV</td>
 <td>The track's drive and its three sends</td>
 </tr>
-<tr>
-<td>SLICER</td>
-<td>SLCR, PAT, RATE, DEPTH</td>
-<td>The track's rhythmic chopper (below)</td>
-</tr>
+
 <tr>
 <td>DLY</td>
 <td>TIME, FDBK, COLR, MIX</td>
@@ -814,8 +810,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <li><strong>CRSH</strong>: a cheap old sampler's fewer bits and lower rate: grainy, then robotic.</li>
 <li><strong>AMB</strong>: a bed of wind under everything, with no track or voice of its own. <strong>CRKL</strong> adds crackle to it (0 = the wind alone). For living wildlife, use SCAPE instead.</li>
 </ul>
-<h3 id="slicer">SLICER</h3>
-<p>A per-track chopper locked to the tempo, after DST and before the sends, so the echoes follow the chopped sound. SLCR GATE cuts the sound in a 16-step pattern; STUT repeats the last bit instead. PAT picks one of 16 patterns, RATE the step (1/8 to 32T), DEPTH how far a gap closes (or the repeat's level). GATE on a pad gives a herd's trotting pulse.</p>
+<p>The SLICER insert has been retired. Saved projects retain their parameter slots for compatibility; those settings no longer process audio. The FX performance layer keeps repeat, reverse, tape stop, freeze and octave effects.</p>
 <h3 id="the-fx-layer-performance-effects">The FX layer: performance effects</h3>
 <p>Hold <strong>FX</strong> (or double-tap it to keep it open) and the keys become effects on the whole mix, held while the key is held:</p>
 <table>
@@ -1286,15 +1281,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <td>DLY</td>
 <td>REV</td>
 </tr>
-<tr>
-<td>SLICER</td>
-<td>FX</td>
-<td>track</td>
-<td>SLCR</td>
-<td>PAT</td>
-<td>RATE</td>
-<td>DEPTH</td>
-</tr>
+
 <tr>
 <td>DLY</td>
 <td>FX</td>

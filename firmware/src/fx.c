@@ -460,7 +460,7 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
 }
 
 /* one block of the whole mix (shared with hostsim.c): events -> each part (with its modulation matrix)
- * -> dist -> SLICER -> level / pan / sends -> buses -> master; out: stereo Q15 */
+ * -> dist -> level / pan / sends -> buses -> master; out: stereo Q15 */
 static void events_block(uint32_t n);                    /* seq.c */
 static int32_t send_c[CTL], send_d[CTL], send_r[CTL], wet[CTL], mix_l[CTL], mix_r[CTL];
 
@@ -469,8 +469,8 @@ static int32_t send_c[CTL], send_d[CTL], send_r[CTL], wet[CTL], mix_l[CTL], mix_
  * law PAN has (the far side down, the near one as it is). track_render gives every voice (b, as always) and the left
  * ones (spread_buf); here d = left - right, the side signal, so for a pair of pans L = b (gla + glb) / 2 + d (gla - glb)
  * / 2 (R alike): the mono sum is b's, the level of a centre pan less by SPRD / 256 at most. b goes through DIST, the
- * SLICER and the FX layer's mute key as always; d gets the SLICER's gate and the mute's ramp (slicer_track_sd,
- * perf_mute_sd) and passes DIST by (the spread of a distorted chord is its voices' clean difference). The sends
+ * FX layer mute key as always; d gets the mute ramp (perf_mute_sd) and passes DIST by
+ * (the spread of a distorted chord is its voices' clean difference). The sends
  * take b, mono, as before. SPRD 0, MONO or LEGATO: mix_part's own loop, bit for bit as before. The cost: a block's
  * clear and sum of spread_buf, the side and a wider mix loop, per part; per voice none (it picks its buffer) */
 static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_t n)
@@ -488,7 +488,7 @@ static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_
     for (i = 0; i < n; i++)
         d[i] = (d[i] << 1) - b[i];                      /* left - right */
     track_dist(t, b, n);
-    slicer_track_sd(t, b, d, n);
+
     if ((pf.mute >> (t - trk)) & 1u)
         perf_mute_sd((uint32_t)(t - trk), b, d, n);
     for (i = 0; i < n; i++) {
@@ -518,8 +518,8 @@ static void mix_part(track_t *t, uint32_t n)
     spread_on = t->p[P_SPRD] > 0 && (trk_vmode(t) == V_POLY || trk_vmode(t) == V_UNISON);   /* (SPREAD, mix_spread) */
     if (track_render(t, b, n))
         t->tail = 16;                                   /* blocks of DIST state to run out after the last voice */
-    else if ((!t->tail || !t->p[P_DIST] || !--t->tail) && !slicer_busy(t)) {
-        slicer_track(t, 0, n);                          /* (the SLICER's step clock runs on) */
+    else if ((!t->tail || !t->p[P_DIST] || !--t->tail)) {
+
         if (mod.on)
             mod_end(t);
         return;
@@ -533,7 +533,7 @@ static void mix_part(track_t *t, uint32_t n)
         int32_t xmax = c > d ? c : d;
         xmax = 0x7FFFFFFF / ((xmax > r ? xmax : r) | 1);   /* sends: loud chords at a high LEVEL */
         track_dist(t, b, n);
-        slicer_track(t, b, n);                          /* slicer.c: before the level, pan and sends */
+
         if ((pf.mute >> (t - trk)) & 1u)
             perf_mute((uint32_t)(t - trk), b, n);       /* perform.c: a black key in the FX layer */
         for (i = 0; i < n; i++) {

@@ -27,8 +27,7 @@
  * last stage's output fed back (0.4) into the first; out (x + all-passed) / 2 * 0.9: two notches moving, the peaks
  * +1.6 dB, white noise -1 .. -3.5 dB. KNOB 4 DEPTH is the FLANGER's and the PHASER's level too (OCT UP /
  * DN playing: full, KNOB 4 its shimmer).
- * The buffer: the SLICER's recordings (sl_buf, 32 KB) borrowed as one stereo loop of 8192 frames at 22.05 kHz
- * (371 ms). While borrowed, STUT tracks play live; their recordings are dropped afterwards. A REPEAT 1/8 or
+ * The buffer: a dedicated 32 KB stereo loop of 8192 frames at 22.05 kHz (371 ms). A REPEAT 1/8 or
  * REVERSE longer than the loop at the tempo (below 81 BPM) does nothing (the map shows it dimmed).
  * KNOB 1..4 with FX: the macros FILTER (the LPF / HPF), CRUSH, THROW (the dry mix into the delay and reverb
  * sends), DEPTH (the buffer effects' level, FLANGER's and PHASER's; OCT UP / DN: the shimmer).
@@ -51,7 +50,8 @@ enum { PF_R8, PF_R16, PF_R32, PF_REV, PF_LPF, PF_HPF, PF_TAPE, PF_FRZ, PF_OUP, P
 #define PF_BUF (PF_REPEAT | PF_BIT(PF_REV) | PF_BIT(PF_TAPE) | PF_BIT(PF_FRZ) | PF_HARM)
 #define PF_MUTE (((1u << NTRK) - 1u) << PF_M1)
 #define PF_MOD (PF_BIT(PF_FLG) | PF_BIT(PF_PHS))   /* FLANGER, PHASER: their own stages after CRUSH */
-#define PB_FRAMES (NTRK * SL_LEN / 2u)        /* stereo frames in sl_buf: 8192, 371 ms at 22.05 kHz */
+static int16_t perf_buffer[16384] __attribute__((section(".pool")));
+#define PB_FRAMES (8192u)        /* stereo frames in perf_buffer: 8192, 371 ms at 22.05 kHz */
 #define PB_MAX (2u * PB_FRAMES)               /* the longest loop, 44.1 kHz samples */
 #define PB_TAPE 32000u                        /* TAPE STOP takes 1 beat, at most this (it lags a quarter of it) */
 #define PB_FREC 4096u                         /* FREEZE: frames it records (186 ms) */
@@ -194,14 +194,6 @@ static void perf_press(uint32_t e, int down)
 
 static void perf_start(void) { pf.ph = 0; pf.sync = 1; }      /* seq_start: a 1/16 starts with the transport */
 
-/* the SLICER's recordings dropped (when the buffer is taken and given back) */
-static void perf_drop_slicer(void)
-{
-    uint32_t k;
-    for (k = 0; k < NTRK; k++)
-        sl[k].rec = sl[k].loop = sl[k].rec_on = 0;
-}
-
 /* the buffer effect to play: the last pressed of those running */
 static uint32_t perf_pick(uint32_t a)
 {
@@ -215,10 +207,6 @@ static uint32_t perf_pick(uint32_t a)
 
 static void perf_buf_start(uint32_t e)
 {
-    if (!sl_lent) {
-        sl_lent = 1;
-        perf_drop_slicer();
-    }
     pf.src = (uint8_t)e;
     pf.next = PF_N;
     pf.wr = pf.rp = 0;
@@ -349,7 +337,7 @@ static __attribute__((noinline)) int perf_begin(uint32_t n)
     return 1;
 }
 
-/* a track muted by its black key: its signal ramps to 0 and back (fx.c mix_part, after the SLICER) */
+/* a track muted by its black key: its signal ramps to 0 and back (fx.c mix_part, after track distortion) */
 static __attribute__((noinline)) void perf_mute(uint32_t k, int32_t *b, uint32_t n)
 {
     uint32_t i;
@@ -398,7 +386,7 @@ static inline int32_t pf_mix(int32_t x, int32_t y, int32_t w)
 /* the loop: frame f of it, both channels (Q15) */
 static inline void pb_put(uint32_t f, int32_t l, int32_t r)
 {
-    int16_t *p = &sl_buf[0][0] + 2u * (f & (PB_FRAMES - 1u));
+    int16_t *p = perf_buffer + 2u * (f & (PB_FRAMES - 1u));
     p[0] = (int16_t)clamp(l, -32768, 32767);
     p[1] = (int16_t)clamp(r, -32768, 32767);
 }
@@ -406,7 +394,7 @@ static inline void pb_put(uint32_t f, int32_t l, int32_t r)
 static inline void pb_at(uint32_t s, uint32_t n, int32_t *l, int32_t *r)
 {
     uint32_t f = s >> 1 < n ? s >> 1 : n - 1u;    /* (an odd loop's last sample: the frame before) */
-    const int16_t *p = &sl_buf[0][0] + 2u * (f & (PB_FRAMES - 1u));
+    const int16_t *p = perf_buffer + 2u * (f & (PB_FRAMES - 1u));
     const int16_t *q;                               /* a frame is the mean of samples 2f, 2f + 1: sample s */
     if (s & 1u)                                     /* lies a quarter frame from it, towards f + 1 or f - 1 */
         q = f + 1u < n ? p + 2 : p;
@@ -466,8 +454,8 @@ static inline void hb_tap(uint32_t ph, int32_t *l, int32_t *r)
         *l = *r = 0;
         return;
     }
-    p = &sl_buf[0][0] + 2u * ((pf.wr - di) & HB_MASK);
-    q = &sl_buf[0][0] + 2u * ((pf.wr - di - 1u) & HB_MASK);
+    p = perf_buffer + 2u * ((pf.wr - di) & HB_MASK);
+    q = perf_buffer + 2u * ((pf.wr - di - 1u) & HB_MASK);
     *l = p[0] + (((q[0] - p[0]) * f) >> 15);
     *r = p[1] + (((q[1] - p[1]) * f) >> 15);
 }
@@ -510,10 +498,6 @@ static __attribute__((noinline)) void perf_buf_done(void)
         perf_buf_start(pf.next);
     } else {
         pf.mode = BM_NONE;
-        if (sl_lent) {
-            sl_lent = 0;
-            perf_drop_slicer();
-        }
     }
 }
 
@@ -548,8 +532,8 @@ static inline void perf_buf(int32_t *pl, int32_t *pr)
         if (pf.wr >= 2u) {                          /* read behind the writing, slower and slower */
             uint32_t f = pf.tpos >> 16;
             int32_t fr = (int32_t)((pf.tpos >> 1) & 0x7FFFu), a, b, env;
-            const int16_t *p = &sl_buf[0][0] + 2u * (f & (PB_FRAMES - 1u));
-            const int16_t *s = &sl_buf[0][0] + 2u * ((f + 1u) & (PB_FRAMES - 1u));
+            const int16_t *p = perf_buffer + 2u * (f & (PB_FRAMES - 1u));
+            const int16_t *s = perf_buffer + 2u * ((f + 1u) & (PB_FRAMES - 1u));
             a = p[0];
             b = s[0];
             yl = (a + (((b - a) * fr) >> 15)) << 1;

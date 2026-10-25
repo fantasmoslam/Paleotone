@@ -1,5 +1,5 @@
 {
-  "rendererId": 695244803,
+  "rendererId": 36258057,
   "schema": 2,
   "seqMode": 143,
   "selectedTrack": 146,
@@ -56,13 +56,13 @@
       "id": "mixer",
       "label": "Mixer",
       "home": 0,
-      "page": 41
+      "page": 40
     },
     {
       "id": "sequencer",
       "label": "Sequencer",
       "home": 0,
-      "page": 39
+      "page": 38
     },
     {
       "id": "envelope",
@@ -86,25 +86,25 @@
       "id": "arp",
       "label": "Arpeggiator",
       "home": 0,
-      "page": 37
+      "page": 36
     },
     {
       "id": "scale",
       "label": "Scale",
       "home": 0,
-      "page": 12
+      "page": 11
     },
     {
       "id": "clock",
       "label": "Clock",
       "home": 0,
-      "page": 42
+      "page": 41
     },
     {
       "id": "scape",
       "label": "Soundscape",
       "home": 0,
-      "page": 45
+      "page": 44
     }
   ],
   "pages": [
@@ -145,216 +145,211 @@
     },
     {
       "page": 7,
-      "label": "SLICER",
-      "button": 0
-    },
-    {
-      "page": 8,
       "label": "DLY",
       "button": 0
     },
     {
-      "page": 9,
+      "page": 8,
       "label": "REVERB",
       "button": 0
     },
     {
-      "page": 10,
+      "page": 9,
       "label": "CHORUS",
       "button": 0
     },
     {
-      "page": 11,
+      "page": 10,
       "label": "TAPE",
       "button": 0
     },
     {
-      "page": 12,
+      "page": 11,
       "label": "SCL",
       "button": 1
     },
     {
-      "page": 13,
+      "page": 12,
       "label": "CHORD",
       "button": 1
     },
     {
-      "page": 14,
+      "page": 13,
       "label": "EDIT 1",
       "button": 4
     },
     {
-      "page": 15,
+      "page": 14,
       "label": "EDIT 2",
       "button": 4
     },
     {
-      "page": 16,
+      "page": 15,
       "label": "RING",
       "button": 4
     },
     {
-      "page": 17,
+      "page": 16,
       "label": "LANES",
       "button": 4
     },
     {
-      "page": 18,
+      "page": 17,
       "label": "LANES 2",
       "button": 4
     },
     {
-      "page": 19,
+      "page": 18,
       "label": "SLICES",
       "button": 4
     },
     {
-      "page": 20,
+      "page": 19,
       "label": "OPERATOR",
       "button": 4
     },
     {
-      "page": 21,
+      "page": 20,
       "label": "OP ENV",
       "button": 4
     },
     {
-      "page": 22,
+      "page": 21,
       "label": "OPERATOR 2",
       "button": 4
     },
     {
-      "page": 23,
+      "page": 22,
       "label": "OP1 ENV",
       "button": 4
     },
     {
-      "page": 24,
+      "page": 23,
       "label": "OP2 ENV",
       "button": 4
     },
     {
-      "page": 25,
+      "page": 24,
       "label": "OP3 ENV",
       "button": 4
     },
     {
-      "page": 26,
+      "page": 25,
       "label": "OP4 ENV",
       "button": 4
     },
     {
-      "page": 27,
+      "page": 26,
       "label": "OP LEVEL",
       "button": 4
     },
     {
-      "page": 28,
+      "page": 27,
       "label": "VOICE",
       "button": 4
     },
     {
-      "page": 29,
+      "page": 28,
       "label": "VOICE 2",
       "button": 4
     },
     {
-      "page": 30,
+      "page": 29,
       "label": "VOICE 3",
       "button": 4
     },
     {
-      "page": 31,
+      "page": 30,
       "label": "SONG",
       "button": 5
     },
     {
-      "page": 32,
+      "page": 31,
       "label": "PRESETS",
       "button": 7
     },
     {
-      "page": 33,
+      "page": 32,
       "label": "USER",
       "button": 7
     },
     {
-      "page": 34,
+      "page": 33,
       "label": "PHRASES",
       "button": 7
     },
     {
-      "page": 35,
+      "page": 34,
       "label": "PROJECT",
       "button": 7
     },
     {
-      "page": 36,
+      "page": 35,
       "label": "TOOLS",
       "button": 7
     },
     {
-      "page": 37,
+      "page": 36,
       "label": "ARP",
       "button": 8
     },
     {
-      "page": 38,
+      "page": 37,
       "label": "ARP 2",
       "button": 8
     },
     {
-      "page": 39,
+      "page": 38,
       "label": "STEP",
       "button": 9
     },
     {
-      "page": 40,
+      "page": 39,
       "label": "AUTOMATION",
       "button": 9
     },
     {
-      "page": 41,
+      "page": 40,
       "label": "MIXER",
       "button": 6
     },
     {
-      "page": 42,
+      "page": 41,
       "label": "CLOCK",
       "button": 6
     },
     {
-      "page": 43,
+      "page": 42,
       "label": "KEYS",
       "button": 6
     },
     {
-      "page": 44,
+      "page": 43,
       "label": "SCAPE MUSIC",
       "button": 6
     },
     {
-      "page": 45,
+      "page": 44,
       "label": "SCAPE",
       "button": 6
     },
     {
-      "page": 46,
+      "page": 45,
       "label": "SCAPE DRONE",
       "button": 6
     },
     {
-      "page": 47,
+      "page": 46,
       "label": "SCAPE LIFE",
       "button": 6
     },
     {
-      "page": 48,
+      "page": 47,
       "label": "SCAPE LEVELS",
       "button": 6
     },
     {
-      "page": 49,
+      "page": 48,
       "label": "SCAPE LEVELS 2",
       "button": 6
     }
