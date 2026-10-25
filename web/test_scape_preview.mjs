@@ -15,6 +15,7 @@ for(const sub of ['', 'screen/']) {
   assert.equal(instance.exports.web_remote_id()>>>0,build.rendererId);
   assert.equal(layout.rendererId,build.rendererId);assert.equal(layout.schema,build.schema);
 }
+assert.match(await read('screen/index.html'),/remote_views\.json\?v=/);
 const html=await read('index.html');assert.match(html,/paleotone-scape-preview-flash/);assert.doesNotMatch(html,/ghoulbox-emu-flash/);
 assert.match(html,/SCAPE candidate preview/);assert.match(html,/worklet\.js\?v=/);assert.match(html,/felucca\.wasm\?v=/);
 for(const page of ['index.html','installer/index.html','editor/index.html','manual/index.html','screen/index.html']) {

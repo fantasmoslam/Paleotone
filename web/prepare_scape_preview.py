@@ -50,6 +50,6 @@ for path in out.rglob('*'):
     if path.suffix not in ('.html','.js'):continue
     text=path.read_text(encoding="utf-8")
     text=re.sub(r'''(from\s+["']\./[^"'?]+\.js)(["'])''',r'\1?v='+token+r'\2',text)
-    text=re.sub(r'''(fetch\(["']felucca\.wasm|addModule\(["']worklet\.js)(["'])''',r'\1?v='+token+r'\2',text)
+    text=re.sub(r'''(fetch\(["'](?:felucca\.wasm|remote_views\.json)|addModule\(["']worklet\.js)(["'])''',r'\1?v='+token+r'\2',text)
     path.write_text(text,encoding="utf-8")
 print(json.dumps(metadata,indent=2))
