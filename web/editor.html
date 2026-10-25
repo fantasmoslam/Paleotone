@@ -1755,13 +1755,13 @@ function makeMockDevice(opt = {}) {
     D("FROGS", F.PCT, 0, 127, 50), D("BIRDS", F.PCT, 0, 127, 55), D("DRIPS", F.PCT, 0, 127, 20), D("RUMBL", F.PCT, 0, 127, 30),
     /* SCAPE's drone and calls (ids 57..64): DRONE (0 none) TYPE KEY (AUTO: track 1's ROOT) MOVE; TRK (OFF, T1..T4) RATE PTCH
      * (D3 + semitones) SPRD */
-    D("DRONE", F.PCT, 0, 127, 0), E("TYPE", ["HUM", "WIND", "CHOIR", "EARTH"], 0),
+    D("DRONE", F.PCT, 0, 127, 0), D("LEGACY", F.INT, 0, 3, 0),
     E("KEY", ["AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], 0), D("MOVE", F.PCT, 0, 127, 40),
     E("TRK", ["OFF", "T1", "T2", "T3", "T4"], 0), D("RATE", F.PCT, 0, 127, 40), D("PTCH", F.SEMI, -24, 24, 0),
     D("SPRD", F.INT, 0, 24, 5),
     /* SCAPE DANGER (ids 65..68): DANGR (0 never) SIZE STEP ROAR (OFF, the CALLS track, T1..T4) */
     D("DANGR", F.PCT, 0, 127, 0), E("SIZE", ["SMALL", "BIG", "HUGE"], 1), D("STEP", F.PCT, 0, 127, 100),
-    E("ROAR", ["OFF", "CALLS", "T1", "T2", "T3", "T4"], 1),
+    D("LEGACY", F.INT, 0, 5, 1),
   ];
   const NONE = D("-", F.INT, 0, 0, 0);
   const RATIO = [".5", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "14", "16"];
@@ -2973,10 +2973,11 @@ const LAYOUT = (pe0, gc = 27) => [
     ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["SCAPE MUSIC", 1, [33, 34, 35, 36]]] : []),
     ...(gc >= 57 ? [["SCAPE", 1, [37, 38, 39, 40]], ...(gc >= 65 ? [["SCAPE DRONE", 1, [57, 59, 60, 63]],
                     ["SCAPE LIFE", 1, gc >= 69 ? [61, 62, 65, 66] : [61, 62, 63, 64]]] : []),
-                    ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]]] : [])] },   /* unified SCAPE */
+                    ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]],
+                    ["SCAPE DETAIL", 1, [49, 50, 51, 52, 53, 54, 55, 56, ...(gc >= 65 ? [58, 64] : []), ...(gc >= 69 ? [67, 68] : [])]]] : [])] },   /* device pages stay compact; editor retains imported fine settings */
 ];
 /* globals that are actions or placeholders on the device: buttons instead, or hidden */
-const G_SKIP = new Set(["SLOT", "NAME", "LOAD", "SAVE", "ENG", "SET", "CLRSQ", "INIT", "MIDI", "SYNC", "CPU", "CLK"]);
+const G_SKIP = new Set(["SLOT", "NAME", "LOAD", "SAVE", "ENG", "SET", "CLRSQ", "INIT", "MIDI", "SYNC", "CPU", "CLK", "LEGACY"]);
 const key = (s, id) => s + ":" + id;
 const engName = () => (dev && dev.info && dev.dump ? dev.info.engines[dev.dump.engine] : "");
 const gEng = () => { const i = dev.gdesc.findIndex((d) => d && d.label === "ENG"); return i >= 0 ? i : 20; };
