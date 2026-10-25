@@ -105,8 +105,15 @@ def main(pkg, version, out):
     for required in ("index.html", "screen.js", "sw.js", "manifest.webmanifest", "icon.svg"):
         if not (scr / required).is_file():
             raise SystemExit(f"second-screen app missing {scr / required}; refusing an incomplete site")
+    shutil.rmtree(out / "webapp/screen-lite", ignore_errors=True)
+    shutil.copytree(scr, out / "webapp/screen-lite")
+    companion = root / "build/screen-companion"
+    for required in ("index.html", "remote_screen.js", "second_screen.js", "control_target.js",
+                     "remote_views.json", "felucca.wasm", "build.json"):
+        if not (companion / required).is_file():
+            raise SystemExit(f"graphics companion missing {companion / required}; refusing to replace it with the lightweight page")
     shutil.rmtree(out / "webapp/screen", ignore_errors=True)
-    shutil.copytree(scr, out / "webapp/screen")
+    shutil.copytree(companion, out / "webapp/screen")
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
