@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {SecondScreen,viewSnapshot,joinScreens} from './second_screen.js';
-const layout=JSON.parse(await readFile(new URL('./remote_views.json',import.meta.url),'utf8'));
+const layoutFile=process.argv[2]?new URL('remote_views.json',pathToFileURL(resolve(process.argv[2]))):new URL('./remote_views.json',import.meta.url);
+const layout=JSON.parse(await readFile(layoutFile,'utf8'));
 const bytes=new Uint8Array(16384).fill(5), pristine=bytes.slice();
 for(const view of layout.views){
   const copy=viewSnapshot(bytes,layout,view.id,'2');
