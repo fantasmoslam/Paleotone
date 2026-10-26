@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-const html=await readFile(new URL('./screen.html',import.meta.url),'utf8');
+const html=await readFile(process.argv[2]||new URL('./screen.html',import.meta.url),'utf8');
 assert.match(html,/HOME/);assert.match(html,/PhysicalFocus/);
 assert.doesNotMatch(html,/ControlTarget|inputCommand|\.turn\(|\.tap\(|shiftTarget|id="target-(left|right|shift)"/,
   'page swapping must not synthesize instrument input from browser or keyboard');

@@ -88,22 +88,18 @@ int main(int argc, char **argv)
     press(B_HOME);
     shot("keys");
     press(B_HOME);
+    dream_go((uint32_t)trk[0].p[P_ROOT]); live(400);
     shot("scape_music");
-    press(B_HOME);                                  /* SCAPE: on, JUNGLE */
-    turn(EN_K1, 100);
-    live(1600);
-    shot("scape");
-    press(B_HOME);
-    turn(EN_K1, 90);
-    shot("scape_drone");
-    press(B_HOME);
-    turn(EN_K1, 2);
-    turn(EN_K2, 40);
-    shot("scape_life");
-    press(B_HOME);
-    shot("scape_levels");
-    press(B_HOME);
-    shot("scape_levels2");
+    page("SCAPE MIX"); shot("scape_mix");
+    song.g[G_SCAPE]=100; live(1600);
+    page("SCAPE"); shot("scape");
+    page("SCAPE SETUP"); shot("scape_setup");
+    page("SCAPE ROLES"); shot("scape_roles");
+    page("SCAPE DRONE"); turn(EN_K1,90); shot("scape_drone");
+    page("SCAPE LIFE"); turn(EN_K1,2); turn(EN_K2,40); shot("scape_life");
+    page("SCAPE LEVELS"); shot("scape_levels");
+    page("SCAPE LEVELS 2"); shot("scape_levels2");
+    page("SCAPE SCENE"); shot("scape_scene");
     press(B_HOME);                                  /* HOME again */
     song.g[G_SCAPE] = 0;
     song.g[G_SCTRK] = 0;

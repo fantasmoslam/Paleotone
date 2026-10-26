@@ -48,33 +48,37 @@ int main(void)
     ck("off: nothing runs", !sc.on);
 
     go_title("SCAPE MUSIC");
-    press(B_HOME);
-    ck("SCAPE MUSIC, HOME tapped: the SCAPE page", !ui.home && str_eq(cur_page()->title, "SCAPE"));
-    turn(EN_K1, 20);
+    turn(EN_SELECT, 4);
+    ck("SCAPE workspace, SELECT: the habitat bank", !ui.home && str_eq(cur_page()->title, "SCAPE"));
+    go_title("SCAPE SETUP"); turn(EN_K3, 20); go_title("SCAPE");
     ck("KNOB 1: LEVEL", song.g[G_SCAPE] == 20);
-    turn(EN_K2, 1);
+    turn(EN_K1, 1);
     ck("KNOB 2: BIOME, which sets the layers, DIST and TIME (TUNDRA)", biome_is(2) && song.g[G_SCAPE] == 20);
-    turn(EN_K2, 4);
+    turn(EN_K1, 4);
     ck("BIOME again (CANYONS)", biome_is(6));
     turn(EN_K3, -5);
-    turn(EN_K4, 7);
+    turn(EN_K2, 7);
     ck("KNOB 3 DIST, KNOB 4 TIME", song.g[G_SDIST] == SC_BIOME[6].dist - 5 && song.g[G_STIME] == SC_BIOME[6].time + 7);
-    press(B_HOME);
-    ck("then SCAPE DRONE", str_eq(cur_page()->title, "SCAPE DRONE") && song.g[G_SDRN] == 0);
+    go_title("SCAPE DRONE");
+    ck("GLO: SCAPE DRONE", str_eq(cur_page()->title, "SCAPE DRONE") && song.g[G_SDRN] == 0);
     turn(EN_K1, 90); turn(EN_K2, 4); turn(EN_K3, -10); turn(EN_K4, -7);
     ck("shared harmonic drone: LEVEL KEY MOVE; creature PTCH", song.g[G_SDRN] == 90 &&
        song.g[G_SDKEY] == 4 && song.g[G_SDMOV] == 30 && song.g[G_SCNOTE] == -7);
-    press(B_HOME);
-    ck("then SCAPE LIFE: both calls and passing beasts", str_eq(cur_page()->title, "SCAPE LIFE"));
-    turn(EN_K1, 2); turn(EN_K2, 60); turn(EN_K3, 100); turn(EN_K4, 1);
+    go_title("SCAPE LIFE");
+    ck("GLO: SCAPE LIFE: both calls and passing beasts", str_eq(cur_page()->title, "SCAPE LIFE"));
+    turn(EN_K1, 2); turn(EN_K2, 100); turn(EN_K3, 1); song.g[G_SCRATE]=100;
     ck("one creature track, call rate, danger rate and size", song.g[G_SCTRK] == 2 &&
        song.g[G_SCRATE] == 100 && song.g[G_SDNGR] == 100 && song.g[G_SDSIZ] == 2);
-    press(B_HOME);
-    ck("then SCAPE LEVELS", str_eq(cur_page()->title, "SCAPE LEVELS"));
+    go_title("SCAPE LEVELS");
+    ck("GLO: SCAPE LEVELS", str_eq(cur_page()->title, "SCAPE LEVELS"));
     turn(EN_K1, -10); turn(EN_K4, 3);
     ck("its knobs: WIND .. BUGS", song.g[G_SL0] == SC_BIOME[6].level[0] - 10 && song.g[G_SL3] == SC_BIOME[6].level[3] + 3);
-    press(B_HOME); turn(EN_K2, 9);
+    go_title("SCAPE LEVELS 2"); turn(EN_K2, 9);
     ck("SCAPE LEVELS 2: FROGS .. RUMBL", str_eq(cur_page()->title, "SCAPE LEVELS 2") && song.g[G_SL5] == SC_BIOME[6].level[5] + 9);
+    go_title("SCAPE SCENE");
+    ck("SCAPE SCENE: HOLD, NEXT and NEW, each its own knob, and the chord time", str_eq(cur_page()->title, "SCAPE SCENE") &&
+       cur_page()->id[0] == G_SCHOLD && cur_page()->id[1] == G_SCNEXT && cur_page()->id[2] == G_SCNEW &&
+       cur_page()->id[3] == G_SCHORD);
     press(B_HOME); ck("then HOME: no separate DANGER or density menu", ui.home);
     /* Fine density and legacy route values still round-trip from older projects. */
     song.g[G_SD1] += 11; song.g[G_SD6] -= 4; song.g[G_SDSTP] = 80;

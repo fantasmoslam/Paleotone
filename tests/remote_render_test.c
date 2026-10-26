@@ -15,6 +15,11 @@ int main(int argc, char **argv)
     ui.menu = ui.confirm = ui.layer = ui.msg_t = ui.hot_t = 0;
     ui.force = 1;
     trk[0].p[P_ATK] = 41; trk[0].p[P_SUS] = 72;
+    /* The cross-language fixture exercises the active SCAPE dashboard, not only
+     * ordinary parameter pages. Director gain must survive a snapshot import. */
+    dream_compose(2); song.g[G_DREAM]=1; song.playing=1;
+    for(uint32_t p=0;p<NPAGES;p++)if(PAGES[p].scope==SC_GLOBAL && PAGES[p].id[0]==G_DDENS)ui.page=(uint8_t)p;
+    for(uint32_t t=0;t<NTRK;t++)scape_music.gain[t]=4096+(int32_t)t*6144;
     assert(rs_capture() && rs_len < RS_MAX);
     printf("display snapshot: %u bytes / %u capacity\n", rs_len, RS_MAX);
     uint32_t n = rs_len;
@@ -102,6 +107,14 @@ int main(int argc, char **argv)
         memcpy(snapshot, rs_buf, n); ui_draw_page(seq_counting()); memcpy(expected, web_fb, sizeof expected);
         memcpy(rs_buf, snapshot, n); assert(web_remote_apply(n));
         assert(!memcmp(expected, web_fb, sizeof expected));
+    }
+    for(uint32_t p=0;p<NPAGES;p++) if(scape_page(p)) {
+        ui.home=ui.menu=ui.confirm=ui.layer=ui.msg_t=ui.hot_t=0;ui.page=(uint8_t)p;
+        ui.force=1;assert(rs_capture());n=rs_len;memcpy(snapshot,rs_buf,n);
+        ui_draw_page(0);memcpy(expected,web_fb,sizeof expected);
+        memset(&scape_music,0,sizeof scape_music);
+        memcpy(rs_buf,snapshot,n);assert(web_remote_apply(n));
+        assert(scape_music.active && !memcmp(expected,web_fb,sizeof expected));
     }
     puts("remote renderer tests passed");
     return 0;

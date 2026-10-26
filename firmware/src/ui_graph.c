@@ -376,29 +376,6 @@ static void graph_fx(const track_t *t, uint16_t c)
         cv_rrect(x - 4, 85 - h, 12, 6, 3, c, T_SURF);
     }
 }
-/* SLICER page: the pattern's 16 steps, a 'x' step a full bar; a '.' step: GATE a bar as high as it stays
- * open (DEPTH), STUT hatched (it repeats the last 'x'); the step playing underlined. Grey when OFF. */
-static void graph_slicer(const track_t *t, uint16_t c)
-{
-    uint32_t i, pat = sl_pattern(t), mode = (uint32_t)t->p[P_SLCR], cur = sl[t - trk].idx;
-    int32_t open = 70 - t->p[P_SLDEPTH] * 70 / 127;      /* px a closed GATE step keeps */
-    uint16_t col = mode == SL_OFF ? T_DIM : c;
-    for (i = 0; i < 16u; i++) {
-        int32_t x = bar_x(i), y;
-        if ((pat >> i) & 1u) {
-            cv_rrect(x, 8, 9, 72, 2, mode == SL_OFF ? T_RAISE : col, T_SURF);
-        } else if (mode == SL_STUT) {
-            for (y = 8; y < 80; y += 4)
-                cv_rect(x, y, 9, 1, col);
-        } else {
-            cv_rrect(x, 77, 9, 3, 1, T_RAISE, T_SURF);
-            if (open > 3)
-                cv_rrect(x, 80 - open, 9, open, 2, T_RAISE, T_SURF);
-        }
-        if (mode != SL_OFF && i == cur)
-            cv_rect(x, 84, 9, 2, T_ACCENT);
-    }
-}
 /* MOD page: the four slots as rows "1 LFO > CUT +50%" (M, a list's rows: the source to x 78, the arrow 84..98, the
  * destination of up to 5 characters 106..160, the amount from 172), the one KNOB 2..4 edit selected, slots that do
  * nothing (SRC, DST or AMT at 0) dim */
@@ -1120,8 +1097,6 @@ static uint32_t graph_signature(void)
     }
     if (pg->graph == GR_MOD)
         h ^= (mod_ui_slot + 1u) * 40503u;
-    if (pg->graph == GR_SLCR && t->p[P_SLCR])        /* the SLICER's step playing */
-        h ^= (sl[song.sel].idx + 1u) * 2654435761u;
     if (pg->graph == GR_SLOTS) {                     /* (a checksum over each slot) */
         for (i = 0; i < 4u; i++)
             h ^= (uint32_t)graph_project_used(i) << (20u + i);
@@ -2258,9 +2233,6 @@ static void draw_graph(void)
             break;
         case GR_FX:
             graph_fx(t, c);
-            break;
-        case GR_SLCR:
-            graph_slicer(t, c);
             break;
         case GR_MOD:
             cv_oy = 0;

@@ -152,6 +152,10 @@ static void rs_walk(void)
         RS8(p->used); RSA8(p->name);
         for (k = 0; k < 4u; k++) { RS16(p->len[k]); RS32(p->density[k]); RS8(p->cells[k]); }
     }
+    /* SCAPE's dashboard reads the real director, including on the second screen. */
+    RS8(scape_music.active); RS8(scape_music.chord_pc); RS8(scape_music.suspended);
+    for(i=0;i<NTRK;i++) RS32(scape_music.gain[i]);
+    /* The browser focus/context trailer must stay in the final 17 bytes. */
     RS8(panel_screen.side);
     for(i=0;i<2u;i++){
         panel_view_t *v=&panel_views[i];

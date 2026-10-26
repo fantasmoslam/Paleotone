@@ -1,49 +1,49 @@
 {
-  "rendererId": 695244803,
+  "rendererId": 945076996,
   "schema": 2,
-  "seqMode": 143,
-  "selectedTrack": 146,
-  "grid": 144,
+  "seqMode": 163,
+  "selectedTrack": 166,
+  "grid": 164,
   "ui": {
-    "home": 164,
-    "page": 165,
-    "bank": 166,
-    "cursor": 167,
-    "entry_open": 168,
-    "lane": 169,
-    "plk_src": 170,
-    "plk_lane": 171,
-    "plk_trk": 172,
-    "hot_col": 173,
-    "hot_t": 174,
-    "menu": 175,
-    "menu_sel": 176,
-    "msg_t": 177,
-    "torches": 178,
-    "torch_f": 179,
-    "bpm_t": 180,
-    "act": 181,
-    "confirm": 182,
-    "confirm_trk": 183,
-    "uslot": 184,
-    "ppick": 185,
-    "song_row": 186,
-    "song_trk": 187,
-    "ev_step": 188,
-    "ev_id": 189,
-    "uboot": 190,
-    "ly": 191,
-    "layer": 192,
-    "lock": 193,
-    "menu_scroll": 194,
-    "ev_row": 196,
-    "ev_keep": 198,
-    "pg_down": 200,
-    "home_t0": 202,
-    "rec_t0": 206,
-    "save_t0": 210,
-    "ly_t0": 214,
-    "frame": 218
+    "home": 184,
+    "page": 185,
+    "bank": 186,
+    "cursor": 187,
+    "entry_open": 188,
+    "lane": 189,
+    "plk_src": 190,
+    "plk_lane": 191,
+    "plk_trk": 192,
+    "hot_col": 193,
+    "hot_t": 194,
+    "menu": 195,
+    "menu_sel": 196,
+    "msg_t": 197,
+    "torches": 198,
+    "torch_f": 199,
+    "bpm_t": 200,
+    "act": 201,
+    "confirm": 202,
+    "confirm_trk": 203,
+    "uslot": 204,
+    "ppick": 205,
+    "song_row": 206,
+    "song_trk": 207,
+    "ev_step": 208,
+    "ev_id": 209,
+    "uboot": 210,
+    "ly": 211,
+    "layer": 212,
+    "lock": 213,
+    "menu_scroll": 214,
+    "ev_row": 216,
+    "ev_keep": 218,
+    "pg_down": 220,
+    "home_t0": 222,
+    "rec_t0": 226,
+    "save_t0": 230,
+    "ly_t0": 234,
+    "frame": 238
   },
   "views": [
     {
@@ -56,13 +56,13 @@
       "id": "mixer",
       "label": "Mixer",
       "home": 0,
-      "page": 41
+      "page": 40
     },
     {
       "id": "sequencer",
       "label": "Sequencer",
       "home": 0,
-      "page": 39
+      "page": 38
     },
     {
       "id": "envelope",
@@ -86,19 +86,19 @@
       "id": "arp",
       "label": "Arpeggiator",
       "home": 0,
-      "page": 37
+      "page": 36
     },
     {
       "id": "scale",
       "label": "Scale",
       "home": 0,
-      "page": 12
+      "page": 11
     },
     {
       "id": "clock",
       "label": "Clock",
       "home": 0,
-      "page": 42
+      "page": 41
     },
     {
       "id": "scape",
@@ -145,192 +145,192 @@
     },
     {
       "page": 7,
-      "label": "SLICER",
-      "button": 0
-    },
-    {
-      "page": 8,
       "label": "DLY",
       "button": 0
     },
     {
-      "page": 9,
+      "page": 8,
       "label": "REVERB",
       "button": 0
     },
     {
-      "page": 10,
+      "page": 9,
       "label": "CHORUS",
       "button": 0
     },
     {
-      "page": 11,
+      "page": 10,
       "label": "TAPE",
       "button": 0
     },
     {
-      "page": 12,
+      "page": 11,
       "label": "SCL",
       "button": 1
     },
     {
-      "page": 13,
+      "page": 12,
       "label": "CHORD",
       "button": 1
     },
     {
-      "page": 14,
+      "page": 13,
       "label": "EDIT 1",
       "button": 4
     },
     {
-      "page": 15,
+      "page": 14,
       "label": "EDIT 2",
       "button": 4
     },
     {
-      "page": 16,
+      "page": 15,
       "label": "RING",
       "button": 4
     },
     {
-      "page": 17,
+      "page": 16,
       "label": "LANES",
       "button": 4
     },
     {
-      "page": 18,
+      "page": 17,
       "label": "LANES 2",
       "button": 4
     },
     {
-      "page": 19,
+      "page": 18,
       "label": "SLICES",
       "button": 4
     },
     {
-      "page": 20,
+      "page": 19,
       "label": "OPERATOR",
       "button": 4
     },
     {
-      "page": 21,
+      "page": 20,
       "label": "OP ENV",
       "button": 4
     },
     {
-      "page": 22,
+      "page": 21,
       "label": "OPERATOR 2",
       "button": 4
     },
     {
-      "page": 23,
+      "page": 22,
       "label": "OP1 ENV",
       "button": 4
     },
     {
-      "page": 24,
+      "page": 23,
       "label": "OP2 ENV",
       "button": 4
     },
     {
-      "page": 25,
+      "page": 24,
       "label": "OP3 ENV",
       "button": 4
     },
     {
-      "page": 26,
+      "page": 25,
       "label": "OP4 ENV",
       "button": 4
     },
     {
-      "page": 27,
+      "page": 26,
       "label": "OP LEVEL",
       "button": 4
     },
     {
-      "page": 28,
+      "page": 27,
       "label": "VOICE",
       "button": 4
     },
     {
-      "page": 29,
+      "page": 28,
       "label": "VOICE 2",
       "button": 4
     },
     {
-      "page": 30,
+      "page": 29,
       "label": "VOICE 3",
       "button": 4
     },
     {
-      "page": 31,
+      "page": 30,
       "label": "SONG",
       "button": 5
     },
     {
-      "page": 32,
+      "page": 31,
       "label": "PRESETS",
       "button": 7
     },
     {
-      "page": 33,
+      "page": 32,
       "label": "USER",
       "button": 7
     },
     {
-      "page": 34,
+      "page": 33,
       "label": "PHRASES",
       "button": 7
     },
     {
-      "page": 35,
+      "page": 34,
       "label": "PROJECT",
       "button": 7
     },
     {
-      "page": 36,
+      "page": 35,
       "label": "TOOLS",
       "button": 7
     },
     {
-      "page": 37,
+      "page": 36,
       "label": "ARP",
       "button": 8
     },
     {
-      "page": 38,
+      "page": 37,
       "label": "ARP 2",
       "button": 8
     },
     {
-      "page": 39,
+      "page": 38,
       "label": "STEP",
       "button": 9
     },
     {
-      "page": 40,
+      "page": 39,
       "label": "AUTOMATION",
       "button": 9
     },
     {
-      "page": 41,
+      "page": 40,
       "label": "MIXER",
       "button": 6
     },
     {
-      "page": 42,
+      "page": 41,
       "label": "CLOCK",
       "button": 6
     },
     {
-      "page": 43,
+      "page": 42,
       "label": "KEYS",
       "button": 6
     },
     {
-      "page": 44,
+      "page": 43,
       "label": "SCAPE MUSIC",
+      "button": 6
+    },
+    {
+      "page": 44,
+      "label": "SCAPE MIX",
       "button": 6
     },
     {
@@ -340,21 +340,31 @@
     },
     {
       "page": 46,
-      "label": "SCAPE DRONE",
+      "label": "SCAPE SETUP",
       "button": 6
     },
     {
       "page": 47,
-      "label": "SCAPE LIFE",
+      "label": "SCAPE ROLES",
       "button": 6
     },
     {
       "page": 48,
-      "label": "SCAPE LEVELS",
+      "label": "SCAPE DRONE",
       "button": 6
     },
     {
       "page": 49,
+      "label": "SCAPE LIFE",
+      "button": 6
+    },
+    {
+      "page": 50,
+      "label": "SCAPE LEVELS",
+      "button": 6
+    },
+    {
+      "page": 51,
       "label": "SCAPE LEVELS 2",
       "button": 6
     }

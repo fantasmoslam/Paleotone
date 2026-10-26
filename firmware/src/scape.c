@@ -88,6 +88,7 @@ static void sc_spawn(uint32_t k)
     uint32_t i, s = 0, night = SC_TIME;
     int32_t g = sc_gain(k), q = 0x7FFFFFFF, pan = (int32_t)sc_rnd(32768u);
     sc_ev_t *e;
+    if (scm_running() && !scm_space() && (k==SC_BIRD || k==SC_FROG || k==SC_INSECT)) return;
     if (g < 40)
         return;
     for (i = 0; i < SC_NEV; i++) {                      /* a free one, else the quietest */
@@ -218,6 +219,7 @@ static const uint16_t SC_DRONE_TRIM[4] = {3015, 3015, 3015, 3015};
 static int32_t sc_drone(int32_t g)
 {
     uint32_t key = song.g[G_SDKEY] ? (uint32_t)(song.g[G_SDKEY] - 1) : (uint32_t)trk[0].p[P_ROOT] % 12u;
+    if (scm_running() && !song.g[G_SDKEY]) key=scape_music.chord_pc;
     int32_t mv = sc.dmv, mov = clamp(song.g[G_SDMOV], 0, 127), x;
     uint32_t inc = pitch_inc((uint32_t)clamp(((36 + (int32_t)key) << 4) + (mulq15(mv, mov) >> 9), 0, 2047)) << 2;
     sc.dph[0] += inc;
@@ -248,10 +250,12 @@ static void sc_calls(void)
         sc.cwait--;
         return;
     }
+    if (!scm_space()) return;
     {
         int32_t sp = clamp(song.g[G_SCSPRD], 0, 24), nt = clamp(50 + song.g[G_SCNOTE] + (int32_t)sc_rnd((uint32_t)(2 * sp + 1)) - sp, 12, 108);
         uint32_t far = sc_rnd(128u) * (uint32_t)(64 + SC_DIST) / 191u, mean = 4000u * 127u / rate;   /* ms */
         sc.ctrk = (uint8_t)(k - 1u);
+        if (scm_running()) nt=clamp((nt/12)*12+(int32_t)scape_music.chord_pc,12,108);
         sc.cnote = (uint8_t)nt;
         trk_note_on(&trk[sc.ctrk], (uint32_t)nt, 127u - far * 80u / 127u);
         sc.chold = (FS / CTL) * (1500u + sc_rnd(2500u)) / 1000u;
@@ -317,6 +321,7 @@ static void sc_danger(void)
             sc.nwait--;
             return;
         }
+        if (!scm_space()) return;
         sc.nsize = (uint8_t)clamp(song.g[G_SDSIZ], 0, 2);
         sc.nlen = SC_BPS * (10u + 4u * sc.nsize);       /* 10, 14, 18 s */
         sc.nt = 0;

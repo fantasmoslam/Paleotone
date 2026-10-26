@@ -213,5 +213,3 @@ sends/ANALOG/reverb 217d0dceb6ded8e8
 sends/ANALOG/all 98b9543c25342780
 sends/ANALOG/dist 1ff75ac225e918e0
 song/4track_mix 9c0bbad2c3fca0f4
-slicer/gate/ANALOG_ACID 07581a19222c2474
-slicer/song_gate_stut 628fb89594342254

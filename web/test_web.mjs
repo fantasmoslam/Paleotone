@@ -262,15 +262,15 @@ async function editorMock() {
   ok(set.value === 127, "editor: SET clamps to the range");
   {
     /* MENU > MIDI > MIDI IN (G_ROUTE 14; up to 1.1.5 GLO > SYSTEM ROUT): CH1-4 (0, the default) / SEL (1) / 1.2: CH5-8 CH9-12 CH13-16 (2..4);
-     * the id and G_COUNT unchanged; 5 clamps to the last */
+     * the id and the older ids unchanged; 5 clamps to the last */
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 14)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 5)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 0)));
-    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 69,
+    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 82,
       "editor: MIDI IN routing (ROUT CH1-4 / SEL / CH5-8 / CH9-12 / CH13-16, global id 14)");
   }
   {
-    /* FX > REVERB TYPE (G_RTYPE 24, the old drum channel's id): ROOM (0) / SPRING (1) / HALL (2, the default); G_COUNT unchanged */
+    /* FX > REVERB TYPE (G_RTYPE 24, the old drum channel's id): ROOM (0) / SPRING (1) / HALL (2, the default); the older ids unchanged */
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 24)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 24, 10)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 24, 0)));
@@ -278,11 +278,11 @@ async function editorMock() {
     const [d25, d26, d27, d28, d29, d30, d31, d32, d33, d34, d35, d36] = await Promise.all(tape);
     ok(rd.label === "TYPE" && rd.def === 2 && eq(rd.names, ["ROOM", "SPRING", "HALL"]) && r1.value === 2 && r0.value === 0 &&
        d25.label === "TAPE" && d26.label === "CRSH" && d25.max === 127 && d26.max === 127 && d25.def === 0 &&
-       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 69 &&
+       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 82 &&
        d29.label === "MODE" && eq(d29.names, ["OFF", "LAYER", "SPLIT"]) && d29.def === 0 && d30.label === "TRK" && d30.def === 3 &&
        d31.label === "SPLT" && d31.names.length === 24 && d31.names[d31.def] === "C4" && d32.label === "OCT" && d32.names[d32.def] === "0" &&
-       d33.label === "EVOL" && d33.def === 0 && d34.label === "DENS" && d34.min === 1 && d34.max === 8 && d34.def === 4 &&
-       d35.label === "DRFT" && d35.def === 6 && d36.label === "MOOD" && eq(d36.names, ["MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"]),
+       d33.label === "EVOL" && d33.def === 0 && d34.label === "ACTV" && d34.min === 1 && d34.max === 8 && d34.def === 4 &&
+       d35.label === "EVOL" && d35.def === 6 && d36.label === "MOOD" && eq(d36.names, ["MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"]),
       "editor: REVERB TYPE (24); TAPE / CRSH (25, 26); GHOULBOX's AMB / CRKL (27, 28), 2.1's KEYS (29..32), 2.3's DREAM (33..36)");
   }
   const st = E.parse[E.CMD.STEP_SET](await rq(E.req.stepSet(5, { n: 2, notes: [60, 64], time: 0, flags: 1, vel: 100 })));
@@ -1382,9 +1382,9 @@ function fm6TabNoBank() {
     return out;
   };
   const all = (n, skip) => Array.from({ length: n }, (_, i) => i).filter((i) => !skip(i));
-  for (const [pc, pe0, gc, what] of [[113, 105, 69, "PALEOTONE DANGER"], [113, 105, 65, "DINOBOX SCAPE 2"], [113, 105, 57, "DINOBOX SCAPE"], [113, 105, 37, "2.3"], [112, 104, 33, "2.1 / 2.2"], [112, 104, 29, "2.0"], [104, 96, 27, "1.2 .. 1.4.1"]]) {
+  for (const [pc, pe0, gc, what] of [[113, 105, 79, "PALEOTONE SCAPE"], [113, 105, 69, "PALEOTONE DANGER"], [113, 105, 65, "DINOBOX SCAPE 2"], [113, 105, 57, "DINOBOX SCAPE"], [113, 105, 37, "2.3"], [112, 104, 33, "2.1 / 2.2"], [112, 104, 29, "2.0"], [104, 96, 27, "1.2 .. 1.4.1"]]) {
     const p = ids(pe0, gc, 0), g = ids(pe0, gc, 1);
-    const missP = all(pe0, (i) => (i >= 61 && i <= 80) || (i >= 96 && i <= 102)).filter((i) => !p.has(i));   /* (DIGITAL's
+    const missP = all(pe0, (i) => (i >= 61 && i <= 80) || (i >= 96 && i <= 102) || (gc >= 79 && i >= 45 && i <= 48)).filter((i) => !p.has(i));   /* (DIGITAL's
                                                          operator ENVs: a FELUCCA_FM4 firmware's; Felucca 1.5's seven: reserved) */
     const missG = all(gc, (i) => [12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(i)).filter((i) => !g.has(i));   /* (MIDI
                                                          SYNC CPU and the actions: G_SKIP's) */

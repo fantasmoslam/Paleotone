@@ -43,7 +43,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <h1 id="paleotone-manual">PALEOTONE Manual</h1>
 <h2 id="welcome">Welcome</h2>
 <p>PALEOTONE turns the M-VAVE FM-1 into a prehistoric synth: four tracks of roaring creatures, war drums, deep horns and jungle pads, plus a living soundscape that runs beside them. It is custom firmware, a fork of GHOULBOX 2.3.2 by Jason Persinger, which is built on Felucca 1.4.1 by Leo Kuroshita (Hügelton Instruments). It is free software under the GPL-3.0 licence.</p>
-<p>This manual covers firmware build a371eb4 (23 October 2026). Every screen picture in it is drawn by the firmware's own display code, so what you see here is what the FM-1 shows.</p>
+<p>This candidate manual covers the SCAPE performance workspace. Every screen picture in it is drawn by the firmware's own display code, so what you see here is what the FM-1 shows.</p>
 <h3 id="what-paleotone-adds">What PALEOTONE adds</h3>
 <ul>
 <li><strong>SAURUS</strong>, an engine whose every note is a creature's call: 20 creatures from brachiosaur to baby rex.</li>
@@ -274,8 +274,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <p>To hear a scene you have just picked, set RESTORE LAST to OFF and switch off and on. Set it back to ON afterwards if you want your music remembered.</p>
 <h2 id="how-the-synth-is-built">How the synth is built</h2>
 <p>PALEOTONE is four tracks playing at once, like four musicians. Each track has its own engine and sound, its own notes in the sequencer and its own settings; together they share 12 voices, the effects and the master.</p>
-<figure><img class="diagram" src="img/signal.png" alt="the signal path · 4 tracks into one master" loading="lazy"><figcaption>the signal path · 4 tracks into one master</figcaption></figure>
-<p>Read it left to right. Notes come from the track's steps, your keys, MIDI or SCAPE's calls; the engine turns them into sound with voices from the shared 12. Then the track's own DIST, SLICER, LEVEL, PAN and SPRD, and sends into the three shared effects. Everything meets in the mix, with the ambience and SCAPE added there, and leaves through TAPE and MASTER.</p>
+<p>Read it left to right. Notes come from the track's steps, your keys, MIDI or SCAPE's calls; the engine turns them into sound with voices from the shared 12. Then the track's own DIST, LEVEL, PAN and SPRD, and sends into the three shared effects. Everything meets in the mix, with the ambience and SCAPE added there, and leaves through TAPE and MASTER.</p>
 <h3 id="tracks-and-voices">Tracks and voices</h3>
 <ul>
 <li><strong>Four tracks.</strong> ALGORITHM picks the one you edit; the header shows its number and colour.</li>
@@ -758,7 +757,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <figure><img class="screen" src="img/edit_voice_chant.png" alt="VOICE&#x27;s first page on DEEP CHANT" loading="lazy"><figcaption>VOICE&#x27;s first page on DEEP CHANT</figcaption></figure>
 <p><strong>VOICE</strong> sings vowels: the chants and choirs. <strong>DRUM</strong> plays eight lanes; the TRIBE kit (KIT TRIBE) has BOOM, SKIN, CLAP, SEEDS, RATTL, LOG, BONE and ROCK. The keys follow the General MIDI drum map, as on any drum machine: C is BOOM, D is SKIN. LANES and LANES 2 set each lane's level, and on a DRUM track the STEP page becomes a drum grid. The <strong>ENCOUNTER</strong> kit (SAMPLE) puts one sound on each key from F3: footfalls near and far, a mud stomp, a claw tap, a branch snap, a falling tree, a splash, a rock fall, leaves, bone clacks, a ground ripple, thunder and a huff. All of PALEOTONE's sample material is synthesized; nothing is a recording.</p>
 <h2 id="effects">Effects</h2>
-<p>Effects put the herd somewhere: a canyon, a swamp at night, a valley before a storm. PALEOTONE has one delay, one reverb and one chorus shared by all four tracks, like four players in one hall, plus per-track drive and slicer, a worn-tape master and hands-on performance effects.</p>
+<p>Effects put the herd somewhere: a canyon, a swamp at night, a valley before a storm. PALEOTONE has one delay, one reverb and one chorus shared by all four tracks, like four players in one hall, plus per-track drive, a worn-tape master and hands-on performance effects.</p>
 <h3 id="sends-the-fx-page">Sends: the FX page</h3>
 <figure><img class="screen" src="img/fx.png" alt="The FX page: DST, CHO, DLY and REV for the selected track" loading="lazy"><figcaption>The FX page: DST, CHO, DLY and REV for the selected track</figcaption></figure>
 <p>Tap <strong>FX</strong>. KNOB 1–4 are the selected track's own amounts: <strong>DST</strong> (drive, on the track itself), and how much it sends into <strong>CHO</strong>, <strong>DLY</strong> and <strong>REV</strong>. A dry, close lead in front of a pad drowned in hall is the classic picture. Tap FX again to step through the rest of the family:</p>
@@ -776,11 +775,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <td>DST, CHO, DLY, REV</td>
 <td>The track's drive and its three sends</td>
 </tr>
-<tr>
-<td>SLICER</td>
-<td>SLCR, PAT, RATE, DEPTH</td>
-<td>The track's rhythmic chopper (below)</td>
-</tr>
+
 <tr>
 <td>DLY</td>
 <td>TIME, FDBK, COLR, MIX</td>
@@ -814,8 +809,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <li><strong>CRSH</strong>: a cheap old sampler's fewer bits and lower rate: grainy, then robotic.</li>
 <li><strong>AMB</strong>: a bed of wind under everything, with no track or voice of its own. <strong>CRKL</strong> adds crackle to it (0 = the wind alone). For living wildlife, use SCAPE instead.</li>
 </ul>
-<h3 id="slicer">SLICER</h3>
-<p>A per-track chopper locked to the tempo, after DST and before the sends, so the echoes follow the chopped sound. SLCR GATE cuts the sound in a 16-step pattern; STUT repeats the last bit instead. PAT picks one of 16 patterns, RATE the step (1/8 to 32T), DEPTH how far a gap closes (or the repeat's level). GATE on a pad gives a herd's trotting pulse.</p>
+<p>The SLICER insert has been retired. Saved projects retain their parameter slots for compatibility; those settings no longer process audio. The FX performance layer keeps repeat, reverse, tape stop, freeze and octave effects.</p>
 <h3 id="the-fx-layer-performance-effects">The FX layer: performance effects</h3>
 <p>Hold <strong>FX</strong> (or double-tap it to keep it open) and the keys become effects on the whole mix, held while the key is held:</p>
 <table>
@@ -957,7 +951,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 </ol>
 <p>A ×2, B ×1, A ×2, C ×1 gives a verse, a bridge, the verse again and an ending. SAVE › TOOLS deletes a section or clears the song.</p>
 <h2 id="homes-pages-mixer-clock-keys-epoch">HOME's pages: MIXER, CLOCK, KEYS, SCAPE MUSIC</h2>
-<p>Tap <strong>HOME</strong> on the home screen and it steps through nine pages that belong to the whole instrument, then back to HOME: MIXER, CLOCK, KEYS, SCAPE MUSIC, then SCAPE's five other pages (next section). The footer shows where you are, for example MIXER 1/9. Press any other page button to leave.</p>
+<p>Tap <strong>HOME</strong> through MIXER, CLOCK and KEYS to enter SCAPE. Turn <strong>SELECT</strong> to choose a control bank inside its shared workspace; tap <strong>HOME</strong> to exit. Hold <strong>GLO</strong> while turning SELECT to change tempo.</p>
 <h3 id="mixer">MIXER</h3>
 <figure><img class="screen" src="img/mixer.png" alt="MIXER with HERD: four track cards with level, pan and reverb, and the selected track&#x27;s LEVEL, PAN, REV and MUTE on the knobs" loading="lazy"><figcaption>MIXER with HERD: four track cards with level, pan and reverb, and the selected track&#x27;s LEVEL, PAN, REV and MUTE on the knobs</figcaption></figure>
 <p>All four tracks at a glance: each card shows the track's sound, its level in dB, its pan and its reverb send. KNOB 1–4 are the selected track's <strong>LEVEL</strong>, <strong>PAN</strong>, <strong>REV</strong> and <strong>MUTE</strong>; turn ALGORITHM to move to another track. For quick mixing with no page change, hold GLO: KNOB 1–4 are the four tracks' levels.</p>
@@ -975,30 +969,28 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <p>Each track keeps its own sound and scale, and records what it plays when armed. On the SEQ pages the keys play the selected track only. KEYS is saved with the project.</p>
 <p><strong>Hands-free drones (LATCH):</strong> hold GLO and press the black key for a track in the upper octave (F♯, G♯, A♯, C♯ above the mute keys, for tracks 1–4). Play a chord on that track and let go: it keeps sounding while you play something else. Press the same GLO key again to end it. Latches are not saved.</p>
 <h3 id="epoch-a-piece-composed-for-you">SCAPE MUSIC: compose and evolve</h3>
-<p>SCAPE combines editable music, environmental layers and passing creatures. Choose your four sounds, open SCAPE MUSIC and press a key to compose in that key. Existing patterns require confirmation: OCT+ replaces them, OCT− cancels. The resulting 64-step patterns at 1/8 are ordinary sequences you can edit and save.</p>
-<p>Parts follow the sounds: sustained creatures and drones, bass roots, pad chords, sparse melodies and percussion. EVOL changes later phrases while preserving the opening and sustained creature parts. DENS ranges from 1 to 8. DRFT ranges from 1 (slow change) to 8 (each pass). MOOD selects MIN, DOR, PHRY, HARM, MAJ or MIX before you compose. Evolution pauses when stopped or while a song chain plays.</p>
+<p>Choose your four sounds, open SCAPE MUSIC and press a key. OCT+ confirms replacement of existing patterns; OCT− cancels. Composition enables evolution and prepares patterns without starting or rewinding playback. Press PLAY explicitly to start the musical parts. The four roles use ordinary editable sequences with unequal loops and one shared chord progression.</p>
 <h2 id="scape-the-living-soundscape">SCAPE: music and the living world</h2>
-<p>Six pages form one SCAPE group after MIXER, CLOCK and KEYS. Wind, water, rain, insects, frogs, birds, drips and rumble run beside the four tracks. Four bounded event slots serve the environmental sounds. Creature notes use the selected track and its shared voice budget.</p>
+<p><a href="https://fantasmoslam.github.io/dinobox-fm1/webapp/scape-preview/scape-guide/">Open the SCAPE listening guide</a> for a step-by-step habitat, drone and music walkthrough.</p>
+<p><strong>Listen without the sequencer:</strong> leave PLAY stopped, raise LEVEL on SCAPE SETUP, then choose a BIOME on SCAPE. Add DRONE if wanted, and tune it with SCAPE DRONE's KEY knob. No note key is required for this ambient-only mode. A note key on SCAPE MUSIC generates track patterns; press PLAY when you want those musical parts.</p>
+<p>One persistent workspace brings musical movement, layer balance and habitat together. The top cards always map to the four physical knobs. Below them, MUSIC, MIX, WORLD and LAYERS identify the active bank. Four track lanes show musical role, loop position, loop length in steps and director gain. The normal header retains tempo, playback and battery status. Environmental sounds remain procedural; music and creature calls use the existing four tracks and shared voice budget.</p>
 <table><thead><tr><th>Page</th><th>Knob 1</th><th>Knob 2</th><th>Knob 3</th><th>Knob 4</th></tr></thead><tbody>
-<tr><td>SCAPE MUSIC</td><td>EVOL</td><td>DENS</td><td>DRFT</td><td>MOOD</td></tr>
-<tr><td>SCAPE</td><td>LEVEL</td><td>BIOME</td><td>DIST</td><td>TIME</td></tr>
-<tr><td>SCAPE DRONE</td><td>DRONE</td><td>KEY</td><td>MOVE</td><td>PTCH</td></tr>
-<tr><td>SCAPE LIFE</td><td>TRK</td><td>RATE</td><td>DANGR</td><td>SIZE</td></tr>
-<tr><td>SCAPE LEVELS</td><td>WIND</td><td>WATER</td><td>RAIN</td><td>BUGS</td></tr>
-<tr><td>SCAPE LEVELS 2</td><td>FROGS</td><td>BIRDS</td><td>DRIPS</td><td>RUMBL</td></tr>
+<tr><td>SCAPE MUSIC</td><td>ACTV</td><td>EVOL</td><td>MOTN</td><td>CHORD</td></tr>
+<tr><td>SCAPE MIX</td><td>BED</td><td>MELO</td><td>BASS</td><td>PULSE</td></tr>
+<tr><td>SCAPE</td><td>BIOME</td><td>TIME</td><td>DIST</td><td>RATE</td></tr>
 </tbody></table>
-<p>To start the environment, tap HOME five times from HOME, raise LEVEL and select a BIOME. The eight biomes are WATER, JUNGLE, TUNDRA, FOREST, PLAINS, MOUNTAINS, CANYONS and CALDERA. A biome sets layer levels, densities, distance and time. LEVEL starts at zero. DIST darkens distant sounds and adds reverb. TIME moves from day to night: birds give way to crickets and frogs. Layer levels remain individually adjustable.</p>
-<p>SCAPE DRONE supplies one harmonic bed. DRONE sets its level; KEY AUTO follows track 1's ROOT, or select C–B. MOVE adds slow movement. PTCH shifts the creature notes, not the drone.</p>
-<p>SCAPE LIFE uses a single TRK selection for occasional calls and passing roars. OFF silences those track-triggered creatures. RATE controls call frequency. DANGR zero disables passing beasts; raise it for footsteps that approach, pan across and recede. Wildlife hushes during a pass, with a roar at its nearest point. SIZE selects SMALL, BIG or HUGE. Calls wait until the beast passes. Turning SCAPE LEVEL to zero releases generated calls and roars.</p>
-<p>SCAPE and music controls are saved with projects. Older project values retain their IDs and load. The separate drone types, density pages and independent roar routing have been consolidated; imported drone types use the harmonic bed, and passing roars use the SCAPE LIFE track.</p>
-<figure><img class="screen" src="img/scape_music.png" alt="SCAPE MUSIC: EVOL, DENS, DRFT and MOOD" loading="lazy"><figcaption>SCAPE MUSIC: EVOL, DENS, DRFT and MOOD</figcaption></figure>
-<figure><img class="screen" src="img/scape.png" alt="SCAPE: LEVEL, BIOME, DIST and TIME" loading="lazy"><figcaption>SCAPE: LEVEL, BIOME, DIST and TIME</figcaption></figure>
-<figure><img class="screen" src="img/scape_drone.png" alt="SCAPE DRONE: DRONE, KEY, MOVE and PTCH" loading="lazy"><figcaption>SCAPE DRONE: DRONE, KEY, MOVE and PTCH</figcaption></figure>
-<figure><img class="screen" src="img/scape_life.png" alt="SCAPE LIFE: TRK, RATE, DANGR and SIZE" loading="lazy"><figcaption>SCAPE LIFE: TRK, RATE, DANGR and SIZE</figcaption></figure>
-<figure><img class="screen" src="img/scape_levels.png" alt="SCAPE LEVELS: WIND, WATER, RAIN and BUGS" loading="lazy"><figcaption>SCAPE LEVELS: WIND, WATER, RAIN and BUGS</figcaption></figure>
-<figure><img class="screen" src="img/scape_levels2.png" alt="SCAPE LEVELS 2: FROGS, BIRDS, DRIPS and RUMBL" loading="lazy"><figcaption>SCAPE LEVELS 2: FROGS, BIRDS, DRIPS and RUMBL</figcaption></figure>
+<p>ACTV controls density; EVOL controls variation speed. MOTN gives each layer a breathing cycle inside a shared two-minute arc; zero removes breathing. CHORD chooses a shared chord time from 20 seconds to five minutes. Bed, melody, bass and pulse loop over 29, 13, 23 and 17 beats. Chord changes keep the rhythm and transpose the notes; held notes finish naturally. Evolution changes later material at each track's loop boundary, preserving its opening.</p>
+<p>SCAPE MIX smoothly attenuates the four roles without rewriting track levels. BED also controls held BEAST parts. SCAPE changes biome, day/night, distance and call activity. New creature calls wait for melody rests and follow the current chord root. Passing beasts hush wildlife as before. Existing events finish naturally.</p>
+<p>Use SELECT to choose SCAPE SETUP: EVOL on/off, MOOD, environment LEVEL and extra DRONE level. Evolution OFF freezes changes and breathing clocks while playback continues. Transport stop pauses generation; song-chain playback suspends the director. Raise environment LEVEL to hear the habitat; it defaults to off.</p>
+<p>SCAPE ROLES assigns T1–T4 to AUTO, BED, MELO, BASS, PULSE or BEAST. AUTO uses bass, bed, melody and pulse in track order, except SAURUS/ROAR become BEAST and drum kits remain PULSE. Roles use no preset-name guesses. Changes apply at that track's next loop. Detailed drone, creature and environmental layer controls remain in the same workspace; SELECT reaches them directly without leaving SCAPE. Creature TRK OFF disables calls and passing roars.</p>
+<p>Project slots and autosave retain these controls in the existing settings sidecar. Older settings load defaults for the new controls. Full editor backups include them; legacy standalone project files do not contain the sidecar. The current chord position restarts after loading.</p>
+<figure><img class="screen" src="img/scape_music.png" alt="SCAPE MUSIC: activity, evolution, motion and chord time" loading="lazy"><figcaption>SCAPE MUSIC: ACTV, EVOL, MOTN and CHORD</figcaption></figure>
+<figure><img class="screen" src="img/scape_mix.png" alt="SCAPE MIX: bed, melody, bass and pulse" loading="lazy"><figcaption>SCAPE MIX: BED, MELO, BASS and PULSE</figcaption></figure>
+<figure><img class="screen" src="img/scape.png" alt="SCAPE habitat: biome, time, distance and call rate" loading="lazy"><figcaption>SCAPE: BIOME, TIME, DIST and RATE</figcaption></figure>
+<p><strong>SCAPE SCENE</strong> keeps performance actions together: HOLD freezes the state the piece has reached while playback continues; NEXT advances harmony once; NEW starts a new piece in the same key; CHORD sets the automatic chord time. NEXT and NEW return to idle after acting.</p>
+<figure><img class="screen" src="img/scape_scene.png" alt="SCAPE SCENE: hold, next chord, new composition and chord time" loading="lazy"><figcaption>SCAPE SCENE: HOLD, NEXT, NEW and CHORD</figcaption></figure>
 <h3 id="dual-screen-control">Dual-screen control</h3>
-<p>Connect the matching graphics companion and choose Expanded. Hold HOME and tap OCT+ to control the right page, or HOME and OCT− for the left. Release, then play and edit. Each side remembers its page, track and cursor for the session; tempo and transport are shared. Finish modal/step edits before swapping.</p>
+<p>Connect the matching graphics companion and choose Expanded. Hold HOME and tap OCT+ to control the right page, or HOME and OCT− for the left. Release, then play and edit. Each side remembers its control bank, track and cursor for the session; tempo and transport are shared. Finish modal/step edits before swapping.</p>
 <h3 id="saurus-2">SAURUS 2</h3>
 <p>The layered-throat engine has 14 calls and 22 presets, including SHRIEK, HONK, BOOM, RATTLE, RAPTOR CRY and TITAN BOOM. Four throat sets are shared across tracks; a new call takes the oldest when all four are occupied.</p>
 <h2 id="saving">Saving</h2>
@@ -1124,7 +1116,6 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <h3 id="recording-to-a-computer">Recording to a computer</h3>
 <p>The FM-1 is a USB audio input on a computer, no driver needed: the master in stereo at 44.1 kHz. MENU › AUDIO › USB LEVEL FIXED records at full level whatever MASTER says. Keep SPEAKER EQ on FLAT.</p>
 <h2 id="reference-every-page-and-knob">Reference: every page and knob</h2>
-<figure><img class="diagram" src="img/pages.png" alt="the page map · 10 page buttons, in tap order" loading="lazy"><figcaption>the page map · 10 page buttons, in tap order</figcaption></figure>
 <p><strong>Track</strong> pages change the selected track only; <strong>shared</strong> pages change the whole instrument and are saved with the project. EDIT 1 and 2 are the engine's own (see the engines table and PALEOTONE's sounds).</p>
 <table>
 <thead>
@@ -1175,52 +1166,16 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <td>SPLT</td>
 <td>OCT</td>
 </tr>
-<tr>
-<td>SCAPE MUSIC</td>
-<td>HOME</td>
-<td>shared</td>
-<td>EVOL</td>
-<td>DENS</td>
-<td>DRFT</td>
-<td>MOOD</td>
-</tr>
-<tr>
-<td>SCAPE</td>
-<td>HOME</td>
-<td>shared</td>
-<td>LEVEL</td>
-<td>BIOME</td>
-<td>DIST</td>
-<td>TIME</td>
-</tr>
-<tr>
-<td>SCAPE DRONE</td>
-<td>HOME</td>
-<td>shared</td>
-<td>DRONE</td>
-<td>TYPE</td>
-<td>KEY</td>
-<td>MOVE</td>
-</tr>
+<tr><td>SCAPE MIX</td><td>HOME</td><td>shared</td><td>BED</td><td>MELO</td><td>BASS</td><td>PULSE</td></tr>
+<tr><td>SCAPE SETUP</td><td>HOME</td><td>shared</td><td>EVOL</td><td>MOOD</td><td>LEVEL</td><td>DRONE</td></tr>
+<tr><td>SCAPE ROLES</td><td>HOME</td><td>shared</td><td>T1</td><td>T2</td><td>T3</td><td>T4</td></tr>
+<tr><td>SCAPE LIFE</td><td>HOME</td><td>shared</td><td>TRK</td><td>DANGR</td><td>SIZE</td><td>PTCH</td></tr>
+<tr><td>SCAPE MUSIC</td><td>HOME</td><td>shared</td><td>ACTV</td><td>EVOL</td><td>MOTN</td><td>HOLD</td></tr>
+<tr><td>SCAPE</td><td>HOME</td><td>shared</td><td>BIOME</td><td>TIME</td><td>DIST</td><td>RATE</td></tr>
+<tr><td>SCAPE DRONE</td><td>HOME</td><td>shared</td><td>DRONE</td><td>KEY</td><td>MOVE</td><td>PTCH</td></tr>
 
-<tr>
-<td>SCAPE LEVELS</td>
-<td>HOME</td>
-<td>shared</td>
-<td>WIND</td>
-<td>WATER</td>
-<td>RAIN</td>
-<td>BUGS</td>
-</tr>
-<tr>
-<td>SCAPE LEVELS 2</td>
-<td>HOME</td>
-<td>shared</td>
-<td>FROGS</td>
-<td>BIRDS</td>
-<td>DRIPS</td>
-<td>RUMBL</td>
-</tr>
+<tr><td>SCAPE LEVELS</td><td>HOME</td><td>shared</td><td>WIND</td><td>WATER</td><td>RAIN</td><td>BUGS</td></tr>
+<tr><td>SCAPE LEVELS 2</td><td>HOME</td><td>shared</td><td>FROGS</td><td>BIRDS</td><td>DRIPS</td><td>RUMBL</td></tr>
 
 
 <tr>
@@ -1286,15 +1241,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <td>DLY</td>
 <td>REV</td>
 </tr>
-<tr>
-<td>SLICER</td>
-<td>FX</td>
-<td>track</td>
-<td>SLCR</td>
-<td>PAT</td>
-<td>RATE</td>
-<td>DEPTH</td>
-</tr>
+
 <tr>
 <td>DLY</td>
 <td>FX</td>

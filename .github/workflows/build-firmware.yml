@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency]
+    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/scape-garden]
   workflow_dispatch:
 
 permissions:
@@ -39,6 +39,14 @@ jobs:
           ./build.sh 2>&1 | tee build.log
           cp build/felucca.fwsc paleotone.fwsc
           sha256sum paleotone.fwsc | tee -a build.log
+
+      - name: Code size diagnostics
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/felucca.elf ]; then
+            "$HOME/.jieli/toolchain/common/bin/objdump" -t build/felucca.elf | sort -k5,5r | sed -n '1,80p'
+          fi
 
       - name: Image tests (the update entry, the loader from another app, the render loops' cost)
         shell: bash

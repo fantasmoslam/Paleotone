@@ -23,7 +23,7 @@ for(const side of [0,1]){
  for(const wide of [false,true]){
   sandbox.wide=wide;
   const expected=wide?joinScreens(rgb565(second.rawPixels(contextSnapshot(bytes,second.layout,ctx.left))),rgb565(second.rawPixels(contextSnapshot(bytes,second.layout,ctx.right)))):active;
-  sandbox.paintFrame(bytes,true);assert.equal(width,wide?480:240);assert.deepEqual(actual,expected);
+  sandbox.paintFrame(bytes,true);assert.equal(width,wide?480:240);assert.ok(Buffer.from(actual).equals(Buffer.from(expected)),'painted pixels must equal the reference renderer');
   const count=paints;sandbox.paintFrame(bytes);assert.equal(paints,count,'unchanged exact frames reuse their presentation');
  }
 }

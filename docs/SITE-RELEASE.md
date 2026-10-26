@@ -53,3 +53,13 @@ companion CI additionally checks the emulator against the native audio build,
 saved projects, all exact display pixels, stale replies, retries, USB resets and
 queue backpressure. The GHOULBOX branch runs upstream host/golden/health tests and
 its own target image/OTA/loader/CPU checks before generating a releasable package.
+
+## SCAPE redesign candidate
+
+The isolated preview is `/webapp/scape-preview/`, with its own `installer/`, `screen/`, `editor/` and `manual/`. It does not replace the release manifest or the existing companion. Browser saves use the `paleotone-scape-preview-` prefix.
+
+Firmware/renderer source: `2ecc0a3827e90e45638ad74bf7690b2e82543a1b`. Renderer `3439484896`, schema 2; package SHA-256 `ed82093de042239665b4bc1ef4da4fc0359bd2951ee684cd0708b9d53b773332`. Target image 565692 bytes, data+BSS 90340/98304, pool 332900/344064. The configured 15872-byte application reserve is unchanged by the UI work. This UI candidate has not been flashed to the physical FM-1.
+
+Firmware run `40263805878`, companion/publish run `40263805917` and full host run `40263805879` passed. Both UI variants have zero layout findings; all 213 audio goldens are unchanged. The candidate workflow verifies package hash, native/WASM identity and complete local assets before publishing only the isolated preview folder. GitHub Pages deployment `40264771557` succeeded.
+
+Rebuild staging with `python web/prepare_scape_preview.py EMULATOR PACKAGE OUT SOURCE`, then run `node web/test_scape_preview.mjs OUT` and `node web/test_published_companion.mjs OUT/screen`. Only publish that output inside the dedicated preview folder. Use its paired display after installing this candidate.

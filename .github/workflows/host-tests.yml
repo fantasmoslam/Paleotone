@@ -7,7 +7,7 @@ name: host tests
 
 on:
   push:
-    branches: [feature/paleotone-unified]
+    branches: [feature/paleotone-unified, feature/scape-garden]
   workflow_dispatch:     # DINOBOX: on request only (about 40 minutes; a private repository's minutes are limited)
 
 permissions:
@@ -36,3 +36,10 @@ jobs:
 
       - name: Host tests
         run: HOST_ONLY=1 tests/run_tests.sh
+
+      - name: Layout diagnostics
+        if: failure()
+        run: |
+          for report in build/ui_new/report.txt build/ui_fm4/report.txt; do
+            if [ -f "$report" ]; then head -65 "$report"; fi
+          done
