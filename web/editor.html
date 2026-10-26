@@ -1762,9 +1762,11 @@ function makeMockDevice(opt = {}) {
     /* SCAPE DANGER (ids 65..68): DANGR (0 never) SIZE STEP ROAR (OFF, the CALLS track, T1..T4) */
     D("DANGR", F.PCT, 0, 127, 0), E("SIZE", ["SMALL", "BIG", "HUGE"], 1), D("STEP", F.PCT, 0, 127, 100),
     D("LEGACY", F.INT, 0, 5, 1),
-    D("MOTN", F.PCT, 0, 127, 64), E("HOLD", ["20S", "30S", "45S", "60S", "90S", "120S", "180S", "300S"], 3),
+    D("MOTN", F.PCT, 0, 127, 64), E("CHORD", ["20S", "30S", "45S", "60S", "90S", "120S", "180S", "300S"], 3),
     D("BED", F.PCT, 0, 127, 100), D("MELO", F.PCT, 0, 127, 90), D("BASS", F.PCT, 0, 127, 100), D("PULSE", F.PCT, 0, 127, 80),
     ...[1,2,3,4].map(n => E("T"+n, ["AUTO", "BED", "MELO", "BASS", "PULSE", "BEAST"], 0)),
+    /* SCAPE SCENE (ids 79..81): the performance actions, each its own control */
+    E("HOLD", NONOFF, 0), E("NEXT", ["--", "GO"], 0), E("NEW", ["--", "GO"], 0),
   ];
   const NONE = D("-", F.INT, 0, 0, 0);
   const RATIO = [".5", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "14", "16"];
@@ -1911,7 +1913,7 @@ function makeMockDevice(opt = {}) {
   TP.push(D("-", F.INT, 0, 8, 0), D("-", F.INT, 0, 127, 64), D("-", F.INT, 0, 127, 96), D("-", F.INT, 0, 127, 96),   /* GHOULBOX: */
     D("-", F.INT, 0, 127, 127), D("-", F.INT, 0, 2, 0), D("-", F.INT, 0, 1, 0),   /* Felucca 1.5's 96..102, reserved */
     E("TEMP", ["EQUAL", "PYTH", "MEAN", "JUST"], 0), E("RING", ["OFF", "ON"], 0));   /* TEMP (103), RING (104, 2.3) */
-  const P_COUNT = 113, G_COUNT = 79, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
+  const P_COUNT = 113, G_COUNT = 82, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */

@@ -262,15 +262,15 @@ async function editorMock() {
   ok(set.value === 127, "editor: SET clamps to the range");
   {
     /* MENU > MIDI > MIDI IN (G_ROUTE 14; up to 1.1.5 GLO > SYSTEM ROUT): CH1-4 (0, the default) / SEL (1) / 1.2: CH5-8 CH9-12 CH13-16 (2..4);
-     * the id and G_COUNT unchanged; 5 clamps to the last */
+     * the id and the older ids unchanged; 5 clamps to the last */
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 14)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 5)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 0)));
-    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 79,
+    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL", "CH5-8", "CH9-12", "CH13-16"]) && r1.value === 4 && r0.value === 0 && info.gcount === 82,
       "editor: MIDI IN routing (ROUT CH1-4 / SEL / CH5-8 / CH9-12 / CH13-16, global id 14)");
   }
   {
-    /* FX > REVERB TYPE (G_RTYPE 24, the old drum channel's id): ROOM (0) / SPRING (1) / HALL (2, the default); G_COUNT unchanged */
+    /* FX > REVERB TYPE (G_RTYPE 24, the old drum channel's id): ROOM (0) / SPRING (1) / HALL (2, the default); the older ids unchanged */
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 24)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 24, 10)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 24, 0)));
@@ -278,7 +278,7 @@ async function editorMock() {
     const [d25, d26, d27, d28, d29, d30, d31, d32, d33, d34, d35, d36] = await Promise.all(tape);
     ok(rd.label === "TYPE" && rd.def === 2 && eq(rd.names, ["ROOM", "SPRING", "HALL"]) && r1.value === 2 && r0.value === 0 &&
        d25.label === "TAPE" && d26.label === "CRSH" && d25.max === 127 && d26.max === 127 && d25.def === 0 &&
-       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 79 &&
+       d27.label === "AMB" && d28.label === "CRKL" && d27.def === 0 && d28.def === 40 && info.gcount === 82 &&
        d29.label === "MODE" && eq(d29.names, ["OFF", "LAYER", "SPLIT"]) && d29.def === 0 && d30.label === "TRK" && d30.def === 3 &&
        d31.label === "SPLT" && d31.names.length === 24 && d31.names[d31.def] === "C4" && d32.label === "OCT" && d32.names[d32.def] === "0" &&
        d33.label === "EVOL" && d33.def === 0 && d34.label === "ACTV" && d34.min === 1 && d34.max === 8 && d34.def === 4 &&
