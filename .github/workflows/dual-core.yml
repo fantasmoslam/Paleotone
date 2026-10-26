@@ -28,6 +28,11 @@ jobs:
         run: |
           cc -O2 -w -DC1_HOST -Ibuild/gen -Ifirmware/src -pthread tests/regress.c -lm -o build/host/regress-c1
           build/host/regress-c1
+      - name: Concurrent memory-access checks
+        run: |
+          sudo sysctl vm.mmap_rnd_bits=28
+          cc -O1 -g -w -fsanitize=thread -fno-omit-frame-pointer -Ibuild/gen -Ifirmware/src -pthread tests/dualcore_test.c -lm -o build/host/dualcore-tsan
+          TSAN_OPTIONS=halt_on_error=1 build/host/dualcore-tsan
       - name: All existing single-core checks
         run: HOST_ONLY=1 tests/run_tests.sh
       - uses: actions/upload-artifact@v4

@@ -158,10 +158,13 @@ static void fm1_main(void)
     master_boot();
     kb_boot_hold = 1;                         /* #137: no notes from the keys before the UI (seq.c keyboard_block) */
 #if FELUCCA_CPU2
-    if((ui_prefs2 & (PREF_CPU2_ON>>16)) && !bootguard.failed) {
-        fm1_guard_pc_open();
-        if(fm1_cpu1_start()) ui_prefs2 &= ~(PREF_CPU2_ON>>16);
-        fm1_guard_enable(FM1_GUARD_PC);
+    if(ui_prefs2 & (PREF_CPU2_ON>>16)) {
+        if(bootguard.failed) fm1_c1_gave_up=3;
+        else {
+            fm1_guard_pc_open();
+            if(fm1_cpu1_start()) fm1_c1_gave_up=3;
+            fm1_guard_enable(FM1_GUARD_PC);
+        }
     }
 #endif
     audio_init();
@@ -193,7 +196,7 @@ static void fm1_main(void)
 #if FELUCCA_CPU2
         if(*(volatile uint8_t *)&fm1_c1_gave_up && (ui_prefs2 & (PREF_CPU2_ON>>16))) {
             ui_prefs2 &= ~(PREF_CPU2_ON>>16);
-            settings_later();
+            settings_save(); /* queues a save; settings_poll waits for stopped transport */
             ui_message("2ND CORE FAULT: OFF");
         }
 #endif

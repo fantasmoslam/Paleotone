@@ -42,6 +42,7 @@ static void *c1h_main(void *x)
 
 static int c1h_run(void (*fn)(uint32_t), uint32_t arg)
 {
+    if(getenv("C1_REJECT")) return 0; /* worker declines a job without touching state */
     if (!c1h_up) {                                  /* started in the child that renders (the tests fork) */
         pthread_t th;
         if (pthread_create(&th, 0, c1h_main, 0))

@@ -4,6 +4,10 @@
  * audio) have it: interrupts off, no interrupt configuration, its own user and supervisor stacks,
  * then out of the start-up interrupt into fm1_c1_main (in RAM, fm1_cpu1.h), which never returns.
  * fm1_cpu1_start puts this address in the word the chip starts core 1 from (0x01C7FFF8). */
+#ifndef FELUCCA_CPU2
+#define FELUCCA_CPU2 1
+#endif
+#if FELUCCA_CPU2
 	.section .text.cpu1,"ax",@progbits
 	.balign 4
 	.globl fm1_c1_entry
@@ -29,3 +33,4 @@ _c1_sstack:			/* exceptions only (no interrupts on this core) */
 	.space 256
 	.globl _c1_sstack_top
 _c1_sstack_top:
+#endif

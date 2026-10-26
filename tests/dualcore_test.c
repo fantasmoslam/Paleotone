@@ -58,7 +58,15 @@ static uint64_t render(const scen_t *sc, int dual, const char *mask)
     uint32_t f, k, i;
     int32_t o[2 * CTL];
     host_tracks_init();
+    if(sc->morph==2) {
+        song.g[G_SCAPE]=70;song.g[G_SDRN]=50;
+        song.g[G_SCTRK]=1;song.g[G_SCRATE]=127;song.g[G_SDNGR]=30;
+    }
     c1h_off = !dual;
+    if(mask && !strcmp(mask,"reject")) {
+        setenv("C1_REJECT","1",1);
+        mask="rot";
+    }
     if (mask)
         setenv("C1_MASK", mask, 1);
     for (k = 0; k < NPART; k++) {
@@ -76,7 +84,7 @@ static uint64_t render(const scen_t *sc, int dual, const char *mask)
                 for (i = 0; i < 3u; i++)
                     trk_note_off(&trk[k], base + CH[i]);
         }
-        if (sc->morph && ms == 600u)                /* PHYS: MODEL changed under a sounding note (phys_render) */
+        if (sc->morph==1 && ms == 600u)             /* PHYS model changed under a sounding note */
             trk[0].p[P_E0] = (int16_t)((trk[0].p[P_E0] + 1) % PM_COUNT);
         mix_block(o, CTL);
         for (k = 0; k < NPART; k++)
@@ -122,7 +130,7 @@ int main(void)
 {
     static scen_t sc[256];
     static char names[256][40];
-    static const char *const MASKS[] = {"rot", "auto", "5", "10", "3", "12", "1"};
+    static const char *const MASKS[] = {"rot", "auto", "5", "10", "3", "12", "1", "reject"};
     uint32_t n = 0, e, i, k, g, fail = 0;
     for (e = 0; e < NENGINES; e++) {                    /* every preset: four parts at a time */
         if (!eng_ok(e))                                 /* (a retired number: DIGITAL without FELUCCA_FM4) */
@@ -140,6 +148,7 @@ int main(void)
     sc[n++] = (scen_t){"PHYS FM6 ANALOG DRUM", {ENGI_PHYS, ENGI_FM6, 0, ENGI_DRUM}, {1, 4, 7, 0}, 0};
     sc[n++] = (scen_t){"GRAIN NOISE VOICE LOFI", {8, 11, 5, 3}, {1, 4, 7, 10}, 0};
     sc[n++] = (scen_t){"TRIO WHEEL PHASE FM6", {6, 7, 2, ENGI_FM6}, {1, 4, 7, 10}, 0};
+    sc[n++] = (scen_t){"SCAPE SAURUS FM6 ANALOG DRUM", {ENGI_SAURUS, ENGI_FM6, 0, ENGI_DRUM}, {1, 4, 7, 0}, 2};
     sc[n++] = (scen_t){"PHYS morph + DRUM GRAIN ANALOG", {ENGI_PHYS, ENGI_DRUM, 8, 0}, {2, 1, 3, 5}, 1};
 #if FELUCCA_SLICE
     sc[n++] = (scen_t){"SAMPLE SLICE GRAIN PHASE", {ENGI_SAMPLE, 13, 8, 2}, {2, 1, 3, 5}, 0};
