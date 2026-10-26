@@ -36,3 +36,13 @@ Owner identified the suspected whoosh as a heavily edited SAURUS/BRACHIO sound, 
 Sustained readings reached 178335 worker blocks, cpu2_bad=0 and cpu2_gave_up=0; maximum wait 11 microseconds, stack high-water 748 bytes. Thirty actual display snapshot updates completed with 30 applied state buffers (421380 bytes processed). This tests the transfer protocol, not browser rendering or listening quality. At the last reading audio_late=19 and voices_shed=90 since boot: overload remains. Playback was left running for listening. No project patches or sequences were edited by these tests.
 
 Pending: USB audio streaming, owner listening feedback, live recording on an agreed disposable project, save/reload, long-duration and other-engine trials. Do not call the candidate stable or ready for extra SCAPE load.
+
+## Live recording, persistence and USB audio trial
+
+Owner authorized editing the default loaded scene. A fresh 13-object pre-recording backup was captured first. All four project slots queried empty; test used Project A (slot 0), leaving B-D untouched. Four MIDI notes (60, 62, 65, 67) were sent while REC was armed; selected-track steps 0, 10, 12 and 14 changed, and all four requested pitches were present. Project save returned [1,0,1]. A step velocity was deliberately changed in RAM, then Project A reloaded ([0,0,1]); all 64 checked selected-track step responses matched the saved recording exactly. This verifies those steps, not every serialized field or power-cycle recall.
+
+Direct capture used only Windows Line (Felucca), not a microphone. First capture: stereo PCM16 at 44100 Hz, 351918 frames / 7.98 s, peak 18222/32768, RMS 4660.9, zero full-scale clipped samples. USB diagnostics showed 7 underruns, 0 overruns, 0 missed packets and 0 stalls afterward.
+
+A second approximately eight-second capture started with playback already running. During the capture, USB packets increased from 11267 to 15988 and underruns from 10 to 19. This demonstrates underruns continuing during the stream; it is not just an initial-start count. audio_late also increased from 48 to 50 across those reads. Worker faults remained zero. Do not label USB recording clean or assume CPU1 caused the underruns; a matched OFF comparison is still needed. No automated listening assessment was made.
+
+Current scene now contains the authorized test notes and is saved in Project A. Original scene/settings backup retained locally. USB capture closed normally; playback left running for listening, second core ON. Next step: compare USB capture with worker OFF and isolate USB buffering/clocking versus audio workload before changing DSP or increasing voices.
