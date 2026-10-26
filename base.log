@@ -1,0 +1,36 @@
+In file included from firmware/src/felucca.c:70:
+In file included from firmware/src/fx.c:222:
+firmware/src/scape.c:312:99: warning: shifting a negative signed value is undefined [-Wshift-negative-value]
+        sc.wc[k] = clamp(sc.wc[k] + (int32_t)(noise32(&sc.rng) >> 25) - 64 - (sc.wc[k] >> 11), -6 << 8, 6 << 8);
+                                                                                               ~~ ^
+1 warning generated.
+size: 895 main-loop functions built for size (6 not in this build; 123 reached from an interrupt kept -Os)
+face S: ShareTechMono-Regular.ttf 13px h18 base13  105 glyphs x 1  data 2076 B + table 840 B + kern 0 B (0 pairs) = 2926 B   digit adv 7.00px
+face M: ShareTechMono-Regular.ttf 15px h20 base15  105 glyphs x 1  data 1007 B + table 840 B + kern 0 B (0 pairs) = 1857 B   digit adv 8.00px
+face L: ShareTechMono-Regular.ttf 29px h37 base28  41 glyphs x 1  data 1027 B + table 328 B + kern 0 B (0 pairs) = 1395 B   digit adv 16.00px
+fonts total 6178 B  -> /__w/dinobox-fm1/base/build/gen/ui_fonts.h
+loader: image 8308 B at 0x1c0a800, bss end 0x1c0f580
+loader: ota.bin 7031 B
+2 extra bytes in post.stringData array
+2 extra bytes in post.stringData array
+icons: x_oct_up: symbol_pitch_up not in the font yet, using control_arrow_up
+icons: x_oct_dn: symbol_pitch_down not in the font yet, using control_arrow_down
+icons 12px: 107 cells, 4339 B
+icons 16px: 41 cells, 2757 B
+icons 24px: 6 cells, 681 B
+icons code: 57 B
+icons total 7834 B -> /__w/dinobox-fm1/base/build/gen/ui_icons.h   (87 legacy names + 38 new)
+keycaps: 27 pills, data 2164 B + tables 246 B; knob arcs 584 B = 2994 B -> /__w/dinobox-fm1/base/build/gen/ui_keycaps.h
+fm6 patches: 15 -> /__w/dinobox-fm1/base/build/gen/felucca_fm6.h
+generated waves into /__w/dinobox-fm1/base/build/genwav
+samples: 9 sets, 25 zones, 213018 B ADPCM, SLICE BREAK 44100 samples, SLICE PIANO (own copy) 16537 samples
+ghoulbox art: GB_LOGO 224 x 34, 500 B (3808 B as nibbles)
+ghoulbox art: GB_LOGO_S 176 x 28, 381 B (2464 B as nibbles)
+ghoulbox art: GB_SKULL 110 x 60, 1001 B (3300 B as nibbles)
+ghoulbox art: 1945 B -> /__w/dinobox-fm1/base/build/gen/ghoulbox_art.h
+  ok    .ram_text: 916 insns, no calls
+  ok    image 556660 B; RAM .data+.bss 89108 B of 98304; pool 300132 B of 344064
+  ok    register access: hal/ only (src/, loader/ clean)
+app      /__w/dinobox-fm1/base/build/felucca.bin  556660 B
+loader   /__w/dinobox-fm1/base/build/loader/ota.bin  7031 B
+package  /__w/dinobox-fm1/base/build/felucca.fwsc  610187 B, identity FM-1_900
