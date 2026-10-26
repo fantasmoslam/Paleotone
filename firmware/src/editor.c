@@ -212,6 +212,7 @@ static void ed_known(uint32_t k, uint32_t id)            /* the editor's own cha
             ed_w.tv[k * 3u + j] = trk[k].p[id];
 }
 
+static void ed_screen_push(void);                        /* editor_screen.c */
 static void ed_sync(void)                                /* main loop */
 {
     uint32_t i, n = 0, now = fm1_ms;
@@ -222,6 +223,7 @@ static void ed_sync(void)                                /* main loop */
         ed_w.on = 0;                                     /* no host, USB reset, or 3 s without a request */
         return;
     }
+    ed_screen_push();                                    /* second screen: what the screen shows */
     if (sync_reload || ed_eng(TSEL) != ed_w.eng || TSEL->preset != ed_w.preset || song.sel != ed_w.sel) {
         if (!ed_room())
             return;
@@ -356,6 +358,12 @@ static int ed_flash_stop(void)
 #include "editor_backup.c"
 #include "editor_fm6.c"
 #include "editor_menu.c"
+#include "editor_screen.c"
+#if FELUCCA_REMOTE_STATE
+#include "editor_remote.c"
+#include "editor_remote_queue.h"
+static ed_remote_queue_t ed_remote_queue;
+#endif
 
 /* MOTION's reply: the records of track k as (step, id, v14), a lock's id without its MOTION_LOCK bit (a 7-bit SysEx
  * byte); kinds (1.1: the ops 5..7): then one byte per record, in the same order, 0 automation, 1 lock. The query and
@@ -388,9 +396,12 @@ static void ed_motion_reply(uint32_t k, uint32_t rc, uint32_t kinds, uint32_t fu
 }
 static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
+    #if FELUCCA_REMOTE_STATE
+    if (!ed_remote_args(cmd, a, n)) return 0;
+    #endif
     switch (cmd) {
     case ED_INFO: case ED_DUMP: case ED_SMP_INFO: case ED_PING:
-    case ED_UI_STATE: case ED_UI_PALETTES:
+    case ED_UI_STATE: case ED_UI_PALETTES: case ED_SCREEN:
         return !n;
     case ED_GET: case ED_DESC: case ED_PRESET: case ED_PROJECT: case ED_UP_LIST:
     case ED_TRACK_PARAM:
@@ -398,7 +409,7 @@ static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
     case ED_SET:
         return n == 4u;
     case ED_STEP_GET: case ED_NAMES: case ED_SMP_BEGIN: case ED_SMP_ERASE:
-    case ED_UP_GET: case ED_UP_LOAD: case ED_UP_ERASE: case ED_WATCH: case ED_TRACK_DUMP: case ED_MENU_DESC:
+    case ED_UP_GET: case ED_UP_LOAD: case ED_UP_ERASE: case ED_WATCH: case ED_TRACK_DUMP: case ED_MENU_DESC: case ED_PAGE_DESC:
         return n == 1u;
     case ED_MENU_SET:
         return n == 3u;
@@ -443,6 +454,10 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     if (ed_backup_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_fm6_handle(cmd, a, na)) { ed_send(); return; }
     if (ed_menu_handle(cmd, a, na)) { ed_send(); return; }
+    if (ed_screen_handle(cmd, a, na)) { ed_send(); return; }
+    #if FELUCCA_REMOTE_STATE
+    if (ed_remote_handle(cmd, a, na)) { ed_send(); return; }
+    #endif
     switch (cmd) {
     case ED_MOTION: {
         track_t *t = &trk[a[0]]; uint32_t rc = 0;
@@ -909,10 +924,28 @@ static void ed_service(void)
 {
     const uint8_t *p;
     uint32_t n;
+#if FELUCCA_REMOTE_STATE
+    if (ed_remote_queue.len) {
+        int ready = edrq_ready(&ed_remote_queue, so_w - so_r, usb.resets, usb.config);
+        if (ready == 1) {
+            uint32_t count = ed_remote_queue.len;
+            ed_remote_queue.len = 0;                     /* take exactly once, before handling an input */
+            ed_handle(ed_remote_queue.frame, count);
+        }
+        return;                                         /* no WATCH pushes ahead of a waiting reply */
+    }
+#endif
     ed_sync();                                             /* v2 pushes (while watched) */
     if (!ota_frame_get(&p, &n) || n < 4u || p[0] != ED_HDR0 || p[1] != ED_HDR1 || p[2] != ED_HDR2)
         return;
     ed_w.last_ms = fm1_ms;                                 /* any request keeps WATCH alive */
+#if FELUCCA_REMOTE_STATE
+    if ((p[3] >= ED_REMOTE && p[3] <= ED_REMOTE_INPUT) || p[3] == ED_PANEL_FOCUS) {
+        (void)edrq_offer(&ed_remote_queue, p, n, usb.resets);
+        ota_frame_done();                                /* queue owns its copy, including while USB is full */
+        return;
+    }
+#endif
     if (p[3] >= ED_SMP_BEGIN) {                            /* large frames: handled in place, then freed */
         ed_handle(p, n);
         ota_frame_done();

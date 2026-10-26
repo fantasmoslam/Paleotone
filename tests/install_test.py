@@ -9,6 +9,8 @@ Also checks logical_image/product_of against web/fm1pkg.js (needs node and
 build/felucca.fwsc, skipped otherwise), and (BOARD_SMK37) the SMK-37 Pro identities and port names and the
 20 / 36 block deinterleave (the stock SMK-37 Pro V016 from a directory named by SMK_STOCK_DIR, skipped when unset)."""
 import io
+import json
+import hashlib
 import queue
 import shutil
 import subprocess
@@ -16,6 +18,7 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -192,6 +195,8 @@ def cli(args, dev, answer=True):
     out, err = io.StringIO(), io.StringIO()
     old, sys.stderr = sys.stderr, err
     try:
+        if "--info" not in args and "--log" not in args:
+            args = [*args, "--log", str(TMP / f"install-{uuid.uuid4().hex}.jsonl")]
         rc = I.main(args, backend=dev, out=out, ask=lambda _p: answer)
     finally:
         sys.stderr = old
@@ -322,6 +327,65 @@ def against_js():
     ok(I.LOADER_MARK in raw, f"{clean.name} carries the Felucca loader marker")
 
 
+def diagnostics():
+    raw = package()
+    image = I.logical_image(raw)
+    p = pkgfile("trace.fwsc", raw)
+    trace = TMP / "success.jsonl"
+    rc, out, err = cli([p, "--yes", "--log", str(trace)], FakeFM1(image))
+    events = [json.loads(line) for line in trace.read_text().splitlines()]
+    pkg = next(e for e in events if e["event"] == "package")
+    ok(rc == 0 and pkg["sha256"] == hashlib.sha256(raw).hexdigest() and pkg["product"] == "FM-1_900",
+       "install log identifies the exact package by SHA256")
+    ok(any(e["event"] == "read_request" for e in events) and
+       any(e["event"] == "identity_verified" for e in events) and events[-1]["exit_code"] == 0,
+       "install log records reads, finish and returned identity")
+    trace = TMP / "interrupted.jsonl"
+    dev = FakeFM1(image, identity="ota-FM-1_900", name="Felucca Update", stall_after=3)
+    rc, out, err = cli([p, "--yes", "--log", str(trace)], dev)
+    events = [json.loads(line) for line in trace.read_text().splitlines()]
+    replies = [e for e in events if e["event"] == "data_reply_sent"]
+    ok(rc == 4 and len(replies) == 3 and replies[-1]["address"] == 1024 and events[-1]["event"] == "error" and
+       "partly written" in err and "SAME package" in err,
+       "interrupted write leaves exact last-served address and resume guidance")
+
+    class FailFinish(FakeFM1):
+        def open(self, in_name, out_name):
+            link = super().open(in_name, out_name)
+            send = link.send
+
+            def wrapped(pkt):
+                if self.waiting and self.waiting[0] == I.FINISH_WRITE and pkt not in (I.HS_QUERY, I.UPGRADE):
+                    return False
+                return send(pkt)
+            link.send = wrapped
+            return link
+
+    trace = TMP / "finish-failed.jsonl"
+    rc, out, err = cli([p, "--yes", "--log", str(trace)], FailFinish(image))
+    events = [json.loads(line) for line in trace.read_text().splitlines()]
+    ok(rc == 4 and "100%" not in out and any(e["event"] == "finish_send_failed" for e in events),
+       "failed finish reply is an error, never a successful write")
+    dev = FakeFM1(image)
+    rc, out, err = cli([p, "--yes", "--log", str(trace)], dev)
+    ok(rc == 2 and not dev.sent, "existing log is preserved and refusal happens before MIDI")
+
+    class FullDisk:
+        def write(self, _s):
+            raise OSError("disk full")
+        def close(self):
+            pass
+    log = I.SessionLog(TMP / "full-disk.jsonl")
+    log.file.close()
+    log.file = FullDisk()
+    old, sys.stderr = sys.stderr, io.StringIO()
+    try:
+        log.event("data_reply_sent", address=0)
+    finally:
+        sys.stderr = old
+    ok(log.file is None, "logging failure does not abort an active firmware transfer")
+
+
 def official():
     """#32: back to the official V15 from Felucca, without --force (only the unmodified file)"""
     v15 = ROOT / "FM-1_v15.fwsc"
@@ -413,6 +477,7 @@ ok(I.same_keyboard("SMK-37 Elite_016", "SMK-37 Pro_900") and I.same_keyboard("ot
 ok(all(I.PORT_RE.search(n) for n in ("SMK-37 Elite", "MKE-P37", "STARRYKEY-37 PLAY", "Snoop37", "Vox37", "Felucca",
                                      "X0X FM-1", "FoMni SMK-37", "Makkuro37 Update")),
    "port names: every SMK model and every port firmware probed")
+diagnostics()
 against_js()
 official()
 shutil.rmtree(TMP, ignore_errors=True)

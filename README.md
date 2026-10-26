@@ -1,3 +1,5 @@
+> Integration branch: [Unified SCAPE, SAURUS 2 and dual screens](docs/UNIFIED-SCAPE.md).
+
 # PALEOTONE: FM-1 Prehistoric Synth
 
 ![PALEOTONE (then DINOBOX) 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
@@ -8,9 +10,18 @@ pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpe
 Hügelton Instruments. Everything GHOULBOX does (its composer, RING, KEYS, the hall reverb, tape and crush, twelve
 voices) works the same; the look, the names and the sounds are new.
 
-**Status: PALEOTONE 1.0 has not been tested on a real FM-1 yet.** The host test suite passes, but install it at your
-own risk. Holding OCT− while switching on puts the FM-1 into USB rescue mode, from which any firmware (or M-VAVE's
-own, `FM-1.fwsc`) can be installed again.
+**Hardware status:** the owner has tested PALEOTONE on an FM-1, including the lightweight USB second-screen
+messages (90 and 91). This does not establish hardware coverage of every feature or development branch.
+An earlier experimental screen-companion build required Flipper-assisted recovery; USB rescue alone was
+insufficient. Keep a known-good firmware package and recovery instructions before trying experimental firmware.
+
+The [USB second-screen app](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen/) follows the FM-1's controls.
+Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. This is the graphics companion:
+it uses the firmware's C screen renderer and provides Original and Expanded views. It is pinned to the
+working companion source `19727a9` and requires the matching firmware already used with that companion.
+Opening the webpage does not install firmware. Phone support remains untested.
+The separate [lightweight display](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen-lite/) uses screen-state
+messages 90/91 and is not a replacement for the graphics companion.
 
 **M-Vave SMK-37:** see [SMK-37 instructions](SMK37.md).
 
@@ -24,11 +35,11 @@ own, `FM-1.fwsc`) can be installed again.
 - **The boot screen and ABOUT page:** a Dilophosaurus skull, the PALEOTONE title in big terminal pixels and "PREHISTORIC
   SYNTH".
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
-  controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
+  controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **SCAPE MUSIC** is GHOULBOX's DREAM: tap
   HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
-- **119 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
-  prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 62 more join
-  them (SAURUS's 20 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
+- **121 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
+  prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 64 more join
+  them (SAURUS's 22 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
 - **Its own sample material, synthesized**: a night jungle, a tropical storm, a lithophone and the ENCOUNTER kit
   (footfalls near and far, a mud stomp, a claw tap, a branch snap, a falling tree, a splash, a rock fall, leaves,
   bone clacks, a ground ripple, thunder, a huff), in the place of GHOULBOX's four recordings, 12 KB smaller.
@@ -38,11 +49,11 @@ own, `FM-1.fwsc`) can be installed again.
 
 ### SAURUS, the creature voice
 
-An engine of its own (engine 15): one note is one call. A throat that buzzes, rasps and breathes, shaped by:
+An engine of its own (engine 15): one note is one call, with up to three layered throats. Four throat sets are shared across tracks. Controls:
 
 | Control | What it does |
 | --- | --- |
-| CALL | The call's shape over its length: HOLD (a drone), BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN, HISS, SNORT |
+| CALL | The call's shape over its length: HOLD (a drone), BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN, HISS, SNORT, SHRIEK, HONK, BOOM, RATTLE |
 | SIZE | The animal: small (high throat) to sauropod (formants two octaves down) |
 | SWOOP | How far the call's pitch moves (up to two octaves) |
 | LEN | How long the call takes (1 ms to 10 s); the ADSR still shapes and ends the note |

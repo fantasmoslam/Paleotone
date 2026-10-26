@@ -11,10 +11,12 @@
  *   BIRDS   calls: 2..6 chirps, each a fast sine sweep
  *   DRIPS   cave drips: a plink rising in pitch, sometimes its echo
  *   RUMBLE  far thunder / the earth: low noise swelling in and dying away, rare
- * Event layers share SC_NEV slots (the quietest given up first). Levels are squared (the first half of a knob quiet). */
+ * Event layers share SC_NEV slots (the quietest given up first). Levels are squared (the first half of a knob quiet).
+ * DANGER (sc_danger): now and then a beast passes: far footsteps on one side, the insects, frogs and birds hush, the
+ * steps come closer, a roar (a track's note) as it passes nearest, the steps go away on the other side. */
 #define SC_NL 8
 enum { SC_WIND, SC_WATER, SC_RAIN, SC_INSECT, SC_FROG, SC_BIRD, SC_DRIP, SC_RUMBLE };
-#define SC_NEV 6u
+#define SC_NEV 4u
 #define SC_DIV 4u                                       /* the noise beds' rate: FS / 4 */
 
 /* the settings: the globals of HOME > SCAPE (core.h G_SCAPE .., params.c), stored with the project (project.c) */
@@ -50,9 +52,15 @@ static struct {
     uint16_t hold[SC_NEV];                              /* a slot's wait before its next repeat (blocks) */
     sc_ev_t ev[SC_NEV];
     uint32_t dph[3];                                    /* DRONE: its partials' phases (quarter rate) */
-    int32_t dmv, dmv_to, d1[2][2], dlp;                 /* .. its movement's walk, formant / whistle states, a low-pass */
+    int32_t dmv, dmv_to;                 /* .. its movement's walk, formant / whistle states, a low-pass */
     uint32_t cwait, chold;                              /* CALLS: blocks to the next call, to this one's end */
     uint8_t cnote, ctrk;                                /* .. the note sounding (0: none) and its track */
+    uint32_t nwait, nt, nlen, nstep, rhold;             /* DANGER: blocks to the next beast; into it; its length; the
+                                                         * next step; the roar's blocks left */
+    int32_t hush, hush_to;                              /* .. the hush on INSECTS FROGS BIRDS (Q15: 32767 none) */
+    uint8_t narm, nside, nsize, rnote, rtrk;            /* .. waiting armed, the side it comes from, its size, the roar */
+    uint32_t fph, finc, finc0, fn;                      /* .. a footstep: the body's sine, its pitch falling to finc0 */
+    int32_t fenv, fdec, nenv, ndec, nlp, nk, fgl, fgr;  /* .. its body and its crunch (low-passed noise), gains */
 } sc;
 
 static inline uint32_t sc_rnd(uint32_t m) { return noise32(&sc.rng) % (m ? m : 1u); }
@@ -204,52 +212,20 @@ static inline int32_t sc_ev_run(sc_ev_t *e, int32_t *r)
     return mulq15(s, e->gl);
 }
 
-/* THE DRONE (G_SDRN .. G_SDMOV): a tone in a key under the layers, worked out with the beds at a quarter of the rate.
- * KEY AUTO follows track 1's ROOT (as EPOCH does); the drone sits in octave 2 (C2 .. B2). MOVE: how far its slow walk
- * (brightness, level, a little pitch) goes.
- *   HUM    a fundamental, its octave a little detuned, its twelfth: a low organ hum, beating
- *   WIND   noise through a resonant band-pass two octaves up: the wind whistling in key
- *   CHOIR  a saw and its fifth through two formants ("oo" .. "oh" as it moves): low voices
- *   EARTH  a sub an octave down, and low noise throbbing with it */
-static const uint16_t SC_DRONE_TRIM[4] = {3015, 3843, 7227, 1675};   /* each type at DRONE 127 as loud as a layer
-                                                    * at LEVEL 127 (measured: tests/scape_render.c) */
+/* The shared SCAPE drone: one harmonic bed, keyed to the composition (or a fixed key).
+ * No second formant/noise synth. Legacy TYPE values are retained in projects but use this bed. */
+static const uint16_t SC_DRONE_TRIM[4] = {3015, 3015, 3015, 3015};
 static int32_t sc_drone(int32_t g)
 {
     uint32_t key = song.g[G_SDKEY] ? (uint32_t)(song.g[G_SDKEY] - 1) : (uint32_t)trk[0].p[P_ROOT] % 12u;
-    int32_t note = 36 + (int32_t)key, mv = sc.dmv, mov = clamp(song.g[G_SDMOV], 0, 127), x = 0, y;
-    uint32_t inc = pitch_inc((uint32_t)clamp((note << 4) + (mulq15(mv, mov) >> 9), 0, 2047)) << 2;   /* (x4: quarter rate) */
-    tsvf_t f1, f2;
-    switch (song.g[G_SDTYP]) {
-    case 0:                                             /* HUM */
-        sc.dph[0] += inc;
-        sc.dph[1] += (inc << 1) + (inc >> 9);
-        sc.dph[2] += inc * 3u;
-        x = sine_i(sc.dph[0]) + (sine_i(sc.dph[1]) >> 1) + mulq15(sine_i(sc.dph[2]), 6000 + mulq15(mv + 32768, mov * 100));
-        x >>= 1;
-        break;
-    case 1:                                             /* WIND: a whistle two octaves up */
-        tsvf_coef(&f1, (28 << 8) + 4035 + (note - 36 + 24) * 299 + (mulq15(mv, mov) >> 2), 118);
-        x = gurdy_bp(&f1, (int32_t)(noise32(&sc.rng) >> 17) - 16384, &sc.d1[0][0], &sc.d1[0][1]) * 2;
-        break;
-    case 2: {                                           /* CHOIR: two formants on a saw and its fifth */
-        int32_t s, open = mulq15(mv + 32768, mov * 258) >> 7;   /* 0 .. 256: "oo" .. "oh" */
-        sc.dph[0] += inc;
-        sc.dph[1] += inc + (inc >> 1);
-        s = ((int32_t)(sc.dph[0] >> 17) - 16384) + (((int32_t)(sc.dph[1] >> 17) - 16384) >> 1);
-        tsvf_coef(&f1, ((28 + 54) << 8) + open * 8, 90);     /* ~400 .. ~550 Hz */
-        tsvf_coef(&f2, ((28 + 70) << 8) + open * 12, 90);    /* ~800 .. ~1100 Hz */
-        x = gurdy_bp(&f1, s, &sc.d1[0][0], &sc.d1[0][1]) + (gurdy_bp(&f2, s, &sc.d1[1][0], &sc.d1[1][1]) >> 1);
-        break;
-    }
-    default:                                            /* EARTH: a sub and its throb */
-        sc.dph[0] += inc >> 1;
-        sc.dph[1] += inc >> 7;                          /* (the throb: a few a second) */
-        y = (int32_t)(noise32(&sc.rng) >> 17) - 16384;
-        sc.dlp += (y - sc.dlp) >> 5;
-        x = sine_i(sc.dph[0]) + mulq15(sc.dlp * 3, 16384 + (sine_i(sc.dph[1]) >> 1));
-        break;
-    }
-    return mulq15(clamp(x, -32767, 32767), mulq15(g, 32767 - mulq15(mv > 0 ? mv : -mv, mov * 100)));
+    int32_t mv = sc.dmv, mov = clamp(song.g[G_SDMOV], 0, 127), x;
+    uint32_t inc = pitch_inc((uint32_t)clamp(((36 + (int32_t)key) << 4) + (mulq15(mv, mov) >> 9), 0, 2047)) << 2;
+    sc.dph[0] += inc;
+    sc.dph[1] += (inc << 1) + (inc >> 9);
+    sc.dph[2] += inc * 3u;
+    x = (sine_i(sc.dph[0]) + (sine_i(sc.dph[1]) >> 1) +
+         mulq15(sine_i(sc.dph[2]), 6000 + mulq15(mv + 32768, mov * 100))) >> 1;
+    return mulq15(x, mulq15(g, 32767 - mulq15(mv > 0 ? mv : -mv, mov * 100)));
 }
 
 /* THE CALLS (G_SCTRK .. G_SCSPRD): now and then the track picked (its sound: a SAURUS creature, a horn, anything) is
@@ -266,7 +242,7 @@ static void sc_calls(void)
         trk_note_off(&trk[sc.ctrk], sc.cnote);
         sc.cnote = 0;
     }
-    if (!k || !rate || sc.cnote)
+    if (!k || !rate || sc.cnote || sc.nlen)             /* (no calls while a beast is near) */
         return;
     if (sc.cwait) {
         sc.cwait--;
@@ -283,6 +259,119 @@ static void sc_calls(void)
     }
 }
 
+/* DANGER (G_SDNGR .. G_SDROR): a beast passing. DANGER: how often (127: one every ~40 s on average, 8: ~10 min; 0
+ * never); SIZE: SMALL (a raptor: quick light steps with claws), BIG, HUGE (slow, deep, long); STEP: the footsteps'
+ * level; ROAR: the track played a low note as it passes nearest (CALLS: the SCAPE CALLS track; OFF: none). Called
+ * once a block */
+#define SC_BPS (FS / CTL)
+static void sc_roar_off(void)
+{
+    if (sc.rnote)
+        trk_note_off(&trk[sc.rtrk], sc.rnote);
+    sc.rnote = 0;
+}
+static uint32_t sc_dwait(uint32_t d)                    /* blocks to the next beast at DANGER d */
+{
+    uint32_t ms = 40000u * 127u / (d < 8u ? 8u : d);
+    return (ms / 2u + sc_rnd(ms)) * SC_BPS / 1000u + 1u;
+}
+static void sc_step(uint32_t near)                      /* a footstep, near 0 (far) .. 32767 (nearest) */
+{
+    static const uint16_t F0[3] = {95, 55, 36}, BODY[3] = {130, 260, 420}, CRUNCH[3] = {30, 45, 70},
+                          TRIM[3] = {20000, 26000, 32000};
+    uint32_t z = sc.nsize;
+    int32_t g = mulq15(mulq15(sc_lvl((uint32_t)clamp(song.g[G_SDSTP], 0, 127)), sc_lvl(SC_MASTER)), TRIM[z]);
+    int32_t x = (int32_t)(sc.nt * 65534u / sc.nlen) - 32767, pan;
+    g = mulq15(g, 2000 + mulq15(mulq15((int32_t)near, (int32_t)near), 30767));   /* far: faint; near: loud */
+    pan = 16384 + mulq15(sc.nside ? -x : x, 14000);
+    sc.fgl = mulq15(g, 32767 - pan);
+    sc.fgr = mulq15(g, pan);
+    sc.finc0 = SC_HZ(F0[z] + sc_rnd(F0[z] / 8u));
+    sc.finc = sc.finc0 * 2u;                            /* (the thud: from an octave up, falling in ~10 ms) */
+    sc.fph = 0;
+    sc.fn = FS / 1000u * BODY[z];
+    sc.fenv = 1 << 24;
+    sc.fdec = 65536 - 65536 * 5 / (int32_t)sc.fn;
+    sc.nenv = z ? 1 << 23 : 3 << 22;                    /* the crunch: claws and twigs louder on a small one */
+    sc.ndec = 65536 - 65536 * 5 / (int32_t)(FS / 1000u * CRUNCH[z]);
+    sc.nk = (z ? 2500 : 9000) + mulq15((int32_t)near, z ? 5000 : 12000);   /* (brighter nearer) */
+}
+static void sc_danger(void)
+{
+    uint32_t d = (uint32_t)clamp(song.g[G_SDNGR], 0, 127), t, half, near;
+    if (sc.rnote && (!sc.rhold || --sc.rhold == 0u))
+        sc_roar_off();
+    sc.hush += (sc.hush_to - sc.hush) >> 10;            /* (~0.75 s in and out) */
+    if (!d) {
+        sc.nlen = 0;
+        sc.narm = 0;
+        sc.hush_to = 32767;
+        return;
+    }
+    if (!sc.nlen) {
+        if (!sc.narm) {                                 /* (DANGER turned up: the first one sooner) */
+            sc.nwait = sc_dwait(d) / 3u + SC_BPS * 4u;
+            sc.narm = 1;
+        }
+        if (sc.nwait > 1u) {
+            sc.nwait--;
+            return;
+        }
+        sc.nsize = (uint8_t)clamp(song.g[G_SDSIZ], 0, 2);
+        sc.nlen = SC_BPS * (10u + 4u * sc.nsize);       /* 10, 14, 18 s */
+        sc.nt = 0;
+        sc.nstep = SC_BPS / 2u;
+        sc.nside = (uint8_t)sc_rnd(2u);
+    }
+    t = ++sc.nt;
+    half = sc.nlen / 2u;
+    sc.hush_to = t > sc.nlen / 8u && t < sc.nlen * 7u / 8u ? 2500 : 32767;   /* the jungle goes quiet */
+    near = 32767u - (t < half ? half - t : t - half) * 32767u / half;
+    if (t >= sc.nstep) {
+        static const uint16_t STEP_MS[3] = {430, 780, 1150};
+        sc_step(near);
+        sc.nstep = t + STEP_MS[sc.nsize] * (92u + sc_rnd(16u)) / 100u * SC_BPS / 1000u;
+    }
+    if (t == half) {                                    /* nearest: the roar */
+        uint32_t k = (uint32_t)clamp(song.g[G_SCTRK], 0, 4);
+        if (k) {
+            static const int8_t DOWN[3] = {0, 7, 12};
+            sc_roar_off();
+            sc.rtrk = (uint8_t)(k - 1u);
+            sc.rnote = (uint8_t)clamp(50 + song.g[G_SCNOTE] - DOWN[sc.nsize], 12, 108);
+            trk_note_on(&trk[sc.rtrk], sc.rnote, 127u);
+            sc.rhold = SC_BPS * (35u + 5u * sc.nsize) / 10u;   /* 3.5, 4, 4.5 s: a whole sampled roar too */
+        }
+    }
+    if (t >= sc.nlen) {
+        sc.nlen = 0;
+        sc.hush_to = 32767;
+        sc.nwait = sc_dwait(d) + SC_BPS * 15u;
+    }
+}
+
+/* a footstep, a sample */
+static inline int32_t sc_foot(int32_t *r)
+{
+    int32_t s, z;
+    if (!sc.fn)
+        return *r = 0;
+    sc.fn--;
+    s = mulq15((sine_i(sc.fph) + (sine_i(sc.fph << 1) >> 1)) * 2 / 3, sc.fenv >> 9);   /* (its octave: heard on a
+                                                         * small speaker too) */
+    sc.fph += sc.finc;
+    sc.finc -= (sc.finc - sc.finc0) >> 9;
+    sc.fenv = mulq16(sc.fenv, (uint32_t)sc.fdec);
+    if (sc.nenv > 4096) {
+        z = (int32_t)(noise32(&sc.rng) >> 17) - 16384;
+        sc.nlp += mulq15(z - sc.nlp, sc.nk);
+        s += mulq15(sc.nlp * 2, sc.nenv >> 9);
+        sc.nenv = mulq16(sc.nenv, (uint32_t)sc.ndec);
+    }
+    *r = mulq15(s, sc.fgr);
+    return mulq15(s, sc.fgl);
+}
+
 static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
 {
     int32_t gw = sc_gain(SC_WIND), gs = sc_gain(SC_WATER), gr = sc_gain(SC_RAIN), gm = sc_gain(SC_RUMBLE);
@@ -293,6 +382,8 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
     if (!SC_MASTER) {
         if (sc.on && sc.cnote)                          /* (a call sounding: let it go) */
             trk_note_off(&trk[sc.ctrk], sc.cnote);
+        if (sc.on)
+            sc_roar_off();                              /* (and a roar) */
         sc.on = 0;
         return;
     }
@@ -303,6 +394,7 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
         sc.wbl = sc.wbl_to = 16384;
         sc.rlvl = sc.rlvl_to = 16384;
         sc.cwait = (FS / CTL) * 2u;                     /* (the first call after a moment) */
+        sc.hush = sc.hush_to = 32767;
         for (k = 0; k < SC_NL; k++)
             sc.wait[k] = sc_rnd(sc_wait(k, SC_DENS(k)) + 1u);
         sc.on = 1;
@@ -321,6 +413,7 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
         sc.dmv_to = (int32_t)sc_rnd(65536u) - 32768;                      /* the drone's slow walk */
     sc.dmv += (sc.dmv_to - sc.dmv) >> 11;
     sc_calls();
+    sc_danger();
     if (sc.rlvl - sc.rlvl_to < 256 && sc.rlvl_to - sc.rlvl < 256)
         sc.rlvl_to = 8192 + (int32_t)sc_rnd(24576u);
     sc.rlvl += (sc.rlvl_to - sc.rlvl) >> 9;
@@ -422,6 +515,15 @@ static void scape_block(int32_t *l, int32_t *r, int32_t *rev, uint32_t n)
         }
         for (k = 0; k < SC_NEV; k++) {
             el = sc_ev_run(&sc.ev[k], &er);
+            if (sc.hush < 32767 && sc.ev[k].kind >= SC_INSECT && sc.ev[k].kind <= SC_BIRD) {   /* DANGER's hush */
+                el = mulq15(el, sc.hush);
+                er = mulq15(er, sc.hush);
+            }
+            al += el;
+            ar += er;
+        }
+        if (sc.fn) {                                    /* DANGER's footsteps */
+            el = sc_foot(&er);
             al += el;
             ar += er;
         }

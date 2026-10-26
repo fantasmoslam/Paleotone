@@ -5,7 +5,7 @@ name: smk37
 
 on:
   push:
-    branches: [smk37]
+    branches: [smk37, feature/paleotone-unified-smk37]
   workflow_dispatch:
 
 permissions:
@@ -38,9 +38,16 @@ jobs:
         run: |
           set -o pipefail
           git config --global --add safe.directory "$PWD"
-          BASE=$(git merge-base HEAD origin/main)
+          if [ "$GITHUB_REF_NAME" = feature/paleotone-unified-smk37 ]; then
+            BASE=$(git merge-base HEAD origin/feature/paleotone-unified)
+          else
+            BASE=$(git merge-base HEAD origin/main)
+          fi
           echo "base $BASE" | tee smk.log
           git worktree add ../base "$BASE"
+          # Board-only source files alter the raw source hash. Bind the FM-1 identity to the reference
+          # renderer, then prove the ENTIRE FM-1 binary still matches that reference below.
+          echo "PALEOTONE_RENDER_ID=$(cd ../base && python3 tools/remote_identity.py)" >> "$GITHUB_ENV"
           (cd ../base && ./build.sh > ../base.log 2>&1) || { tail -40 ../base.log; exit 1; }
           (cd ../base && sha256sum build/felucca.bin build/felucca.fwsc build/loader/ota.bin) | tee ../fm1-reference.sha256 | tee -a smk.log
 
@@ -50,7 +57,7 @@ jobs:
           set -o pipefail
           mkdir -p out
           for m in pro elite mke; do
-            BOARD=smk37 MODEL=$m ./build.sh 2>&1 | tee -a smk.log | tail -5
+            PALEOTONE_RENDER_ID=$(python3 tools/remote_identity.py) BOARD=smk37 MODEL=$m ./build.sh 2>&1 | tee -a smk.log | tail -5
             f=build/paleotone-smk37.fwsc; [ $m = pro ] || f=build/paleotone-smk37-$m.fwsc
             cp "$f" out/
             grep -E "image [0-9]+ B" build.log 2>/dev/null | tail -1 || true
@@ -77,8 +84,21 @@ jobs:
             python3 tests/smk_pkg_test.py "build/${m%%:*}" "${m#*:}" | tail -1 | tee -a smk.log
           done
 
-      - name: Put the result on the smk37-output branch
+      - name: Installer model and diagnostic tests
+        run: python3 tests/install_test.py
+      - name: Collect reference log
         if: always()
+        run: cp ../base.log base.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paleotone-unified-smk37
+          path: |
+            out/*.fwsc
+            smk.log
+            base.log
+      - name: Put the result on the smk37-output branch
+        if: always() && github.ref == 'refs/heads/smk37'
         shell: bash
         run: |
           mkdir -p /tmp/o && cp smk.log /tmp/o/ 2>/dev/null; cp out/*.fwsc /tmp/o/ 2>/dev/null || true
