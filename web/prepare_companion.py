@@ -20,6 +20,12 @@ def prepare(source, destination, revision):
         shutil.copyfile(source / name, destination / ("index.html" if name == "screen.html" else name))
     page = Path(__file__).with_name("companion_page.html").read_text()
     shutil.copyfile(Path(__file__).with_name("frame_presenter.js"), destination / "frame_presenter.js")
+    # the page's script: forward a visitor whose firmware needs a newer screen page (make_site.py's
+    # webapp/screens.json); it must ship with the page or the page 404s it
+    router = Path(__file__).with_name("screen_router.js")
+    if not router.is_file():
+        raise SystemExit(f"graphics companion needs {router}")
+    shutil.copyfile(router, destination / "screen_router.js")
     (destination / "index.html").write_text(page)
     (destination / "build.json").write_text(json.dumps({"source": revision,
         "rendererId": layout["rendererId"], "kind": "firmware-graphics-companion", "presentation": "android-compatible-v1"}, indent=2) + "\n")
