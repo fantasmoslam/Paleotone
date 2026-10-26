@@ -1,5 +1,9 @@
 # PALEOTONE: FM-1 Prehistoric Synth
 
+> **Early alpha:** experimental firmware. Installation can leave the FM-1 unable to boot and require recovery. Back up projects/settings and retain a known-good firmware before installing. Audio and recording issues remain under investigation.
+
+[Play in your browser](https://fantasmoslam.github.io/Paleotone/webapp/emu/) · **[Install on your FM-1](https://fantasmoslam.github.io/Paleotone/webapp/installer/)** · [Manual](https://fantasmoslam.github.io/Paleotone/manual/)
+
 <p>
   <img src="docs/paleotone-splash.png" width="23%" alt="PALEOTONE boot artwork">
   <img src="docs/paleotone-home.png" width="23%" alt="PALEOTONE home screen">
