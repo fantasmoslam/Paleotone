@@ -9,7 +9,7 @@
 #define RS_MAX 16384u
 #define RS_BLOCK 128u
 #define RS_BLOCKS (RS_MAX / RS_BLOCK)
-#define RS_SCHEMA 1u
+#define RS_SCHEMA 2u
 #include "remote_catalog.h"
 static uint8_t rs_buf[RS_MAX] __attribute__((section(".pool")));
 static uint8_t rs_old[RS_MAX] __attribute__((section(".pool")));
@@ -152,6 +152,14 @@ static void rs_walk(void)
         RS8(p->used); RSA8(p->name);
         for (k = 0; k < 4u; k++) { RS16(p->len[k]); RS32(p->density[k]); RS8(p->cells[k]); }
     }
+    RS8(panel_screen.side);
+    for(i=0;i<2u;i++){
+        panel_view_t *v=&panel_views[i];
+        RS8(v->home);RS8(v->page);RS8(v->track);RS8(v->bank);
+        RS8(v->cursor);RS8(v->lane);RS8(v->seq_mode);RS8(v->grid);
+    }
+    if(rs_read)panel_views_ready=1;
+
 }
 #undef RS
 #undef RS8
@@ -160,6 +168,7 @@ static void rs_walk(void)
 #undef RSA8
 static uint32_t rs_capture(void)
 {
+    panel_views_capture();
     uint32_t i, j;
     for (i = 0; i < 4u; i++) {
         remote_project_t *p = &rs_projects[i];

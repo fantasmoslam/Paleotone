@@ -38,4 +38,4 @@ cp web/emu/fonts/DotGothic16-subset.woff web/emu/fonts/OFL.txt build/emu/fonts/
 echo "emu: build/emu ($(wc -c < build/emu/felucca.wasm | tr -d ' ') B wasm, GHOULBOX $GBVERSION on Felucca $VERSION)"
 
 python3 tools/gen_remote_views.py build/emu/remote_views.json
-cp web/screen.html web/remote_screen.js web/second_screen.js web/control_target.js build/emu/
+cp web/screen.html web/remote_screen.js web/second_screen.js web/control_target.js web/physical_focus.js web/frame_presenter.js build/emu/

@@ -548,6 +548,12 @@ EXPORT uint32_t web_sample_rate(void) { return FS; }
 #include "../../firmware/src/remote_state.c"
 static uint16_t remote_wide[480 * 240];
 EXPORT uint32_t web_remote_id(void) { return PALEOTONE_RENDER_ID; }
+EXPORT uint32_t web_panel_side(void){return panel_screen.side&1u;}
+EXPORT uint32_t web_panel_context(uint32_t side,uint32_t field){
+    if(side>1u||field>7u)return 0;const panel_view_t *v=&panel_views[side];
+    switch(field){case 0:return v->home;case 1:return v->page;case 2:return v->track;case 3:return v->bank;
+    case 4:return v->cursor;case 5:return v->lane;case 6:return v->seq_mode;default:return v->grid;}
+}
 EXPORT uint32_t web_remote_schema(void) { return RS_SCHEMA; }
 EXPORT uint8_t *web_remote_buffer(void) { return rs_buf; }
 EXPORT uint32_t web_remote_capacity(void) { return RS_MAX; }
