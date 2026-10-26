@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     press(B_HOME);
     shot("keys");
     press(B_HOME);
-    shot("epoch");
+    shot("scape_music");
     press(B_HOME);                                  /* SCAPE: on, JUNGLE */
     turn(EN_K1, 100);
     live(1600);
@@ -99,15 +99,11 @@ int main(int argc, char **argv)
     press(B_HOME);
     turn(EN_K1, 2);
     turn(EN_K2, 40);
-    shot("scape_calls");
+    shot("scape_life");
     press(B_HOME);
     shot("scape_levels");
     press(B_HOME);
     shot("scape_levels2");
-    press(B_HOME);
-    shot("scape_density");
-    press(B_HOME);
-    shot("scape_density2");
     press(B_HOME);                                  /* HOME again */
     song.g[G_SCAPE] = 0;
     song.g[G_SCTRK] = 0;

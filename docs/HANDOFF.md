@@ -1,3 +1,5 @@
+> Historical record. Current integration: [UNIFIED-SCAPE.md](UNIFIED-SCAPE.md).
+
 # DINOBOX: project summary and handoff (2026-10-23)
 
 ## What it is
@@ -15,8 +17,7 @@ Persinger), itself built on Felucca 1.4.1 (Leo Kuroshita, Hügelton Instruments)
   Includes the Active Sensing clock-fallback correction and the MIDI output controls described below. Before it:
   `db51439` (clock fallback, track selection and track colours; image 547,504 B), then `945e00c` (all host tests passed, GitHub
   build OK). Image 547,104 B in an app slot of ~581 KB; the build refuses less than 16 KB spare (about 18 KB of
-  room left above that floor). Riders was approved as a standalone audition, then its built-in integration was
-  cancelled by the owner to reserve flash. No built-in song is to be added.
+  room left above that floor).
 - **Ground rules from the owner:** no copyrighted film audio, logos, lettering or screens (all sound is synthesized
   or CC0); no Sloop code; ask before big changes when he says so; he judges by ear, so send previews (MP3) before
   building anything into the firmware.
@@ -95,11 +96,6 @@ clock fallback (docs/NOTES.md "External clock"): PLAY with no clock coming runs 
   an 8-section song chain with lanes and repeats, a SAURUS track that changes creature by automation (brachiosaur,
   raptors, tyrant), half-time WAR DRUMS. `DS_SOLO=k` renders one track (levels measured under the limiter).
 - `tests/stem.c` renders any preset's part through the firmware, dry, from a text score.
-- `tools/dino_riders.py` **"RIDERS OF THE VALLEY"**: a produced track from the presets' stems (arrangement, reverbs,
-  delays, drive, tape). Latest is the Paleolithic cut (84 BPM, ROAR rhythms STAMPEDE > WAR PARADE > TRIBAL WAR >
-  HEARTBEAT > STAMPEDE > CHAOS DRUMS, PRIMEVAL and SWAMP FIDDLE leads, ICE AGE PAD and TAR PIT BASS through the mud,
-  deep skins, giant footfalls, DEEP CHANT, the dinosaurs, the jungle bed). It reads
-  `build/biomes/biome_JUNGLE.wav`: run `tools/biome_preview.py JUNGLE` first.
 - `tools/biome_preview.py`: the 8 biome previews (procedural water, wind, insects, frogs, birds, lava ... plus the
   firmware's SAURUS and the ENCOUNTER kit).
 
@@ -107,7 +103,7 @@ clock fallback (docs/NOTES.md "External clock"): PLAY with no clock coming runs 
 
 `dinobox.fwsc` (the installed firmware), `fm1_install.py`, sound previews (`growl_preview_3.mp3` was approved),
 `rhythms_and_growl.mp3`, `jungle_drums_v2.mp3`, `stampede_emulator.mp3`, `dinobox_biomes.mp3`,
-`dinobox_titan_rising_v3.mp4` (+ `_with_jungle.mp3`), `dinobox_riders_paleolithic.mp3` (the latest track). A sound
+`dinobox_titan_rising_v3.mp4` (+ `_with_jungle.mp3`). A sound
 gallery page for step 3 was built but not published.
 
 ## Working on it

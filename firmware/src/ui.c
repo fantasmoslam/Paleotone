@@ -251,7 +251,7 @@ static void scr_wake_now(void)                         /* main.c: the crash scre
 /* ui_input, every pass: 1 = the pass is swallowed (the screen dark or waking, or the wake gesture going on) */
 static int scr_input(uint32_t pressed, uint32_t notes)
 {
-    uint32_t held = fm1_in.buttons | fm1_in.notes, k;
+    uint32_t held = panel_buttons() | fm1_in.notes, k;
     int32_t moved = 0;
     if (pressed | notes | held | panel_moved)
         scrn.idle = fm1_ms;
@@ -482,7 +482,7 @@ static void page_entered(void)
     ui.act = pg->graph == GR_USER ? 4u : 0u;     /* the save screen is ready for OCT+ */
     ui.force = 1;
     if (!ui.home && pg->scope == SC_GLOBAL && pg->id[0] == G_DREAM)
-        ui_message("A KEY: AN EPOCH");           /* GHOULBOX 2.3: DREAM's keys (DINOBOX: EPOCH) */
+        ui_message("A KEY: SCAPE MUSIC");           /* GHOULBOX 2.3: DREAM's keys (DINOBOX: EPOCH) */
 }
 
 static int step_on(const step_t *st) { return st->time == ST_NOTE && (st->n || st->hit); }

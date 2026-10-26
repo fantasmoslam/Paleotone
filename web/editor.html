@@ -1755,10 +1755,13 @@ function makeMockDevice(opt = {}) {
     D("FROGS", F.PCT, 0, 127, 50), D("BIRDS", F.PCT, 0, 127, 55), D("DRIPS", F.PCT, 0, 127, 20), D("RUMBL", F.PCT, 0, 127, 30),
     /* SCAPE's drone and calls (ids 57..64): DRONE (0 none) TYPE KEY (AUTO: track 1's ROOT) MOVE; TRK (OFF, T1..T4) RATE PTCH
      * (D3 + semitones) SPRD */
-    D("DRONE", F.PCT, 0, 127, 0), E("TYPE", ["HUM", "WIND", "CHOIR", "EARTH"], 0),
+    D("DRONE", F.PCT, 0, 127, 0), D("LEGACY", F.INT, 0, 3, 0),
     E("KEY", ["AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], 0), D("MOVE", F.PCT, 0, 127, 40),
     E("TRK", ["OFF", "T1", "T2", "T3", "T4"], 0), D("RATE", F.PCT, 0, 127, 40), D("PTCH", F.SEMI, -24, 24, 0),
     D("SPRD", F.INT, 0, 24, 5),
+    /* SCAPE DANGER (ids 65..68): DANGR (0 never) SIZE STEP ROAR (OFF, the CALLS track, T1..T4) */
+    D("DANGR", F.PCT, 0, 127, 0), E("SIZE", ["SMALL", "BIG", "HUGE"], 1), D("STEP", F.PCT, 0, 127, 100),
+    D("LEGACY", F.INT, 0, 5, 1),
   ];
   const NONE = D("-", F.INT, 0, 0, 0);
   const RATIO = [".5", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "14", "16"];
@@ -1862,10 +1865,10 @@ function makeMockDevice(opt = {}) {
       presets: [
         /* GHOULBOX presets (tools/ghoulbox_presets.py) */ P("PRIMEVAL", [2, 100, 90, 60, 75, 0, 110, 70], [25, 64, 127, 60], 1, 15), P("EARTHQUAKE", [2, 127, 110, 30, 50, 0, 127, 110], [70, 64, 127, 110], 1, 17), P("STAMPEDE", [2, 40, 30, 80, 40, 8, 60, 45], [2, 64, 127, 25], 1, 21), P("REX GROWL", [2, 60, 0, 100, 127, 3, 100, 90], [8, 64, 127, 45], 1, 18), P("SWAMP FIDDLE", [2, 10, 20, 85, 20, 0, 90, 80], [45, 64, 120, 80], 1, 19), P("TRIBE PIPES", [2, 110, 127, 127, 5, 0, 30, 30], [6, 64, 127, 35], 1, 15), P("WAR CHANT", [2, 100, 60, 90, 90, 2, 100, 55], [5, 64, 127, 40], 1, 18), P("TUNDRA", [2, 120, 100, 40, 30, 0, 127, 127], [90, 64, 127, 120], 1, 17), P("WAR PARADE", [2, 70, 60, 70, 30, 10, 80, 45], [5, 64, 127, 40], 1, 18), P("JUNGLE CAMP", [2, 45, 50, 60, 20, 9, 50, 60], [10, 64, 127, 50], 1, 17), P("RITUAL FIRE", [2, 55, 70, 50, 10, 11, 70, 70], [20, 64, 127, 60], 1, 16), P("TITAN MARCH", [2, 90, 40, 70, 60, 6, 100, 30], [5, 64, 127, 45], 1, 17), P("HEARTBEAT", [2, 30, 20, 40, 0, 12, 40, 60], [40, 64, 127, 90], 1, 17), P("HERD RUN", [2, 35, 40, 90, 30, 7, 50, 50], [2, 64, 127, 30], 1, 17), P("TRIBAL WAR", [2, 75, 60, 60, 20, 13, 90, 40], [5, 64, 127, 45], 1, 17), P("TALK DRUMS", [2, 40, 40, 50, 10, 14, 60, 50], [10, 64, 127, 50], 1, 17), P("ODD RITUAL", [2, 50, 60, 60, 20, 15, 70, 40], [15, 64, 127, 60], 1, 17), P("FIVE MOONS", [2, 40, 70, 50, 10, 16, 60, 60], [30, 64, 127, 80], 1, 17), P("SPIRAL", [2, 45, 50, 60, 30, 17, 60, 50], [10, 64, 127, 50], 1, 17), P("CHAOS DRUMS", [2, 40, 40, 70, 30, 18, 60, 90], [5, 64, 127, 40], 1, 17) /* GHOULBOX end */] },
     { name: "SAURUS", titles: ["CALL", "THROAT"], edit: [E("CALL", ["HOLD", "BELLOW", "ROAR", "BARK", "HOOT", "TRILL", "CHIRP",
-        "MOAN", "HISS", "SNORT"], 1), D("SIZE", F.INT, 0, 127, 80), D("SWOOP", F.INT, 0, 127, 40), D("LEN", F.TIME, 0, 127, 100),
+        "MOAN", "HISS", "SNORT", "SHRIEK", "HONK", "BOOM", "RATTLE"], 1), D("SIZE", F.INT, 0, 127, 80), D("SWOOP", F.INT, 0, 127, 40), D("LEN", F.TIME, 0, 127, 100),
         D("GROWL", F.PCT, 0, 127, 40), D("BRTH", F.PCT, 0, 127, 30), D("MOUTH", F.INT, 0, 127, 100), D("WILD", F.PCT, 0, 127, 30)],
       presets: [
-        /* GHOULBOX presets (tools/ghoulbox_presets.py) */ P("BRACHIO CALL", [1, 120, 42, 108, 20, 35, 90, 25], [40, 90, 127, 90], 0, 17), P("TYRANT ROAR", [2, 105, 58, 102, 100, 45, 127, 30], [4, 90, 127, 80], 1, 17), P("RAPTOR BARK", [3, 35, 55, 82, 80, 60, 120, 50], [0, 70, 127, 40], 0, 4), P("RAPTOR CHAT", [5, 30, 20, 96, 50, 50, 90, 70], [2, 80, 110, 40], 0, 4), P("CREST HOOT", [4, 85, 10, 104, 10, 25, 40, 15], [50, 90, 127, 100], 0, 17), P("PTERO SHRIEK", [6, 15, 70, 92, 70, 70, 127, 60], [0, 80, 110, 50], 0, 4), P("HERD MOAN", [7, 95, 45, 110, 35, 40, 80, 40], [40, 90, 120, 100], 0, 5), P("FRILL HISS", [8, 40, 0, 96, 30, 90, 110, 30], [6, 80, 110, 60], 0, 17), P("SAURO SNORT", [9, 120, 0, 88, 40, 110, 70, 30], [0, 80, 127, 50], 0, 4), P("DEEP RUMBLE", [0, 127, 0, 0, 60, 30, 40, 20], [80, 90, 127, 110], 0, 17), P("TITAN APE", [2, 70, 30, 98, 100, 60, 110, 30], [6, 90, 127, 80], 1, 17), P("NEST CHIRPS", [6, 5, 50, 84, 20, 40, 110, 90], [0, 70, 110, 40], 0, 4), P("SWAMP CROAK", [5, 75, 8, 100, 60, 30, 20, 40], [10, 80, 120, 60], 0, 8), P("MONSTER ROAR", [2, 90, 66, 100, 127, 70, 127, 45], [2, 90, 127, 70], 1, 17), P("DISTANT HERD", [1, 110, 36, 112, 15, 30, 70, 50], [90, 90, 120, 120], 0, 5), P("LOW GROWL", [0, 95, 0, 0, 127, 80, 50, 40], [30, 90, 127, 80], 1, 17), P("BABY REX", [2, 55, 60, 95, 70, 50, 110, 40], [2, 90, 127, 60], 1, 4), P("SEA MONSTER", [7, 127, 30, 118, 70, 30, 60, 30], [60, 90, 127, 120], 0, 17), P("HADRO HORN", [4, 100, 15, 110, 15, 20, 70, 20], [40, 90, 127, 110], 0, 17), P("COMPY PACK", [6, 20, 60, 70, 30, 50, 100, 110], [0, 64, 100, 30], 0, 13) /* GHOULBOX end */] },
+        /* GHOULBOX presets (tools/ghoulbox_presets.py) */ P("BRACHIO CALL", [1, 104, 60, 110, 50, 60, 70, 25], [30, 90, 127, 90], 0, 17), P("TYRANT ROAR", [2, 64, 64, 112, 64, 64, 64, 30], [2, 90, 127, 80], 1, 17), P("RAPTOR BARK", [3, 64, 64, 92, 64, 64, 64, 40], [0, 70, 127, 40], 0, 4), P("RAPTOR CHAT", [5, 64, 64, 98, 64, 64, 64, 60], [1, 80, 110, 40], 0, 4), P("CREST HOOT", [4, 70, 50, 104, 40, 50, 60, 15], [40, 90, 127, 100], 0, 17), P("PTERO SHRIEK", [10, 30, 80, 98, 50, 70, 80, 50], [0, 80, 110, 50], 0, 4), P("HERD MOAN", [7, 76, 64, 110, 64, 64, 64, 40], [30, 90, 120, 100], 0, 5), P("FRILL HISS", [8, 64, 0, 96, 64, 64, 64, 30], [4, 80, 110, 60], 0, 17), P("SAURO SNORT", [9, 90, 0, 88, 64, 64, 64, 30], [0, 80, 127, 50], 0, 4), P("DEEP RUMBLE", [0, 110, 0, 0, 80, 40, 40, 20], [80, 90, 127, 110], 0, 17), P("TITAN APE", [2, 80, 50, 104, 90, 70, 80, 30], [4, 90, 127, 80], 1, 17), P("NEST CHIRPS", [6, 30, 64, 84, 40, 50, 64, 90], [0, 70, 110, 40], 0, 4), P("SWAMP CROAK", [13, 50, 40, 100, 70, 40, 50, 40], [6, 80, 120, 60], 0, 8), P("MONSTER ROAR", [2, 90, 70, 112, 100, 90, 80, 45], [2, 90, 127, 70], 1, 17), P("DISTANT HERD", [7, 90, 50, 112, 50, 80, 50, 50], [80, 90, 120, 120], 0, 5), P("LOW GROWL", [13, 80, 30, 116, 90, 60, 64, 40], [20, 90, 127, 80], 1, 17), P("BABY REX", [2, 30, 64, 100, 50, 50, 70, 40], [2, 90, 127, 60], 1, 4), P("SEA MONSTER", [1, 120, 50, 116, 100, 60, 50, 30], [50, 90, 127, 120], 0, 17), P("HADRO HORN", [11, 64, 64, 110, 64, 64, 64, 20], [30, 90, 127, 110], 0, 17), P("COMPY PACK", [3, 20, 64, 82, 50, 60, 64, 110], [0, 64, 100, 30], 0, 13), P("RAPTOR CRY", [10, 64, 64, 100, 64, 64, 64, 40], [0, 80, 120, 50], 0, 4), P("TITAN BOOM", [12, 64, 64, 114, 64, 64, 64, 20], [60, 90, 127, 110], 0, 17) /* GHOULBOX end */] },
   ];
   const FM6_E = ENG.findIndex((e) => e.name === "FM6"), FM6_OWN = FM6.FACTORY_PK.length, DRUM_E = ENG.findIndex((e) => e.name === "DRUM");
   /* factory PATTERNS[] (engines.c; the device loads them from SAVE > PHRASES, presets only suggest one): absolute
@@ -1905,7 +1908,7 @@ function makeMockDevice(opt = {}) {
   TP.push(D("-", F.INT, 0, 8, 0), D("-", F.INT, 0, 127, 64), D("-", F.INT, 0, 127, 96), D("-", F.INT, 0, 127, 96),   /* GHOULBOX: */
     D("-", F.INT, 0, 127, 127), D("-", F.INT, 0, 2, 0), D("-", F.INT, 0, 1, 0),   /* Felucca 1.5's 96..102, reserved */
     E("TEMP", ["EQUAL", "PYTH", "MEAN", "JUST"], 0), E("RING", ["OFF", "ON"], 0));   /* TEMP (103), RING (104, 2.3) */
-  const P_COUNT = 113, G_COUNT = 65, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
+  const P_COUNT = 113, G_COUNT = 69, NSTEP = 64, P_E0 = 105, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */
@@ -2944,7 +2947,7 @@ const stepEdit = new Map(); /* index -> time of the last edit */
    2.3.1: 1.2 .. 1.4.1 (103 / 104 with SPREAD, P_E0 95 / 96), GHOULBOX 2.0 .. 2.2 (112, 104: TEMP) and 2.3 (113, 105:
    RING); globals 27, GHOULBOX's 29 (AMB CRKL), 33 (KEYS), 37 (DREAM). Felucca 1.5 (111) keeps the id-order list: its
    INSERT (96..102) has no group here */
-const knownLayout = (info) => [27, 29, 33, 37, 57, 65].includes(info.gcount) &&
+const knownLayout = (info) => [27, 29, 33, 37, 57, 65, 69].includes(info.gcount) &&
   [[113, 105], [112, 104], [104, 96], [103, 95], [99, 91], [91, 83], [89, 81], [69, 61], [57, 49]].some(([c, e]) => info.pcount === c && info.pe0 === e);
 const P = { LEVEL: 0, SLEN: 29 };
 const LAYOUT = (pe0, gc = 27) => [
@@ -2967,13 +2970,14 @@ const LAYOUT = (pe0, gc = 27) => [
   { t: "SEQ PATTERN", tab: "seqgroups", pages: [["PATTERN", 0, pe0 >= 95 ? [29, 30, 31, 32, 94] : [29, 30, 31, 32]]] },   /* QNTZ 94 */
   /* 1.2: as the device shows them: HOME > CLOCK (BPM SWG; CLK not here), MENU > AUDIO TUNE, MENU > MIDI > MIDI IN (G_ROUTE) */
   { t: "GLOBAL", tab: "setgroups", pages: [["CLOCK", 1, [0, 1, 2]], ["AUDIO", 1, [3]], ["MIDI", 1, [14]],
-    ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["EPOCH", 1, [33, 34, 35, 36]]] : []),
-    ...(gc >= 57 ? [["SCAPE", 1, [37, 38, 39, 40]], ...(gc >= 65 ? [["SCAPE DRONE", 1, [57, 58, 59, 60]],
-                    ["SCAPE CALLS", 1, [61, 62, 63, 64]]] : []), ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]],
-                    ["SCAPE DENSITY", 1, [49, 50, 51, 52, 53, 54, 55, 56]]] : [])] },   /* GHOULBOX; PALEOTONE: SCAPE */
+    ...(gc >= 33 ? [["KEYS", 1, [29, 30, 31, 32]]] : []), ...(gc >= 37 ? [["SCAPE MUSIC", 1, [33, 34, 35, 36]]] : []),
+    ...(gc >= 57 ? [["SCAPE", 1, [37, 38, 39, 40]], ...(gc >= 65 ? [["SCAPE DRONE", 1, [57, 59, 60, 63]],
+                    ["SCAPE LIFE", 1, gc >= 69 ? [61, 62, 65, 66] : [61, 62, 63, 64]]] : []),
+                    ["SCAPE LEVELS", 1, [41, 42, 43, 44, 45, 46, 47, 48]],
+                    ["SCAPE DETAIL", 1, [49, 50, 51, 52, 53, 54, 55, 56, ...(gc >= 65 ? [58, 64] : []), ...(gc >= 69 ? [67, 68] : [])]]] : [])] },   /* device pages stay compact; editor retains imported fine settings */
 ];
 /* globals that are actions or placeholders on the device: buttons instead, or hidden */
-const G_SKIP = new Set(["SLOT", "NAME", "LOAD", "SAVE", "ENG", "SET", "CLRSQ", "INIT", "MIDI", "SYNC", "CPU", "CLK"]);
+const G_SKIP = new Set(["SLOT", "NAME", "LOAD", "SAVE", "ENG", "SET", "CLRSQ", "INIT", "MIDI", "SYNC", "CPU", "CLK", "LEGACY"]);
 const key = (s, id) => s + ":" + id;
 const engName = () => (dev && dev.info && dev.dump ? dev.info.engines[dev.dump.engine] : "");
 const gEng = () => { const i = dev.gdesc.findIndex((d) => d && d.label === "ENG"); return i >= 0 ? i : 20; };

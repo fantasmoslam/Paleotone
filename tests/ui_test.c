@@ -280,13 +280,12 @@ static void turn(uint32_t role, int32_t s)
     host_ticks += 200000u;                        /* (no knob acceleration between the turns) */
 }
 static void stop_transport(void) { transport_req = 0; song.playing = 0; }
-/* DINOBOX: HOME tapped on EPOCH goes through SCAPE's seven pages (scape.c), then HOME. 1 = so */
+/* DINOBOX: HOME tapped on SCAPE MUSIC goes through SCAPE's remaining five pages (scape.c), then HOME. 1 = so */
 static int home_through_scape(void)
 {
-    static const char *const T[7] = {"SCAPE", "SCAPE DRONE", "SCAPE CALLS", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE DENSITY",
-                                     "SCAPE DENSITY 2"};
+    static const char *const T[] = {"SCAPE", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2"};
     int ok = 1;
-    for (uint32_t i = 0; i < 7u; i++) {
+    for (uint32_t i = 0; i < NELEM(T); i++) {
         press(B_HOME);
         ok &= !ui.home && str_eq(cur_page()->title, T[i]);
     }
@@ -2766,7 +2765,7 @@ static int test_page_cycles(void)
         ok &= f != FAM_SEQ || PAGES[i].graph == GR_ROLL || PAGES[i].graph == GR_EVENTS;
         ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG;   /* (1.2: GLO's only page) */
         ok &= f != FAM_TRK || PAGES[i].graph == GR_TRK || str_eq(PAGES[i].title, "CLOCK") ||
-              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "EPOCH") ||   /* HOME's: MIXER CLOCK KEYS (2.1)
+              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "SCAPE MUSIC") ||   /* HOME's: MIXER CLOCK KEYS (2.1)
                                                                                      * DREAM (2.3) */
               !memcmp(PAGES[i].title, "SCAPE", 5);   /* DINOBOX: SCAPE's five */
         ok &= PAGES[i].graph != GR_TRK || f == FAM_TRK;
@@ -2948,7 +2947,7 @@ static int test_product_ux(void)
     press(B_HOME);                                      /* (2.1: CLOCK > KEYS; 2.3: > DREAM > HOME) */
     ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
     press(B_HOME);
-    ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
+    ok &= !ui.home && str_eq(cur_page()->title, "SCAPE MUSIC");
     ok &= home_through_scape() && !ui.menu;
     press(B_HOME);
     ok &= cur_page()->graph == GR_TRK;
@@ -2965,7 +2964,7 @@ static int test_product_ux(void)
         memcpy(song.g, g0, sizeof g0);
     }
     press(B_HOME);
-    ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");   /* (2.3: DREAM after KEYS) */
+    ok &= !ui.home && str_eq(cur_page()->title, "SCAPE MUSIC");   /* (2.3: DREAM after KEYS) */
     {   /* DREAM's knobs: EVOL DENS DRFT MOOD, nothing else */
         int16_t g0[G_COUNT];
         memcpy(g0, song.g, sizeof g0);
@@ -2975,7 +2974,7 @@ static int test_product_ux(void)
         memcpy(song.g, g0, sizeof g0);
     }
     ok &= home_through_scape();
-    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x7 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
+    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
                  "DREAM: EVOL DENS DRFT MOOD); elsewhere HOME", ok);
     hold(B_HOME);
     bad += check("1.2: HOME held still opens the menu", ui.menu == 1);
@@ -9231,11 +9230,11 @@ static int test_home_tracks(void)
     press(B_HOME); ok = !ui.home && cur_page()->graph == GR_TRK;
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "CLOCK");
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
-    press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
+    press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "SCAPE MUSIC");
     ok &= home_through_scape();
     frame();
     ok &= tr_px(3 + 22, tr_y(3) + 1) == T_THEME;
-    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x7 > HOME (the rows back)", ok);
+    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (the rows back)", ok);
 
     ui_prefs |= PREF_LARGE;                             /* MENU > LARGE: the cards as on a list page, the rows */
     ui.force = 1; frame();

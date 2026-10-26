@@ -720,7 +720,7 @@ static const lstep_t L14_STEPS[] = {
 /* ---------------------------------------------------------------- LESSON 15: THE WHOLE PIECE */
 static const act_t L15_A[] = {
     SAY(C_NONE, "Four sounds: gurdy, crypt pad, monks, drone wheel", 4.5f),
-    TAPS(C_HOME, "EPOCH", "Tap HOME until DREAM"),
+    TAPS(C_HOME, "SCAPE MUSIC", "Tap HOME until DREAM"),
     SAY(C_K4, "KNOB 4 (MOOD): MIN", 3),
     KEY(9, "D: a piece in D minor", 2.5f),
     TAP(C_OCTUP, "It asks first: OCT+ for yes"),
@@ -734,7 +734,7 @@ static const act_t L15_SAVEA[] = {
     TAP(C_OCTUP, "Press OCT+"),
     TAP(C_OCTUP, "OCT+ again: saved as A"), END};
 static const act_t L15_B[] = {
-    TAPS(C_HOME, "EPOCH", "Tap HOME until DREAM"),
+    TAPS(C_HOME, "SCAPE MUSIC", "Tap HOME until DREAM"),
     TURN_TO(C_K4, U_VALUE, 3, 0, "Turn KNOB 4 (MOOD) to HARM"),
     KEY(9, "D again: the same key, a darker mood", 2.5f),
     SAY(C_NONE, "Section B: harmonic minor, the castle", 10), END};
@@ -778,7 +778,7 @@ static const lstep_t L15_STEPS[] = {
 /* ---------------------------------------------------------------- 6: DREAM (GHOULBOX 2.3: what's new, not a lesson) */
 static const act_t L6_FIND[] = {
     SAY(C_NONE, "GHOULBOX 2.3 can compose. This is DREAM", 4.5f),
-    TAPS(C_HOME, "EPOCH", "Tap HOME until DREAM: after MIXER, CLOCK, KEYS"),
+    TAPS(C_HOME, "SCAPE MUSIC", "Tap HOME until DREAM: after MIXER, CLOCK, KEYS"),
     SAY(C_NONE, "Four knobs: EVOL, DENS, DRFT and MOOD", 4.5f), END};
 static const act_t L6_FIRST[] = {
     SAY(C_K4, "KNOB 4 is the MOOD: MIN, a minor key", 4),
