@@ -29,7 +29,9 @@ static void audio_block(int32_t *out, uint32_t n)       /* mix (fx.c), then Q15 
     uint32_t i;
     mix_block(out, n);
 #if FELUCCA_UAC
+    ap_stamp_t ap_usb=AP_BEGIN();
     uac_tap(out, n);                                    /* the USB audio input: the same master output */
+    AP_END(9,ap_usb);
 #endif
     if (fx_usb_fixed)                                   /* USB LEVEL FIXED: USB took the full level, the DAC */
         usb_fixed_dac(out, n);                          /* (speaker, headphones) gets MASTER's (fx.c) */
@@ -50,11 +52,15 @@ static volatile uint8_t shed_req;
 static uint8_t shed_over;                              /* bit k: the half k halves ago was over 85 % */
 #define SHED_TICKS ((HALF_FRAMES * 1000000u / FS) * 85u / 100u * FM1_TICKS_PER_US)   /* 85 % of a half */
 static uint32_t shed_count;
+static uint32_t audio_wall_max_us,audio_nested_max_us;
 
 /* end of a half: all = its ticks, TIMER5 nested in it included -> the render alone in us. The deadline sees
  * both; shed after 2 overloaded halves in a row (out of line: keeps the ISR's render loops as they were) */
 static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 {
+    uint32_t wall=all/FM1_TICKS_PER_US,nested=t5_nested_ticks/FM1_TICKS_PER_US;
+    if(wall>audio_wall_max_us)audio_wall_max_us=wall;
+    if(nested>audio_nested_max_us)audio_nested_max_us=nested;
     shed_over = (uint8_t)(shed_over << 1 | (all > SHED_TICKS));
     if ((shed_over & 3u) == 3u)
         shed_req = 1;

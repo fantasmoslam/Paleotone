@@ -76,6 +76,7 @@
 #include "params.c"
 #include "mod.c"               /* the modulation matrix, used by voice.c and fx.c */
 #include "voice.c"
+#define AUDIO_PROFILE_TARGET 1
 #include "fx.c"
 
 /* ------------------------------------------------- MIDI, sequencer --- */

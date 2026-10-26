@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/scape-garden, feature/paleotone-dualcore]
+    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/scape-garden, feature/paleotone-dualcore, feature/audio-diagnostics]
   workflow_dispatch:
 
 permissions:

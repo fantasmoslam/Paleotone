@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+#include "audio_profile.h"
 /* Effects: per-track DIST insert, then sends into three
  * shared buses (chorus, tempo delay, reverb). Mono buses, stereo dry mix. */
 #define DLY_LEN 65536u           /* 1.49 s: 1/4 at 40 BPM fits */
@@ -541,6 +542,7 @@ static void mix_part(track_t *t, uint32_t n SM_DECL)
 #if FELUCCA_CPU2
     uint32_t nr;
 #endif
+    ap_stamp_t ap_track = AP_TRACK_BEGIN();
     mod_begin(t);                                       /* the matrix's per-block values into t->p (mod.c) */
     t->spread_on = t->p[P_SPRD] > 0 && (trk_vmode(t) == V_POLY || trk_vmode(t) == V_UNISON);   /* (SPREAD, mix_spread) */
 #if FELUCCA_CPU2
@@ -555,6 +557,7 @@ static void mix_part(track_t *t, uint32_t n SM_DECL)
 
         if (MOD(t).on)
             mod_end(t);
+        AP_END((uint32_t)(t-trk),ap_track);
         return;
     }
     if (t->spread_on)
@@ -587,6 +590,7 @@ static void mix_part(track_t *t, uint32_t n SM_DECL)
     }
     if (MOD(t).on)
         mod_end(t);                                     /* the stored values back */
+    AP_END((uint32_t)(t-trk),ap_track);
 }
 
 /* the HOME oscilloscope (ui_graph.c graph_scope): every other sample of the left channel. MENU > DISPLAY > SCOPE (1.2,
@@ -681,8 +685,10 @@ static void mix_block(int32_t *out, uint32_t n)
     int32_t mg = fx_usb_fixed ? MASTER_FULL : (int32_t)song.master_q12;   /* (USB LEVEL FIXED: MASTER after) */
     for (i = 0; i < n; i++)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
+    ap_stamp_t ap = AP_BEGIN();
     events_block(n);
     scm_block(n);
+    AP_END(4,ap); ap=AP_BEGIN();
     perf = perf_begin(n);                               /* the FX hold layer at work (perform.c) */
 #if FELUCCA_CPU2
     uint32_t m=C1_ON() ? C1_SPLIT() & c1_safe_mask() : 0;
@@ -702,15 +708,19 @@ static void mix_block(int32_t *out, uint32_t n)
 #else
     for (i = 0; i < NPART; i++) mix_part(&trk[i], n);
 #endif
+    AP_END(5,ap); ap=AP_BEGIN();
     amb_block(mix_l, mix_r, send_r, n);                 /* GHOULBOX: the ambience, with the tracks (no track's) */
     scape_block(mix_l, mix_r, send_r, n);               /* DINOBOX: SCAPE, the soundscape (off: nothing runs) */
+    AP_END(6,ap); ap=AP_BEGIN();
     if (perf)
         perf_pre(mix_l, mix_r, send_d, send_r, n);
     fx_buses(send_c, send_d, send_r, wet, n);
+    AP_END(7,ap); ap=AP_BEGIN();
     if (scope_mix)
         scope_take_mix(n);
     if (perf) {
         perf_master(out, n);
+        AP_END(8,ap);
         return;
     }
     for (i = 0; i < n; i++) {
@@ -725,4 +735,5 @@ static void mix_block(int32_t *out, uint32_t n)
         out[2u * i] = l;
         out[2u * i + 1u] = r;
     }
+    AP_END(8,ap);
 }
