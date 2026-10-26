@@ -1380,6 +1380,7 @@ static void style_apply(void)
     }
 }
 
+#include "ui_scape.c"
 static void ui_draw_page(uint32_t counting);
 static void ui_draw(void)
 {
@@ -1449,6 +1450,16 @@ static void ui_draw_page(uint32_t counting)
         page_entered();
     }
     cursor_fix();
+    if(scape_workspace()) {
+        draw_scape();
+        if(ui.msg_t && !--ui.msg_t && ui.msg2[0]) {
+            str_cpy(ui.msg,ui.msg2,sizeof ui.msg);ui.msg2[0]=0;ui.msg_t=60;
+        }
+        if(ui.bpm_t) ui.bpm_t--;
+        if(ui.hot_t) ui.hot_t--;
+        ui.force=0;
+        return;
+    }
     if (ui.force)
         draw_frame();
     felucca_dbg.stage = 3;

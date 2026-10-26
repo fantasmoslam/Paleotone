@@ -48,8 +48,8 @@ int main(void)
     ck("off: nothing runs", !sc.on);
 
     go_title("SCAPE MUSIC");
-    press(B_HOME); press(B_HOME);
-    ck("SCAPE overview, HOME twice: the habitat page", !ui.home && str_eq(cur_page()->title, "SCAPE"));
+    turn(EN_SELECT, 4);
+    ck("SCAPE workspace, SELECT: the habitat bank", !ui.home && str_eq(cur_page()->title, "SCAPE"));
     go_title("SCAPE SETUP"); turn(EN_K3, 20); go_title("SCAPE");
     ck("KNOB 1: LEVEL", song.g[G_SCAPE] == 20);
     turn(EN_K1, 1);

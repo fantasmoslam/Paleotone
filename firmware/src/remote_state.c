@@ -159,6 +159,9 @@ static void rs_walk(void)
         RS8(v->cursor);RS8(v->lane);RS8(v->seq_mode);RS8(v->grid);
     }
     if(rs_read)panel_views_ready=1;
+    /* SCAPE's dashboard reads the real director, including on the second screen. */
+    RS8(scape_music.active); RS8(scape_music.chord_pc); RS8(scape_music.suspended);
+    for(i=0;i<NTRK;i++) RS32(scape_music.gain[i]);
 
 }
 #undef RS

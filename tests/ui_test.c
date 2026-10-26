@@ -280,13 +280,13 @@ static void turn(uint32_t role, int32_t s)
     host_ticks += 200000u;                        /* (no knob acceleration between the turns) */
 }
 static void stop_transport(void) { transport_req = 0; song.playing = 0; }
-/* DINOBOX: HOME tapped on SCAPE MUSIC goes through SCAPE's remaining five pages (scape.c), then HOME. 1 = so */
+/* SCAPE banks are selected in-place; HOME exits the whole workspace. */
 static int home_through_scape(void)
 {
-    static const char *const T[] = {"SCAPE MIX", "SCAPE", "SCAPE SETUP", "SCAPE ROLES", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE SCENE"};
+    static const char *const T[] = {"SCAPE SETUP", "SCAPE ROLES", "SCAPE MIX", "SCAPE", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE SCENE"};
     int ok = 1;
     for (uint32_t i = 0; i < NELEM(T); i++) {
-        press(B_HOME);
+        turn(EN_SELECT, 1);
         ok &= !ui.home && str_eq(cur_page()->title, T[i]);
     }
     press(B_HOME);

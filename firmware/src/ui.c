@@ -469,6 +469,31 @@ static uint32_t lock_id(uint32_t k)
 }
 
 static void ev_enter(void);
+/* SCAPE is one workspace. Page IDs remain stable for editor/second-screen views;
+ * SELECT visits its control banks without walking the HOME page family. */
+static int scape_page(uint32_t p)
+{
+    return p < NPAGES && !memcmp(PAGES[p].title, "SCAPE", 5);
+}
+static int scape_workspace(void) { return !ui.home && scape_page(ui.page); }
+static uint32_t scape_bank(void)
+{
+    static const char *const BANK[] = {"SCAPE MUSIC", "SCAPE SETUP", "SCAPE ROLES", "SCAPE MIX",
+        "SCAPE", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE SCENE"};
+    for (uint32_t i=0;i<NELEM(BANK);i++) if(str_eq(cur_page()->title,BANK[i])) return i;
+    return 0;
+}
+static void page_entered(void);
+static void scape_bank_turn(int32_t steps)
+{
+    static const uint8_t ORDER[] = {0,3,4,1,2,5,6,7,8,9};
+    uint32_t first=0, bank=(uint32_t)clamp((int32_t)scape_bank()+steps,0,9);
+    while(first<NPAGES && !scape_page(first)) first++;
+    if(first+ORDER[bank]>=NPAGES || first+ORDER[bank]==ui.page) return;
+    ui.page=(uint8_t)(first+ORDER[bank]);
+    ui.fam_last[FAM_TRK]=ui.page;
+    page_entered();
+}
 static void page_entered(void)
 {
     const page_t *pg = cur_page();
@@ -647,7 +672,9 @@ static void go_home(void)
 static void home_tap(void)
 {
     uint32_t i = ui.page + 1u;
-    if (ui.home) {
+    if (scape_workspace()) {
+        go_home();
+    } else if (ui.home) {
         ui.fam_last[FAM_TRK] = 0;                     /* (open_family: the family's first, the MIXER) */
         open_family(FAM_TRK);
     } else if (cur_page()->fam == FAM_TRK && i < NPAGES && PAGES[i].fam == FAM_TRK) {
