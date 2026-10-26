@@ -338,6 +338,7 @@ enum { LK_OFF, LK_LABEL, LK_TALL };
 static uint32_t large_kind(void)
 {
     uint32_t g;
+    if (!ui.home && !memcmp(cur_page()->title,"SCAPE",5)) return (ui_prefs & PREF_LARGE) ? LK_LABEL : LK_OFF;
     if (!(ui_prefs & PREF_LARGE))
         return LK_OFF;
     if (ui.layer)
