@@ -9,10 +9,10 @@ static void check_key(void)
 }
 int main(void)
 {
-    uint32_t i,t,old,peak=0;int32_t out[CTL*2];int16_t keep[10];
+    uint32_t i,t,old,peak=0;int32_t out[CTL*2];int16_t keep[13];
     static step_t patterns[NTRK][NSTEP];
     web_nor_erase();web_boot();gb_scene_load(0);
-    assert(G_SDROR==68 && G_SMOTION==69 && G_COUNT==79);
+    assert(G_SDROR==68 && G_SMOTION==69 && G_COUNT==82);
     rng_state=42;dream_compose(2);
     for(t=0;t<NTRK;t++)memcpy(patterns[t],trk[t].step,sizeof patterns[t]);
     rng_state=42;dream_compose(2);
@@ -35,13 +35,19 @@ int main(void)
     song.g[G_SMELO]=0;for(i=0;i<512;i++)scm_block(CTL);assert(scape_music.gain[2]==0);
     old=scape_music.elapsed;song.g[G_DREAM]=0;for(i=0;i<30;i++){scm_block(CTL);dream_tick();}assert(scape_music.elapsed==old);
     song.g[G_DREAM]=1;chain.armed=1;dream_tick();scm_block(CTL);assert(scape_music.elapsed==old);chain.armed=0;dream_tick();
+    /* The performance actions: HOLD keeps the state it reached, NEXT moves the harmony on, NEW starts again. */
+    song.g[G_SCHOLD]=song.g[G_SCNEXT]=song.g[G_SCNEW]=0;
+    {uint32_t e0=scape_music.elapsed;song.g[G_SCHOLD]=1;scm_block(CTL);assert(scape_music.elapsed==e0);song.g[G_SCHOLD]=0;}
+    {uint32_t c0=dream.chord;song.g[G_SCNEXT]=1;dream_tick();assert(dream.chord==(c0+1u)%4u && !song.g[G_SCNEXT]);}
+    {uint32_t s0,root0=dream.root;dream.seed=12345u;s0=dream.seed;song.g[G_SCNEW]=1;dream_tick();
+     assert(dream.root==root0 && dream.seed!=s0 && !song.g[G_SCNEW]);}
     /* Append-only, byte-bounded settings; the older 33 bytes remain untouched. */
-    for(i=0;i<10;i++)song.g[G_SMOTION+i]=GP[G_SMOTION+i].max;
+    for(i=0;i<13;i++)song.g[G_SMOTION+i]=GP[G_SMOTION+i].max;
     memcpy(keep,&song.g[G_SMOTION],sizeof keep);scape_side_put(0);
-    for(i=0;i<10;i++)song.g[G_SMOTION+i]=0;
+    for(i=0;i<13;i++)song.g[G_SMOTION+i]=0;
     scape_side_get(0);assert(!memcmp(keep,&song.g[G_SMOTION],sizeof keep));
-    memset(scape_side[0]+SCAPE_DIR_OFF,0,10);scape_side_get(0);
-    for(i=0;i<10;i++)assert(song.g[G_SMOTION+i]==GP[G_SMOTION+i].def);
+    memset(scape_side[0]+SCAPE_DIR_OFF,0,13);scape_side_get(0);
+    for(i=0;i<13;i++)assert(song.g[G_SMOTION+i]==GP[G_SMOTION+i].def);
     /* Full mixer, evolution and shared habitat: 35 seconds within the existing voice budget. */
     gb_scene_load(0);dream_compose(9);song.g[G_SCAPE]=80;song.g[G_SDRN]=60;song.g[G_SCTRK]=1;song.g[G_SCRATE]=127;
     song.g[G_SCHORD]=0;seq_start();

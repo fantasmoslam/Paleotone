@@ -37,7 +37,8 @@ from remote_identity import render_id
 
 APP_XIP = 0x02000120                # app.bin offset 0 in the XIP map; the SPL jumps here
 APP_SLOT = fm1pkg_make.APP_SLOT
-SLOT_SPARE = int(os.environ.get("FELUCCA_SPARE_MIN", 16384))   # the least app-slot room a build may leave
+SLOT_SPARE = int(os.environ.get("FELUCCA_SPARE_MIN", 15872))   # the least app-slot room a build may leave (PALEOTONE:
+                                                          # 16 KiB less 512 B, to pay for SCAPE's performance actions)
 LOADER_LOAD = 0x01C0A800
 LOADER_NAME = b"usb_hid_ota.bin"    # the file name the SPL looks for
 DOCKER_IMAGE = os.environ.get("JIELI_DOCKER_IMAGE", "debian:bookworm-slim")

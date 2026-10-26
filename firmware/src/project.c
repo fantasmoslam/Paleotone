@@ -171,8 +171,9 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
  * defaults) or 1 + EVOL + 2 x (DENS - 1 + 8 x (DRFT - 1 + 8 x MOOD)), up to 768. Two bytes left below it */
 #define PROJ_DREAM_OFF (PROJ_KEYS_OFF - 2u)
 typedef union { uint32_t align; uint8_t raw[PROJ_STORE_SIZE]; } project_store_t;
-_Static_assert(PROJ_NG == 27u && G_SDROR == 68u && G_SMOTION == 69u && G_COUNT == 79u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
-               "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store)");
+_Static_assert(PROJ_NG == 27u && G_SDROR == 68u && G_SMOTION == 69u && G_COUNT == 82u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
+               "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store), and the "
+               "performance actions appended after the director's");
 _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUN10 / FUN7 sizes");
 typedef struct {                               /* a track of format 4, read only */
     int16_t p[PROJ_NP_V4];
@@ -1249,7 +1250,7 @@ _Static_assert(SCAPE_SIDE_N + 1u <= sizeof scape_side[0], "SCAPE's sidecar entry
 /* (stage 2, the drone and the calls, and DANGER after them: G_SDRN .. G_SDROR, each stored as its value - min + 1
  * after the twenty, 0 = none stored, its default: an entry of an earlier SCAPE firmware holds 0 there) */
 #define SCAPE_SIDE_N2 (G_SDROR - G_SDRN + 1u)
-#define SCAPE_SIDE_N3 (G_SROLE3 - G_SMOTION + 1u)
+#define SCAPE_SIDE_N3 (G_SCNEW - G_SMOTION + 1u)   /* (the director's controls, then its performance actions) */
 #define SCAPE_DIR_OFF (1u + SCAPE_SIDE_N + SCAPE_SIDE_N2)
 _Static_assert(SCAPE_DIR_OFF + SCAPE_SIDE_N3 <= sizeof scape_side[0], "SCAPE director sidecar");
 _Static_assert(1u + SCAPE_SIDE_N + SCAPE_SIDE_N2 <= sizeof scape_side[0], "SCAPE's sidecar entry, stage 2");

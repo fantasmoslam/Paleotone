@@ -226,13 +226,18 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SDSIZ] = PE("SIZE", N_DSIZE, 1),
     [G_SDSTP] = PD("STEP", F_PCT, 0, 127, 100),     /* the footsteps' level */
     [G_SMOTION] = PD("MOTN", F_PCT, 0, 127, 64),
-    [G_SCHORD] = PE("HOLD", N_SHOLD, 3),
+    [G_SCHORD] = PE("CHORD", N_SHOLD, 3),
     [G_SBED] = PD("BED", F_PCT, 0, 127, 100),
     [G_SMELO] = PD("MELO", F_PCT, 0, 127, 90),
     [G_SBASS] = PD("BASS", F_PCT, 0, 127, 100),
     [G_SPULSE] = PD("PULSE", F_PCT, 0, 127, 80),
     [G_SROLE0] = PE("T1", N_SROLE, 0), [G_SROLE1] = PE("T2", N_SROLE, 0),
     [G_SROLE2] = PE("T3", N_SROLE, 0), [G_SROLE3] = PE("T4", N_SROLE, 0),
+    /* the performance actions (SCAPE SCENE), each its own control: HOLD keeps the state the piece
+     * reached, NEXT moves the harmony on, NEW starts a new piece in the same key */
+    [G_SCHOLD] = PE("HOLD", N_ONOFF, 0),
+    [G_SCNEXT] = PE("NEXT", N_GO, 0),
+    [G_SCNEW] = PE("NEW", N_GO, 0),
     [G_SDROR] = PD("LEGACY", F_INT, 0, 5, 1),             /* CALLS: the SCAPE CALLS track */
 };
 
@@ -524,6 +529,8 @@ static const page_t PAGES[] = {
     {"SCAPE LIFE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCTRK, G_SDNGR, G_SDSIZ, G_SCNOTE}},
     {"SCAPE LEVELS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL0, G_SL1, G_SL2, G_SL3}},
     {"SCAPE LEVELS 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL4, G_SL5, G_SL6, G_SL7}},
+    /* the performance actions, each its own knob, with the chord-change time beside them */
+    {"SCAPE SCENE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCHOLD, G_SCNEXT, G_SCNEW, G_SCHORD}},
 };
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */

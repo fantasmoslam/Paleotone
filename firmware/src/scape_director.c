@@ -39,6 +39,7 @@ static void scm_block(uint32_t n)
     static const uint16_t PERIOD[5]={31,23,29,13,17};
     uint32_t i;
     if (!scm_running()) return;
+    if (song.g[G_SCHOLD]) return;                   /* HOLD: the state it reached, kept (levels too) */
     if (song.g[G_DREAM]) {
         scape_music.elapsed += n;
         scape_music.phase += n;

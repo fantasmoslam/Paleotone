@@ -125,12 +125,31 @@ static void dream_keys(uint32_t notes)
     for(i=0;i<NTRK && !any;i++)for(j=0;j<NSTEP && !any;j++)any=trk[i].step[j].n||trk[i].step[j].hit;
     if(any && !dream.asked && !chain_busy())confirm_open(CF_DREAM,(53+k)%12);else dream_go((53+k)%12);
 }
+/* the performance actions (SCAPE SCENE): a knob turned to GO does it once and is put back, so a
+ * turned knob never fires twice; taken whether or not SCAPE is running, so a knob never sticks. */
+static void dream_actions(void)
+{
+    if (song.g[G_SCNEXT]) {
+        song.g[G_SCNEXT]=0;
+        if (scape_music.active && dream.valid) dr_chord();           /* NEXT: the harmony moves on now */
+    }
+    if (song.g[G_SCNEW]) {
+        song.g[G_SCNEW]=0;
+        if (scape_music.active && !chain_busy()) {                   /* NEW: a new starting point, same key */
+            song.g[G_SCHOLD]=0;
+            dream_compose(dream.valid ? (uint32_t)dream.root
+                                      : (uint32_t)((trk[0].p[P_ROOT]%12+12)%12));
+        }
+    }
+}
 static void dream_tick(void)
 {
     static const uint16_t SECONDS[8]={20,30,45,60,90,120,180,300};
     uint32_t i,every=9u-(uint32_t)clamp(song.g[G_DDRFT],1,8);
     scape_music.suspended=(uint8_t)chain_busy();
+    dream_actions();
     if(!song.g[G_DREAM] || !song.playing || scape_music.suspended)return;
+    if(song.g[G_SCHOLD])return;                                     /* HOLD: no advance, no evolution */
     if(!dream.valid)dr_rebuild();
     if(scape_music.elapsed >= FS*(uint32_t)SECONDS[clamp(song.g[G_SCHORD],0,7)])dr_chord();
     for(i=0;i<NTRK;i++) {

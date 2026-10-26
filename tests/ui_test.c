@@ -283,7 +283,7 @@ static void stop_transport(void) { transport_req = 0; song.playing = 0; }
 /* DINOBOX: HOME tapped on SCAPE MUSIC goes through SCAPE's remaining five pages (scape.c), then HOME. 1 = so */
 static int home_through_scape(void)
 {
-    static const char *const T[] = {"SCAPE MIX", "SCAPE", "SCAPE SETUP", "SCAPE ROLES", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2"};
+    static const char *const T[] = {"SCAPE MIX", "SCAPE", "SCAPE SETUP", "SCAPE ROLES", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE SCENE"};
     int ok = 1;
     for (uint32_t i = 0; i < NELEM(T); i++) {
         press(B_HOME);

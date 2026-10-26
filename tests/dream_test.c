@@ -41,8 +41,26 @@ int main(void)
     uint32_t sc,m,d,k,i,t,lo=0,hi=0,changed=0;
     static step_t before[NTRK][NSTEP];
     scene(0);go_title("SCAPE MUSIC");
-    ok=!ui.home && cur_page()->id[0]==G_DDENS && cur_page()->id[3]==G_SCHORD && G_SMOTION==69 && G_COUNT==79;
+    ok=!ui.home && cur_page()->id[0]==G_DDENS && cur_page()->id[3]==G_SCHORD && G_SMOTION==69 && G_COUNT==82;
     bad+=check("SCAPE MUSIC owns the existing composition controls and stable stored global IDs",ok);
+    go_title("SCAPE SCENE");
+    ok=!ui.home && cur_page()->id[0]==G_SCHOLD && cur_page()->id[1]==G_SCNEXT &&
+       cur_page()->id[2]==G_SCNEW && cur_page()->id[3]==G_SCHORD;
+    bad+=check("SCAPE SCENE gives each performance action its own control",ok);
+    /* HOLD, NEXT and NEW */
+    song.playing=1;song.g[G_DREAM]=1;song.g[G_SCHOLD]=song.g[G_SCNEXT]=song.g[G_SCNEW]=0;dream_compose(2);
+    scape_music.suspended=0;
+    {uint8_t c0=dream.chord;song.g[G_SCNEXT]=1;dream_tick();
+     ok=dream.chord==(uint8_t)((c0+1u)&3u) && !song.g[G_SCNEXT];}
+    bad+=check("NEXT advances the harmony once and returns to --",ok);
+    {uint32_t s0,root0=dream.root;dream.seed=0x01234567u;s0=dream.seed;song.g[G_SCNEW]=1;dream_tick();
+     ok=dream.root==root0 && dream.seed!=s0 && !song.g[G_SCNEW] && piece_ok();}
+    bad+=check("NEW starts a new piece in the same key",ok);
+    {uint32_t e0;int32_t g0;song.g[G_SCHOLD]=1;e0=scape_music.elapsed;g0=scape_music.gain[0];
+     scm_block(FS/2u);ok=scape_music.elapsed==e0 && scape_music.gain[0]==g0;
+     song.g[G_SCHOLD]=0;scm_block(FS/2u);ok=ok && scape_music.elapsed!=e0;}
+    bad+=check("HOLD keeps the state it reached, released it moves on again",ok);
+    go_title("SCAPE MUSIC");
     for(sc=0,ok=1;sc<GB_NSCENE;sc++)
         for(m=0;m<6;m++)
             for(d=1;d<=8;d+=d==1?3:4)
