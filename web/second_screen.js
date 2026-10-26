@@ -50,9 +50,9 @@ export class SecondScreen {
   }
 }
 
-export function joinScreens(left, right) {
+export function joinScreens(left, right, out=new Uint8ClampedArray(480*240*4)) {
   if (left.length !== 240*240*4 || right.length !== left.length) throw new Error('Invalid screen size');
-  const out = new Uint8ClampedArray(480*240*4);
+  if(out.length!==480*240*4)throw new Error("Invalid joined output size");
   for (let y=0; y<240; y++) {
     out.set(left.subarray(y*960, (y+1)*960), y*1920);
     out.set(right.subarray(y*960, (y+1)*960), y*1920+960);

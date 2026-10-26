@@ -40,5 +40,7 @@ int main(void)
     assert(edrq_ready(&q, 0, 8, 1) == 1 && q.frame[3] == 96);
     q.len = 0;
     focus[3] = 95; assert(!edrq_offer(&q, focus, sizeof focus, 8));
+    uint8_t burst[11]={0x7D,0x46,0x4C,95,1,0,4,0,1,2,3};
+    assert(edrq_offer(&q,burst,sizeof burst,8));assert(q.len==11);q.len=0;
     puts("remote busy-queue and request ownership tests passed");
 }

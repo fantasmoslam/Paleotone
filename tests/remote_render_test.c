@@ -57,6 +57,33 @@ int main(int argc, char **argv)
     uint8_t block[4] = {rs_rev & 127u, rs_rev >> 7, 0, 0};
     ed_test_n = 0; assert(ed_remote_handle(ED_REMOTE_BLOCK, block, 4));
     assert(ed_test_n + 6u <= 192u); /* no blocking send for a snapshot block */
+    uint8_t burst[7]={rs_rev&127u,rs_rev>>7,4,0,1,2,3}, args[4];
+    assert(ed_remote_args(ED_REMOTE_BATCH,burst,sizeof burst));
+    ed_test_n=0;assert(ed_remote_handle(ED_REMOTE_BATCH,burst,sizeof burst));
+    assert(ed_test_n==4 && ed_test_out[3]==0);
+    for(uint32_t used=64;used>4;used--)assert(!ed_stream_take(args,used,usb.resets,1));
+    for(uint32_t j=0;j<4;j++){
+        assert(ed_stream_take(args,4,usb.resets,1) && args[2]==j);
+        ed_test_n=0;assert(ed_remote_handle(ED_REMOTE_BLOCK,args,4));
+        assert(ed_test_n+6<=180 && !ed_test_out[4]);
+    }
+    assert(!ed_stream_take(args,0,usb.resets,1));
+    burst[4]=0;assert(!ed_remote_args(ED_REMOTE_BATCH,burst,sizeof burst));burst[4]=1;
+    ed_test_n=0;ed_remote_handle(ED_REMOTE_BATCH,burst,sizeof burst);
+    assert(!ed_stream_take(args,0,usb.resets+1,1) && !ed_stream.count);
+    ed_test_n=0;ed_remote_handle(ED_REMOTE_BATCH,burst,sizeof burst);
+    assert(!ed_stream_take(args,0,usb.resets,0) && !ed_stream.count);
+    /* The wire compressor must round-trip every native snapshot block.
+     * Also feed these exact C payloads to the JS decoder in CI. */
+    FILE *compact_file=NULL;
+    if(argc>1){char path[1024];snprintf(path,sizeof path,"%s.compact",argv[1]);compact_file=fopen(path,"wb");assert(compact_file);}
+    for(uint32_t off=0;off<rs_len;off+=RS_BLOCK){
+        uint8_t a[4]={rs_rev&127u,rs_rev>>7,(uint8_t)(off/RS_BLOCK),64};
+        ed_test_n=0;assert(ed_remote_handle(ED_REMOTE_BLOCK,a,4));
+        assert(ed_test_n+6<=180 && !ed_test_out[4]);
+        if(compact_file){uint32_t len=ed_test_n;fwrite(&len,4,1,compact_file);fwrite(ed_test_out,1,len,compact_file);uint32_t raw=rs_len-off;if(raw>128)raw=128;fwrite(rs_buf+off,1,raw,compact_file);}
+    }
+    if(compact_file)fclose(compact_file);
     rs_ack();
     assert(rs_base == rs_rev);
     assert(rs_capture());

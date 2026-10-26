@@ -82,3 +82,20 @@ original screen. Hardware audio performance, reconnection and phone operation
 must be tested on the real instrument before a release.
 
 - **96 PANEL_FOCUS**: `[enabled]` (0 Original/hidden, 1 Expanded) renews a three-second gesture-reporting lease. Reply: `1, side, serial14, held`. HOME + OCT− / OCT+ emits an absolute left/right event. The browser waits for `held=0`, deduplicates the serial, and uses the existing serialized panel-navigation path. This adds 16 bytes of device state and no display buffers. Hardware validation is still required; do not treat a passing build as a tested image.
+
+## Display latency
+
+The companion renders the original C screen code locally in WebAssembly; graphics are already app-side. Only compact instrument state crosses USB. Measured before optimization on the connected FM-1: cold snapshot 514 ms; seven dirty blocks took 38–48 ms; the three-render Expanded path took about 1.9 ms on the host. The older loop imposed a 120 ms minimum update interval. These are measurements on this machine, not input-to-photon guarantees.
+
+The updated page targets up to 30 updates/s, presents a completed frame before waiting for ACK, renews focus at 750 ms intervals rather than on every frame, reuses the active C rendering, caches exact pane pixels, and reuses pixel/ImageData buffers. Canvas is the default on Android too; Compatible display remains available, at up to 15 updates/s. The status area reports observed transfer/draw timing.
+
+New firmware advertises four-block read bursts. Each reply is emitted only when the existing USB ring has enough space for a complete ordinary block; no extra snapshot buffer, audio ISR work or busy wait is added. The page continues to support older 46-byte status replies and single-block reads.
+
+
+FM-1 hardware verification (2026-10-25): nonblocking four-block bursts installed and verified with renderer 2036782920, schema 2, 14,001-byte snapshots. Alternating reads of the same frozen seven blocks: legacy median 39.61 ms, burst median 27.12 ms (12 samples each; about 32% less transfer time). Alternating live 15–16 dirty blocks: 80.01 → 58.12 ms median (12 samples each). These measure state transfer, not physical input-to-photon latency. Exact Original/Expanded pixels were checked on both physical focus sides against the full renderer. Firmware image 564084 B; data+bss 90324/98304 B; pool 332900/344064 B.
+
+
+Lossless transport compression: command 95 count bit 6 opts into compressed replies only when status capability bit 6 is advertised. Replies retain revision/block/error/raw-size, then add encoding (0 raw, 1 PackBits), encoded-size and MIDI-safe packed bytes. A block uses compression only when it is smaller; decoding strictly bounds both sizes to 128 bytes. Each block has its own dictionary-free encoding, so a dropped burst can be retried without prior compressed state. Legacy single blocks and uncompressed bursts are unchanged. The encoder runs in the main loop with a 128-byte stack buffer; USB backpressure and the existing complete-frame reserve remain in force.
+
+
+Compression hardware verification (2026-10-25): FM-1_900 reboot/installer exit 0; schema 2, renderer 2540340739, capability 68, full 14001-byte snapshot verified byte-for-byte between raw bursts and compressed bursts. Alternating 12 samples per mode on identical frozen blocks: fixed first seven blocks 21.48 → 10.89 ms (1120 → 333 reply bytes); live dirty blocks [0,1,6,16,25,34,43] 23.81 → 15.60 ms (1120 → 684 reply bytes). Full initial state 352.20 → 161.41 ms (one read per mode; 17509 → 4797 reply bytes). Transfer timings exclude capture, draw and input-to-photon. Replies include SysEx framing but byte counts exclude USB-MIDI packet overhead and request/ACK traffic. C-to-JS decoder fixtures: all 1024 synthetic patterns and 110 real native snapshot blocks pass. Target image 564356 B, data+bss 90340/98304 B, pool 332900/344064 B.

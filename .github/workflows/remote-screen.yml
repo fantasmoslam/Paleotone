@@ -1,7 +1,7 @@
 name: remote screen
 on:
   push:
-    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified]
+    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency]
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,6 +40,8 @@ jobs:
           mkdir -p build/remote
           cc -std=c99 -Wall -Wextra -Werror -o build/remote/queue_test tests/remote_queue_test.c
           build/remote/queue_test
+          cc -std=c99 -Wall -Wextra -Werror -Ifirmware/src -o build/remote/codec_test tests/remote_codec_test.c
+          build/remote/codec_test build/remote/codec.bin
       - name: Native renderer and original-screen fidelity
         run: |
           mkdir -p build/remote
@@ -51,6 +53,9 @@ jobs:
           node web/test_remote_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_second_screen.mjs build/emu/felucca.wasm build/remote/fixture.bin
           node web/test_physical_focus.mjs
+          node web/test_display_paint.mjs build/emu/felucca.wasm build/remote/fixture.bin
+          node web/test_remote_compression.mjs build/remote/fixture.bin.compact build/remote/codec.bin
+          node web/test_display_performance.mjs
           node web/test_frame_presenter.mjs
           node web/test_control_target.mjs
           node web/test_control_widget.mjs
@@ -73,6 +78,7 @@ jobs:
             build/emu/control_target.js
             build/emu/physical_focus.js
             build/emu/frame_presenter.js
+            build/emu/display_performance.js
             build/emu/remote_views.json
             build/emu/felucca.wasm
             web/REMOTE_SCREEN.md

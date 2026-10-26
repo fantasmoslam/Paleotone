@@ -21,4 +21,6 @@ canvas.lost=true;time=200;p.present(rgba,240);assert.equal(p.compatible,true);
 const black=rgba.slice();black[40]=0;time=400;p.present(black,240);assert.match(p.status(),/black frame/);
 assert.throws(()=>p.present(new Uint8ClampedArray(3),240),/Invalid/);
 p.buffer.lost=true;time=600;assert.throws(()=>p.present(rgba,240),/lost/);
+const fast=new FramePresenter(surface(),{doc,now:()=>time});assert.equal(fast.compatible,false);
+fast.present(rgba,240);const reused=fast.frame;time+=34;fast.present(rgba,240);assert.equal(fast.frame,reused);
 console.log('frame presenter: exact pixels, Android image surface, Canvas fallback, context loss and black-frame reporting passed');
