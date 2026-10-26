@@ -20,9 +20,11 @@ insufficient. Keep a known-good firmware package and recovery instructions befor
 
 The [USB second-screen app](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen/) follows the FM-1's controls.
 Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. This is the graphics companion:
-it uses the firmware's C screen renderer and provides Original and Expanded views. It is pinned to the
-working companion source `19727a9` and requires the matching firmware already used with that companion.
-Opening the webpage does not install firmware. Phone support remains untested.
+it uses the firmware's C screen renderer and provides Original and Expanded views. This one link covers every
+build: the page reads the connected FM-1 and, when the instrument runs a newer companion build, forwards to the
+page made for it (`screen-unified/`). It defaults to the working companion source `19727a9`; a firmware and a page
+still have to come from matching builds. Opening the webpage does not install firmware. Phone support remains
+untested.
 The separate [lightweight display](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen-lite/) uses screen-state
 messages 90/91 and is not a replacement for the graphics companion.
 
