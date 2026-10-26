@@ -9,8 +9,8 @@ Finish hardware Paleotone, make it usable and publicly available, then consider 
 SCAPE is too repetitive, subtle or predictable and changes the music because it draws on sequencer/mixer tracks. Dylan wants all four sequencer tracks usable while independent AMB-1-like generation evolves, with every dinosaur call type independently triggerable and editable. Recording, sequencing and generation must work together. The second-core experiment precedes that redesign and does not solve ownership by itself.
 
 ## Exact source and validation state
-Repository: https://github.com/fantasmoslam/dinobox-fm1
-Experimental draft PR: https://github.com/fantasmoslam/dinobox-fm1/pull/11
+Repository: https://github.com/fantasmoslam/Paleotone
+Experimental draft PR: https://github.com/fantasmoslam/Paleotone/pull/11
 Hardware baseline branch: feature/scape-garden
 Installed baseline source recorded in the prior handoff: 76d32f3050fe21968ac13b017ad8d98a1928b456
 Baseline renderer: 799295047
