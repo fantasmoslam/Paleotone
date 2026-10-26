@@ -8,6 +8,9 @@
 #include <stdint.h>
 
 /* ------------------------------------------------------------ sizes --- */
+#ifndef FELUCCA_CPU2
+#define FELUCCA_CPU2 0 /* host/browser remain single-core unless explicitly tested */
+#endif
 #define NVOICE 12                /* voices per part, and the budget shared by all parts */
 #define NPART 4                  /* synth parts: tracks 1..4 */
 #define NTRK NPART               /* tracks (the formats and the protocol count these): every track is a part */
@@ -392,6 +395,7 @@ typedef struct track {
     int32_t peak;
     int32_t dist_hp, dist_lp1, dist_lp2;   /* DIST insert state (fx.c) */
     uint8_t tail;                /* blocks to mix after the last voice (the DIST tail) */
+    uint8_t lfo_wrap, spread_on;  /* per-part render state; never saved in project payloads */
     int16_t armp, aholdp;        /* P_AMODE / P_AHOLD as last seen by the ISR */
     /* engine switch (voice.c engine_block): the old engine's voices fade out, then it switches */
     uint8_t xf_on, xf;           /* fading; blocks of the fade still to render */

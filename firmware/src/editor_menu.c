@@ -32,6 +32,7 @@ static const uint8_t ED_MENU[][2] = {
     {MI_NAMES, 25},                                    /* GHOULBOX 2.1: NOTE NAMES ON / OFF, CONTROL */
     {MI_OUT1, 26}, {MI_OUT2, 27}, {MI_OUT3, 28}, {MI_OUT4, 29},   /* DINOBOX: T1..T4 OUT, MIDI */
     {MI_CLKOUT, 30},                                   /* DINOBOX: CLOCK OUT, MIDI */
+    {MI_CPU2, 31}, /* append only: existing descriptor indexes and ids remain stable */
 };
 #define ED_MENU_N NELEM(ED_MENU)
 

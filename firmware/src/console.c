@@ -211,6 +211,15 @@ static void con_status(void)
     con_puts("\r\n");
     con_kv("bpm", song.g[G_BPM]);
     con_kv("playing", song.playing);
+#if FELUCCA_CPU2
+    con_kv("cpu2_set", !!(ui_prefs2 & (PREF_CPU2_ON>>16)));
+    con_kv("cpu2",fm1_c1_on);
+    con_kv("cpu2_blocks",c1_blocks);
+    con_kv("cpu2_bad",fm1_c1_mb.bad);
+    con_kv("cpu2_gave_up",fm1_c1_gave_up);
+    con_kv("cpu2_wait_max_us",fm1_c1_wait_max/24u);
+    con_kv("cpu2_stack",fm1_cpu1_stack_used());
+#endif
     con_kv("boots", (int32_t)felucca_dbg.boots);
     con_kv("usb_resets", (int32_t)usb.resets);
     con_kv("usb_sof", (int32_t)usb.sof_seen);
