@@ -1,7 +1,7 @@
-name: pinned dual-core companion
+name: pinned audio diagnostics companion
 on:
   push:
-    branches: [feature/dualcore-hardware-prep]
+    branches: [feature/audio-diagnostics-prep]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 21404aa73f3480c495424267d9b1acb6707ac4fd
+          ref: c564f667fe54d051eb0158e54b86ba319e814c60
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
