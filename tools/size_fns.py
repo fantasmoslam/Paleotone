@@ -18,6 +18,7 @@ SRC = _ROOT / "firmware" / "src" if (_ROOT / "firmware" / "src").is_dir() else _
 # other file without DSP: USB, MIDI, the sequencer, the drawing, the LCD, OTA, ... Of those, what an interrupt
 # reaches (ISR_ROOTS and everything they call or name, from the IR) keeps -Os (isr_reach)
 SIZE_FILES = ["ui.c", "favorites.c", "menu_items.c", "icons.c", "ui_graph.c", "ui_draw.c", "ui_scape.c", "ui_menu.c", "ui_input.c",
+              "remote_state.c", "editor_remote.c", "ui_panel_views.c", "remote_codec.h",
               "storage.c", "upreset.c", "project.c", "settings_persist.c",
               "editor.c", "editor_preferences.c", "editor_backup.c", "editor_menu.c", "console.c",
               "usb.c", "midi_uart.c", "midi_control.c", "midi_clock.c", "seq.c", "song_chain.c", "chord.c", "motion.c",
