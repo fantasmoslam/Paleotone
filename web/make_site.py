@@ -114,14 +114,8 @@ def main(pkg, version, out):
             raise SystemExit(f"graphics companion missing {companion / required}; refusing to replace it with the lightweight page")
     shutil.rmtree(out / "webapp/screen", ignore_errors=True)
     shutil.copytree(companion, out / "webapp/screen")
-    pages = []                                      # the screen page's forward (web/screen_router.js):
-    for build in sorted((out / "webapp").glob("*/build.json")):   # every screen page the site ships,
-        try:                                                      # by the firmware it was built for
-            ident = json.loads(build.read_text(encoding="utf-8")).get("rendererId")
-        except (OSError, ValueError):
-            continue
-        if ident:
-            pages.append({"rendererId": ident, "path": build.parent.name + "/", "label": build.parent.name})
+    from screen_registry import screen_pages
+    pages = screen_pages(out / "webapp")
     (out / "webapp" / "screens.json").write_text(json.dumps({"pages": pages}, indent=2) + "\n", encoding="utf-8")
     print("site: webapp/screens.json: " + (", ".join(f"{p['path']} ({p['rendererId']})" for p in pages)
                                            or "no screen pages"))
