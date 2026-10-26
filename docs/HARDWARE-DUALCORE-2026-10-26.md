@@ -54,3 +54,21 @@ After owner disabled the worker and restarted, serial confirmed cpu2_set=0, cpu2
 Playback was then stopped and verified playing=0. A second capture under stopped-transport load completed (1409436 PCM bytes). During streaming, packets advanced 10985 to 15988 while underruns stayed at 16, audio_late stayed at 30 and voices_shed stayed at 32; CPU samples 38% and 37%. No added underruns in this observed low-load capture. Ambient/drone output was not explicitly muted, so this is a stopped-transport test, not a certified silence test.
 
 This points toward a load-dependent problem in the audio/USB path rather than CPU1 being necessary for failure. It does not establish the precise root cause or exclude a buffering/scheduling defect aggravated by load. ON/OFF captures were not sample-aligned; do not rank the worker by these short USB counts alone. Profile expensive rendering, interrupt time and USB buffer behavior before changing thresholds, voice limits or SCAPE load. Final state verified stopped, second core OFF.
+
+## Reversible track-mute isolation
+
+Second core OFF; track levels retained; each phase settled for 5.5 seconds, then two serial reads bracketed a five-second wait. CPU values below are snapshots; intervals were not musically synchronized. Mutes stop new notes, so lingering release/effect tails can affect the comparison.
+
+| Muted tracks | CPU snapshot (%) | New late blocks | New overload-shed voices |
+| --- | --- | --- | --- |
+| None | 78 | 2 | 5 |
+| 1: STAMPEDE | 75 | 0 | 5 |
+| 2: BRACHIO CALL | 70 | 0 | 4 |
+| 3: MAMMOTH | 76 | 0 | 4 |
+| 4: DEEP CHANT | 78 | 0 | 0 |
+| 1: STAMPEDE, 2: BRACHIO CALL, 3: MAMMOTH, 4: DEEP CHANT | 37 | 0 | 0 |
+| None | 85 | 4 | 4 |
+
+Original level/mute readbacks matched exactly afterward; final transport stopped. Track identities: T1 STAMPEDE (engine 14); T2 BRACHIO CALL (engine 15); T3 MAMMOTH (engine 12); T4 DEEP CHANT (engine 5). T2 had the largest observed snapshot reduction, but the varying baseline prohibits treating these as exact independent costs. T4-muted and all-muted intervals had no new overload shedding.
+
+Only FM6/T3 is eligible for the present worker split in this loaded mix: ROAR, SAURUS and VOICE remain on CPU0 for shared-state safety. The current part_cost array contains estimated engine/voice weights, not measured runtime costs. New diagnostic candidate c564f667fe54d051eb0158e54b86ba319e814c60 adds opt-in actual timing; it has not been installed as of this record.
