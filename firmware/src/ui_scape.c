@@ -46,6 +46,6 @@ static void draw_scape(void)
     }
     cv_begin(240,38,T_BG);
     cv_text_in(0,1,240,&AF_S,ui.msg_t?ui.msg:"SELECT: BANK / HOME: EXIT",ui.msg_t?T_ACCENT:T_MID,T_BG);
-    cv_text_in(0,19,240,&AF_S,bank==0?"KEY: COMPOSE / GLO+SELECT: BPM":"GLO+SELECT: BPM",T_MID,T_BG);
+    cv_text_in(0,19,240,&AF_S,bank==0?"KEY: COMPOSE":"GLO+SELECT: BPM",T_MID,T_BG);
     cv_blit(0,202);
 }

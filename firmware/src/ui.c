@@ -477,21 +477,21 @@ static int scape_page(uint32_t p)
     return p < NPAGES && !memcmp(PAGES[p].title, "SCAPE", 5);
 }
 static int scape_workspace(void) { return !ui.home && scape_page(ui.page); }
+static const uint8_t SCAPE_ORDER[]={0,3,4,1,2,5,6,7,8,9};
 static uint32_t scape_bank(void)
 {
-    static const char *const BANK[] = {"SCAPE MUSIC", "SCAPE SETUP", "SCAPE ROLES", "SCAPE MIX",
-        "SCAPE", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE SCENE"};
-    for (uint32_t i=0;i<NELEM(BANK);i++) if(str_eq(cur_page()->title,BANK[i])) return i;
-    return 0;
+    uint32_t first=ui.page;
+    while(first && scape_page(first-1u)) first--;
+    uint32_t offset=ui.page-first;
+    return offset<NELEM(SCAPE_ORDER)?SCAPE_ORDER[offset]:0;
 }
 static void page_entered(void);
 static void scape_bank_turn(int32_t steps)
 {
-    static const uint8_t ORDER[] = {0,3,4,1,2,5,6,7,8,9};
-    uint32_t first=0, bank=(uint32_t)clamp((int32_t)scape_bank()+steps,0,9);
-    while(first<NPAGES && !scape_page(first)) first++;
-    if(first+ORDER[bank]>=NPAGES || first+ORDER[bank]==ui.page) return;
-    ui.page=(uint8_t)(first+ORDER[bank]);
+    uint32_t first=ui.page, bank=(uint32_t)clamp((int32_t)scape_bank()+steps,0,9);
+    while(first && scape_page(first-1u)) first--;
+    if(first+SCAPE_ORDER[bank]>=NPAGES || first+SCAPE_ORDER[bank]==ui.page) return;
+    ui.page=(uint8_t)(first+SCAPE_ORDER[bank]);
     ui.fam_last[FAM_TRK]=ui.page;
     page_entered();
 }

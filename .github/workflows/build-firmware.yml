@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           if [ -f build/felucca.elf ]; then
-            "$HOME/.jieli/toolchain/common/bin/objdump" -t build/felucca.elf | sort -k5,5r | head -80
+            "$HOME/.jieli/toolchain/common/bin/objdump" -t build/felucca.elf | sort -k5,5r | sed -n '1,80p'
           fi
 
       - name: Image tests (the update entry, the loader from another app, the render loops' cost)
