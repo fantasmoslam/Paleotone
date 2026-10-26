@@ -88,6 +88,7 @@ int main(int argc, char **argv)
     press(B_HOME);
     shot("keys");
     press(B_HOME);
+    dream_go((uint32_t)trk[0].p[P_ROOT]); live(400);
     shot("scape_music");
     page("SCAPE MIX"); shot("scape_mix");
     song.g[G_SCAPE]=100; live(1600);
@@ -98,6 +99,7 @@ int main(int argc, char **argv)
     page("SCAPE LIFE"); turn(EN_K1,2); turn(EN_K2,40); shot("scape_life");
     page("SCAPE LEVELS"); shot("scape_levels");
     page("SCAPE LEVELS 2"); shot("scape_levels2");
+    page("SCAPE SCENE"); shot("scape_scene");
     press(B_HOME);                                  /* HOME again */
     song.g[G_SCAPE] = 0;
     song.g[G_SCTRK] = 0;

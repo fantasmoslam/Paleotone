@@ -43,7 +43,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <h1 id="paleotone-manual">PALEOTONE Manual</h1>
 <h2 id="welcome">Welcome</h2>
 <p>PALEOTONE turns the M-VAVE FM-1 into a prehistoric synth: four tracks of roaring creatures, war drums, deep horns and jungle pads, plus a living soundscape that runs beside them. It is custom firmware, a fork of GHOULBOX 2.3.2 by Jason Persinger, which is built on Felucca 1.4.1 by Leo Kuroshita (Hügelton Instruments). It is free software under the GPL-3.0 licence.</p>
-<p>This manual covers firmware build a371eb4 (23 October 2026). Every screen picture in it is drawn by the firmware's own display code, so what you see here is what the FM-1 shows.</p>
+<p>This candidate manual covers the SCAPE performance workspace. Every screen picture in it is drawn by the firmware's own display code, so what you see here is what the FM-1 shows.</p>
 <h3 id="what-paleotone-adds">What PALEOTONE adds</h3>
 <ul>
 <li><strong>SAURUS</strong>, an engine whose every note is a creature's call: 20 creatures from brachiosaur to baby rex.</li>
@@ -951,7 +951,7 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 </ol>
 <p>A ×2, B ×1, A ×2, C ×1 gives a verse, a bridge, the verse again and an ending. SAVE › TOOLS deletes a section or clears the song.</p>
 <h2 id="homes-pages-mixer-clock-keys-epoch">HOME's pages: MIXER, CLOCK, KEYS, SCAPE MUSIC</h2>
-<p>Tap <strong>HOME</strong> through MIXER, CLOCK and KEYS into one continuous SCAPE group: MUSIC, MIX, habitat, SETUP, ROLES, DRONE, LIFE and the two layer-level pages. Keep using HOME throughout; GLO stays SONG.</p>
+<p>Tap <strong>HOME</strong> through MIXER, CLOCK and KEYS to enter SCAPE. Turn <strong>SELECT</strong> to choose a control bank inside its shared workspace; tap <strong>HOME</strong> to exit. Hold <strong>GLO</strong> while turning SELECT to change tempo.</p>
 <h3 id="mixer">MIXER</h3>
 <figure><img class="screen" src="img/mixer.png" alt="MIXER with HERD: four track cards with level, pan and reverb, and the selected track&#x27;s LEVEL, PAN, REV and MUTE on the knobs" loading="lazy"><figcaption>MIXER with HERD: four track cards with level, pan and reverb, and the selected track&#x27;s LEVEL, PAN, REV and MUTE on the knobs</figcaption></figure>
 <p>All four tracks at a glance: each card shows the track's sound, its level in dB, its pan and its reverb send. KNOB 1–4 are the selected track's <strong>LEVEL</strong>, <strong>PAN</strong>, <strong>REV</strong> and <strong>MUTE</strong>; turn ALGORITHM to move to another track. For quick mixing with no page change, hold GLO: KNOB 1–4 are the four tracks' levels.</p>
@@ -971,22 +971,24 @@ blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--am
 <h3 id="epoch-a-piece-composed-for-you">SCAPE MUSIC: compose and evolve</h3>
 <p>Choose your four sounds, open SCAPE MUSIC and press a key. OCT+ confirms replacement of existing patterns; OCT− cancels. Composition enables evolution and starts playback. The four roles use ordinary editable sequences with unequal loops and one shared chord progression.</p>
 <h2 id="scape-the-living-soundscape">SCAPE: music and the living world</h2>
-<p>Three main pages put musical movement, layer balance and habitat together. Environmental sounds remain procedural; music and creature calls use the existing four tracks and shared voice budget.</p>
+<p>One persistent workspace brings musical movement, layer balance and habitat together. The top cards always map to the four physical knobs. Below them, MUSIC, MIX, WORLD and LAYERS identify the active bank. Four track lanes show musical role, loop position, loop length in steps and director gain. The normal header retains tempo, playback and battery status. Environmental sounds remain procedural; music and creature calls use the existing four tracks and shared voice budget.</p>
 <table><thead><tr><th>Page</th><th>Knob 1</th><th>Knob 2</th><th>Knob 3</th><th>Knob 4</th></tr></thead><tbody>
-<tr><td>SCAPE MUSIC</td><td>ACTV</td><td>EVOL</td><td>MOTN</td><td>HOLD</td></tr>
+<tr><td>SCAPE MUSIC</td><td>ACTV</td><td>EVOL</td><td>MOTN</td><td>CHORD</td></tr>
 <tr><td>SCAPE MIX</td><td>BED</td><td>MELO</td><td>BASS</td><td>PULSE</td></tr>
 <tr><td>SCAPE</td><td>BIOME</td><td>TIME</td><td>DIST</td><td>RATE</td></tr>
 </tbody></table>
-<p>ACTV controls density; EVOL controls variation speed. MOTN gives each layer a breathing cycle inside a shared two-minute arc; zero removes breathing. HOLD chooses a shared chord time from 20 seconds to five minutes. Bed, melody, bass and pulse loop over 29, 13, 23 and 17 beats. Chord changes keep the rhythm and transpose the notes; held notes finish naturally. Evolution changes later material at each track's loop boundary, preserving its opening.</p>
+<p>ACTV controls density; EVOL controls variation speed. MOTN gives each layer a breathing cycle inside a shared two-minute arc; zero removes breathing. CHORD chooses a shared chord time from 20 seconds to five minutes. Bed, melody, bass and pulse loop over 29, 13, 23 and 17 beats. Chord changes keep the rhythm and transpose the notes; held notes finish naturally. Evolution changes later material at each track's loop boundary, preserving its opening.</p>
 <p>SCAPE MIX smoothly attenuates the four roles without rewriting track levels. BED also controls held BEAST parts. SCAPE changes biome, day/night, distance and call activity. New creature calls wait for melody rests and follow the current chord root. Passing beasts hush wildlife as before. Existing events finish naturally.</p>
-<p>Continue tapping HOME to SCAPE SETUP: EVOL on/off, MOOD, environment LEVEL and extra DRONE level. Evolution OFF freezes changes and breathing clocks while playback continues. Transport stop pauses generation; song-chain playback suspends the director. Raise environment LEVEL to hear the habitat; it defaults to off.</p>
-<p>SCAPE ROLES assigns T1–T4 to AUTO, BED, MELO, BASS, PULSE or BEAST. AUTO uses bass, bed, melody and pulse in track order, except SAURUS/ROAR become BEAST and drum kits remain PULSE. Roles use no preset-name guesses. Changes apply at that track's next loop. Detailed drone, creature and environmental layer controls follow in the same HOME group. Creature TRK OFF disables calls and passing roars.</p>
+<p>Use SELECT to choose SCAPE SETUP: EVOL on/off, MOOD, environment LEVEL and extra DRONE level. Evolution OFF freezes changes and breathing clocks while playback continues. Transport stop pauses generation; song-chain playback suspends the director. Raise environment LEVEL to hear the habitat; it defaults to off.</p>
+<p>SCAPE ROLES assigns T1–T4 to AUTO, BED, MELO, BASS, PULSE or BEAST. AUTO uses bass, bed, melody and pulse in track order, except SAURUS/ROAR become BEAST and drum kits remain PULSE. Roles use no preset-name guesses. Changes apply at that track's next loop. Detailed drone, creature and environmental layer controls remain in the same workspace; SELECT reaches them directly without leaving SCAPE. Creature TRK OFF disables calls and passing roars.</p>
 <p>Project slots and autosave retain these controls in the existing settings sidecar. Older settings load defaults for the new controls. Full editor backups include them; legacy standalone project files do not contain the sidecar. The current chord position restarts after loading.</p>
-<figure><img class="screen" src="img/scape_music.png" alt="SCAPE MUSIC: activity, evolution, motion and chord time" loading="lazy"><figcaption>SCAPE MUSIC: ACTV, EVOL, MOTN and HOLD</figcaption></figure>
+<figure><img class="screen" src="img/scape_music.png" alt="SCAPE MUSIC: activity, evolution, motion and chord time" loading="lazy"><figcaption>SCAPE MUSIC: ACTV, EVOL, MOTN and CHORD</figcaption></figure>
 <figure><img class="screen" src="img/scape_mix.png" alt="SCAPE MIX: bed, melody, bass and pulse" loading="lazy"><figcaption>SCAPE MIX: BED, MELO, BASS and PULSE</figcaption></figure>
 <figure><img class="screen" src="img/scape.png" alt="SCAPE habitat: biome, time, distance and call rate" loading="lazy"><figcaption>SCAPE: BIOME, TIME, DIST and RATE</figcaption></figure>
+<p><strong>SCAPE SCENE</strong> keeps performance actions together: HOLD freezes the state the piece has reached while playback continues; NEXT advances harmony once; NEW starts a new piece in the same key; CHORD sets the automatic chord time. NEXT and NEW return to idle after acting.</p>
+<figure><img class="screen" src="img/scape_scene.png" alt="SCAPE SCENE: hold, next chord, new composition and chord time" loading="lazy"><figcaption>SCAPE SCENE: HOLD, NEXT, NEW and CHORD</figcaption></figure>
 <h3 id="dual-screen-control">Dual-screen control</h3>
-<p>Connect the matching graphics companion and choose Expanded. Hold HOME and tap OCT+ to control the right page, or HOME and OCT− for the left. Release, then play and edit. Each side remembers its page, track and cursor for the session; tempo and transport are shared. Finish modal/step edits before swapping.</p>
+<p>Connect the matching graphics companion and choose Expanded. Hold HOME and tap OCT+ to control the right page, or HOME and OCT− for the left. Release, then play and edit. Each side remembers its control bank, track and cursor for the session; tempo and transport are shared. Finish modal/step edits before swapping.</p>
 <h3 id="saurus-2">SAURUS 2</h3>
 <p>The layered-throat engine has 14 calls and 22 presets, including SHRIEK, HONK, BOOM, RATTLE, RAPTOR CRY and TITAN BOOM. Four throat sets are shared across tracks; a new call takes the oldest when all four are occupied.</p>
 <h2 id="saving">Saving</h2>

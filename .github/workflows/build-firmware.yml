@@ -40,6 +40,14 @@ jobs:
           cp build/felucca.fwsc paleotone.fwsc
           sha256sum paleotone.fwsc | tee -a build.log
 
+      - name: Code size diagnostics
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/felucca.elf ]; then
+            "$HOME/.jieli/toolchain/common/bin/objdump" -t build/felucca.elf | sort -k5,5r | head -80
+          fi
+
       - name: Image tests (the update entry, the loader from another app, the render loops' cost)
         shell: bash
         run: |

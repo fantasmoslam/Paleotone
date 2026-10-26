@@ -878,7 +878,8 @@ static void engine_columns(void)
     draw_column(2, "FAV", preset_favorite() ? "ON" : "OFF", "", VAL(2u), -1, ICON_X_STAR);
     draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
 }
-static __attribute__((noinline)) void draw_columns(void)
+static void draw_columns(void) __attribute__((noinline));
+static void draw_columns(void)
 {
     uint32_t c;
     char val[12];

@@ -112,3 +112,83 @@ jobs:
             build/emu/felucca.wasm
             web/REMOTE_SCREEN.md
             build/remote/manual/
+
+  candidate-preview:
+    if: github.ref == 'refs/heads/feature/scape-garden'
+    needs: companion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Require matching target and full host checks
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/wait_candidate_checks.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: paleotone-screen-companion
+          path: build/candidate-companion
+      - uses: actions/download-artifact@v4
+        with:
+          name: paleotone-firmware
+          path: build/candidate-firmware
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.gate.outputs.firmware_run }}
+      - name: Stage matched preview and native manual pictures
+        run: |
+          python3 -m pip install pillow==12.3.0
+          python3 - <<'PY'
+          import os,subprocess
+          from pathlib import Path
+          from PIL import Image
+          companion=Path('build/candidate-companion')
+          emu=next(companion.rglob('felucca.wasm')).parent
+          package=next(Path('build/candidate-firmware').rglob('paleotone.fwsc'))
+          for name in ('scape_music','scape_mix','scape','scape_setup','scape_roles','scape_drone','scape_life','scape_levels','scape_levels2','scape_scene'):
+              path=next(companion.rglob(name+'.ppm'))
+              Image.open(path).save(Path('web/manual/img')/(name+'.png'))
+          subprocess.run(['python3','web/prepare_scape_preview.py',str(emu),str(package),'build/scape-preview',os.environ['GITHUB_SHA']],check=True)
+          PY
+          node web/test_scape_preview.mjs build/scape-preview
+          node web/test_published_companion.mjs build/scape-preview/screen
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paleotone-validated-preview
+          path: build/scape-preview/
+      - name: Publish isolated candidate preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          url='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/git/ref/heads/feature/scape-garden'
+          request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN']})
+          with urllib.request.urlopen(request,timeout=30) as response:head=json.load(response)['object']['sha']
+          assert head==os.environ['GITHUB_SHA'],'Newer source exists; preserve current preview'
+          PY
+          git fetch origin gh-pages
+          git worktree add --detach build/candidate-pages FETCH_HEAD
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('build/candidate-pages').resolve()
+          target=(root/'webapp/scape-preview').resolve()
+          assert target.relative_to(root).as_posix()=='webapp/scape-preview'
+          if target.exists():shutil.rmtree(target)
+          shutil.copytree('build/scape-preview',target)
+          PY
+          git -C build/candidate-pages config user.name github-actions
+          git -C build/candidate-pages config user.email github-actions@users.noreply.github.com
+          git -C build/candidate-pages add -- webapp/scape-preview
+          git -C build/candidate-pages commit -m "Update validated SCAPE preview ${GITHUB_SHA}"
+          git -C build/candidate-pages push origin HEAD:gh-pages
