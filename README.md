@@ -15,12 +15,12 @@ messages (90 and 91). This does not establish hardware coverage of every feature
 An earlier experimental screen-companion build required Flipper-assisted recovery; USB rescue alone was
 insufficient. Keep a known-good firmware package and recovery instructions before trying experimental firmware.
 
-The [USB second-screen app](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen/) follows the FM-1's controls.
+The [USB second-screen app](https://fantasmoslam.github.io/Paleotone/webapp/screen/) follows the FM-1's controls.
 Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. This is the graphics companion:
 it uses the firmware's C screen renderer and provides Original and Expanded views. It is pinned to the
 working companion source `19727a9` and requires the matching firmware already used with that companion.
 Opening the webpage does not install firmware. Phone support remains untested.
-The separate [lightweight display](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen-lite/) uses screen-state
+The separate [lightweight display](https://fantasmoslam.github.io/Paleotone/webapp/screen-lite/) uses screen-state
 messages 90/91 and is not a replacement for the graphics companion.
 
 ## What's different from GHOULBOX
@@ -35,7 +35,7 @@ messages 90/91 and is not a replacement for the graphics companion.
 - **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
   controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **SCAPE MUSIC** coordinates four unequal musical loops with one chord progression and a shared breathing arc.
   SCAPE has one performance workspace: SELECT changes its control bank, the four knobs edit the visible controls, and HOME exits. The track overview stays visible while editing music, mix, habitat or scene actions.
-  See [SCAPE controls](docs/UNIFIED-SCAPE.md) and the [listening guide](https://fantasmoslam.github.io/dinobox-fm1/webapp/scape-preview/scape-guide/).
+  See [SCAPE controls](docs/UNIFIED-SCAPE.md) and the [listening guide](https://fantasmoslam.github.io/Paleotone/webapp/scape-preview/scape-guide/).
 - **121 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
   prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 64 more join
   them (SAURUS's 22 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).

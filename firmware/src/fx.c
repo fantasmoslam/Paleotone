@@ -410,7 +410,26 @@ static void rev_run(uint32_t model, const int32_t *rev_in, int32_t *out, uint32_
         rev_room(rev_in, out, n);
 }
 
-static int32_t part_buf[CTL];                            /* a part's block (mix_part); the fade of a model change */
+typedef struct { int32_t b[CTL], l[CTL], r[CTL], c[CTL], d[CTL], v[CTL]; } mixsum_t;
+#if FELUCCA_CPU2
+static mixsum_t mx[2];
+#define SM_DECL , mixsum_t *sm
+#define SM_ARG(x) , x
+#define SM(k) (sm->k)
+#else
+static mixsum_t mx[1];
+#define SM_DECL
+#define SM_ARG(x)
+#define SM(k) (mx[0].k)
+#endif
+#define part_buf (mx[0].b)
+/* Legacy globals stay aliases of CPU0's sums (host fixtures and master path). */
+#define send_c (mx[0].c)
+#define send_d (mx[0].d)
+#define send_r (mx[0].v)
+#define mix_l (mx[0].l)
+#define mix_r (mx[0].r)
+/* a part's block and the fade of a model change */
 
 /* process the three buses for one block; sends in, wet stereo-equal out */
 static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet,
@@ -463,7 +482,7 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
 /* one block of the whole mix (shared with hostsim.c): events -> each part (with its modulation matrix)
  * -> dist -> level / pan / sends -> buses -> master; out: stereo Q15 */
 static void events_block(uint32_t n);                    /* seq.c */
-static int32_t send_c[CTL], send_d[CTL], send_r[CTL], wet[CTL], mix_l[CTL], mix_r[CTL];
+static int32_t wet[CTL];
 
 /* SPREAD (#148): a POLY or UNISON part whose SPRD is above 0. Its voices start left and right of PAN in turn (voice.c
  * voice_start; UNISON's detuned voices alternate), at PAN -/+ SPRD / 2 (SPRD 127: hard left and right), with the pan
@@ -474,9 +493,9 @@ static int32_t send_c[CTL], send_d[CTL], send_r[CTL], wet[CTL], mix_l[CTL], mix_
  * (the spread of a distorted chord is its voices' clean difference). The sends
  * take b, mono, as before. SPRD 0, MONO or LEGATO: mix_part's own loop, bit for bit as before. The cost: a block's
  * clear and sum of spread_buf, the side and a wider mix loop, per part; per voice none (it picks its buffer) */
-static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_t n)
+static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_t n SM_DECL)
 {
-    int32_t *d = spread_buf;
+    int32_t *d = spread_buf[(uint32_t)(t-trk)];
     uint32_t i;
     int32_t lvl = scm_level(t, LEVEL_Q12[t->p[P_LEVEL] & 127]), pan = t->p[P_PAN], s = (t->p[P_SPRD] + 1) >> 1;
     int32_t pa = clamp(pan - s, -64, 63), pb = clamp(pan + s, -64, 63);
@@ -498,35 +517,48 @@ static __attribute__((noinline)) void mix_spread(track_t *t, int32_t *b, uint32_
         if (a > pk)
             pk = a;
         if (c)
-            send_c[i] += mulq15(xs, c);
+            SM(c)[i] += mulq15(xs, c);
         if (dl)
-            send_d[i] += mulq15(xs, dl);
+            SM(d)[i] += mulq15(xs, dl);
         if (r)
-            send_r[i] += mulq15(xs, r);
-        mix_l[i] += ((x * glm) >> 12) + ((y * gld) >> 12);
-        mix_r[i] += ((x * grm) >> 12) + ((y * grd) >> 12);
+            SM(v)[i] += mulq15(xs, r);
+        SM(l)[i] += ((x * glm) >> 12) + ((y * gld) >> 12);
+        SM(r)[i] += ((x * grm) >> 12) + ((y * grd) >> 12);
     }
     t->peak = pk;
 }
 
+#if FELUCCA_CPU2
+static uint16_t part_cost[NTRK];
+static const uint16_t ENG_VCOST[NENGINES] = {163,181,162,67,70,174,144,143,189,309,113,134,181,129,220,360};
+#endif
 /* one synth part into the dry mix and the sends; a part with no voice sounding costs
  * the LFO tick and a cleared buffer only (after the DIST tail has run out) */
-static void mix_part(track_t *t, uint32_t n)
+static void mix_part(track_t *t, uint32_t n SM_DECL)
 {
-    int32_t *b = part_buf;
+    int32_t *b = SM(b);
     uint32_t i;
+#if FELUCCA_CPU2
+    uint32_t nr;
+#endif
     mod_begin(t);                                       /* the matrix's per-block values into t->p (mod.c) */
-    spread_on = t->p[P_SPRD] > 0 && (trk_vmode(t) == V_POLY || trk_vmode(t) == V_UNISON);   /* (SPREAD, mix_spread) */
+    t->spread_on = t->p[P_SPRD] > 0 && (trk_vmode(t) == V_POLY || trk_vmode(t) == V_UNISON);   /* (SPREAD, mix_spread) */
+#if FELUCCA_CPU2
+    nr=track_render(t,b,n);
+    part_cost[(uint32_t)(t-trk)]=(uint16_t)(nr*ENG_VCOST[t->engine%NENGINES]+(nr||t->tail?60u:0u));
+    if(nr)
+#else
     if (track_render(t, b, n))
+#endif
         t->tail = 16;                                   /* blocks of DIST state to run out after the last voice */
     else if ((!t->tail || !t->p[P_DIST] || !--t->tail)) {
 
-        if (mod.on)
+        if (MOD(t).on)
             mod_end(t);
         return;
     }
-    if (spread_on)
-        mix_spread(t, b, n);
+    if (t->spread_on)
+        mix_spread(t, b, n SM_ARG(sm));
     else {
         int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127], pan = t->p[P_PAN];
         int32_t gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
@@ -543,17 +575,17 @@ static void mix_part(track_t *t, uint32_t n)
             if (a > pk)
                 pk = a;
             if (c)
-                send_c[i] += mulq15(xs, c);
+                SM(c)[i] += mulq15(xs, c);
             if (d)
-                send_d[i] += mulq15(xs, d);
+                SM(d)[i] += mulq15(xs, d);
             if (r)
-                send_r[i] += mulq15(xs, r);
-            mix_l[i] += (x * gl) >> 12;
-            mix_r[i] += (x * gr) >> 12;
+                SM(v)[i] += mulq15(xs, r);
+            SM(l)[i] += (x * gl) >> 12;
+            SM(r)[i] += (x * gr) >> 12;
         }
         t->peak = pk;
     }
-    if (mod.on)
+    if (MOD(t).on)
         mod_end(t);                                     /* the stored values back */
 }
 
@@ -595,6 +627,53 @@ static __attribute__((noinline)) void perf_master(int32_t *out, uint32_t n)
     }
 }
 
+/* PALEOTONE worker integration, after Felucca v1.6.1 (GPL-3.0).
+ * Keep FORMANT/SAURUS on CPU0: their shared noise stream and SAURUS slot pool retain
+ * their existing ordering. PHYS may draw rng() during model changes, so any PHYS
+ * part disables parallel rendering for that block, preserving LFO/random ordering.
+ * SCAPE calls, note allocation, transport, effects and USB remain on CPU0. */
+#if FELUCCA_CPU2
+#ifndef C1_ON
+#define C1_ON() 0
+#define C1_RUN(fn,arg) 0
+#define C1_WAIT() 0
+#endif
+static uint32_t c1_blocks;
+static uint32_t c1_safe_mask(void)
+{
+    uint32_t i, mask=0;
+    for(i=0;i<NPART;i++) {
+        uint32_t e=trk[i].engine;
+        if(e==ENGI_PHYS) return 0;
+        if(e!=5u && e!=ENGI_SAURUS && e!=ENGI_GURDY) mask|=1u<<i;
+    }
+    return mask;
+}
+static void c1_parts(uint32_t arg)
+{
+    uint32_t i,n=arg>>8;
+    mixsum_t *sm=&mx[1];
+    for(i=0;i<n;i++) sm->l[i]=sm->r[i]=sm->c[i]=sm->d[i]=sm->v[i]=0;
+    for(i=0;i<NPART;i++) if(arg>>i&1u) mix_part(&trk[i],n,sm);
+}
+static uint32_t mix_split(void)
+{
+    uint32_t i,m,all=0,best=0,lo,safe=c1_safe_mask();
+    for(i=0;i<NPART;i++) all+=part_cost[i];
+    lo=all;
+    for(m=1;m<(1u<<NPART);m++) if(!(m&~safe)) {
+        uint32_t a=0,w;
+        for(i=0;i<NPART;i++) if(m>>i&1u) a+=part_cost[i];
+        w=(a>all-a?a:all-a)+40u;
+        if(w<lo){lo=w;best=m;}
+    }
+    return best;
+}
+#ifndef C1_SPLIT
+#define C1_SPLIT() mix_split()
+#endif
+#endif
+
 static void mix_block(int32_t *out, uint32_t n)
 {
     uint32_t i;
@@ -605,8 +684,24 @@ static void mix_block(int32_t *out, uint32_t n)
     events_block(n);
     scm_block(n);
     perf = perf_begin(n);                               /* the FX hold layer at work (perform.c) */
-    for (i = 0; i < NPART; i++)
-        mix_part(&trk[i], n);
+#if FELUCCA_CPU2
+    uint32_t m=C1_ON() ? C1_SPLIT() & c1_safe_mask() : 0;
+    c1_parallel=m!=0;
+    if(m && !C1_RUN(c1_parts,m | n<<8)) { m=0; c1_parallel=0; }
+    c1_blocks+=m!=0;
+    for(i=0;i<NPART;i++) if(!(m>>i&1u)) mix_part(&trk[i],n,&mx[0]);
+    if(m) {
+        if(C1_WAIT()) c1_parts(m | n<<8); /* worker held first; one affected block may glitch */
+        for(i=0;i<n;i++) {
+            mix_l[i]+=mx[1].l[i];mix_r[i]+=mx[1].r[i];
+            send_c[i]+=mx[1].c[i];send_d[i]+=mx[1].d[i];send_r[i]+=mx[1].v[i];
+        }
+        for(i=0;i<NPART;i++) track_lfo_end(&trk[i]);
+    }
+    c1_parallel=0;
+#else
+    for (i = 0; i < NPART; i++) mix_part(&trk[i], n);
+#endif
     amb_block(mix_l, mix_r, send_r, n);                 /* GHOULBOX: the ambience, with the tracks (no track's) */
     scape_block(mix_l, mix_r, send_r, n);               /* DINOBOX: SCAPE, the soundscape (off: nothing runs) */
     if (perf)

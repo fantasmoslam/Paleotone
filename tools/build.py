@@ -42,7 +42,7 @@ SLOT_SPARE = int(os.environ.get("FELUCCA_SPARE_MIN", 15872))   # the least app-s
 LOADER_LOAD = 0x01C0A800
 LOADER_NAME = b"usb_hid_ota.bin"    # the file name the SPL looks for
 DOCKER_IMAGE = os.environ.get("JIELI_DOCKER_IMAGE", "debian:bookworm-slim")
-CFLAGS = ["-Os", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-function"]
+CFLAGS = ["-Oz", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-function"]
 LINE = re.compile(r"^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2} )+)\s*\t(.*)$")
 
 # SDK files of AC79NN_SDK_V1.2.1_2023-12-13 (the tested version)
@@ -184,7 +184,7 @@ def build_app():
     flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen", f"-DPALEOTONE_RENDER_ID={render_id()}u"]
     for flag in ("FELUCCA_FLASH", "FELUCCA_OTA", "FELUCCA_OTA_DRYRUN", "FELUCCA_OTA_RAMONLY", "FELUCCA_CDC",
                  "FELUCCA_UART", "FELUCCA_UAC", "FELUCCA_UAC_TONE", "FELUCCA_UAC_48K", "FELUCCA_ICONS", "FELUCCA_SLICE", "FELUCCA_FM4",
-                 "FELUCCA_CDC_DEFAULT"):
+                 "FELUCCA_CDC_DEFAULT", "FELUCCA_CPU2"):
         v = os.environ.get(flag)    # unset: the default in firmware/src/felucca.c
         if v in ("0", "1"):
             flags.append(f"-D{flag}={v}")
@@ -203,6 +203,7 @@ def build_app():
     tc_all(("cc", "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
            ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
            ("cc", "-c", FW / "hal" / "fm1_isr.S", "-o", OUT / "fm1_isr.o"),
+           ("cc", "-DFELUCCA_CPU2=" + os.environ.get("FELUCCA_CPU2", "1"), "-c", FW / "hal" / "fm1_cpu1.S", "-o", OUT / "fm1_cpu1.o"),
            cmain)
     if size:
         subprocess.run([sys.executable, SRC / "tools" / "size_fns.py", OUT / "felucca.ll", OUT / "felucca_size.ll"],
@@ -210,13 +211,14 @@ def build_app():
         tc("cc", *[f for f in flags if not f.startswith(("-I", "-D", "-W"))], "-c",
            OUT / "felucca_size.ll", "-o", OUT / "felucca.o")
     elf = OUT / "felucca.elf"
-    tc("pi32v2/bin/ld", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
-       OUT / "felucca.o", "-o", elf)
-    for sect in ("text.bin", "data.bin", "ramtext.bin"):
+    tc("pi32v2/bin/ld", "--gc-sections", "-e", "_start", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
+       OUT / "fm1_cpu1.o", OUT / "felucca.o", "-o", elf)
+    for sect in ("text.bin", "data.bin", "ramtext.bin", "c1text.bin"):
         (OUT / sect).unlink(missing_ok=True)
     *_, syms, dis, rt = tc_all(("common/bin/objcopy", "-O", "binary", "-j", ".text", elf, OUT / "text.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".data", elf, OUT / "data.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".ram_text", elf, OUT / "ramtext.bin"),
+                               ("common/bin/objcopy", "-O", "binary", "-j", ".c1_text", elf, OUT / "c1text.bin"),
                                ("common/bin/objdump", "-t", elf),
                                ("common/bin/objdump", "-d", elf),
                                ("common/bin/objdump", "-d", "-j", ".ram_text", elf))
@@ -226,7 +228,7 @@ def build_app():
         return int(re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M).group(1), 16)
     img = bytearray((OUT / "text.bin").read_bytes())
     # .ram_text and .data follow .text at their load addresses; crt0 copies them by words
-    for sect, lname in (("ramtext.bin", "_rt_load"), ("data.bin", "_data_load")):
+    for sect, lname in (("ramtext.bin", "_rt_load"), ("c1text.bin", "_c1_load"), ("data.bin", "_data_load")):
         load = symv(lname)
         if load % 4:
             raise SystemExit(f"{lname} {load:#x} is not word aligned")
@@ -238,6 +240,14 @@ def build_app():
             img += blob
     img += b"\xff" * (-len(img) % 4)
     (OUT / "felucca.bin").write_bytes(img)
+    # Validate the worker's RAM-resident idle loop independently of flash-driver code.
+    if os.environ.get("FELUCCA_CPU2", "1") != "0":
+        c1dis=tc("common/bin/objdump", "-d", "-j", ".c1_text", elf)
+        insns=[ln for ln in c1dis.splitlines() if LINE.match(ln)]
+        bad=[ln for ln in insns if re.search(r"\bcall\b",ln) and not re.search(r"\bcall\s+r\d+\b",ln)]
+        if not insns or bad:
+            raise SystemExit("CPU1 idle loop missing or calls XIP directly: " + str(bad[:3]))
+        print(f"CPU1 idle loop: {len(insns)} instructions, only indirect job calls")
     return bytes(img), syms, dis, rt
 
 

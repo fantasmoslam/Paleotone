@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/scape-garden]
+    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/scape-garden, feature/paleotone-dualcore]
   workflow_dispatch:
 
 permissions:
@@ -29,8 +29,11 @@ jobs:
       - name: JieLi toolchain
         run: tools/get_toolchain.sh "$HOME/.jieli"
 
+      - name: SDK retry regression
+        run: python3 tests/sdk_fetch_test.py
+
       - name: JieLi AC79 SDK
-        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+        run: sh tools/get_ac79_sdk.sh "$HOME/fw-AC79_AIoT_SDK"
 
       - name: Build
         shell: bash

@@ -10,7 +10,7 @@ To add the independent drone, keep habitat LEVEL above zero and raise DRONE on S
 
 SCAPE's generated musical parts are ordinary sequencer patterns. A key on SCAPE MUSIC composes them, and may ask to replace existing patterns. Composition now preserves the current transport state and position. Press PLAY explicitly to start the prepared musical parts. SCENE NEW also leaves stopped playback stopped. If music was already playing, composition does not force a restart.
 
-For a full walkthrough, recipes and troubleshooting, see the [SCAPE listening guide](https://fantasmoslam.github.io/dinobox-fm1/webapp/scape-preview/scape-guide/).
+For a full walkthrough, recipes and troubleshooting, see the [SCAPE listening guide](https://fantasmoslam.github.io/Paleotone/webapp/scape-preview/scape-guide/).
 
 | Page | Knob 1 | Knob 2 | Knob 3 | Knob 4 |
 | --- | --- | --- | --- | --- |

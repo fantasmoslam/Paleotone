@@ -8,9 +8,9 @@ This build swaps the instrument's control focus directly in firmware. Both pages
 
 Automated firmware, image, loader, UI and renderer tests passed. A physical-device trial is still pending. Keep your known-good firmware and the recovery method used previously before installing this experimental build.
 
-1. Download [paleotone-device-controls.fwsc](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen-device/paleotone-device-controls.fwsc).
+1. Download [paleotone-device-controls.fwsc](https://fantasmoslam.github.io/Paleotone/webapp/screen-device/paleotone-device-controls.fwsc).
 2. Install it from your computer using the existing FM-1 installer.
-3. Open [the matching device-control page](https://fantasmoslam.github.io/dinobox-fm1/webapp/screen-device/), connect the FM-1, and select **Expanded**.
+3. Open [the matching device-control page](https://fantasmoslam.github.io/Paleotone/webapp/screen-device/), connect the FM-1, and select **Expanded**.
 
 ## Play
 
@@ -27,11 +27,11 @@ The original [screen companion](../screen/) remains available for the previous f
 
 ## Exact build
 
-Source: [5233e71702f81150f8a0d54566ff9f87c44c7b37](https://github.com/fantasmoslam/dinobox-fm1/tree/5233e71702f81150f8a0d54566ff9f87c44c7b37)
+Source: [5233e71702f81150f8a0d54566ff9f87c44c7b37](https://github.com/fantasmoslam/Paleotone/tree/5233e71702f81150f8a0d54566ff9f87c44c7b37)
 
 Firmware SHA256:
 `52020d278e3023b1dcf6ef840412679d595d1728a1fe267779208d560a015862`
 
-[Firmware checks](https://github.com/fantasmoslam/dinobox-fm1/actions/runs/40172598769) · [Companion checks](https://github.com/fantasmoslam/dinobox-fm1/actions/runs/40172598766)
+[Firmware checks](https://github.com/fantasmoslam/Paleotone/actions/runs/40172598769) · [Companion checks](https://github.com/fantasmoslam/Paleotone/actions/runs/40172598766)
 
-Licences: [GPL source](https://github.com/fantasmoslam/dinobox-fm1/blob/5233e71702f81150f8a0d54566ff9f87c44c7b37/LICENSE), [licensing notes](https://github.com/fantasmoslam/dinobox-fm1/blob/5233e71702f81150f8a0d54566ff9f87c44c7b37/LICENSING.md), [component licence texts](../../firmware/LICENSES/).
+Licences: [GPL source](https://github.com/fantasmoslam/Paleotone/blob/5233e71702f81150f8a0d54566ff9f87c44c7b37/LICENSE), [licensing notes](https://github.com/fantasmoslam/Paleotone/blob/5233e71702f81150f8a0d54566ff9f87c44c7b37/LICENSING.md), [component licence texts](../../firmware/LICENSES/).

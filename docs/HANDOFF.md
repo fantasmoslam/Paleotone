@@ -8,7 +8,7 @@ DINOBOX is a dinosaur-themed firmware for the **M-VAVE FM-1** pocket synth: a fo
 Persinger), itself built on Felucca 1.4.1 (Leo Kuroshita, Hügelton Instruments). GPL-3.0-only. Owner: Dylan
 (GitHub `fantasmoslam`, Windows only, prefers not to touch GitHub himself).
 
-- **Repository:** `github.com/fantasmoslam/dinobox-fm1` (**private**), branch `main`. Commits are authored as
+- **Repository:** `github.com/fantasmoslam/Paleotone` (**private**), branch `main`. Commits are authored as
   `fantasmoslam <dylan.peter.spaniel@gmail.com>`.
 - **Builds:** GitHub Actions only (`.github/workflows/build-firmware.yml`); the JieLi toolchain and SDK can't be
   fetched locally. Every push to `main` builds; the result (`dinobox.fwsc`, `build.log`, `felucca.bin`, `ota.bin`,

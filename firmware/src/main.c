@@ -4,6 +4,7 @@
  * guards; then LCD, input (TIMER5 IRQ, 10 kHz), audio (ALNK0 IRQ). GHOULBOX: two failed boots or OCT- held at
  * power-on start the USB RESCUE instead (rescue.c, bootguard.h). */
 extern uint32_t _data_start[], _data_end[], _data_load[], _bss_start[], _bss_end[];
+extern uint32_t _c1_start[], _c1_end[], _c1_load[];
 extern uint32_t _pool_start[], _pool_end[], _rt_start[], _rt_end[], _rt_load[];
 
 
@@ -156,6 +157,16 @@ static void fm1_main(void)
     felucca_init();
     master_boot();
     kb_boot_hold = 1;                         /* #137: no notes from the keys before the UI (seq.c keyboard_block) */
+#if FELUCCA_CPU2
+    if(ui_prefs2 & (PREF_CPU2_ON>>16)) {
+        if(bootguard.failed) fm1_c1_gave_up=3;
+        else {
+            fm1_guard_pc_open();
+            if(fm1_cpu1_start()) fm1_c1_gave_up=3;
+            fm1_guard_enable(FM1_GUARD_PC);
+        }
+    }
+#endif
     audio_init();
     usb_start();
 #if FELUCCA_UART
@@ -182,6 +193,13 @@ static void fm1_main(void)
     for (;;) {
         uint32_t m = fm1_ms;
         fm1_wdt_feed();
+#if FELUCCA_CPU2
+        if(*(volatile uint8_t *)&fm1_c1_gave_up && (ui_prefs2 & (PREF_CPU2_ON>>16))) {
+            ui_prefs2 &= ~(PREF_CPU2_ON>>16);
+            settings_save(); /* queues a save; settings_poll waits for stopped transport */
+            ui_message("2ND CORE FAULT: OFF");
+        }
+#endif
         usb_retry(fm1_ms);
         if (fm1_ms > 30000u && bootguard.pending) {     /* a crash or hang in the first 30 s counts */
             bootguard.pending = 0;
@@ -272,6 +290,7 @@ static void fm1_main(void)
 void fm1_cstart(void)
 {
     uint32_t *s, *d, p3, src, wdt, boot_mode;
+    FM1_RESET_PREP(); /* stop CPU1 before clearing any shared RAM */
     fm1_time_init();
     fm1_reset_reason();
     p3 = fm1_boot.p3_rst;
@@ -297,6 +316,7 @@ void fm1_cstart(void)
         *d = *s;
     for (s = _rt_load, d = _rt_start; d < _rt_end; s++, d++)
         *d = *s;                                /* flash driver code that must run from RAM */
+    for(s=_c1_load,d=_c1_start;d<_c1_end;s++,d++) *d=*s;
     fm1_mailbox_clear();
     fm1_guard_enable(FM1_GUARD_STACK | FM1_GUARD_WRITE | FM1_GUARD_BUS | FM1_GUARD_PC);
     fm1_boot.p3_rst = (uint8_t)p3;

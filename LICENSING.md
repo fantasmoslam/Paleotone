@@ -9,6 +9,13 @@ Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 
 ## What is GPL-3.0-only
 
+The opt-in second-core worker and lifecycle safeguards are ported from
+Felucca v1.6.1 (hugelton/Felucca), including work by gospodindilly-ops,
+Charles Vestal (X0X), Kerem Kilic (Melodee), and zednaked (Jangada), GPL-3.0-only.
+See firmware/hal/fm1_cpu1.{h,S}, the CPU1 reset/guard/fault paths, and
+tests/c1_host.h. PALEOTONE adapts the part-render split with conservative
+engine ownership; no CPU voltage or clock changes are included.
+
 Every file in this tree that carries an `SPDX-License-Identifier: GPL-3.0-only` header:
 
 - the firmware: `firmware/` (app, HAL, update loader)
