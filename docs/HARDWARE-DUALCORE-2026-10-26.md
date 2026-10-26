@@ -20,11 +20,19 @@ Same current song/settings, reported BPM 84, selected track ROAR/STAMPEDE. No so
 | Worker maximum wait (microseconds) | 0 | 8 |
 | Worker stack high-water (bytes) | 0 | 748 |
 
-Worker startup after power cycle confirmed cpu2_set=1 and cpu2=1; block count increased during playback. This is actual device evidence, not emulator output. Playback stopped after the short comparison; second-core preference remains ON.
+Worker startup after power cycle confirmed cpu2_set=1 and cpu2=1; block count increased during playback. This is actual device evidence, not emulator output. A PLAY toggle was sent after the short comparison, but stop was not verified; owner subsequently reported continued playback. Never assume a toggle established a particular transport state.
 
 ## Interpretation and limits
-Worker execution and a short-run timing benefit are demonstrated on this device/workload. Voice competition remains: the twelve-voice budget was not increased. Residual late blocks remain, so this is not an overload-free result or public-release acceptance.
+Worker execution and a short-run timing benefit are demonstrated on this device/workload. Correction after source inspection: voices_shed is specifically CPU-overload protection (audio.c), not a count proving exhaustion of the twelve-voice budget. The budget is unchanged, but these observations establish processing pressure. Residual late blocks remain, so this is not an overload-free result or public-release acceptance.
 
 Runs were not sample-aligned, did not have identical uptime, and worst-block counters are cumulative since boot. CPU numbers are snapshots, not averages. Do not claim a universal percentage speedup or compare absolute cumulative counts across boots. Listening quality has not been assessed by the automated tools.
 
 Pending: owner listening feedback; longer stability run; USB audio under load; expanded-display simultaneous operation; live recording/save/reload; controlled fault/fallback and reset/update checks; additional engine workloads. SCAPE independence is not implemented. Retain backups/rollback before further updates.
+
+## Follow-up with second core re-enabled
+
+Owner identified the suspected whoosh as a heavily edited SAURUS/BRACHIO sound, rather than an established worker artifact. After another restart, cpu2_set=1 and cpu2=1 were verified with transport stopped. Playback was then started from that verified state.
+
+Sustained readings reached 178335 worker blocks, cpu2_bad=0 and cpu2_gave_up=0; maximum wait 11 microseconds, stack high-water 748 bytes. Thirty actual display snapshot updates completed with 30 applied state buffers (421380 bytes processed). This tests the transfer protocol, not browser rendering or listening quality. At the last reading audio_late=19 and voices_shed=90 since boot: overload remains. Playback was left running for listening. No project patches or sequences were edited by these tests.
+
+Pending: USB audio streaming, owner listening feedback, live recording on an agreed disposable project, save/reload, long-duration and other-engine trials. Do not call the candidate stable or ready for extra SCAPE load.
