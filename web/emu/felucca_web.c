@@ -209,6 +209,10 @@ static void fl_plain_window_init(void) {}
 #include "../../firmware/src/project.c"
 
 /* ------------------------------------------------- main.c and its HAL --- */
+/* No hardware worker exists in the browser/native emulator. These mirror the
+ * other linker-symbol stand-ins below; web_boot never calls fm1_cstart. */
+#define FM1_RESET_PREP() ((void)0)
+uint32_t _c1_start[1], _c1_end[1], _c1_load[1];
 typedef struct { uint32_t magic, count, vec, pc, emu, dbg, rets; } fm1_crash_t;
 #define FM1_CRASH_MAGIC 0x43525348u
 static fm1_crash_t fm1_crash;                     /* (none: main.c boot_leds runs the sweep) */
