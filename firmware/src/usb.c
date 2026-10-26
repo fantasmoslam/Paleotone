@@ -108,6 +108,7 @@ static struct {
     uint32_t acc;                /* 44.1 frames per ms: 0.1 frame steps */
     uint32_t last;               /* the last frame sent, repeated on an underrun */
     uint32_t starts, pkts, frames;               /* frames in packets sent from the ring */
+    uint32_t raw_fill_lo;
     uint32_t underruns, overruns, missed;        /* glitches: ring empty (repeat), ring full (drop), no packet ready */
     uint32_t stalls;                             /* the host stopped reading for > 20 ms (alt still 1) */
     uint32_t adj_up, adj_down;                   /* packets one frame longer / shorter than the pattern */
@@ -1026,6 +1027,9 @@ static void ep3_tx(void)                                /* <= 63 bytes per packe
 
 #if FELUCCA_UAC
 /* ---- the audio input: audio.c produces (render start, then each block), TIMER5 consumes ---- */
+#ifdef AUDIO_PROFILE_TARGET
+static uint32_t uac_last_feed_tick,uac_feed_gap_max_us;
+#endif
 static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, before a half buffer renders */
 {
     uint32_t fill;
@@ -1051,6 +1055,10 @@ static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, bef
         RING_PUBLISH();
         ua_w = r + prime;
         uac.fill_min = prime;
+        uac.raw_fill_lo=0xFFFFFFFFu;
+#ifdef AUDIO_PROFILE_TARGET
+        uac_last_feed_tick=0; uac_feed_gap_max_us=0;
+#endif
         RING_PUBLISH();
         uac.go = 1;
         return;
@@ -1160,6 +1168,9 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)   
 #endif
     RING_PUBLISH();
     ua_w = w + n;
+#ifdef AUDIO_PROFILE_TARGET
+    { uint32_t now=fm1_ticks(); if(uac_last_feed_tick){uint32_t us=(now-uac_last_feed_tick)/FM1_TICKS_PER_US;if(us>uac_feed_gap_max_us)uac_feed_gap_max_us=us;} uac_last_feed_tick=now; }
+#endif
 }
 
 /* the next packet into d: 44 / 45 frames (+-1 to hold the ring's fill), from the ring or, until it is
@@ -1195,6 +1206,7 @@ static uint32_t uac_packet(uint32_t *d)
     }
     r = ua_r;
     fill = ua_w - r;
+    if(fill<uac.raw_fill_lo)uac.raw_fill_lo=fill;
     RING_PUBLISH();                                     /* the slots after the index */
     k = fill < n ? fill : n;
     for (i = 0; i < k; i++)

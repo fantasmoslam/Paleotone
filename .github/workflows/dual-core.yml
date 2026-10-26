@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,6 +19,10 @@ jobs:
           node-version: '24'
       - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
       - run: python3 tools/build.py --gen-only
+      - name: Audio profiling counter regression
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror -Ifirmware/src tests/audio_profile_test.c -o /tmp/audio-profile-test
+          /tmp/audio-profile-test
       - name: Compile and test the real concurrent mixer
         run: |
           mkdir -p build/host

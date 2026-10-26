@@ -183,6 +183,10 @@ static void con_uac(void)                              /* USB audio input: strea
     con_kv("uac_stalls", (int32_t)uac.stalls);
     con_kv("uac_adj_up", (int32_t)uac.adj_up);
     con_kv("uac_adj_down", (int32_t)uac.adj_down);
+    con_kv("uac_raw_fill_lo",uac.raw_fill_lo==0xFFFFFFFFu?-1:(int32_t)uac.raw_fill_lo);
+#ifdef AUDIO_PROFILE_TARGET
+    con_kv("uac_feed_gap_max_us",uac_feed_gap_max_us);
+#endif
     con_kv("uac_fill", (int32_t)uac.fill_min);
     con_kv("uac_fill_lo", uac.fill_lo == 0xFFFFFFFFu ? -1 : (int32_t)uac.fill_lo);
     con_kv("uac_fill_hi", (int32_t)uac.fill_hi);
@@ -198,6 +202,10 @@ static void con_status(void)
     con_kv("uptime_ms", (int32_t)fm1_ms);
     con_kv("cpu_pct", (int32_t)(song.cpu_q8 * 100u / 256u));
     con_kv("audio_max_us", (int32_t)felucca_dbg.max_us);
+    con_kv("audio_wall_max_us",audio_wall_max_us);
+    con_kv("audio_nested_max_us",audio_nested_max_us);
+    con_kv("audio_deadline_us",HALF_FRAMES*1000000u/FS);
+    con_kv("lcd_timeouts",fm1_lcd_timeouts);
     con_kv("audio_late", (int32_t)felucca_dbg.late);
     con_kv("voices_shed", (int32_t)shed_count);
     con_kv("voices_given_up", (int32_t)voice_kills);
@@ -350,8 +358,28 @@ static void con_params(void)
     }
 }
 
+#ifdef AUDIO_PROFILE_TARGET
+static void con_profile(void)
+{
+    static const char *const names[10]={"track1","track2","track3","track4","events","parts","scape","effects","master","usb_copy"};
+    con_kv("profile_on",ap_on);
+    for(uint32_t i=0;i<10;i++) {
+        con_puts(names[i]); con_putc(' '); con_dec(ap_metric[i].calls);
+        con_putc(' '); con_dec(ap_metric[i].sum_us);
+        con_putc(' '); con_dec(ap_metric[i].max_us);con_puts("\r\n");
+    }
+}
+#endif
+
 static void con_exec(const char *p)
 {
+#ifdef AUDIO_PROFILE_TARGET
+    if(con_word(&p,"profile")) {
+        if(con_word(&p,"on")) {ap_on=0;memset(ap_metric,0,sizeof ap_metric);ap_on=1;}
+        else if(con_word(&p,"off")) ap_on=0;
+        con_profile();
+    } else
+#endif
     if (con_word(&p, "help") || con_word(&p, "?"))
         con_puts("status  dbg  inp  crash  params  memr ADDR [LEN]  flr OFF [LEN]  uboot yes\r\n");
     else if (con_word(&p, "status"))
