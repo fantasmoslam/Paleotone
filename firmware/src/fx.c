@@ -539,13 +539,17 @@ static void mix_part(track_t *t, uint32_t n SM_DECL)
     int32_t *b = SM(b);
     uint32_t i;
 #if FELUCCA_CPU2
-    uint32_t j,nv=0;
-    for(j=0;j<NVOICE;j++) nv+=t->v[j].active!=0;
-    part_cost[(uint32_t)(t-trk)]=(uint16_t)(nv*ENG_VCOST[t->engine%NENGINES]+(nv||t->tail?60u:0u));
+    uint32_t nr;
 #endif
     mod_begin(t);                                       /* the matrix's per-block values into t->p (mod.c) */
     t->spread_on = t->p[P_SPRD] > 0 && (trk_vmode(t) == V_POLY || trk_vmode(t) == V_UNISON);   /* (SPREAD, mix_spread) */
+#if FELUCCA_CPU2
+    nr=track_render(t,b,n);
+    part_cost[(uint32_t)(t-trk)]=(uint16_t)(nr*ENG_VCOST[t->engine%NENGINES]+(nr||t->tail?60u:0u));
+    if(nr)
+#else
     if (track_render(t, b, n))
+#endif
         t->tail = 16;                                   /* blocks of DIST state to run out after the last voice */
     else if ((!t->tail || !t->p[P_DIST] || !--t->tail)) {
 

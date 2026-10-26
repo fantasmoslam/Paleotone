@@ -211,7 +211,7 @@ def build_app():
         tc("cc", *[f for f in flags if not f.startswith(("-I", "-D", "-W"))], "-c",
            OUT / "felucca_size.ll", "-o", OUT / "felucca.o")
     elf = OUT / "felucca.elf"
-    tc("pi32v2/bin/ld", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
+    tc("pi32v2/bin/ld", "--gc-sections", "-e", "_start", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
        OUT / "fm1_cpu1.o", OUT / "felucca.o", "-o", elf)
     for sect in ("text.bin", "data.bin", "ramtext.bin", "c1text.bin"):
         (OUT / sect).unlink(missing_ok=True)
@@ -240,6 +240,14 @@ def build_app():
             img += blob
     img += b"\xff" * (-len(img) % 4)
     (OUT / "felucca.bin").write_bytes(img)
+    # Validate the worker's RAM-resident idle loop independently of flash-driver code.
+    if os.environ.get("FELUCCA_CPU2", "1") != "0":
+        c1dis=tc("common/bin/objdump", "-d", "-j", ".c1_text", elf)
+        insns=[ln for ln in c1dis.splitlines() if LINE.match(ln)]
+        bad=[ln for ln in insns if re.search(r"\bcall\b",ln) and not re.search(r"\bcall\s+r\d+\b",ln)]
+        if not insns or bad:
+            raise SystemExit("CPU1 idle loop missing or calls XIP directly: " + str(bad[:3]))
+        print(f"CPU1 idle loop: {len(insns)} instructions, only indirect job calls")
     return bytes(img), syms, dis, rt
 
 
