@@ -17,5 +17,12 @@ assert.equal(instance.exports.web_remote_id()>>>0,layout.rendererId);
 assert.equal(instance.exports.web_remote_schema(),layout.schema);
 assert.equal(metadata.rendererId,layout.rendererId);
 assert.equal(metadata.kind,'firmware-graphics-companion');
+if(metadata.physicalFocusProtocol===2){
+  assert.match(html,/PhysicalFocus/);
+  assert.match(html,/await focus.poll\(enabled\)/);
+  assert.match(html,/focus.snapshot\(\)/);
+  assert.doesNotMatch(html,/ControlTarget|shiftTarget/,'physical focus must survive companion packaging');
+  for(const f of ['physical_focus.js','display_performance.js'])assert.ok((await readFile(join(dir,f))).length);
+}
 for(const f of ['remote_screen.js','second_screen.js','control_target.js','frame_presenter.js'])assert.ok((await readFile(join(dir,f))).length);
 console.log('published companion: graphics renderer, Original/Expanded, complete assets and matching WASM identity passed');

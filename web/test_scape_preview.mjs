@@ -7,6 +7,10 @@ import vm from 'node:vm';
 import {productOf,logicalImage} from './fm1pkg.js';
 const root=resolve(process.argv[2]),read=p=>fs.readFile(join(root,p),'utf8');
 const build=JSON.parse(await read('build.json')),pkg=await fs.readFile(join(root,build.firmware.file));
+assert.equal(build.physicalFocusProtocol,2);
+assert.equal(JSON.parse(await read('screen/build.json')).physicalFocusProtocol,2);
+assert.match(await read('screen/index.html'),/PhysicalFocus/);
+assert.match(await read('screen/index.html'),/await focus.poll\(enabled\)/);
 assert.equal(productOf(pkg),'FM-1_900');assert.ok(logicalImage(pkg).length);
 assert.equal(createHash('sha256').update(pkg).digest('hex'),build.firmware.sha256);
 for(const sub of ['', 'screen/']) {

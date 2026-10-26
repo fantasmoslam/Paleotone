@@ -18,7 +18,9 @@ jobs:
         with:
           node-version: '24'
       - name: Installer diagnostics and interrupted-transfer regression
-        run: python3 tests/install_test.py
+        run: |
+          python3 tests/install_test.py
+          python3 tests/companion_package_test.py
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 3.1.74
@@ -161,6 +163,7 @@ jobs:
           PY
           node web/test_scape_preview.mjs build/scape-preview
           node web/test_published_companion.mjs build/scape-preview/screen
+          node web/test_control_widget.mjs build/scape-preview/screen/index.html
       - uses: actions/upload-artifact@v4
         with:
           name: paleotone-validated-preview

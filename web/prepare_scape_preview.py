@@ -21,8 +21,9 @@ shutil.copytree(HERE/'manual',out/'manual',dirs_exist_ok=True)
 shutil.copyfile(HERE.parent/'docs/UNIFIED-SCAPE.md',out/'SCAPE-CONTROLS.md')
 shutil.copyfile(pkg,out/'paleotone-scape.fwsc')
 prepare(emu,out/'screen',source)
+assert json.loads((out/'screen/build.json').read_text(encoding="utf-8")).get('physicalFocusProtocol') == 2, 'SCAPE preview requires the device-controlled screen page'
 metadata={'source':source,'rendererId':layout['rendererId'],'schema':layout['schema'],'kind':'firmware-graphics-companion',
-          'candidate':True,'firmware':{'file':'paleotone-scape.fwsc','sha256':sha,'size':len(raw)}}
+          'candidate':True,'physicalFocusProtocol':2,'firmware':{'file':'paleotone-scape.fwsc','sha256':sha,'size':len(raw)}}
 (out/'build.json').write_text(json.dumps(metadata,indent=2)+'\n',encoding="utf-8")
 (out/'screen/build.json').write_text(json.dumps(metadata,indent=2)+'\n',encoding="utf-8")
 editor=out/'editor';editor.mkdir(exist_ok=True)
@@ -36,7 +37,7 @@ lib='\n'.join(strip_module((HERE/name).read_text(encoding="utf-8")) for name in 
 meta={'version':'SCAPE candidate','product':'FM-1_900','pkg':'../paleotone-scape.fwsc?v='+token,'sha256':sha}
 html=(HERE/'index_pkg.html').read_text(encoding="utf-8").replace('/*LIB*/',lib).replace('/*META*/',json.dumps(meta))
 html=html.replace('href="../../"','href="../"').replace('href="../app-setup/"','href="../screen/"').replace('href="../screen-unified/"','href="../screen/"').replace('href="../emu/"','href="../"').replace('href="../../manual/"','href="../manual/"').replace('href="../../firmware/','href="../firmware/').replace('href="../../firmwares/"','href="https://fantasmoslam.github.io/dinobox-fm1/firmwares/"')
-html=html.replace('<body>','<body><p style="text-align:center">SCAPE candidate firmware — use the paired candidate display after installing.</p>',1)
+html=html.replace('<body>','<body><p style="text-align:center">SCAPE candidate firmware - use the paired candidate display after installing.</p>',1)
 html=html.replace('href="../firmware/LICENSES/"','href="https://github.com/fantasmoslam/dinobox-fm1/tree/'+source+'/LICENSES"')
 html=html.replace('This PALEOTONE build has been tested on an FM-1 with compressed dual-screen display.','This SCAPE candidate passed automated firmware and display checks; it has not yet been tested on a physical FM-1.')
 (installer/'index.html').write_text(html,encoding="utf-8")
@@ -44,7 +45,7 @@ path=editor/'index.html';path.write_text(path.read_text(encoding="utf-8").replac
 path=out/'manual/index.html';path.write_text(path.read_text(encoding="utf-8").replace('href="../webapp/emu/"','href="../"').replace('href="../webapp/installer/"','href="../installer/"').replace('href="../webapp/editor/"','href="../editor/"'),encoding="utf-8")
 html=(out/'index.html').read_text(encoding="utf-8").replace('ghoulbox-emu-','paleotone-scape-preview-')
 html=html.replace('href="../app-setup/"','href="screen/"').replace('Connect your FM-1 display','Candidate FM-1 display').replace('href="../installer/"','href="installer/"').replace('Install on your FM-1','Install SCAPE candidate').replace('href="../../manual/"','href="manual/"').replace('href="../editor/"','href="editor/"').replace('href="../../firmwares/"','href="https://fantasmoslam.github.io/dinobox-fm1/firmwares/"')
-html=re.sub(r'<body([^>]*)>',r'<body\1><aside style="padding:10px;text-align:center;background:#122417">SCAPE candidate preview · Separate browser saves · <a href="manual/#scape-the-living-soundscape">New controls</a> · Your FM-1 changes only if you install.</aside>',html,count=1)
+html=re.sub(r'<body([^>]*)>',r'<body\1><aside style="padding:10px;text-align:center;background:#122417">SCAPE candidate preview � Separate browser saves � <a href="manual/#scape-the-living-soundscape">New controls</a> � Your FM-1 changes only if you install.</aside>',html,count=1)
 (out/'index.html').write_text(html,encoding="utf-8")
 for path in out.rglob('*'):
     if path.suffix not in ('.html','.js'):continue
