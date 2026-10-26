@@ -3,7 +3,7 @@
 /* Host test of the Felucca update loader (firmware/loader/ldr_core.c): a fake
  * host serves a package over the SysEx protocol, the "device" flash starts as
  * another package's flash.bin (as if that firmware were installed).
- *   ldr_test OLD.fwsc NEW.fwsc */
+ *   ldr_test OLD.fwsc NEW.fwsc [FAILED_FLASH.bin] */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +16,7 @@ static uint8_t nor[0x100000], *logical;
 static size_t logical_len;
 static uint8_t rx[1024];
 static uint32_t rx_len, rx_full, now_ms, requests, erases, bad_range, record_cleared, f0_asked;
+static uint32_t stop_after_sectors, sectors_done, app_erases;
 static uint32_t flip_addr = 0xFFFFFFFFu, flip_seen, flip_on;   /* serve addr's flip_on-th reply with a byte changed */
 
 static uint32_t pack7(const uint8_t *in, uint32_t n, uint8_t *out)
@@ -49,6 +50,8 @@ static int ota_wire_send(const uint8_t *p, uint32_t n)
     addr = u[7] | u[8] << 8 | u[9] << 16 | (uint32_t)u[10] << 24;
     len = u[11] | u[12] << 8 | u[13] << 16;
     requests++;
+    if (stop_after_sectors && sectors_done >= stop_after_sectors && addr < 0xE0000000u)
+        return 0; /* simulate a silent host after the last verified sector */
     memcpy(m, "\x00\x59\x30", 3);
     m[3] = (uint8_t)(len + 8); m[4] = (uint8_t)((len + 8) >> 8); m[5] = 0; m[6] = 0;
     memcpy(m + 7, &addr, 4);
@@ -86,6 +89,7 @@ static int ldr_erase(uint32_t off)
     if (off < 0x4000u || off >= 0xFC000u || (off & 0xFFFu) || (off >= 0x97000u && off < 0xE0000u)) bad_range++;
     if (off < 0x4000u) { printf("ERASE IN THE HEAD %#x\n", off); exit(1); }
     erases++;
+    if (off < 0x93000u) app_erases++;
     memset(nor + off, 0xFF, 0x1000);
     return 0;
 }
@@ -98,7 +102,7 @@ static int ldr_prog(uint32_t off, const void *p, uint32_t n)
     return 0;
 }
 static void ldr_record_clear(void) { record_cleared++; }
-static void ldr_progress(uint32_t done, uint32_t total) { (void)done; (void)total; }
+static void ldr_progress(uint32_t done, uint32_t total) { sectors_done = done / 0x1000u; (void)total; }
 #include "../firmware/loader/ldr_core.c"
 
 static uint8_t *load_logical(const char *path, size_t *len)
@@ -142,7 +146,7 @@ int main(int argc, char **argv)
     uint8_t *old, head[0x4000];
     uint32_t ofo, nfo, i;
     int bad = 0, rc;
-    if (argc < 3) { printf("usage: ldr_test OLD.fwsc NEW.fwsc\n"); return 2; }
+    if (argc < 3) { printf("usage: ldr_test OLD.fwsc NEW.fwsc [FAILED_FLASH.bin]\n"); return 2; }
     old = load_logical(argv[1], &olen);
     logical = load_logical(argv[2], &logical_len);
     ofo = flash_off(old);
@@ -162,6 +166,32 @@ int main(int argc, char **argv)
         memcpy(nor + 0xA0F00, r, sizeof r);
         memcpy(user, nor + 0xA0000, sizeof user);
     }
+    if (argc > 3) {
+        static uint8_t saved[sizeof nor], captured[sizeof nor];
+        FILE *f = fopen(argv[3], "rb");
+        uint32_t expected_erases = 0;
+        if (!f) { perror(argv[3]); return 2; }
+        if (fread(captured, 1, sizeof captured, f) != sizeof captured || fgetc(f) != EOF) {
+            fclose(f);
+            printf("failed flash must be exactly 1 MiB\n");
+            return 2;
+        }
+        fclose(f);
+        memcpy(saved, nor, sizeof nor);
+        memcpy(nor, captured, sizeof nor);
+        for (i = LDR_APP_LO; i < LDR_APP_HI; i += 0x1000u)
+            expected_erases += memcmp(nor + i, logical + nfo + i, 0x1000u) != 0;
+        app_erases = 0;
+        rc = ldr_session();
+        bad += check("captured failed flash resumes to the exact new application",
+                     rc == 0 && app_erases == expected_erases &&
+                     !memcmp(nor + LDR_APP_LO, logical + nfo + LDR_APP_LO, LDR_APP_HI - LDR_APP_LO));
+        bad += check("captured-image replay preserves boot head and user data",
+                     !memcmp(nor, captured, LDR_APP_LO) &&
+                     !memcmp(nor + LDR_DATA_LO, captured + LDR_DATA_LO, LDR_DATA_HI - LDR_DATA_LO));
+        memcpy(nor, saved, sizeof nor);
+        sectors_done = record_cleared = f0_asked = app_erases = erases = requests = 0;
+    }
     /* a damaged package (one byte deep in the app area): refused before anything is erased */
     {
         size_t at = nfo + 0x50123u;
@@ -172,6 +202,43 @@ int main(int argc, char **argv)
                      !memcmp(nor + 0x4000, old + ofo + 0x4000, 0x93000 - 0x4000) && nor[0xE4F06] == 0x41);
         logical[at] ^= 0x01;
         requests = 0;
+    }
+    /* Recovery backup6 showed exactly 23 new sectors followed by the old image.
+     * Interrupt the actual loader at that boundary, then restart its session
+     * on the mixed flash. No device, reset simulation or new firmware is needed. */
+    {
+        static uint8_t saved[sizeof nor], before[sizeof nor];
+        uint32_t expected_erases = 0;
+        memcpy(saved, nor, sizeof nor);
+        for (i = LDR_APP_LO; i < LDR_APP_HI; i += 0x1000u)
+            nor[i] = logical[nfo + i] ^ 1u; /* every sector needs a write */
+        memcpy(before, nor, sizeof nor);
+        sectors_done = record_cleared = f0_asked = app_erases = 0;
+        stop_after_sectors = 23;
+        rc = ldr_session();
+        stop_after_sectors = 0;
+        bad += check("host loss after 23 sectors aborts without success",
+                     rc == -7 && sectors_done == 23 && !record_cleared && !f0_asked);
+        bad += check("interruption leaves exact new prefix and unchanged old suffix",
+                     !memcmp(nor + LDR_APP_LO, logical + nfo + LDR_APP_LO, 23u * 0x1000u) &&
+                     !memcmp(nor + LDR_APP_LO + 23u * 0x1000u, before + LDR_APP_LO + 23u * 0x1000u,
+                             LDR_APP_HI - LDR_APP_LO - 23u * 0x1000u));
+        bad += check("interruption keeps staged update records and flash head",
+                     !memcmp(nor + 0xE4F00, before + 0xE4F00, 112) &&
+                     !memcmp(nor + 0xE8F00, before + 0xE8F00, 112) &&
+                     !memcmp(nor, before, LDR_APP_LO));
+        for (i = LDR_APP_LO; i < LDR_APP_HI; i += 0x1000u)
+            expected_erases += memcmp(nor + i, logical + nfo + i, 0x1000u) != 0;
+        app_erases = 0;
+        rc = ldr_session();
+        bad += check("restart from mixed image completes, skipping verified sectors",
+                     rc == 0 && app_erases == expected_erases && expected_erases == LDR_NSEC - 23u &&
+                     !memcmp(nor + LDR_APP_LO, logical + nfo + LDR_APP_LO, LDR_APP_HI - LDR_APP_LO));
+        bad += check("resumed update preserves head and user data",
+                     !memcmp(nor, before, LDR_APP_LO) &&
+                     !memcmp(nor + LDR_DATA_LO, before + LDR_DATA_LO, LDR_DATA_HI - LDR_DATA_LO));
+        memcpy(nor, saved, sizeof nor);
+        sectors_done = record_cleared = f0_asked = app_erases = erases = requests = 0;
     }
     /* a sector that comes in different the second time (a transfer error after the check) is read again */
     flip_addr = nfo + 0x20000u; flip_on = 2; flip_seen = 0;

@@ -13,11 +13,12 @@ cd "$(dirname "$0")/../.."
 [ -f build/gen/felucca_tables.h ] || { echo "emu: run ./build.sh once first (build/gen)"; exit 1; }
 command -v emcc >/dev/null 2>&1 || { echo "emu: no emcc (Emscripten)"; exit 1; }
 VERSION=$(sed -n 's/^#define FELUCCA_VERSION "\([^"]*\)".*/\1/p' firmware/src/felucca.c)
+RENDER_ID=$(python3 tools/remote_identity.py)
 GBVERSION=$(sed -n 's/^#define GHOULBOX_VERSION "\([^"]*\)".*/\1/p' firmware/src/core.h)   # GHOULBOX: the page shows both
 mkdir -p build/emu/fonts build/emu/vendor/libflac build/emu/vendor/mp3 build/emu/licenses
 # shellcheck disable=SC2086
 emcc ${EMU_OPT:--O2} -ffp-contract=off -std=gnu99 -w ${EMU_CFLAGS:-} \
-    "-DFELUCCA_VERSION=\"$VERSION\"" -Ibuild/gen -Ifirmware/src \
+    "-DFELUCCA_VERSION=\"$VERSION\"" "-DPALEOTONE_RENDER_ID=${RENDER_ID}u" -Ibuild/gen -Ifirmware/src \
     --no-entry -sSTANDALONE_WASM -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=33554432 -sFILESYSTEM=0 \
     -o build/emu/felucca.wasm web/emu/felucca_web.c
 [ "${EMU_PREVIEW:-1}" = 0 ] && PREVIEW='' || PREVIEW=' (preview)'
@@ -35,3 +36,6 @@ cp LICENSES/MIT-libflac.js.txt LICENSES/BSD-3-Clause-libFLAC.txt LICENSES/MIT-wa
 python3 tools/gen_emu_art.py build/gen build/emu/art   # GHOULBOX: the dungeon's pixel art (torch, wall, name)
 cp web/emu/fonts/DotGothic16-subset.woff web/emu/fonts/OFL.txt build/emu/fonts/
 echo "emu: build/emu ($(wc -c < build/emu/felucca.wasm | tr -d ' ') B wasm, GHOULBOX $GBVERSION on Felucca $VERSION)"
+
+python3 tools/gen_remote_views.py build/emu/remote_views.json
+cp web/screen.html web/remote_screen.js web/second_screen.js web/control_target.js build/emu/
