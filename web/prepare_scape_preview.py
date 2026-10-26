@@ -18,6 +18,7 @@ assert layout['rendererId']==render_id(),'Renderer must match this source tree'
 sha=hashlib.sha256(raw).hexdigest();token=sha[:12]
 shutil.copytree(emu,out,dirs_exist_ok=True,ignore=shutil.ignore_patterns('native*'))
 shutil.copytree(HERE/'manual',out/'manual',dirs_exist_ok=True)
+shutil.copytree(HERE/'scape-guide',out/'scape-guide',dirs_exist_ok=True)
 shutil.copyfile(HERE.parent/'docs/UNIFIED-SCAPE.md',out/'SCAPE-CONTROLS.md')
 shutil.copyfile(pkg,out/'paleotone-scape.fwsc')
 prepare(emu,out/'screen',source)
@@ -43,9 +44,10 @@ html=html.replace('This PALEOTONE build has been tested on an FM-1 with compress
 (installer/'index.html').write_text(html,encoding="utf-8")
 path=editor/'index.html';path.write_text(path.read_text(encoding="utf-8").replace('href="../emu/"','href="../"'),encoding="utf-8")
 path=out/'manual/index.html';path.write_text(path.read_text(encoding="utf-8").replace('href="../webapp/emu/"','href="../"').replace('href="../webapp/installer/"','href="../installer/"').replace('href="../webapp/editor/"','href="../editor/"'),encoding="utf-8")
+path=out/'screen/index.html';path.write_text(path.read_text(encoding="utf-8").replace('<div id="stage">','<p class="help"><a style="color:#b7edb6" href="../scape-guide/">SCAPE listening guide</a></p><div id="stage">'),encoding="utf-8")
 html=(out/'index.html').read_text(encoding="utf-8").replace('ghoulbox-emu-','paleotone-scape-preview-')
 html=html.replace('href="../app-setup/"','href="screen/"').replace('Connect your FM-1 display','Candidate FM-1 display').replace('href="../installer/"','href="installer/"').replace('Install on your FM-1','Install SCAPE candidate').replace('href="../../manual/"','href="manual/"').replace('href="../editor/"','href="editor/"').replace('href="../../firmwares/"','href="https://fantasmoslam.github.io/dinobox-fm1/firmwares/"')
-html=re.sub(r'<body([^>]*)>',r'<body\1><aside style="padding:10px;text-align:center;background:#122417">SCAPE candidate preview · Separate browser saves · <a href="manual/#scape-the-living-soundscape">New controls</a> · Your FM-1 changes only if you install.</aside>',html,count=1)
+html=re.sub(r'<body([^>]*)>',r'<body\1><aside style="padding:10px;text-align:center;background:#122417">SCAPE candidate preview · Separate browser saves · <a href="scape-guide/">SCAPE guide</a> · Your FM-1 changes only if you install.</aside>',html,count=1)
 (out/'index.html').write_text(html,encoding="utf-8")
 for path in out.rglob('*'):
     if path.suffix not in ('.html','.js'):continue

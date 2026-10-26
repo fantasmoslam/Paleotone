@@ -84,7 +84,7 @@ static void dream_compose(uint32_t root)
         dr_phrase(i,0);dream.last[i]=dream.passes[i]=0;
     }
     dream.valid=1;song.g[G_DREAM]=1;dr_arm();
-    if(song.playing)transport_req=3;else if(!chain_busy())transport_req=1;
+    /* Prepare the music without starting or rewinding the user's transport. */
 }
 static void dr_rebuild(void)
 {

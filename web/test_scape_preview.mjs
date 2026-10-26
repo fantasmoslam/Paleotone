@@ -11,6 +11,8 @@ assert.equal(build.physicalFocusProtocol,2);
 assert.equal(JSON.parse(await read('screen/build.json')).physicalFocusProtocol,2);
 assert.match(await read('screen/index.html'),/PhysicalFocus/);
 assert.match(await read('screen/index.html'),/await focus.poll\(enabled\)/);
+assert.match(await read('screen/index.html'),/href="\.\.\/scape-guide\/"/);
+assert.match(await read('scape-guide/index.html'),/Composing leaves stopped playback stopped/);
 assert.equal(productOf(pkg),'FM-1_900');assert.ok(logicalImage(pkg).length);
 assert.equal(createHash('sha256').update(pkg).digest('hex'),build.firmware.sha256);
 for(const sub of ['', 'screen/']) {
@@ -22,7 +24,7 @@ for(const sub of ['', 'screen/']) {
 assert.match(await read('screen/index.html'),/remote_views\.json\?v=/);
 const html=await read('index.html');assert.match(html,/paleotone-scape-preview-flash/);assert.doesNotMatch(html,/ghoulbox-emu-flash/);
 assert.match(html,/SCAPE candidate preview/);assert.match(html,/worklet\.js\?v=/);assert.match(html,/felucca\.wasm\?v=/);
-for(const page of ['index.html','installer/index.html','editor/index.html','manual/index.html','screen/index.html']) {
+for(const page of ['index.html','installer/index.html','editor/index.html','manual/index.html','screen/index.html','scape-guide/index.html']) {
   const html=await read(page);
   for(const [,href]of html.matchAll(/(?:href|src)="([^"#]+)"/g)) {
     if(/^(https?:|mailto:|data:|blob:)/.test(href))continue;

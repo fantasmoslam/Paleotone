@@ -68,7 +68,7 @@ int main(void)
                     scene(sc);rng_state=1+sc*97+m*19+d*7+k;
                     song.g[G_DMOOD]=(int16_t)m;song.g[G_DDENS]=(int16_t)d;
                     dream_compose(k);
-                    ok&=dream.valid && transport_req==1 && piece_ok();
+                    ok&=dream.valid && !song.playing && !transport_req && piece_ok();
                 }
     bad+=check("every scene, mood, density and root: ordinary unequal-length patterns, in key, valid ties/drums",ok);
     for(k=0;k<8;k++) {
@@ -79,9 +79,19 @@ int main(void)
     scene(0);go_title("SCAPE MUSIC");frame();
     tap_key(9);ok=ui.confirm==CF_DREAM && !dream.valid;
     press(B_OCTDN);ok&=!ui.confirm && !dream.valid;
-    tap_key(9);press(B_OCTUP);ok&=dream.valid && dream.asked && dream.root==2 && piece_ok();
-    tap_key(11);ok&=!ui.confirm && dream.root==4;
-    bad+=check("composition requires confirmation over existing patterns; cancel preserves them",ok);
+    tap_key(9);press(B_OCTUP);ok&=dream.valid && dream.asked && dream.root==2 && piece_ok() && !song.playing && !transport_req;
+    tap_key(11);ok&=!ui.confirm && dream.root==4 && !song.playing && !transport_req;
+    bad+=check("key composition confirms replacement and leaves stopped playback stopped",ok);
+    scene(0);dream_compose(2);song.playing=0;transport_req=0;song.g[G_SCNEW]=1;dream_tick();
+    bad+=check("SCENE NEW prepares another piece without starting playback",!song.playing && !transport_req && !song.g[G_SCNEW] && piece_ok());
+    for(i=0,ok=1;i<2;i++)for(k=0;k<4;k++){
+        song.playing=(uint8_t)i;transport_req=(uint8_t)k;song.tick=12345;
+        for(t=0;t<NTRK;t++)trk[t].seq_idx=7;
+        dream_compose(5);
+        ok&=song.playing==i && transport_req==k && song.tick==12345;
+        for(t=0;t<NTRK;t++)ok&=trk[t].seq_idx==7;
+    }
+    bad+=check("composing preserves running/stopped transport, pending commands and song position",ok);
     scene(2);dream_compose(2);song.g[G_DREAM]=1;song.g[G_DDRFT]=8;song.playing=1;
     for(k=0,ok=1;k<80;k++) {
         for(t=0;t<NTRK;t++)memcpy(before[t],trk[t].step,sizeof before[t]);

@@ -19,6 +19,15 @@ int main(void)
     for(t=0;t<NTRK;t++)assert(!memcmp(patterns[t],trk[t].step,sizeof patterns[t]));
     assert(trk[0].p[P_SLEN]==46 && trk[1].p[P_SLEN]==58 && trk[2].p[P_SLEN]==26 && trk[3].p[P_SLEN]==34);
     assert(scape_music.role[0]==DR_BASS && scape_music.role[1]==DR_PAD && scape_music.role[2]==DR_MELODY && scape_music.role[3]==DR_PERC);
+    /* Habitat and procedural drone remain audible without running track patterns. */
+    song.playing=0;transport_req=0;song.g[G_SCAPE]=80;song.g[G_SDRN]=60;song.g[G_SCTRK]=0;song.g[G_SDNGR]=0;
+    old=song.tick;
+    for(t=0;t<FS*2u;t+=CTL){
+        mix_block(out,CTL);dream_tick();
+        assert(!song.playing && !transport_req && song.tick==old);
+        for(i=0;i<CTL*2;i++){uint32_t a=out[i]<0?-out[i]:out[i];if(a>peak)peak=a;}
+    }
+    assert(peak>100);
     song.playing=1;transport_req=0;check_key();
     old=scape_music.chord_pc;scape_music.elapsed=FS*60u;dream_tick();
     assert(dream.chord==1 && scape_music.elapsed==0 && old!=scape_music.chord_pc);check_key();

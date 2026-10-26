@@ -2,13 +2,23 @@
 
 Tap HOME through MIXER, CLOCK and KEYS to enter the SCAPE workspace. SELECT chooses its control bank; HOME exits the whole workspace. The transport and four knob cards stay in place above one shared four-track overview. MUSIC, MIX, WORLD and LAYERS show where each bank belongs. GLO+SELECT changes tempo; ALGORITHM still selects a track.
 
+## Listen without the sequencer
+
+Leave PLAY stopped. From HOME, tap HOME four times to enter SCAPE, then turn SELECT to SCAPE SETUP. Raise LEVEL (knob 3) to around 35%; this is the habitat master. Choose a BIOME on SCAPE, then adjust TIME and DIST. For habitat alone, set SCAPE LIFE TRK OFF and DANGR 0.
+
+To add the independent drone, keep habitat LEVEL above zero and raise DRONE on SCAPE DRONE to around 20%. Its KEY knob tunes the drone without generating or replacing track patterns. MOVE adjusts slow movement. This works while the sequencer stays stopped; a note key is not required.
+
+SCAPE's generated musical parts are ordinary sequencer patterns. A key on SCAPE MUSIC composes them, and may ask to replace existing patterns. Composition now preserves the current transport state and position. Press PLAY explicitly to start the prepared musical parts. SCENE NEW also leaves stopped playback stopped. If music was already playing, composition does not force a restart.
+
+For a full walkthrough, recipes and troubleshooting, see the [SCAPE listening guide](https://fantasmoslam.github.io/dinobox-fm1/webapp/scape-preview/scape-guide/).
+
 | Page | Knob 1 | Knob 2 | Knob 3 | Knob 4 |
 | --- | --- | --- | --- | --- |
 | SCAPE MUSIC | ACTV: note density | EVOL: variation speed | MOTN: breathing depth | CHORD: chord time |
 | SCAPE MIX | Bed | Melody | Bass | Pulse |
 | SCAPE | Biome | Day/night | Distance | Creature call activity |
 
-Choose sounds first. Open SCAPE MUSIC and press a physical key to compose in that key. OCT+ confirms replacement of existing patterns; OCT− cancels. Composing enables evolution and starts playback. These remain ordinary editable sequences using the existing twelve-voice budget.
+Choose sounds first. Open SCAPE MUSIC and press a physical key to compose in that key. OCT+ confirms replacement of existing patterns; OCT− cancels. Composing enables evolution and prepares the patterns without starting or rewinding playback. Press PLAY explicitly for the musical parts. These remain ordinary editable sequences using the existing twelve-voice budget.
 
 The musical roles use independent 1/8-note loops: bed 29 beats, melody 13, bass 23, pulse 17. BEAST uses a held 64-step phrase. They follow one four-chord progression; CHORD selects 20, 30, 45, 60, 90, 120, 180 or 300 seconds. Chord changes transpose existing notes, preserving their rhythms and velocities. Held notes finish naturally; new notes adopt the new harmony. AUTO drone follows the current chord. A separate fixed drone key remains available.
 
