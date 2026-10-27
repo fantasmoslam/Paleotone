@@ -18,3 +18,9 @@ The producer ring reached zero raw frames and producer publication gaps reached 
 ## Scope
 
 No clock, voltage, interrupt priority, buffer, overload threshold, voice count, reserve or synthesis behavior was changed for this audit. The independent SCAPE redesign remains later work; the current goal is measured headroom with preserved sound and saved projects.
+
+## USB ring details from source inspection
+
+`firmware/src/usb.c` distinguishes reserved ring capacity from the amount normally buffered. UA_N=512 stereo frames (about 11.6 ms at 44.1 kHz), but UA_PRIME=104 frames (about 2.36 ms) and the sampled fill-control band is UA_LO=80 to UA_HI=128 (about 1.81 to 2.90 ms). More reserved capacity therefore does not mean the stream normally has 11.6 ms of audio queued. `uac_tap` publishes each 32-frame control block after writing its samples and a memory barrier. `uac_render_start` snapshots the fill used for rate correction at the start of each 128-frame I2S half. The consumer tracks a separate raw low-water mark.
+
+`uac_packet` increments underruns once when the packet requires more frames than available, then repeats the last available sample for the remainder of that packet. This is a packet-underfill counter, not a count of distinct audible clicks. The observed roughly 4 ms producer-publication gaps exceed the normal queued-audio margin; a controlled queue-target/latency experiment may be useful after render deadline work. That is a hypothesis for a separate experiment, not a demonstrated full fix, and no USB constants were changed in either hotpath candidate.
