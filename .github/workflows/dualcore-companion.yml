@@ -1,7 +1,7 @@
-name: pinned engine hotpath companion
+name: pinned SAURUS cache companion
 on:
   push:
-    branches: [feature/engine-hotpath-prep]
+    branches: [feature/saurus-cache-prep]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 3da5576a9971191eef44d027f2cc1727203eb9f6
+          ref: abe30e682e77caa9758f653fded04dd653393eb6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
