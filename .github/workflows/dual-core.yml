@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,6 +11,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
@@ -23,6 +25,14 @@ jobs:
         run: |
           cc -std=c99 -Wall -Wextra -Werror -Ifirmware/src tests/audio_profile_test.c -o /tmp/audio-profile-test
           /tmp/audio-profile-test
+      - name: USB queue timing and jitter regression
+        run: |
+          mkdir -p build/host
+          cc -O2 -DT_CDC=1 -DHALF_FRAMES=128 tests/uac_queue_test.c -lm -o build/host/uac-queue
+          build/host/uac-queue
+          git show 3da5576a9971191eef44d027f2cc1727203eb9f6:firmware/src/usb.c > build/host/baseline_usb.c
+          cc -O2 -DT_CDC=1 -DHALF_FRAMES=128 -Ifirmware/src '-DUAC_SOURCE="../build/host/baseline_usb.c"' tests/uac_queue_test.c -lm -o build/host/uac-queue-base
+          build/host/uac-queue-base
       - name: Compile and test the real concurrent mixer
         run: |
           mkdir -p build/host
