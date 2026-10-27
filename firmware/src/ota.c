@@ -137,12 +137,14 @@ static void ota_reply_identity(void)
 }
 
 /* decode the pending frame; returns its decoded length (0 = not ours) */
-static uint32_t ota_take(void)
+static uint32_t ota_take_kind(uint32_t keep_editor)
 {
     const uint8_t *p;
     uint32_t n, d, s = 0, i;
     if (!ota_frame_get(&p, &n))
         return 0;
+    if (keep_editor && n >= 4u && p[0] == 125u && p[1] == 70u && p[2] == 76u)
+        return 0; /* ownership stays with editor, including arrival between service passes */
     d = ota_unpack7(p, n, ota_dec, sizeof ota_dec);
     ota_frame_done();
     if (d < 7u || d > sizeof ota_dec || ota_dec[0] != 0 || ota_dec[1] != 0x59 || ota_rd24(ota_dec + 3) + 7u != d)
@@ -154,13 +156,19 @@ static uint32_t ota_take(void)
     return d;
 }
 
+static uint32_t ota_take(void) { return ota_take_kind(0); }
+
 /* main loop, outside a session: answer handshakes */
-static void ota_service(void)
+static void ota_service_kind(uint32_t keep_editor)
 {
-    uint32_t d = ota_take();
+    uint32_t d = ota_take_kind(keep_editor);
     if (d == 7u && ota_dec[2] == 0x11)
         ota_reply_identity();
 }
+
+/* Loader/rescue have no editor; only the normal main loop preserves editor ownership. */
+static void ota_service(void) { ota_service_kind(0); }
+static void ota_service_editor(void) { ota_service_kind(1); }
 
 /* one read request (3 tries x 5 s); data -> dst */
 static uint32_t ota_deadline;                    /* 0 = none; else ota_now_ms() limit of the session */

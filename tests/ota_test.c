@@ -151,12 +151,34 @@ static void reset_dev(void)
     mute_after = 0xFFFFFFFFu; corrupt_at = NULL; bad_erase = 0;
 }
 
+static int test_editor_dispatch(void)
+{
+    static const uint8_t editor[][5]={{125,70,76,29,2},{125,70,76,96,0}};
+    const uint8_t identity[7]={0,0x59,0x11,0,0,0,255};
+    unsigned i;int bad=0;
+    /* editor service saw no frame; an IRQ then publishes one before updater service. */
+    for(i=0;i<2;i++){
+        memcpy(rx,editor[i],5);rx_len=5;rx_full=1;ota_service_editor();
+        bad+=check("handshake preserves newly arrived editor request",rx_full&&rx_len==5&&!memcmp(rx,editor[i],5));
+        ota_frame_done();
+    }
+    host_reply(identity,sizeof identity);ident_replies=0;ota_service_editor();
+    bad+=check("updater identity still consumed and answered",!rx_full&&ident_replies==1);
+    memcpy(rx,editor[0],5);rx_len=5;rx_full=1;(void)ota_take();
+    bad+=check("active update session still discards unrelated editor frame",!rx_full);
+    rx[0]=125;rx[1]=70;rx[2]=76;rx_len=3;rx_full=1;ota_service_editor();
+    bad+=check("short malformed editor prefix does not block handshake",!rx_full);
+    memcpy(rx,editor[0],5);rx_len=5;rx_full=1;ota_service();
+    bad+=check("loader/rescue service consumes unrelated editor frame",!rx_full);
+    rx_full=0;ident_replies=0;return bad;
+}
+
 int main(int argc, char **argv)
 {
     FILE *f;
     uint8_t *raw;
     size_t n, i;
-    int bad = 0, rc;
+    int bad = test_editor_dispatch(), rc;
     if (argc < 2) { printf("usage: ota_test FILE.fwsc\n"); return 2; }
     f = fopen(argv[1], "rb");
     if (!f) { perror(argv[1]); return 2; }
