@@ -307,7 +307,7 @@ static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t 
 }
 
 /* HALL (see the top) */
-static inline int32_t hl_mul(int32_t a, int32_t g)      /* a * g / 32768 towards 0 (|a| <= 32768) */
+static inline __attribute__((always_inline)) int32_t hl_mul(int32_t a, int32_t g)      /* a * g / 32768 towards 0 (|a| <= 32768) */
 {
     int32_t v = a * g;
     return (v + ((v >> 31) & 32767)) >> 15;
