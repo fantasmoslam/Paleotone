@@ -108,6 +108,7 @@
 #include "upreset.c"             /* user presets (RAM mirror; flash with FELUCCA_FLASH) */
 #include "project.c"
 #if FELUCCA_OTA
+#define OTA_KEEP_EDITOR 1 /* normal handshake leaves editor frames for ed_service */
 #include "ota.c"
 #include "ota_hw.c"
 #include "rescue.c"              /* the USB RESCUE: two failed boots, or OCT- held at power-on (main.c) */
