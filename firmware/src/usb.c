@@ -765,6 +765,7 @@ stall:
     sie_wr(S_CSR0, 0x60);
 }
 
+#if FELUCCA_OTA
 /* Keep event-only diagnostics out of the nested USB packet/byte loop body. */
 static __attribute__((noinline)) void mt_receive_start(void)
 {
@@ -777,6 +778,8 @@ static __attribute__((noinline)) void mt_receive_done(void)
     midi_trace.rx_cmd=sx_pos>3u?sx_frame[3]:127u;
     midi_trace.rx_track=sx_pos>4u?sx_frame[4]:127u;
 }
+#endif
+
 /* SysEx assembly: only short commands matter here */
 static void sysex_byte(uint8_t b)
 {
