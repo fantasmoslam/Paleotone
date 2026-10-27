@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin, feature/midi-path-trace, fix/editor-updater-dispatch]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin, feature/midi-path-trace, fix/editor-updater-dispatch, feature/roar-oscillator-inline]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,6 +21,8 @@ jobs:
           node-version: '24'
       - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
       - run: python3 tools/build.py --gen-only
+      - name: Actual ROAR oscillator equivalence
+        run: python3 tests/roar_oscillator_test.py
       - name: MIDI path counter regression
         run: |
           cc -O2 -w tests/midi_trace_test.c -o /tmp/midi-trace

@@ -178,6 +178,24 @@ static inline __attribute__((always_inline)) int32_t gurdy_bp(const tsvf_t *c, i
     return v1;
 }
 
+/* Exact osc_saw/blep arithmetic kept local to ROAR so other engines retain
+ * their compact helper. Boundary/phase equivalence is checked directly. */
+static inline __attribute__((always_inline)) int32_t gurdy_saw(uint32_t ph, uint32_t inc)
+{
+    uint32_t d = inc >> 15;
+    int32_t x, residual = 0;
+    if (d) {
+        if (ph < inc) {
+            x = (int32_t)(ph / d);
+            residual = x + x - ((x * x) >> 15) - 32768;
+        } else if (ph > 0xFFFFFFFFu - inc) {
+            x = -(int32_t)((0xFFFFFFFFu - ph) / d);
+            residual = ((x * x) >> 15) + x + x + 32768;
+        }
+    }
+    return ((int32_t)(ph >> 16) - 32768) - residual;
+}
+
 static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
@@ -274,16 +292,16 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     tsvf_coef(&nose, 73 << 8, 90);                     /* ~1.1 kHz */
     for (i = 0; i < n; i++) {
         int32_t s, x, r, tr, nz = (int32_t)(noise32(&nst) >> 17) - 16384;
-        s = osc_saw(ph0, inc);                          /* the chanterelle, through the pressure low-pass */
+        s = gurdy_saw(ph0, inc);                          /* the chanterelle, through the pressure low-pass */
         lp += mulq15(s - lp, kp);
         x = lp + mulq15(nz, fric);                      /* .. and the rosin */
         if (rg) {                                       /* RING: fading after its note */
             x = mulq15(x, g);
             g += dg;
         }
-        x += mulq15(osc_saw(ph1, dinc), dlvl) + mulq15(osc_saw(ph2, finc), flvl);   /* the drones */
+        x += mulq15(gurdy_saw(ph1, dinc), dlvl) + mulq15(gurdy_saw(ph2, finc), flvl);   /* the drones */
         if (e > 0) {                                    /* the trompette: the dog chatters at each period's start */
-            tr = osc_saw(ph1 << 1, dinc << 1);
+            tr = gurdy_saw(ph1 << 1, dinc << 1);
             tr = clamp(tr * 3, -24000, 24000) + ((ph1 << 1) < 0x30000000u ? nz * 2 : 0);   /* 1.3: the chatter x2 */
             x += mulq15(mulq15(tr, e), buzz);           /* (|tr| < 56768: no overflow at BUZZ 127) */
         }
