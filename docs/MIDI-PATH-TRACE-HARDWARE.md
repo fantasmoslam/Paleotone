@@ -19,3 +19,9 @@ This locates the missing three between receive acceptance and editor handling, r
 A first extended-run startup encountered WinMM7 (input allocated) before polling; no lingering test process was found and a retry connected normally. It is excluded from request counts.
 
 All13 backup objects match pre-install state by size, CRC and encoded data. Playback stopped, profiling OFF, core ON. Diagnostic build remains installed; use screen-midi-trace. Private extended-run evidence: work/paleotone-midi-trace/hardware/mixed-1793092275754. Keep raw backups private.
+
+## Prepared fix validation checkpoint
+
+Fix source81bae2a3b9a0e2157e7a781ff7daa9015c3d279f, renderer3177467445, PR19. Target run40479669210/job122106511367 passed, including the expanded real updater regression and loader test; instruction budgets unchanged. Host run40479669212/job122106514758 and companion run40479669230/job122106511510 still running at checkpoint. Fix is NOT installed. Normal main calls ota_service_editor, while loader/rescue retain ota_service and active sessions retain ota_take. The editor-preservation decision occurs within the same frame-taking operation; checking before calling the old service would leave another arrival window.
+
+Current installed firmware remains diagnostic source86fa328, renderer3220445640, package8e872ce8fa484a3dbea6eb312d2e813984005a90efc27821430761d8b5374ca3. Current matching display screen-midi-trace. No permission question is pending; complete remaining exact-source gates before a fresh-backup install and repeat mixed polling to verify the fix on hardware.
