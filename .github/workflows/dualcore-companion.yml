@@ -1,7 +1,7 @@
-name: pinned audio diagnostics companion
+name: pinned audio hotpath companion
 on:
   push:
-    branches: [feature/audio-diagnostics-prep]
+    branches: [feature/audio-hotpath-prep]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: c564f667fe54d051eb0158e54b86ba319e814c60
+          ref: 8fba4c6036f5c201d8eeb81a5d90730e5ee7a6c8
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
