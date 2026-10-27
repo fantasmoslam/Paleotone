@@ -200,8 +200,8 @@ static inline void master_out(int32_t *l, int32_t *r)
         *l = ((*l >> 4) * g) >> 11;                      /* >> 4 first: |l| may be far above Q15 */
         *r = ((*r >> 4) * g) >> 11;
     }
-    *l = softclip(*l);
-    *r = softclip(*r);
+    *l = softclip_inline(*l);
+    *r = softclip_inline(*r);
 }
 
 /* length of one division (N_DIV order) in samples at the song tempo */
