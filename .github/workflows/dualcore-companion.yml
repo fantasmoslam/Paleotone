@@ -1,7 +1,7 @@
-name: pinned effects hotpath companion
+name: pinned engine hotpath companion
 on:
   push:
-    branches: [feature/effects-hotpath-prep]
+    branches: [feature/engine-hotpath-prep]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ba586018234cd8be5fbce09a3c3c7306c4c1389f
+          ref: 3da5576a9971191eef44d027f2cc1727203eb9f6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
