@@ -147,7 +147,7 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         uint32_t inc, incj, ph = z->ph, gs = z->gs;
         int32_t lp = z->lp, lq = z->lq, y0 = z->y[0], y1 = z->y[1], y2 = z->y[2], y3 = z->y[3], y4 = z->y[4], y5 = z->y[5];
         int32_t f1 = z->f1, f2 = z->f2;
-        fres_t *r = z->res;
+        fres_t r[3];
         uint64_t x64;
         amp1 = ((saur_at(c->t, L->amp, 0, q) >> 8) * L->lvl) >> 1;   /* Q15 */
         amp0 = z->am < 0 ? amp1 : z->am;
@@ -173,10 +173,11 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
                 /* saur_res depends only on these inputs and immutable tables. New slots
                  * are zeroed by note_on; retriggers may reuse an exact match. */
                 if (z->res_f[j] != f || z->res_bw[j] != bw) {
-                    saur_res(&r[j], f, bw);
+                    saur_res(&z->res[j], f, bw);
                     z->res_f[j] = f;
                     z->res_bw[j] = bw;
                 }
+                r[j] = z->res[j]; /* keep the sample loop's existing local coefficients */
             }
         }
         /* the growl's gate at the block's end */
