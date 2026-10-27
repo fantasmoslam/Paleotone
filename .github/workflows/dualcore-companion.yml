@@ -1,7 +1,7 @@
-name: pinned audio hotpath companion
+name: pinned effects hotpath companion
 on:
   push:
-    branches: [feature/audio-hotpath-prep]
+    branches: [feature/effects-hotpath-prep]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 8fba4c6036f5c201d8eeb81a5d90730e5ee7a6c8
+          ref: ba586018234cd8be5fbce09a3c3c7306c4c1389f
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
