@@ -40,3 +40,11 @@ Host measured publication-to-packet queue latency, healthy schedule: baseline me
 All 13 post-trial objects match the fresh pre-install backup exactly in size, CRC and encoded data, including settings. Playback stopped, profiling OFF, second core ON. Candidate remains installed for further evaluation. Unprofiled evidence: C:\Users\Dylan\Documents\Codex\2026-10-25\new-chat-9\work\paleotone-engine-hotpath\hardware\usb-unprofiled-baseline-1793087933337 and C:\Users\Dylan\Documents\Codex\2026-10-25\new-chat-9\work\paleotone-usb-buffer\hardware\unprofiled-1793087951329. Comparison, saved-state proof and validation manifest are in the candidate trial directory. The reserved repeat directory was not used; the longer unprofiled run provided the second hardware observation.
 
 Decision: retain as an experimental build because the USB margin improved without added RAM or synthesis work. Keep PR #17 draft. Next work should address synthesis deadline/overload pressure and longer MIDI/UI/recording interaction soak tests before public release.
+
+## Additional MIDI readback stress
+
+A further 60-second unprofiled USB capture ran alongside screen-context and track-dump request pairs every 100 ms (one pair in flight at a time). 483 pairs completed, seven pairs encountered an exception, maximum successful pair latency 64 ms. The harness counted exceptions but did not preserve their individual messages, so the cause is unresolved; this is not a clean MIDI reliability pass and does not test MIDI note/clock input or physical UI interaction.
+
+USB still had zero new underruns, overruns, missed packets or stalls. The surrounding ~64.7 seconds had six late blocks and 45 voices shed; worker faults/fallbacks zero. Raw ring minimum 103 frames, max publication gap 3638 us. Final stopped, profiler OFF, worker ON. Evidence: hardware/midi-usb-stress-1793088985441. Follow up with request-level error logging and separate MIDI request types before drawing conclusions about MIDI stability.
+
+Fresh post-stress backup again matches all 13 pre-install objects exactly by size, CRC and encoded data.
