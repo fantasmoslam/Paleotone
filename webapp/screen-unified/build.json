@@ -1,0 +1,19 @@
+{
+  "source": "1f68c416481860b568e41a85685edcf0cfefa1a7",
+  "rendererId": 2540340739,
+  "schema": 2,
+  "kind": "firmware-graphics-companion",
+  "presentation": "device-owned-focus",
+  "firmware": {
+    "file": "paleotone-unified.fwsc",
+    "sha256": "26eafca0b34d109d79026d8bffa6a64188fc6c28ce11fd290097662d04d7d07e",
+    "size": 610187
+  },
+  "optimizations": [
+    "lossless-state-compression",
+    "nonblocking-usb-bursts",
+    "adaptive-refresh",
+    "exact-pixel-cache",
+    "immediate-presentation"
+  ]
+}

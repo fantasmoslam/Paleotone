@@ -1,0 +1,11 @@
+{
+  "source": "5233e71702f81150f8a0d54566ff9f87c44c7b37",
+  "rendererId": 2964915361,
+  "kind": "firmware-graphics-companion",
+  "presentation": "device-owned-focus",
+  "firmware": {
+    "file": "paleotone-device-controls.fwsc",
+    "sha256": "52020d278e3023b1dcf6ef840412679d595d1728a1fe267779208d560a015862",
+    "size": 610187
+  }
+}

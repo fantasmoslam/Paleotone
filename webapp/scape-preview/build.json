@@ -1,0 +1,13 @@
+{
+  "source": "76d32f3050fe21968ac13b017ad8d98a1928b456",
+  "rendererId": 799295047,
+  "schema": 2,
+  "kind": "firmware-graphics-companion",
+  "candidate": true,
+  "physicalFocusProtocol": 2,
+  "firmware": {
+    "file": "paleotone-scape.fwsc",
+    "sha256": "9b808fd7da0c4422863d00a607a1158b66562ffa6dbd736c0f2da3297fb501b7",
+    "size": 610187
+  }
+}

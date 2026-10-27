@@ -1,0 +1,377 @@
+{
+  "rendererId": 3513154928,
+  "schema": 2,
+  "seqMode": 169,
+  "selectedTrack": 172,
+  "grid": 170,
+  "ui": {
+    "home": 190,
+    "page": 191,
+    "bank": 192,
+    "cursor": 193,
+    "entry_open": 194,
+    "lane": 195,
+    "plk_src": 196,
+    "plk_lane": 197,
+    "plk_trk": 198,
+    "hot_col": 199,
+    "hot_t": 200,
+    "menu": 201,
+    "menu_sel": 202,
+    "msg_t": 203,
+    "torches": 204,
+    "torch_f": 205,
+    "bpm_t": 206,
+    "act": 207,
+    "confirm": 208,
+    "confirm_trk": 209,
+    "uslot": 210,
+    "ppick": 211,
+    "song_row": 212,
+    "song_trk": 213,
+    "ev_step": 214,
+    "ev_id": 215,
+    "uboot": 216,
+    "ly": 217,
+    "layer": 218,
+    "lock": 219,
+    "menu_scroll": 220,
+    "ev_row": 222,
+    "ev_keep": 224,
+    "pg_down": 226,
+    "home_t0": 228,
+    "rec_t0": 232,
+    "save_t0": 236,
+    "ly_t0": 240,
+    "frame": 244
+  },
+  "views": [
+    {
+      "id": "home",
+      "label": "Home",
+      "home": 1,
+      "page": 0
+    },
+    {
+      "id": "mixer",
+      "label": "Mixer",
+      "home": 0,
+      "page": 40
+    },
+    {
+      "id": "sequencer",
+      "label": "Sequencer",
+      "home": 0,
+      "page": 38
+    },
+    {
+      "id": "envelope",
+      "label": "Envelope",
+      "home": 0,
+      "page": 0
+    },
+    {
+      "id": "lfo",
+      "label": "LFO",
+      "home": 0,
+      "page": 2
+    },
+    {
+      "id": "fx",
+      "label": "FX",
+      "home": 0,
+      "page": 6
+    },
+    {
+      "id": "arp",
+      "label": "Arpeggiator",
+      "home": 0,
+      "page": 36
+    },
+    {
+      "id": "scale",
+      "label": "Scale",
+      "home": 0,
+      "page": 11
+    },
+    {
+      "id": "clock",
+      "label": "Clock",
+      "home": 0,
+      "page": 41
+    },
+    {
+      "id": "scape",
+      "label": "Soundscape",
+      "home": 0,
+      "page": 45
+    }
+  ],
+  "pages": [
+    {
+      "page": 0,
+      "label": "ENV",
+      "button": 2
+    },
+    {
+      "page": 1,
+      "label": "ENV DEST",
+      "button": 2
+    },
+    {
+      "page": 2,
+      "label": "LFO",
+      "button": 3
+    },
+    {
+      "page": 3,
+      "label": "LFO 2",
+      "button": 3
+    },
+    {
+      "page": 4,
+      "label": "LFO DEST",
+      "button": 3
+    },
+    {
+      "page": 5,
+      "label": "MOD",
+      "button": 3
+    },
+    {
+      "page": 6,
+      "label": "FX",
+      "button": 0
+    },
+    {
+      "page": 7,
+      "label": "DLY",
+      "button": 0
+    },
+    {
+      "page": 8,
+      "label": "REVERB",
+      "button": 0
+    },
+    {
+      "page": 9,
+      "label": "CHORUS",
+      "button": 0
+    },
+    {
+      "page": 10,
+      "label": "TAPE",
+      "button": 0
+    },
+    {
+      "page": 11,
+      "label": "SCL",
+      "button": 1
+    },
+    {
+      "page": 12,
+      "label": "CHORD",
+      "button": 1
+    },
+    {
+      "page": 13,
+      "label": "EDIT 1",
+      "button": 4
+    },
+    {
+      "page": 14,
+      "label": "EDIT 2",
+      "button": 4
+    },
+    {
+      "page": 15,
+      "label": "RING",
+      "button": 4
+    },
+    {
+      "page": 16,
+      "label": "LANES",
+      "button": 4
+    },
+    {
+      "page": 17,
+      "label": "LANES 2",
+      "button": 4
+    },
+    {
+      "page": 18,
+      "label": "SLICES",
+      "button": 4
+    },
+    {
+      "page": 19,
+      "label": "OPERATOR",
+      "button": 4
+    },
+    {
+      "page": 20,
+      "label": "OP ENV",
+      "button": 4
+    },
+    {
+      "page": 21,
+      "label": "OPERATOR 2",
+      "button": 4
+    },
+    {
+      "page": 22,
+      "label": "OP1 ENV",
+      "button": 4
+    },
+    {
+      "page": 23,
+      "label": "OP2 ENV",
+      "button": 4
+    },
+    {
+      "page": 24,
+      "label": "OP3 ENV",
+      "button": 4
+    },
+    {
+      "page": 25,
+      "label": "OP4 ENV",
+      "button": 4
+    },
+    {
+      "page": 26,
+      "label": "OP LEVEL",
+      "button": 4
+    },
+    {
+      "page": 27,
+      "label": "VOICE",
+      "button": 4
+    },
+    {
+      "page": 28,
+      "label": "VOICE 2",
+      "button": 4
+    },
+    {
+      "page": 29,
+      "label": "VOICE 3",
+      "button": 4
+    },
+    {
+      "page": 30,
+      "label": "SONG",
+      "button": 5
+    },
+    {
+      "page": 31,
+      "label": "PRESETS",
+      "button": 7
+    },
+    {
+      "page": 32,
+      "label": "USER",
+      "button": 7
+    },
+    {
+      "page": 33,
+      "label": "PHRASES",
+      "button": 7
+    },
+    {
+      "page": 34,
+      "label": "PROJECT",
+      "button": 7
+    },
+    {
+      "page": 35,
+      "label": "TOOLS",
+      "button": 7
+    },
+    {
+      "page": 36,
+      "label": "ARP",
+      "button": 8
+    },
+    {
+      "page": 37,
+      "label": "ARP 2",
+      "button": 8
+    },
+    {
+      "page": 38,
+      "label": "STEP",
+      "button": 9
+    },
+    {
+      "page": 39,
+      "label": "AUTOMATION",
+      "button": 9
+    },
+    {
+      "page": 40,
+      "label": "MIXER",
+      "button": 6
+    },
+    {
+      "page": 41,
+      "label": "CLOCK",
+      "button": 6
+    },
+    {
+      "page": 42,
+      "label": "KEYS",
+      "button": 6
+    },
+    {
+      "page": 43,
+      "label": "SCAPE MUSIC",
+      "button": 6
+    },
+    {
+      "page": 44,
+      "label": "SCAPE MIX",
+      "button": 6
+    },
+    {
+      "page": 45,
+      "label": "SCAPE",
+      "button": 6
+    },
+    {
+      "page": 46,
+      "label": "SCAPE SETUP",
+      "button": 6
+    },
+    {
+      "page": 47,
+      "label": "SCAPE ROLES",
+      "button": 6
+    },
+    {
+      "page": 48,
+      "label": "SCAPE DRONE",
+      "button": 6
+    },
+    {
+      "page": 49,
+      "label": "SCAPE LIFE",
+      "button": 6
+    },
+    {
+      "page": 50,
+      "label": "SCAPE LEVELS",
+      "button": 6
+    },
+    {
+      "page": 51,
+      "label": "SCAPE LEVELS 2",
+      "button": 6
+    },
+    {
+      "page": 52,
+      "label": "SCAPE SCENE",
+      "button": 6
+    }
+  ]
+}

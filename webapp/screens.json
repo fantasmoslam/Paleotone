@@ -1,0 +1,84 @@
+{
+  "pages": [
+    {
+      "rendererId": 799295047,
+      "path": "scape-preview/screen/",
+      "label": "scape-preview/screen"
+    },
+    {
+      "rendererId": 534039429,
+      "path": "screen/",
+      "label": "screen"
+    },
+    {
+      "rendererId": 3998626645,
+      "path": "screen-audio-diagnostics/",
+      "label": "screen-audio-diagnostics"
+    },
+    {
+      "rendererId": 2482780981,
+      "path": "screen-audio-hotpath/",
+      "label": "screen-audio-hotpath"
+    },
+    {
+      "rendererId": 2964915361,
+      "path": "screen-device/",
+      "label": "screen-device"
+    },
+    {
+      "rendererId": 503813915,
+      "path": "screen-dualcore/",
+      "label": "screen-dualcore"
+    },
+    {
+      "rendererId": 696079837,
+      "path": "screen-effects-hotpath/",
+      "label": "screen-effects-hotpath"
+    },
+    {
+      "rendererId": 2162762987,
+      "path": "screen-engine-hotpath/",
+      "label": "screen-engine-hotpath"
+    },
+    {
+      "rendererId": 3177467445,
+      "path": "screen-midi-dispatch/",
+      "label": "screen-midi-dispatch"
+    },
+    {
+      "rendererId": 3220445640,
+      "path": "screen-midi-trace/",
+      "label": "screen-midi-trace"
+    },
+    {
+      "rendererId": 3291600579,
+      "path": "screen-roar-oscillator/",
+      "label": "screen-roar-oscillator"
+    },
+    {
+      "rendererId": 3513154928,
+      "path": "screen-roar-worker/",
+      "label": "screen-roar-worker"
+    },
+    {
+      "rendererId": 1132235027,
+      "path": "screen-saurus-cache/",
+      "label": "screen-saurus-cache"
+    },
+    {
+      "rendererId": 1002661661,
+      "path": "screen-scape/",
+      "label": "screen-scape"
+    },
+    {
+      "rendererId": 2540340739,
+      "path": "screen-unified/",
+      "label": "screen-unified"
+    },
+    {
+      "rendererId": 696410948,
+      "path": "screen-usb-buffer/",
+      "label": "screen-usb-buffer"
+    }
+  ]
+}
