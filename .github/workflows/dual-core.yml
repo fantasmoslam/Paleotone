@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/saurus-coefficient-cache]
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,6 +23,11 @@ jobs:
         run: |
           cc -std=c99 -Wall -Wextra -Werror -Ifirmware/src tests/audio_profile_test.c -o /tmp/audio-profile-test
           /tmp/audio-profile-test
+      - name: SAURUS cached coefficients against forced recalculation
+        run: |
+          mkdir -p build/host
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/saurus_cache_test.c -lm -o build/host/saurus-cache-test
+          build/host/saurus-cache-test
       - name: Compile and test the real concurrent mixer
         run: |
           mkdir -p build/host

@@ -16,7 +16,7 @@
  * growl (a flutter, or bursts that open fast and die away); three resonators side by side (peak gain 1, weights 1,
  * 0.6, 0.35) between closed and open; a soft clip (its drive); a two-pole high or low cut. Its loudness and pitch follow
  * the recipe's six points over LEN. The ADSR still shapes and ends the note.
- * State: the throats' (16 words each) in a pool of SAUR_SLOTS (a voice takes one at its note-on, the oldest if none is
+ * State: the throats and their exact coefficient caches in a pool of SAUR_SLOTS (a voice takes one at its note-on, the oldest if none is
  * free: .poly 4, so only when four tracks play SAURUS at once); s[0] the voice's slot; s[7] the call's progress (Q24,
  * bits 0..24) and the note's random number (bits 25..31). */
 
@@ -55,6 +55,8 @@ typedef struct {
     int32_t lp, lq, y[6], f1, f2; /* tilt (two poles: a throat's -12 dB an octave); resonators; the cut */
     int32_t gate, wf, wg, am;    /* the growl's gate (Q15) at the block's end; the drifts (pitch, the growl's); the
                                   * loudness at the block's end (Q15; -1 none yet) */
+    fres_t res[3];             /* exact coefficients, keyed by their clamped inputs below */
+    uint32_t res_f[3], res_bw[3]; /* zero frequency is invalid; real inputs are at least 30 * 16 */
 } sthroat_t;
 static struct {
     const voice_t *owner;
@@ -145,7 +147,7 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         uint32_t inc, incj, ph = z->ph, gs = z->gs;
         int32_t lp = z->lp, lq = z->lq, y0 = z->y[0], y1 = z->y[1], y2 = z->y[2], y3 = z->y[3], y4 = z->y[4], y5 = z->y[5];
         int32_t f1 = z->f1, f2 = z->f2;
-        fres_t r[3];
+        fres_t *r = z->res;
         uint64_t x64;
         amp1 = ((saur_at(c->t, L->amp, 0, q) >> 8) * L->lvl) >> 1;   /* Q15 */
         amp0 = z->am < 0 ? amp1 : z->am;
@@ -165,7 +167,17 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             int32_t bz = L->bw[j] << 6;                 /* Hz * 16 */
             fz = (int32_t)(((int64_t)fz * size) >> 16);
             bz = (int32_t)(((int64_t)bz * size) >> 16);
-            saur_res(&r[j], (uint32_t)clamp(fz, 30 * 16, 9000 * 16), (uint32_t)clamp(bz, 15 * 16, 1500 * 16));
+            {
+                uint32_t f = (uint32_t)clamp(fz, 30 * 16, 9000 * 16);
+                uint32_t bw = (uint32_t)clamp(bz, 15 * 16, 1500 * 16);
+                /* saur_res depends only on these inputs and immutable tables. New slots
+                 * are zeroed by note_on; retriggers may reuse an exact match. */
+                if (z->res_f[j] != f || z->res_bw[j] != bw) {
+                    saur_res(&r[j], f, bw);
+                    z->res_f[j] = f;
+                    z->res_bw[j] = bw;
+                }
+            }
         }
         /* the growl's gate at the block's end */
         {
