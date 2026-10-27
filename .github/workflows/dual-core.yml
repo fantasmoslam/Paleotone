@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore, feature/audio-diagnostics]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline]
   workflow_dispatch:
 permissions:
   contents: read
