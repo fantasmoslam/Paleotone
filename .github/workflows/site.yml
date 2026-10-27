@@ -90,7 +90,7 @@ jobs:
         run: |
           git fetch origin gh-pages
           mkdir -p site
-          for d in screen-device screen-unified screen-scape screen-dualcore screen-audio-diagnostics screen-audio-hotpath screen-effects-hotpath screen-engine-hotpath screen-saurus-cache; do
+          for d in screen-device screen-unified screen-scape screen-dualcore screen-audio-diagnostics screen-audio-hotpath screen-effects-hotpath screen-engine-hotpath screen-saurus-cache screen-usb-buffer; do
             if git cat-file -e "origin/gh-pages:webapp/$d/build.json" 2>/dev/null; then
               git archive origin/gh-pages "webapp/$d" | tar -x -C site
               node web/test_published_companion.mjs "site/webapp/$d"
