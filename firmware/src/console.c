@@ -1,3 +1,4 @@
+#include "midi_trace.h"
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Serial console on the CDC-ACM function (FELUCCA_CDC=1): read-only
@@ -236,6 +237,19 @@ static void con_status(void)
     con_kv("usb_frame", (int32_t)usb.frame);
     con_kv("usb_frame_stalls", (int32_t)usb.frame_stalls);
     con_kv("usb_max_gap_polls", (int32_t)usb.max_gap);
+    con_kv("mt_rx_start",midi_trace.rx_start);
+    con_kv("mt_rx_busy",midi_trace.rx_busy);
+    con_kv("mt_rx_done",midi_trace.rx_done);
+    con_kv("mt_rx_cmd",midi_trace.rx_cmd);
+    con_kv("mt_rx_track",midi_trace.rx_track);
+    con_kv("mt_handle29",midi_trace.handle29);
+    con_kv("mt_handle96",midi_trace.handle96);
+    con_kv("mt_tx29",midi_trace.tx29);
+    con_kv("mt_done29",midi_trace.done29);
+    con_kv("mt_tx96",midi_trace.tx96);
+    con_kv("mt_done96",midi_trace.done96);
+    con_kv("mt_tx_timeout",midi_trace.tx_timeout);
+    con_kv("mt_tx_fail_cmd",midi_trace.tx_fail_cmd);
     con_kv("midi_rx_pkts", (int32_t)usb.rx_pkts);
     con_kv("midi_tx_pkts", (int32_t)usb.tx_pkts);
 #if FELUCCA_UAC

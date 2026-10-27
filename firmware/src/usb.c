@@ -1,3 +1,4 @@
+#include "midi_trace.h"
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* USB full-speed device on USB0: a
@@ -781,6 +782,8 @@ static void sysex_byte(uint8_t b)
         usb.sx_on = 1;
         usb.sx_len = 0;
 #if FELUCCA_OTA
+        midi_trace.rx_start++;
+        if(sx_ready)midi_trace.rx_busy++;
         sx_collect = !sx_ready;
         sx_pos = 0;
 #endif
@@ -808,6 +811,9 @@ static void sysex_byte(uint8_t b)
                  usb.sysex[4] == 0x7F)
             usb.ota_req = 1;
         else if (sx_collect && sx_pos) {
+            midi_trace.rx_done++;
+            midi_trace.rx_cmd=sx_pos>3u?sx_frame[3]:127u;
+            midi_trace.rx_track=sx_pos>4u?sx_frame[4]:127u;
             sx_frame_len = sx_pos;
             RING_PUBLISH();
             sx_ready = 1;                               /* main loop: ota_take() / ed_service() */
@@ -891,6 +897,7 @@ static void ota_idle(void);
 static int ota_wire_send(const uint8_t *p, uint32_t n)   /* F0..F7 -> USB-MIDI SysEx packets */
 {
     uint32_t i = 0, t0 = ota_now_ms();
+    if(n>4u&&p[1]==125u&&p[2]==70u&&p[3]==76u){if(p[4]==29u)midi_trace.tx29++;if(p[4]==96u)midi_trace.tx96++;}
     sx_busy = 1;
     while (i < n) {
         uint32_t k = n - i >= 3u ? 3u : n - i, pkt;
@@ -899,6 +906,7 @@ static int ota_wire_send(const uint8_t *p, uint32_t n)   /* F0..F7 -> USB-MIDI S
               (k > 2u ? (uint32_t)p[i + 2] << 24 : 0u);
         while (so_w - so_r >= SXQ) {
             if (!*(volatile uint8_t *)&usb.config || ota_now_ms() - t0 > 200u) {
+                midi_trace.tx_timeout++;midi_trace.tx_fail_cmd=n>4u?p[4]:127u;
                 sx_busy = 0;
                 return -1;
             }
@@ -910,6 +918,7 @@ static int ota_wire_send(const uint8_t *p, uint32_t n)   /* F0..F7 -> USB-MIDI S
         i += k;
     }
     sx_busy = 0;
+    if(n>4u&&p[1]==125u&&p[2]==70u&&p[3]==76u){if(p[4]==29u)midi_trace.done29++;if(p[4]==96u)midi_trace.done96++;}
     return 0;
 }
 static int ota_frame_get(const uint8_t **p, uint32_t *n)
