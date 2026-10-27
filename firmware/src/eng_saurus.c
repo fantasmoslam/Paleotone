@@ -217,7 +217,7 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             y5 = y4;
             y4 = a;
             s = (y0 + ((y2 * 19661) >> 15) + ((y4 * 11469) >> 15)) >> 6;   /* Q15 */
-            s = softclip(clamp((s * dr) >> 4, -2000000, 2000000));
+            s = softclip_inline(clamp((s * dr) >> 4, -2000000, 2000000));
             f1 += ((s - f1) * kc) >> 15;
             f2 += ((f1 - f2) * kc) >> 15;
             s = L->lp ? f2 : L->hp ? s - f2 : s;
