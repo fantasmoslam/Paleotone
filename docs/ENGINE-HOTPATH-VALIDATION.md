@@ -3,7 +3,7 @@
 Candidate source: 3da5576a9971191eef44d027f2cc1727203eb9f6.
 Draft PR: https://github.com/fantasmoslam/Paleotone/pull/15
 Base: ba586018234cd8be5fbce09a3c3c7306c4c1389f, the last verified effects build.
-Current checkpoint: target and pinned companion passed; CI concurrent mixer, worker sound and ThreadSanitizer passed; complete host suite is still running. No hardware installation or hardware speedup measurement occurred in this cloud session.
+All exact-source software gates passed, including CI host run 40434234930, job 121958970194 (ALL HOST TESTS PASSED). This includes the concurrent mixer, worker sound, ThreadSanitizer and complete single-core functional/regression suite. No hardware installation or hardware speedup measurement occurred in this cloud session.
 
 ## Changes
 
@@ -17,7 +17,7 @@ Force inline ROAR's two per-sample body filter calls and explicitly use the exis
 - Image 549088 bytes (+528); static RAM 96136/98304 and pool 332900/344064 unchanged.
 - Package 609905 bytes, SHA256 0899f068b59cf46783e0a0fe96b6636aa82abe37de94f65114213df1568ec607.
 - Expected renderer 2162762987, independently verified in the companion's remote_views.json.
-- Pinned companion run 40434327653, job 121959268783: passed. Companion artifact ID is recorded in the local validation manifest and can be retrieved from that exact run.
+- Pinned companion run 40434327653, job 121959268783: passed. Companion artifact 12703238204 is staged alongside the target package.
 
 No expected sound results or CPU/target budgets were changed.
 
@@ -27,7 +27,7 @@ No expected sound results or CPU/target budgets were changed.
 
 The normal host fixture defines __attribute__ away. A supplementary generated fixture removed only that erasure and compiled the same regression and ROAR tests with -Os. With real compiler attributes active, all 213 golden renders remained unchanged and the dedicated ROAR checks passed. This fixture was generated under build/attribute-check; no firmware or tracked test source was modified for the audit.
 
-Native instruction counters were unavailable in this cloud runtime: zero local instruction counts are unavailable data, not evidence that CPU costs are zero. Target and CI gates remain authoritative for the existing budgets.
+Runtime instruction counts were unavailable in the local and CI sound-regression output (zero counts / zero budget notes). Those are unavailable data, not evidence that CPU costs are zero or that a numerical runtime CPU budget was measured successfully. The unchanged target static instruction-budget gates did pass. No target timing or runtime speedup is established.
 
 ## Hardware gate and recovery
 
