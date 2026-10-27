@@ -86,6 +86,19 @@ static uint64_t render(const scen_t *sc, int dual, const char *mask)
         }
         if (sc->morph==1 && ms == 600u)             /* PHYS model changed under a sounding note */
             trk[0].p[P_E0] = (int16_t)((trk[0].p[P_E0] + 1) % PM_COUNT);
+        if(sc->morph==3) { /* controls change only between joined blocks, like CPU0 UI/events */
+            uint32_t q=f/(CTL*64u);
+            song.playing=(uint8_t)((q/7u)&1u);
+            song.g[G_BPM]=(int16_t)(40u+(q*37u)%201u);
+            song.g[G_CLOCK]=(int16_t)((q>>1)&1u);
+            midi_beat_samples=FS*(1u+(q%3u));
+            crank.speed=(q%5u)*16u*15u;
+            crank.strokes=(uint8_t)(q/3u);
+            for(k=0;k<NPART;k++){
+                trk[k].p[P_E5]=(int16_t)((q+5u*k)%19u);
+                trk[k].p[P_RING]=(int16_t)((q/3u+k)&1u);
+            }
+        }
         mix_block(o, CTL);
         for (k = 0; k < NPART; k++)
             if (trk[k].peak > peak[k])
@@ -145,6 +158,8 @@ int main(void)
             sc[n++].morph = 0;
         }
     }
+    sc[n++] = (scen_t){"ROAR controls: crank clock RING", {ENGI_GURDY,ENGI_GURDY,ENGI_GURDY,ENGI_GURDY}, {0,2,6,12}, 3};
+    sc[n++] = (scen_t){"ROAR SAURUS FM6 VOICE", {ENGI_GURDY,ENGI_SAURUS,ENGI_FM6,5}, {2,0,0,0}, 0};
     sc[n++] = (scen_t){"PHYS FM6 ANALOG DRUM", {ENGI_PHYS, ENGI_FM6, 0, ENGI_DRUM}, {1, 4, 7, 0}, 0};
     sc[n++] = (scen_t){"GRAIN NOISE VOICE LOFI", {8, 11, 5, 3}, {1, 4, 7, 10}, 0};
     sc[n++] = (scen_t){"TRIO WHEEL PHASE FM6", {6, 7, 2, ENGI_FM6}, {1, 4, 7, 10}, 0};
@@ -182,7 +197,7 @@ int main(void)
         uint32_t safe=0;
         for(k=0;k<NPART;k++) {
             if(sc[i].eng[k]==ENGI_PHYS){safe=0;break;}
-            if(sc[i].eng[k]!=5u && sc[i].eng[k]!=ENGI_SAURUS && sc[i].eng[k]!=ENGI_GURDY) safe++;
+            if(sc[i].eng[k]!=5u && sc[i].eng[k]!=ENGI_SAURUS) safe++;
         }
         if (safe && took < 2u) {                       /* safe parts must really run on the worker */
             printf("dualcore: %-34s the second core never took parts   FAIL\n", sc[i].name);

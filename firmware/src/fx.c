@@ -635,6 +635,10 @@ static __attribute__((noinline)) void perf_master(int32_t *out, uint32_t n)
  * Keep FORMANT/SAURUS on CPU0: their shared noise stream and SAURUS slot pool retain
  * their existing ordering. PHYS may draw rng() during model changes, so any PHYS
  * part disables parallel rendering for that block, preserving LFO/random ordering.
+ * ROAR uses voice-local noise/filter state. Its clock/transport/crank inputs are
+ * read-only during the job: events finish before launch and CPU0 foreground UI
+ * cannot run until the audio ISR has joined the worker. If that scheduling
+ * contract changes, these inputs must be snapshotted before launching ROAR.
  * SCAPE calls, note allocation, transport, effects and USB remain on CPU0. */
 #if FELUCCA_CPU2
 #ifndef C1_ON
@@ -649,7 +653,7 @@ static uint32_t c1_safe_mask(void)
     for(i=0;i<NPART;i++) {
         uint32_t e=trk[i].engine;
         if(e==ENGI_PHYS) return 0;
-        if(e!=5u && e!=ENGI_SAURUS && e!=ENGI_GURDY) mask|=1u<<i;
+        if(e!=5u && e!=ENGI_SAURUS) mask|=1u<<i;
     }
     return mask;
 }

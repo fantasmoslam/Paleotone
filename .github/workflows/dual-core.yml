@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin, feature/midi-path-trace, fix/editor-updater-dispatch]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin, feature/midi-path-trace, fix/editor-updater-dispatch, feature/roar-worker-audit]
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,6 +42,8 @@ jobs:
           mkdir -p build/host
           cc -O2 -w -Ibuild/gen -Ifirmware/src -pthread tests/dualcore_test.c -lm -o build/host/dualcore_test
           build/host/dualcore_test
+      - name: ROAR forced-worker control transitions
+        run: SCENE='ROAR' build/host/dualcore_test
       - name: Existing sound regression with worker active
         run: |
           cc -O2 -w -DC1_HOST -Ibuild/gen -Ifirmware/src -pthread tests/regress.c -lm -o build/host/regress-c1
