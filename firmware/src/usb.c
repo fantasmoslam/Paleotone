@@ -765,6 +765,18 @@ stall:
     sie_wr(S_CSR0, 0x60);
 }
 
+/* Keep event-only diagnostics out of the nested USB packet/byte loop body. */
+static __attribute__((noinline)) void mt_receive_start(void)
+{
+    midi_trace.rx_start++;
+    if(sx_ready)midi_trace.rx_busy++;
+}
+static __attribute__((noinline)) void mt_receive_done(void)
+{
+    midi_trace.rx_done++;
+    midi_trace.rx_cmd=sx_pos>3u?sx_frame[3]:127u;
+    midi_trace.rx_track=sx_pos>4u?sx_frame[4]:127u;
+}
 /* SysEx assembly: only short commands matter here */
 static void sysex_byte(uint8_t b)
 {
@@ -782,8 +794,7 @@ static void sysex_byte(uint8_t b)
         usb.sx_on = 1;
         usb.sx_len = 0;
 #if FELUCCA_OTA
-        midi_trace.rx_start++;
-        if(sx_ready)midi_trace.rx_busy++;
+        mt_receive_start();
         sx_collect = !sx_ready;
         sx_pos = 0;
 #endif
@@ -811,9 +822,7 @@ static void sysex_byte(uint8_t b)
                  usb.sysex[4] == 0x7F)
             usb.ota_req = 1;
         else if (sx_collect && sx_pos) {
-            midi_trace.rx_done++;
-            midi_trace.rx_cmd=sx_pos>3u?sx_frame[3]:127u;
-            midi_trace.rx_track=sx_pos>4u?sx_frame[4]:127u;
+            mt_receive_done();
             sx_frame_len = sx_pos;
             RING_PUBLISH();
             sx_ready = 1;                               /* main loop: ota_take() / ed_service() */
