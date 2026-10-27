@@ -1,7 +1,7 @@
 name: remote screen
 on:
   push:
-    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/site-installer, feature/scape-garden]
+    branches: [feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/site-installer, feature/scape-garden, feature/usb-buffer-margin]
   workflow_dispatch:
 permissions:
   contents: read

@@ -64,25 +64,22 @@ static struct {
 #endif
 
 #if FELUCCA_UAC
-/* USB audio input. The I2S clock is not locked to USB (about 44,117.6 Hz against the host's 44,100):
- * the endpoint is asynchronous, so each 1 ms packet carries what the ring holds, 44 or 45 frames
- * (the 44.1 pattern) and one more or one fewer while the ring's fill drifts out of its band.
- * The render writes HALF_FRAMES (128) frames every 2.9 ms; the fill measured when a render starts is
- * the low point of that saw tooth, and is kept in UA_LO..UA_HI. A frame waits in the ring for that fill
- * plus its place in the render: 80..256 frames, ~3.8 ms on average (256-frame halves and a 96..160
- * band: ~5.8 ms). Measured under load (65 % CPU): a 64..112 band started renders at
- * 48..119 with no glitch; one render was once seen 29 frames under the floor: a packet (46) must
- * still be in hand then. */
-#define UA_N 512u                /* ring, frames (16-bit L | R << 16); a power of two */
-#define UA_PRIME 104u            /* silence ahead of the first rendered frame */
-#define UA_LO 80u                /* a render may start late: keep a packet and more in hand */
-#define UA_HI 128u
+/* USB audio input. The I2S clock is independent of USB. Packets carry 44/45 frames
+ * (+/-1 for clock drift), controlled by the fill at the start of a 128-frame render.
+ * Keep an extra render (128 frames, 2.90 ms at 44.1 kHz) queued versus the former
+ * 80..128 band: measured publication gaps approached 4 ms under load. This spends
+ * USB latency, not SRAM or synthesis time; I2S deadline overruns are independent.
+ * The existing 512-frame ring still holds the band, a render and a packet. */
+#define UA_N 512u                /* ring frames (16-bit L | R << 16), power of two */
+#define UA_PRIME 232u            /* silence ahead of first render, midpoint of band */
+#define UA_LO 208u
+#define UA_HI 256u
 #define UAC_RATE 44100u
 #if FELUCCA_UAC_48K
 /* 48 kHz: the same times in 48 kHz frames (x 160 / 147); a render of HALF_FRAMES gives 139..140 frames */
-#define UA_PRIME48 113u
-#define UA_LO48 87u
-#define UA_HI48 139u
+#define UA_PRIME48 253u
+#define UA_LO48 227u
+#define UA_HI48 279u
 #define UA_REND48 ((HALF_FRAMES * 160u + 146u) / 147u)
 #define UA_MAXF 49u              /* frames in the largest packet: 48 + 1 */
 _Static_assert(UA_HI48 + UA_REND48 + UA_MAXF < UA_N, "the ring holds the band, a render and a packet (48 kHz)");
