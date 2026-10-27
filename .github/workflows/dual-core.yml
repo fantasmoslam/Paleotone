@@ -1,7 +1,7 @@
 name: dual-core validation
 on:
   push:
-    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin]
+    branches: [feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin, feature/midi-path-trace]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,6 +21,10 @@ jobs:
           node-version: '24'
       - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.5.3
       - run: python3 tools/build.py --gen-only
+      - name: MIDI path counter regression
+        run: |
+          cc -O2 -w tests/midi_trace_test.c -o /tmp/midi-trace
+          /tmp/midi-trace
       - name: Audio profiling counter regression
         run: |
           cc -std=c99 -Wall -Wextra -Werror -Ifirmware/src tests/audio_profile_test.c -o /tmp/audio-profile-test

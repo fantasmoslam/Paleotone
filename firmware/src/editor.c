@@ -1,3 +1,4 @@
+#include "midi_trace.h"
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Editor protocol: SysEx for the web editor (web/EDITOR_PROTOCOL.md; v2 = user presets + live sync,
@@ -432,6 +433,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     if (n < 4u)
         return;
     uint32_t cmd = f[3], i;
+    if(cmd==29u)midi_trace.handle29++;if(cmd==96u)midi_trace.handle96++;
     const uint8_t *a = f + 4;
     uint32_t na = n - 4u;
     int16_t *vp;
