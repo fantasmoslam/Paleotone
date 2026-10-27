@@ -16,8 +16,8 @@ Exact-source gates passed:
 - Pinned matching companion: run 40422790870.
 
 Target image 548420 B; static RAM 96136/98304 B; pool 332900/344064 B.
-The matching companion was prepared and validated locally, but NOT published.
-The currently published screen-dualcore page has the PREVIOUS renderer 503813915 and must not be presented as matching this newly installed firmware. Use the exact new artifact or publish its prepared screen directory before browser testing.
+The matching companion was prepared and validated locally; publication was completed in the resumed session described below.
+The screen-dualcore page has the PREVIOUS renderer 503813915 and must not be presented as matching this newly installed firmware. Use the exact new artifact or publish its prepared screen directory before browser testing.
 
 ## Hardware status and invalid playback phases
 The first profiling harness completed but every serial status, including phases named playingProfile and usbProfile, reported playing=0. Its PLAY request did not establish running transport. It failed to assert playing=1 after the tap. Those phases must NOT be used as loaded-song evidence. Cause of failure to start was not established; the attempt to read UI context and crash status was blocked when the user's connected computer environment became unavailable.
@@ -56,3 +56,33 @@ Do not run an older identity-pinned installer against this new device by mistake
 5. Publish the prepared matching companion and preserve its directory in site deployment; do not overwrite the old matching page.
 6. Compare measured track/events/SCAPE/effects/master work, total wall/nested time and USB raw fill/feed gaps. Do not optimize from the mislabeled stopped phases.
 7. Keep clocks, overload thresholds and voice limits unchanged until the actual bottleneck is established.
+
+## Resumed session: valid loaded-song profiling
+Computer access restored. Serial reported no crash record. Remote screen configuration was rejected by a protected UI-state guard; normal HOME hold/tap navigation cleared the obstruction. A subsequent harness asserted playing=1 after starting and after both loaded phases. The earlier specific attribution to an empty SONG arrangement was an inference, not an established cause; the protected UI/menu state is the confirmed observation. Do not reuse earlier stopped phases as loaded results.
+
+The new loaded run used the same ROAR/STAMPEDE, SAURUS/BRACHIO CALL, FM6/MAMMOTH and VOICE/DEEP CHANT mix at 84 BPM, CPU1 OFF.
+
+18072 profiled 32-frame control blocks without USB capture:
+| Group | Mean microseconds per control block | Max microseconds per call |
+| --- | --- | --- |
+| T1 ROAR/STAMPEDE | 110.30 | 225 |
+| T2 SAURUS/BRACHIO CALL | 108.76 | 160 |
+| T3 FM6/MAMMOTH | 68.66 | 123 |
+| T4 VOICE/DEEP CHANT | 46.47 | 142 |
+| Aggregate parts (includes those tracks; do not add twice) | 340.52 | 659 |
+| Events/director | 23.03 | 207 |
+| Ambient/SCAPE | 3.52 | 14 |
+| Effects | 142.01 | 170 |
+| Master/scope/tape/output | 90.12 | 118 |
+
+Among nonoverlapping measured phase totals, parts account for approximately 57%, effects/master together 39%. These are shares of measured phases, not whole-device CPU percentages. Timing subtracts nested TIMER5 time and loses sub-microsecond precision. Individual maxima need not coincide. Profiling itself adds overhead; the windows are not musically phase aligned and are not a rigorous overhead benchmark.
+
+Before profiling was enabled, playback was independently verified and late blocks rose 55 -> 63 and overload-shed voices 1 -> 5 across the unprofiled baseline interval. Thus the underlying overload was already present without phase profiling.
+
+During verified profiled playback: render maximum 3056 us, wall maximum 3284 us, deadline 2902 us, nested-interrupt maximum 227 us. During verified USB capture: ring raw low-water reached 0 frames, maximum publication gap 3920 us, USB underruns rose from 0 to 16. The capture completed. At final stopped read the cumulative render/wall maxima were 3065/3295 us and nested maximum 247 us, LCD timeouts 0. These independently maintained maxima are not additive.
+
+Interpretation: renderer work itself exceeds the buffer deadline on some blocks; this is not solely UI starvation. USB's producer queue drains under this workload. A larger buffer might mask some USB symptoms but would not solve the I2S deadline violation. LCD timeouts were not observed; this does not rule out draw cost, DMA/bus contention or flash/cache stalls. BLE/heap-compaction explanations do not fit this build's inspected architecture. No clocks, thresholds, buffers or DSP algorithms were changed.
+
+Final state verified stopped, CPU1 OFF, phase profiling OFF. All 13 saved-state objects matched the fresh pre-install backup by size and CRC after profiling. Matching renderer 3998626645 companion published at https://fantasmoslam.github.io/Paleotone/webapp/screen-audio-diagnostics/ and added to main-site preservation. The old screen-dualcore page remains for the previous renderer.
+
+Next: optimize/profile the shared effects/master path and the heavy ROAR/SAURUS work, preserving sound fidelity; then repeat same-song deadline/USB tests. CPU1 currently only offloads FM6 in this particular mix. Do not infer extra SCAPE headroom from the worker merely running.
