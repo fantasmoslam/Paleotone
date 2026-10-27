@@ -12,7 +12,6 @@
 
 #define FELUCCA_ID "FM-1_900"
 #define FELUCCA_OTA_DRYRUN 0
-#define OTA_KEEP_EDITOR 1
 
 static uint8_t nor[0x100000];
 static uint8_t *logical;
@@ -159,16 +158,18 @@ static int test_editor_dispatch(void)
     unsigned i;int bad=0;
     /* editor service saw no frame; an IRQ then publishes one before updater service. */
     for(i=0;i<2;i++){
-        memcpy(rx,editor[i],5);rx_len=5;rx_full=1;ota_service();
+        memcpy(rx,editor[i],5);rx_len=5;rx_full=1;ota_service_editor();
         bad+=check("handshake preserves newly arrived editor request",rx_full&&rx_len==5&&!memcmp(rx,editor[i],5));
         ota_frame_done();
     }
-    host_reply(identity,sizeof identity);ident_replies=0;ota_service();
+    host_reply(identity,sizeof identity);ident_replies=0;ota_service_editor();
     bad+=check("updater identity still consumed and answered",!rx_full&&ident_replies==1);
     memcpy(rx,editor[0],5);rx_len=5;rx_full=1;(void)ota_take();
     bad+=check("active update session still discards unrelated editor frame",!rx_full);
-    rx[0]=125;rx[1]=70;rx[2]=76;rx_len=3;rx_full=1;ota_service();
+    rx[0]=125;rx[1]=70;rx[2]=76;rx_len=3;rx_full=1;ota_service_editor();
     bad+=check("short malformed editor prefix does not block handshake",!rx_full);
+    memcpy(rx,editor[0],5);rx_len=5;rx_full=1;ota_service();
+    bad+=check("loader/rescue service consumes unrelated editor frame",!rx_full);
     rx_full=0;ident_replies=0;return bad;
 }
 

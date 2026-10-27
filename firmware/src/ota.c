@@ -159,18 +159,16 @@ static uint32_t ota_take_kind(uint32_t keep_editor)
 static uint32_t ota_take(void) { return ota_take_kind(0); }
 
 /* main loop, outside a session: answer handshakes */
-static void ota_service(void)
+static void ota_service_kind(uint32_t keep_editor)
 {
-    uint32_t d = ota_take_kind(
-#ifdef OTA_KEEP_EDITOR
-        OTA_KEEP_EDITOR
-#else
-        0
-#endif
-    );
+    uint32_t d = ota_take_kind(keep_editor);
     if (d == 7u && ota_dec[2] == 0x11)
         ota_reply_identity();
 }
+
+/* Loader/rescue have no editor; only the normal main loop preserves editor ownership. */
+static void ota_service(void) { ota_service_kind(0); }
+static void ota_service_editor(void) { ota_service_kind(1); }
 
 /* one read request (3 tries x 5 s); data -> dst */
 static uint32_t ota_deadline;                    /* 0 = none; else ota_now_ms() limit of the session */
