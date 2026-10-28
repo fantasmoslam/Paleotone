@@ -126,3 +126,14 @@ Work that **must wait for hardware**:
 
 - Real-world input-to-display latency, USB transport throughput, frame delivery stability, actual second-panel accuracy, and interference with sound/sequencer activity cannot be established without the instrument.
 - Keep the speed toggle opt-in and all pull requests in draft until those measurements are available.
+
+### Direct JavaScript fixture execution (2026-10-28)
+
+Executed the branch's actual `FramePresenter` source plus the `test_frame_presenter.mjs` fixture in an isolated V8 environment, replacing only Node's import/assert scaffolding. **Passed.**
+
+Executed `test_screen_workload.mjs` against the same source and deterministic clock in V8. **Passed.** Recorded:
+- 1,000 unchanged 480×240 frames: **1 painted, 999 skipped**.
+- 1,000 continually changing frames in Canvas mode: **1,000 painted**, one reusable ImageData allocation.
+- 1,000 changing frames in compatible image mode, with synthetic 45 ms arrival spacing: **500 painted, 500 skipped** by its 90 ms gate.
+
+These figures are deterministic *rendering simulation counts*, not device-measured frames per second or USB speeds. Normal Node/Actions and real-browser integration tests remain to be confirmed. No hardware-dependent claim follows from these numbers.
