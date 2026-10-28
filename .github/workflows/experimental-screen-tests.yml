@@ -1,0 +1,28 @@
+name: experimental screen performance tests
+
+on:
+  push:
+    branches:
+      - experimental-screen-fast-refresh-20261028
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify frame presenter
+        run: node web/test_frame_presenter.mjs
+      - name: Verify fast-refresh opt-in
+        run: node web/test_companion_performance.mjs
+      - name: Verify lightweight-screen compatibility
+        run: node web/test_screen_app.mjs
+      - name: Verify renderer routing
+        run: node web/test_screen_router.mjs
