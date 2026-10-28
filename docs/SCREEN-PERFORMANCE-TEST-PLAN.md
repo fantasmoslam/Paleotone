@@ -78,3 +78,10 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 - Added a controlled clock test: a changed frame arriving 45 ms after the last displayed frame must not trigger PNG encoding or overwrite visible pixels; the latest frame arriving after the 90 ms gate must be shown.
 - Also verifies a subsequent frame can restore the original pixels. Expected improvement: fewer wasted PNG operations and less browser churn, without silently losing the most recent screen state.
 - Assertions are committed but not yet confirmed by a completed test run or FM-1 hardware measurement.
+
+### Diagnostic improvements and fixture maintenance
+
+- Corrected the painted-frame counter expectations after adding additional compatible-mode pacing cases. The expanded test now accounts for all actual draws rather than the earlier baseline.
+- Experimental companion now displays measured browser presentation FPS (delta painted frames / elapsed time), alongside accumulated frames received, painted and skipped. This is **not** the same as device-side frame generation rate or USB transfer throughput.
+- Updated the experiment's static guard to check for the presentation-rate instrumentation.
+- Expected result: clear normal-vs-fast comparison during the hardware test, without claiming that polling targets equal delivered FPS. Node test and live hardware verification pending.
