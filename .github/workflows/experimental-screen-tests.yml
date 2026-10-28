@@ -28,3 +28,5 @@ jobs:
         run: node web/test_screen_app.mjs
       - name: Verify renderer routing
         run: node web/test_screen_router.mjs
+      - name: Verify graphics companion packaging
+        run: python3 web/test_companion_packaging.py
