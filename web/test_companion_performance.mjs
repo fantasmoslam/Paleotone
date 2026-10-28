@@ -9,6 +9,7 @@ assert.match(html,/fastRefresh\?45:90/);
 assert.match(html,/Math\.max\(20,\(fastRefresh\?45:90\)/);
 assert.match(html,/presenter\.metrics\(\)/);
 assert.match(html,/lastPaintCount=perf\.painted/);
+assert.match(html,/lastStatusAt=performance\.now\(\);lastPaintCount=presenter\.metrics\(\)\.painted/);
 assert.match(html,/presented /);
 assert.match(html,/performance\.now\(\)-lastStatusAt>1000/);
 console.log('companion: experimental fast refresh opt-in and frame diagnostics present');
