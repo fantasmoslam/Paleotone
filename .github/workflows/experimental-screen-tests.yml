@@ -1,6 +1,7 @@
 name: experimental screen performance tests
 
 on:
+  pull_request:
   push:
     branches:
       - experimental-screen-fast-refresh-20261028
