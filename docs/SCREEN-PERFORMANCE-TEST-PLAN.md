@@ -151,3 +151,11 @@ These figures are deterministic *rendering simulation counts*, not device-measur
 ### Proposed hardware test entry gate
 
 Once the experimental Actions run is green and the compiled companion can be loaded from a staging URL, the remaining questions become hardware-specific: device transport, audio/sequencer stability, UI button control, and measured latency. If CI or browser rendering fails, fix it before the FM-1 session.
+
+## GitHub workflow audit — 2026-10-28
+
+- Found and fixed a false-positive risk in the headless Chrome smoke test. A plain `grep` for the word PASS could succeed because the test HTML contains the PASS string in its JavaScript source, even if the browser never ran it. CI now extracts the **rendered result output element** and requires it to equal the successful status.
+- Expanded the packaging test to ensure missing `felucca.wasm` fails publication rather than silently yielding an incomplete companion.
+- Audited the experiment workflow's set of independent checks: syntax, exact-pixel frame tests, repeated frame workload, opt-in refresh static checks, lightweight screen routing, packaging, and headless browser Canvas/PNG validation.
+- GitHub's connector exposes no workflow-dispatch method and no completed PR workflow-run result for the checked commit; direct public Actions endpoints are unavailable from this session. A green check has **not** been confirmed.
+- Remaining CI gate: visit the workflow run on GitHub (Actions > experimental screen performance tests), confirm all steps green, and inspect any error logs. No FM-1 is needed for this gate.
