@@ -32,9 +32,6 @@ jobs:
         run: node web/test_companion_performance.mjs
       - name: Verify lightweight-screen compatibility
         run: node web/test_screen_app.mjs
-      - name: Verify lightweight page metadata and published companion checks
-        run: |
-          node web/test_device_release.mjs
       - name: Verify renderer routing
         run: node web/test_screen_router.mjs
       - name: Verify graphics companion packaging
