@@ -85,3 +85,26 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 - Experimental companion now displays measured browser presentation FPS (delta painted frames / elapsed time), alongside accumulated frames received, painted and skipped. This is **not** the same as device-side frame generation rate or USB transfer throughput.
 - Updated the experiment's static guard to check for the presentation-rate instrumentation.
 - Expected result: clear normal-vs-fast comparison during the hardware test, without claiming that polling targets equal delivered FPS. Node test and live hardware verification pending.
+
+## Pre-hardware readiness gate (2026-10-28)
+
+Software preparation that does **not** require the FM-1:
+- [x] Isolate graphics speed changes on draft pull requests.
+- [x] Add frame de-duplication and ImageData reuse.
+- [x] Cover image-mode pacing, exact pixels, and canvas context-loss recovery in regression fixtures.
+- [x] Add on-screen presentation-rate and frame-skip counters.
+- [x] Add opt-in faster refresh and an experimental-only CI workflow.
+- [x] Fix sampling baseline reset on each successful MIDI connection; prevent the first FPS measurement from using page startup time.
+- [ ] Confirm Node tests complete successfully in CI; investigate any red job.
+- [ ] Verify production-built companion bundle generated from this branch still loads all matching scripts and WASM assets.
+- [ ] Validate Chrome/Edge UI in a real browser without hardware using fixture data; check layout changes on phone-sized screens.
+- [ ] Capture a baseline under simulated unchanged and changing frames, and verify memory allocation profiles.
+
+Work that **must wait for hardware**:
+- [ ] Record real transfer latency, screen paint rate, input-to-photon response, and error/retry counts.
+- [ ] Compare normal and fast polling under idle, knob rotation, and four-track playback.
+- [ ] Confirm no audio or sequencer regression with the full graphics companion running.
+- [ ] Exercise disconnect/reconnect, USB sleep/wake, and error recovery with real MIDI ports.
+- [ ] Check whether live browser state captures accurate peak/RMS and dinosaur-call activity before designing new firmware telemetry.
+
+**Decision gate:** do not interpret synthetic timers, status counters, or passing mocks as a proof of USB speed. Keep 45 ms fast refresh opt-in unless hardware benchmarks show a consistent improvement without failures.
