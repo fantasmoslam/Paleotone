@@ -36,3 +36,17 @@ jobs:
         run: node web/test_screen_router.mjs
       - name: Verify graphics companion packaging
         run: python3 web/test_companion_packaging.py
+      - name: Install Chrome for real-browser smoke test
+        uses: browser-actions/setup-chrome@v1
+      - name: Test Canvas and PNG fallback in headless Chrome
+        shell: bash
+        run: |
+          python3 -m http.server 8765 --directory web >/tmp/paleotone-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/frame_presenter.js >/dev/null; then break; fi
+            sleep 1
+          done
+          google-chrome --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8765/test_presenter_browser.html > /tmp/paleotone-chrome.html
+          grep -F 'PASS: actual browser Canvas and PNG presentation' /tmp/paleotone-chrome.html
