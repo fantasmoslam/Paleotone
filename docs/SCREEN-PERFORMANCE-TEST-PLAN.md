@@ -62,3 +62,6 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 - Reset cached ImageData on Canvas/compatible mode transitions to avoid reusing a drawing buffer across surfaces; regression validation remains pending.
 
 - Extended frame-presenter regression assertions to verify that Canvas and compatible image modes maintain distinct cached ImageData surfaces, including context-loss fallback. Hardware and CI validation pending.
+
+- Added a dedicated GitHub Actions workflow (`experimental-screen-tests.yml`) that runs the four focused browser/renderer regression scripts on experimental-branch pushes or by manual dispatch. It does not build or flash FM-1 firmware. CI results must still be checked; a committed workflow alone is not proof of passing tests.
+- Expected outcome: catch display regressions earlier, reduce duplicate redraw work, and determine whether the optional higher polling rate produces meaningful visible improvements without increasing failures. Hardware measurements remain necessary.
