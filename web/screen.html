@@ -36,6 +36,8 @@ body.target-right #screen{border-color:#ffbf53}body.target-left #screen{border-c
 <label>MIDI output <select id="output"></select></label><button id="use">Use selected ports</button></div>
 <p id="status" role="status">Connect the FM-1 with a USB data cable. Sound runs on the instrument.</p>
 <p id="timing" class="help" aria-hidden="true"></p>
+<label><input id="audio-priority" type="checkbox" aria-describedby="audio-priority-help"> Audio priority (experimental)</label>
+<p id="audio-priority-help" class="help">Limit screen requests to 10 updates/s with a pause between transfers. Try this if heavy playing causes audio glitches; screen motion may be less smooth.</p>
 <div class="second-controls" id="second-controls" hidden>
 <label>Second screen <select id="second-view"><option value="overview">Tracks / sequence overview</option></select></label>
 <label id="second-track-label" hidden>Track <select id="second-track"><option value="follow">Follow FM-1</option><option value="0">Track 1</option><option value="1">Track 2</option><option value="2">Track 3</option><option value="3">Track 4</option></select></label>
@@ -151,7 +153,7 @@ async function start(input,output){
         if(!recoverableScreenError(e)||++failures>=3)throw e;
         sync.bytes=null;sync.rev=0;status.textContent='Screen transfer interrupted · retrying…';
       }
-      await new Promise(resolve=>setTimeout(resolve,refreshDelay(performance.now()-began,drawMs,{hidden:document.hidden,compatible:presenter.compatible})));
+      await new Promise(resolve=>setTimeout(resolve,refreshDelay(performance.now()-began,drawMs,{hidden:document.hidden,compatible:presenter.compatible,audioPriority:$('audio-priority').checked})));
     }
   }catch(e){if(own===generation)stop(e.message);}
 }
