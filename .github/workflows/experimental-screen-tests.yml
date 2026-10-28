@@ -20,6 +20,8 @@ jobs:
           node-version: '24'
       - name: Verify frame presenter
         run: node web/test_frame_presenter.mjs
+      - name: Synthetic rendering workload (no FM-1 required)
+        run: node web/test_screen_workload.mjs
       - name: Verify fast-refresh opt-in
         run: node web/test_companion_performance.mjs
       - name: Verify lightweight-screen compatibility
