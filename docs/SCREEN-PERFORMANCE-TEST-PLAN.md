@@ -60,3 +60,5 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 - Scope remains limited to the browser experiment. These changes are not yet hardware-verified, merged, or deployed.
 
 - Reset cached ImageData on Canvas/compatible mode transitions to avoid reusing a drawing buffer across surfaces; regression validation remains pending.
+
+- Extended frame-presenter regression assertions to verify that Canvas and compatible image modes maintain distinct cached ImageData surfaces, including context-loss fallback. Hardware and CI validation pending.
