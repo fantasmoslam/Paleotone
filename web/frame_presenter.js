@@ -29,8 +29,8 @@ export class FramePresenter {
     if(same){this.skipped++;return;}
     // A throttled compatible frame must not replace the last *displayed* frame in the cache.
     const time=this.now();
-    if(this.compatible&&time-this.last<90){this.skipped++;return;}
     if(this.context.isContextLost?.())this.setCompatible(true);
+    if(this.compatible&&time-this.last<90){this.skipped++;return;}
     const target=this.compatible?this.buffer:this.canvas;
     const ctx=this.compatible?this.bufferContext:this.context;
     if(target.width!==width)target.width=width;
