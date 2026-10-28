@@ -39,3 +39,16 @@ Record frames received / painted / skipped, any black frames, stalls, audible ar
 - Compare normal vs fast with real-device numbers. Fast must have measurable benefit without audio or reliability regressions; otherwise retain normal.
 - Check desktop and Android separately. Avoid claiming FPS based solely on timer intervals.
 - Keep the new Mesozoic visual redesign and any audio/sequencer telemetry in independent PRs.
+
+
+## Development log — 2026-10-28
+
+- Continued browser-only performance experiments on `experimental-screen-fast-refresh-20261028`; no changes to live firmware or `main`.
+- Corrected the frame-presenter context-loss check so a lost Canvas context can trigger the compatible fallback even during the compatible update throttle.
+- Existing regression fixtures and the benchmark checklist remain on the experimental branch; physical FM-1 performance has not been measured.
+- Open draft pull requests: [#23](https://github.com/fantasmoslam/Paleotone/pull/23) (presentation optimization), [#24](https://github.com/fantasmoslam/Paleotone/pull/24) (faster polling and diagnostics).
+- **Testing gate:** run Node regression tests and desktop/mobile browser checks before any merging; do not interpret the polling timer as measured display FPS.
+
+## Explanation for the eventual test session
+
+The browser renders firmware pixels received over MIDI. Performance depends on how long the FM-1 takes to send state, how long browser/WASM rendering takes, and how often the browser presents new pixels. Skipping identical frames reduces browser work but doesn't accelerate USB transport. The experimental fast-poll option requests updates more frequently; it may not improve the actual displayed frame rate if USB is already the bottleneck. The original pixel-perfect renderer remains the reference.
