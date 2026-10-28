@@ -24,6 +24,17 @@ for(let n=0;n<100;n++)p.present(rgba,240);
 assert.equal(p.buffer.encodes,1,'100 identical frames must not re-encode PNG');
 assert.equal(p.buffer.draws,1,'100 identical frames must not redraw');
 assert.equal(p.buffer.allocations,1,'100 identical frames must not allocate ImageData');
+// Changed compatible frames are coalesced within the 90 ms presentation window.
+const transient=rgba.slice();transient[40]=73;
+time=45;p.present(transient,240);
+assert.equal(p.buffer.encodes,1,'throttled frame must not encode a new PNG');
+assert.equal(p.buffer.pixels[40],128,'throttled frame must not replace the presented pixels');
+time=100;p.present(transient,240);
+assert.equal(p.buffer.encodes,2,'latest changed frame displays after throttle expires');
+assert.equal(p.buffer.pixels[40],73);
+// Restore the initial pixels for the existing canvas-mode assertions.
+time=200;p.present(rgba,240);
+assert.equal(p.buffer.pixels[40],128);
 assert.match(p.image.src,/^data:image\/png/);assert.equal(p.black,false);
 p.setCompatible(false);p.present(rgba,240);assert.deepEqual(canvas.pixels,rgba);assert.equal(canvas.hidden,false);
 assert.equal(p.frameContext,canvas.ctx,'Canvas mode owns a new image buffer');
