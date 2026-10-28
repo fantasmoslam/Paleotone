@@ -4,6 +4,8 @@
 const C = {bg:"#000", fg:"#33ff66", dim:"#0f5a22", am:"#ffb000"};
 const cv = document.getElementById("s"), g = cv.getContext("2d"), st = document.getElementById("st");
 let midi = null, input = null, selected = null, lastReply = 0, connectedAt = 0;
+let lastRetry = 0;
+const RECONNECT_COOLDOWN_MS = 4000;
 let out = null, info = null, dump = null, scr = null, pages = [], desc = {}, asked = {}, names = {}, menu = [], menuAsked = false, hot = {};
 const q = [];
 let selectedTrack = 0;
@@ -133,7 +135,7 @@ function drawMenu(sel) {
     txt(m.kind === 0 ? (m.vn[m.val] || "") : m.val + m.unit, 232, y, on ? C.fg : C.dim, "right", 12);
   });
 }
-setInterval(draw, 60);
+setInterval(() => { if (!document.hidden) draw(); }, 60);
 
 /* ---- connect ---- */
 
@@ -143,7 +145,7 @@ function resetDisplay() {
 function disconnected(message) {
   if(input) input.onmidimessage=null;
   if(out) { try { out.clear(); } catch {} }
-  input=out=null;resetDisplay();st.textContent=message;
+  input=out=null;lastRetry=performance.now();resetDisplay();st.textContent=message;
 }
 function pairs() {
   if(!midi)return [];
@@ -169,7 +171,7 @@ function refreshPorts(auto=false) {
   const remembered=list.find(p=>p.key===selected);
   const matching=list.filter(p=>/fm-?1|felucca|paleotone|ghoul/i.test(p.label));
   const candidate=remembered||(matching.length===1?matching[0]:null);
-  if(auto&&candidate){attach(candidate);return;}
+  if(auto&&candidate){lastRetry=performance.now();attach(candidate);return;}
   document.getElementById('portbar').hidden=!list.length;
   st.textContent=list.length?'Select your FM-1 ports above.':'No FM-1 found. Check the USB data cable and turn the instrument on.';
 }
@@ -181,8 +183,16 @@ document.getElementById('go').onclick=async()=>{
   catch(e){st.textContent='MIDI permission was blocked. Allow MIDI and SysEx, then connect again.';}
 };
 setInterval(()=>{
-  if(!out)return;
   const now=performance.now();
+  // Reattach known hardware after a stale-stream timeout or USB re-enumeration.
+  // No additional permission prompt: reuse the user's existing MIDI access.
+  if(!out){
+    if(midi && selected && now-lastRetry>=RECONNECT_COOLDOWN_MS){
+      lastRetry=now;
+      refreshPorts(true);
+    }
+    return;
+  }
   if(scr)st.textContent=out.name+' · screen connected';
   else if(info&&now-connectedAt>4000)st.textContent='FM-1 replied, but the second-screen firmware messages are missing. Use the matching tested firmware.';
   else if(!lastReply&&now-connectedAt>4000)st.textContent='FM-1 is not replying. Close other MIDI apps and check the selected ports.';
