@@ -137,3 +137,17 @@ Executed `test_screen_workload.mjs` against the same source and deterministic cl
 - 1,000 changing frames in compatible image mode, with synthetic 45 ms arrival spacing: **500 painted, 500 skipped** by its 90 ms gate.
 
 These figures are deterministic *rendering simulation counts*, not device-measured frames per second or USB speeds. Normal Node/Actions and real-browser integration tests remain to be confirmed. No hardware-dependent claim follows from these numbers.
+
+## Software-only completion pass — 2026-10-28
+
+- Added a real headless Chromium browser smoke test (`web/test_presenter_browser.html`) that exercises the branch's actual Canvas presenter, confirms precise pixel changes, deduplicates unchanged frames, then switches to compatible PNG display.
+- Wired the real-browser check into `.github/workflows/experimental-screen-tests.yml` using a temporary local HTTP server and Chrome; the test does not need MIDI or the FM-1.
+- Added syntax checks of screen browser modules and publishing Python files. Existing test jobs exercise synthetic packaging, renderer logic, page routing and the 1,000-frame workload.
+- Independently executed the JavaScript frame regression fixture and synthetic workload in V8. Both passed (results above).
+- **Outstanding verification:** Actions workflow run results are not visible through the available commit-status interface (it reports no statuses); the new Chrome check and Python packaging test have not been observed executing in GitHub Actions. This is a tooling/verification limitation, not a successful test result.
+- Full end-to-end production site generation requires the pinned graphics renderer source, generated WASM, and build artifacts. The synthetic packaging test covers the helper but cannot establish a production release without running that full pipeline.
+- Do not merge, publish, or flash solely on these findings.
+
+### Proposed hardware test entry gate
+
+Once the experimental Actions run is green and the compiled companion can be loaded from a staging URL, the remaining questions become hardware-specific: device transport, audio/sequencer stability, UI button control, and measured latency. If CI or browser rendering fails, fix it before the FM-1 session.
