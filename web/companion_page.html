@@ -237,6 +237,8 @@ async function start(input,output){
       return !!ex.web_remote_apply(bytes.length);
     });
     sync.check(await link.status(0));
+    // Start rate measurement only after the connection handshake completes.
+    lastStatusAt=performance.now();lastPaintCount=presenter.metrics().painted;
     running=true;enabled(true);$("ports").hidden=true;
     lease=setInterval(()=>{if(held&&link)link.inputCommand([3]).catch((e)=>stop(e.message));},400);
     let failures=0;
