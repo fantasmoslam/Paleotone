@@ -67,7 +67,7 @@ const presenter = new FramePresenter(canvas);
 $("compatible").setAttribute("aria-pressed",presenter.compatible);
 $("compatible").onclick=()=>{presenter.setCompatible(!presenter.compatible);$("compatible").setAttribute("aria-pressed",presenter.compatible);if(sync?.bytes)paint();};
 let access, ex, link, sync, running = false, wide = false, held = 0, lease, generation = 0;
-let fastRefresh=false, lastStatusAt=0;
+let fastRefresh=false, lastStatusAt=0, lastPaintCount=0;
 $("fast-refresh").onclick=()=>{fastRefresh=!fastRefresh;$("fast-refresh").setAttribute("aria-pressed",fastRefresh);};
 let second, secondView='overview', secondTrack='follow';
 let router,baseTarget='left',shiftHeld=false,inputEpoch=0;
@@ -248,8 +248,10 @@ async function start(input,output){
         failures=0;enabled(!router.busy);paint();
         if(performance.now()-lastStatusAt>1000){
           const perf=presenter.metrics();
+          const rate=((perf.painted-lastPaintCount)*1000/Math.max(1,performance.now()-lastStatusAt)).toFixed(1);
+          lastPaintCount=perf.painted;
           status.textContent=output.name+" · synchronized"+(result.full?" · full state":"")+presenter.status()+
-            (fastRefresh?" · FAST":"")+" · frames "+perf.painted+"/"+perf.received+" (skipped "+perf.skipped+")";
+            (fastRefresh?" · FAST":"")+" · presented "+rate+" FPS · frames "+perf.painted+"/"+perf.received+" (skipped "+perf.skipped+")";
           lastStatusAt=performance.now();
         }
       }catch(e){
