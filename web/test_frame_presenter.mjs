@@ -24,7 +24,7 @@ const changed=rgba.slice();changed[41]=42;time=220;p.present(changed,240);
 assert.equal(canvas.pixels[41],42,'single channel changes must be presented');
 assert.equal(p.metrics().painted,3);
 canvas.lost=true;time=320;p.present(rgba,240);assert.equal(p.compatible,true);
-const black=rgba.slice();black[40]=0;time=500;p.present(black,240);assert.match(p.status(),/black frame/);
+const black=rgba.slice();black[40]=0;black[41]=0;time=500;p.present(black,240);assert.match(p.status(),/black frame/);
 assert.throws(()=>p.present(new Uint8ClampedArray(3),240),/Invalid/);
 p.buffer.lost=true;time=700;assert.throws(()=>p.present(rgba,240),/lost/);
 console.log('frame presenter: exact pixels, Android image surface, Canvas fallback, context loss and black-frame reporting passed');
