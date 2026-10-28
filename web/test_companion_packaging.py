@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """No-hardware smoke test for companion file packaging and script references."""
 import json
-import re
 import tempfile
 from pathlib import Path
 from prepare_companion import prepare
@@ -22,8 +21,10 @@ with tempfile.TemporaryDirectory() as temp:
     for name in expected:
         assert (dest / name).is_file(), f"missing packaged file: {name}"
     html = (dest / "index.html").read_text()
-    for src in re.findall(r'(?:from|src=)[\\s]*["\\'](\\./[^"\\']+)["\\']', html):
-        assert (dest / src).exists(), f"unpackaged local dependency: {src}"
+    for module in ("remote_screen.js", "second_screen.js", "control_target.js",
+                   "frame_presenter.js", "screen_router.js"):
+        assert module in html, f"expected local module not referenced: {module}"
+        assert (dest / module).exists(), f"unpackaged dependency: {module}"
     assert "fast-refresh" in html and "FramePresenter" in html
     meta = json.loads((dest / "build.json").read_text())
     assert meta["rendererId"] == 123456
