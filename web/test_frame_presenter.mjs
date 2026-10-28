@@ -2,12 +2,12 @@
 import assert from 'node:assert/strict';
 import {FramePresenter} from './frame_presenter.js';
 function surface(){
-  const element={width:240,height:240,hidden:false,events:{},lost:false,
+  const element={width:240,height:240,hidden:false,events:{},lost:false,encodes:0,draws:0,allocations:0,
     insertAdjacentElement(where,image){this.image=image;},addEventListener(name,fn){this.events[name]=fn;},
     getContext(type,options){this.options=options;return this.ctx;},
-    toDataURL(type){assert.equal(type,'image/png');return 'data:image/png;base64,fixture';}};
-  element.ctx={createImageData(w,h){return {data:new Uint8ClampedArray(w*h*4)};},
-    putImageData(frame){element.pixels=frame.data.slice();},isContextLost:()=>element.lost};return element;
+    toDataURL(type){assert.equal(type,'image/png');this.encodes++;return 'data:image/png;base64,fixture';}};
+  element.ctx={createImageData(w,h){element.allocations++;return {data:new Uint8ClampedArray(w*h*4)};},
+    putImageData(frame){element.draws++;element.pixels=frame.data.slice();},isContextLost:()=>element.lost};return element;
 }
 const created=[],doc={createElement(tag){const e=tag==='canvas'?surface():{};created.push(e);return e;}};
 let time=0;
@@ -17,6 +17,13 @@ p.present(rgba,240);assert.equal(canvas.hidden,true);assert.equal(p.image.hidden
 assert.deepEqual(p.metrics(),{received:1,painted:1,skipped:0});
 p.present(rgba,240);assert.deepEqual(p.metrics(),{received:2,painted:1,skipped:1},'unchanged pixels need no re-encoding');
 assert.deepEqual(p.buffer.pixels,rgba,'the compatible surface must preserve every original firmware pixel');
+assert.equal(p.buffer.encodes,1,'identical frames should encode exactly once');
+assert.equal(p.buffer.draws,1);
+assert.equal(p.buffer.allocations,1);
+for(let n=0;n<100;n++)p.present(rgba,240);
+assert.equal(p.buffer.encodes,1,'100 identical frames must not re-encode PNG');
+assert.equal(p.buffer.draws,1,'100 identical frames must not redraw');
+assert.equal(p.buffer.allocations,1,'100 identical frames must not allocate ImageData');
 assert.match(p.image.src,/^data:image\/png/);assert.equal(p.black,false);
 p.setCompatible(false);p.present(rgba,240);assert.deepEqual(canvas.pixels,rgba);assert.equal(canvas.hidden,false);
 assert.equal(p.frameContext,canvas.ctx,'Canvas mode owns a new image buffer');
