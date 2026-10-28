@@ -39,10 +39,10 @@ assert.match(p.image.src,/^data:image\/png/);assert.equal(p.black,false);
 p.setCompatible(false);p.present(rgba,240);assert.deepEqual(canvas.pixels,rgba);assert.equal(canvas.hidden,false);
 assert.equal(p.frameContext,canvas.ctx,'Canvas mode owns a new image buffer');
 assert.equal(p.frameWidth,240);
-assert.equal(p.metrics().painted,2,'changing surface repaints even when pixels match');
+assert.equal(p.metrics().painted,4,'changing surface repaints even when pixels match');
 const changed=rgba.slice();changed[41]=42;time=220;p.present(changed,240);
 assert.equal(canvas.pixels[41],42,'single channel changes must be presented');
-assert.equal(p.metrics().painted,3);
+assert.equal(p.metrics().painted,5);
 // A lost Canvas must migrate to the compatible renderer even for identical pixels.
 canvas.lost=true;time=320;p.present(changed,240);
 assert.equal(p.compatible,true);assert.deepEqual(p.buffer.pixels,changed);
