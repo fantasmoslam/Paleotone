@@ -18,6 +18,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Check syntax of presentation modules
+        run: |
+          node --check web/frame_presenter.js
+          node --check web/screen_router.js
+          node --check web/screen/screen.js
+          python3 -m py_compile web/prepare_companion.py web/test_companion_packaging.py web/make_site.py
       - name: Verify frame presenter
         run: node web/test_frame_presenter.mjs
       - name: Synthetic rendering workload (no FM-1 required)
@@ -26,6 +32,9 @@ jobs:
         run: node web/test_companion_performance.mjs
       - name: Verify lightweight-screen compatibility
         run: node web/test_screen_app.mjs
+      - name: Verify lightweight page metadata and published companion checks
+        run: |
+          node web/test_device_release.mjs
       - name: Verify renderer routing
         run: node web/test_screen_router.mjs
       - name: Verify graphics companion packaging
