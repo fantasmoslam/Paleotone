@@ -58,3 +58,5 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 - Fixed a subtle context-loss case: if Canvas loses its graphics context while the FM-1 display remains unchanged, the old frame-deduplication logic could skip recovery indefinitely. Context health is now checked *before* comparing pixels.
 - Added a regression case that feeds identical pixels after context loss and confirms migration to the compatible image renderer.
 - Scope remains limited to the browser experiment. These changes are not yet hardware-verified, merged, or deployed.
+
+- Reset cached ImageData on Canvas/compatible mode transitions to avoid reusing a drawing buffer across surfaces; regression validation remains pending.
