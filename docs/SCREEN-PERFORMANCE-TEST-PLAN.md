@@ -65,3 +65,10 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 
 - Added a dedicated GitHub Actions workflow (`experimental-screen-tests.yml`) that runs the four focused browser/renderer regression scripts on experimental-branch pushes or by manual dispatch. It does not build or flash FM-1 firmware. CI results must still be checked; a committed workflow alone is not proof of passing tests.
 - Expected outcome: catch display regressions earlier, reduce duplicate redraw work, and determine whether the optional higher polling rate produces meaningful visible improvements without increasing failures. Hardware measurements remain necessary.
+
+### Frame workload regression — 2026-10-28
+
+- Instrumented the frame-presenter test fixture to count PNG encodes, canvas writes, and ImageData allocations.
+- Added a deterministic 100-repeat identical-frame test. The expected outcome is **zero additional encodes, draws, or allocations** for unchanged pixels after the first presented frame.
+- This verifies the intended optimization through regression assertions, not measured device FPS. The browser-based hardware comparison still determines actual benefit.
+- Checked CI availability through the GitHub connector; no completed workflow run was returned for the queried commit, so no CI-pass claim is made.
