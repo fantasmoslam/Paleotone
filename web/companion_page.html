@@ -38,7 +38,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().the
 <header><h1>PALEOTONE / FM-1 SCREEN</h1><div class="toolbar">
 <button id="connect">Connect FM-1</button><button id="disconnect" disabled>Disconnect</button>
 <button id="original" aria-pressed="true">Original</button><button id="expanded" aria-pressed="false">Expanded</button>
-<button id="fullscreen">Fullscreen</button><button id="compatible" aria-pressed="false">Compatible display</button></div></header>
+<button id="fullscreen">Fullscreen</button><button id="fast-refresh" aria-pressed="false" title="Experimental: request more frequent screen updates">Fast refresh (experimental)</button><button id="compatible" aria-pressed="false">Compatible display</button></div></header>
 <div class="ports" id="ports" hidden><label>MIDI input <select id="input"></select></label>
 <label>MIDI output <select id="output"></select></label><button id="use">Use selected ports</button></div>
 <p id="status" role="status">Connect the FM-1 with a USB data cable. Sound runs on the instrument.</p>
@@ -67,6 +67,8 @@ const presenter = new FramePresenter(canvas);
 $("compatible").setAttribute("aria-pressed",presenter.compatible);
 $("compatible").onclick=()=>{presenter.setCompatible(!presenter.compatible);$("compatible").setAttribute("aria-pressed",presenter.compatible);if(sync?.bytes)paint();};
 let access, ex, link, sync, running = false, wide = false, held = 0, lease, generation = 0;
+let fastRefresh=false, lastStatusAt=0;
+$("fast-refresh").onclick=()=>{fastRefresh=!fastRefresh;$("fast-refresh").setAttribute("aria-pressed",fastRefresh);};
 let second, secondView='overview', secondTrack='follow';
 let router,baseTarget='left',shiftHeld=false,inputEpoch=0;
 try{secondView=localStorage.getItem('fm1-second-view')||'overview';secondTrack=localStorage.getItem('fm1-second-track')||'follow';}catch{}
@@ -243,7 +245,13 @@ async function start(input,output){
       try{
         const result=await sync.update();
         if(own!==generation)return;
-        failures=0;enabled(!router.busy);paint();status.textContent=output.name+" · synchronized"+(result.full?" · full state":"")+presenter.status();
+        failures=0;enabled(!router.busy);paint();
+        if(performance.now()-lastStatusAt>1000){
+          const perf=presenter.metrics();
+          status.textContent=output.name+" · synchronized"+(result.full?" · full state":"")+presenter.status()+
+            (fastRefresh?" · FAST":"")+" · frames "+perf.painted+"/"+perf.received+" (skipped "+perf.skipped+")";
+          lastStatusAt=performance.now();
+        }
       }catch(e){
         if(own!==generation)return;
         if(!recoverableScreenError(e)||++failures>=3)throw e;
@@ -253,7 +261,7 @@ async function start(input,output){
         status.textContent="Screen transfer interrupted · reconnecting automatically ("+failures+"/3)…";
         await new Promise((resolve)=>setTimeout(resolve,250));
       }
-      await new Promise((resolve)=>setTimeout(resolve,Math.max(20,90-(performance.now()-began))));
+      await new Promise((resolve)=>setTimeout(resolve,Math.max(20,(fastRefresh?45:90)-(performance.now()-began))));
     }
   }catch(e){if(own===generation)stop(e.message);}
 }
