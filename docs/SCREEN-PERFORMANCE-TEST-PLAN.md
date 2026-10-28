@@ -52,3 +52,9 @@ Record frames received / painted / skipped, any black frames, stalls, audible ar
 ## Explanation for the eventual test session
 
 The browser renders firmware pixels received over MIDI. Performance depends on how long the FM-1 takes to send state, how long browser/WASM rendering takes, and how often the browser presents new pixels. Skipping identical frames reduces browser work but doesn't accelerate USB transport. The experimental fast-poll option requests updates more frequently; it may not improve the actual displayed frame rate if USB is already the bottleneck. The original pixel-perfect renderer remains the reference.
+
+### Additional regression work
+
+- Fixed a subtle context-loss case: if Canvas loses its graphics context while the FM-1 display remains unchanged, the old frame-deduplication logic could skip recovery indefinitely. Context health is now checked *before* comparing pixels.
+- Added a regression case that feeds identical pixels after context loss and confirms migration to the compatible image renderer.
+- Scope remains limited to the browser experiment. These changes are not yet hardware-verified, merged, or deployed.
