@@ -1,0 +1,62 @@
+name: experimental screen performance tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - experimental-screen-fast-refresh-20261028
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check syntax of presentation modules
+        run: |
+          node --check web/frame_presenter.js
+          node --check web/screen_router.js
+          node --check web/screen/screen.js
+          python3 -m py_compile web/prepare_companion.py web/test_companion_packaging.py web/make_site.py
+      - name: Verify frame presenter
+        run: node web/test_frame_presenter.mjs
+      - name: Synthetic rendering workload (no FM-1 required)
+        run: node web/test_screen_workload.mjs
+      - name: Verify fast-refresh opt-in
+        run: node web/test_companion_performance.mjs
+      - name: Verify lightweight-screen compatibility
+        run: node web/test_screen_app.mjs
+      - name: Verify renderer routing
+        run: node web/test_screen_router.mjs
+      - name: Verify graphics companion packaging
+        run: python3 web/test_companion_packaging.py
+      - name: Install Chrome for real-browser smoke test
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+      - name: Test Canvas and PNG fallback in headless Chrome
+        shell: bash
+        run: |
+          python3 -m http.server 8765 --directory web >/tmp/paleotone-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/frame_presenter.js >/dev/null; then break; fi
+            sleep 1
+          done
+          "${{ steps.chrome.outputs.chrome-path }}" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8765/test_presenter_browser.html > /tmp/paleotone-chrome.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('/tmp/paleotone-chrome.html').read_text()
+          match = re.search(r'<output[^>]*id="result"[^>]*>([^<]*)</output>', html)
+          actual = match.group(1).strip() if match else 'MISSING'
+          print('Browser result:', actual)
+          assert actual == 'PASS: actual browser Canvas and PNG presentation', actual
+          PY

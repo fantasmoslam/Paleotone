@@ -11,7 +11,7 @@ export class FramePresenter {
     this.bufferContext=this.buffer.getContext('2d',{alpha:false,willReadFrequently:true});
     if(!this.context||!this.bufferContext)throw new Error('This browser could not create the screen drawing surface.');
     this.frames=0;this.skipped=0;this.changed=0;
-    this.frame=null;this.frameWidth=0;this.frameHeight=0;
+    this.frame=null;this.frameWidth=0;this.frameHeight=0;this.frameContext=null;
     this.previous=null;this.previousWidth=0;this.previousHeight=0;
     canvas.addEventListener('contextlost',event=>{event.preventDefault();this.setCompatible(true);});
     this.setCompatible(mobile);
@@ -19,10 +19,15 @@ export class FramePresenter {
   setCompatible(on){
     this.compatible=!!on;this.last=-Infinity;this.previous=null;
     this.canvas.hidden=this.compatible;this.image.hidden=!this.compatible;
+    // ImageData objects belong to their drawing surface; rebuild after switching modes.
+    this.frame=null;this.frameContext=null;
   }
   present(rgba,width,height=240){
     if(rgba.length!==width*height*4)throw new Error('Invalid firmware image size');
     this.frames++;
+    // The visible canvas can be lost even if the incoming pixels are identical.
+    // Switch surfaces before considering a frame redundant.
+    if(!this.compatible&&this.context.isContextLost?.())this.setCompatible(true);
     // Compare full pixels, not a lossy sampled hash: one-pixel changes must remain visible.
     let same=this.previous && this.previousWidth===width && this.previousHeight===height;
     if(same)for(let i=0;i<rgba.length;i++){if(this.previous[i]!==rgba[i]){same=false;break;}}
@@ -30,14 +35,13 @@ export class FramePresenter {
     // A throttled compatible frame must not replace the last *displayed* frame in the cache.
     const time=this.now();
     if(this.compatible&&time-this.last<90){this.skipped++;return;}
-    if(this.context.isContextLost?.())this.setCompatible(true);
     const target=this.compatible?this.buffer:this.canvas;
     const ctx=this.compatible?this.bufferContext:this.context;
     if(target.width!==width)target.width=width;
     if(target.height!==height)target.height=height;
     if(ctx.isContextLost?.())throw new Error('Screen drawing surface was lost. Reload the page.');
-    if(!this.frame||this.frameWidth!==width||this.frameHeight!==height){
-      this.frame=ctx.createImageData(width,height);this.frameWidth=width;this.frameHeight=height;
+    if(!this.frame||this.frameContext!==ctx||this.frameWidth!==width||this.frameHeight!==height){
+      this.frame=ctx.createImageData(width,height);this.frameWidth=width;this.frameHeight=height;this.frameContext=ctx;
     }
     this.frame.data.set(rgba);
     ctx.putImageData(this.frame,0,0);
