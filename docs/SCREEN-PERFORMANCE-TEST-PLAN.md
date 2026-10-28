@@ -159,3 +159,12 @@ Once the experimental Actions run is green and the compiled companion can be loa
 - Audited the experiment workflow's set of independent checks: syntax, exact-pixel frame tests, repeated frame workload, opt-in refresh static checks, lightweight screen routing, packaging, and headless browser Canvas/PNG validation.
 - GitHub's connector exposes no workflow-dispatch method and no completed PR workflow-run result for the checked commit; direct public Actions endpoints are unavailable from this session. A green check has **not** been confirmed.
 - Remaining CI gate: visit the workflow run on GitHub (Actions > experimental screen performance tests), confirm all steps green, and inspect any error logs. No FM-1 is needed for this gate.
+
+## GitHub completion audit — 2026-10-28
+
+- Inspected draft PRs #22, #23 and #24 with GitHub's authenticated repository interface: all remain **open, draft, and mergeable**. Their separation is deliberate; do not merge the experimental changes before physical tests.
+- Audited the experimental companion static assertions against the current HTML: **9 of 9 regex expectations matched**. This confirms the basic UI and opt-in fast mode wiring, not runtime operation.
+- Changed `experimental-screen-tests.yml` to listen for `pull_request` as well as branch `push`, making checks eligible to appear on the stacked experimental PR and enabling pull-request-based CI run inspection.
+- Queried associated workflow runs for the latest commit with the authenticated GitHub integration; **no pull-request-triggered runs returned** at the time of inspection. No successful GitHub Actions execution can therefore be claimed.
+- The repository cannot currently be cloned from this environment (DNS resolution for github.com fails), and the GitHub integration does not provide a workflow dispatch endpoint. Local Node/Chromium presence alone does not confer access to the source checkout. Published browser and packaging tests still require a full CI run to establish green status.
+- **Repository work performed without the FM-1 is complete as far as verifiable tools permit.** Outstanding GitHub check: ensure GitHub Actions is enabled and inspect the next experimental screen workflow run; if failing, review its logs and fix the corresponding script.
