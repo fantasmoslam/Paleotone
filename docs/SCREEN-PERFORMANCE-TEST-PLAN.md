@@ -72,3 +72,9 @@ The browser renders firmware pixels received over MIDI. Performance depends on h
 - Added a deterministic 100-repeat identical-frame test. The expected outcome is **zero additional encodes, draws, or allocations** for unchanged pixels after the first presented frame.
 - This verifies the intended optimization through regression assertions, not measured device FPS. The browser-based hardware comparison still determines actual benefit.
 - Checked CI availability through the GitHub connector; no completed workflow run was returned for the queried commit, so no CI-pass claim is made.
+
+### Compatible-mode pacing regression
+
+- Added a controlled clock test: a changed frame arriving 45 ms after the last displayed frame must not trigger PNG encoding or overwrite visible pixels; the latest frame arriving after the 90 ms gate must be shown.
+- Also verifies a subsequent frame can restore the original pixels. Expected improvement: fewer wasted PNG operations and less browser churn, without silently losing the most recent screen state.
+- Assertions are committed but not yet confirmed by a completed test run or FM-1 hardware measurement.
