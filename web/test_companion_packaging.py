@@ -30,4 +30,13 @@ with tempfile.TemporaryDirectory() as temp:
     assert meta["rendererId"] == 123456
     assert meta["source"] == "test-pinned"
     assert "frames" in html and (dest / "frame_presenter.js").stat().st_size > 0
+    # Publishing must not silently succeed with a missing renderer asset.
+    (source / "felucca.wasm").unlink()
+    rejected = False
+    try:
+        prepare(source, root / "rejected", "test-missing")
+    except SystemExit as error:
+        rejected = "felucca.wasm" in str(error)
+    assert rejected, "missing WASM must make packaging fail closed"
+
 print("companion packaging smoke test passed (synthetic renderer files)")
