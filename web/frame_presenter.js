@@ -23,13 +23,15 @@ export class FramePresenter {
   present(rgba,width,height=240){
     if(rgba.length!==width*height*4)throw new Error('Invalid firmware image size');
     this.frames++;
+    // The visible canvas can be lost even if the incoming pixels are identical.
+    // Switch surfaces before considering a frame redundant.
+    if(!this.compatible&&this.context.isContextLost?.())this.setCompatible(true);
     // Compare full pixels, not a lossy sampled hash: one-pixel changes must remain visible.
     let same=this.previous && this.previousWidth===width && this.previousHeight===height;
     if(same)for(let i=0;i<rgba.length;i++){if(this.previous[i]!==rgba[i]){same=false;break;}}
     if(same){this.skipped++;return;}
     // A throttled compatible frame must not replace the last *displayed* frame in the cache.
     const time=this.now();
-    if(this.context.isContextLost?.())this.setCompatible(true);
     if(this.compatible&&time-this.last<90){this.skipped++;return;}
     const target=this.compatible?this.buffer:this.canvas;
     const ctx=this.compatible?this.bufferContext:this.context;
