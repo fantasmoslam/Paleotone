@@ -108,3 +108,21 @@ Work that **must wait for hardware**:
 - [ ] Check whether live browser state captures accurate peak/RMS and dinosaur-call activity before designing new firmware telemetry.
 
 **Decision gate:** do not interpret synthetic timers, status counters, or passing mocks as a proof of USB speed. Keep 45 ms fast refresh opt-in unless hardware benchmarks show a consistent improvement without failures.
+
+## Software-only gate update — 2026-10-28
+
+- Added `web/test_screen_workload.mjs`, a deterministic 1,000-frame workload checking unchanged frames, constantly changing 480×240 frames, image buffer reuse, and mobile fallback encoding frequency. It is a synthetic workload, **not an FPS measurement of the FM-1**.
+- Added `web/test_companion_packaging.py`, which assembles a graphics companion from synthetic renderer files using the same publish helper and verifies expected JS, layout, WASM and build metadata files are carried into the output.
+- Extended the experimental-only GitHub Actions workflow to execute both tests on branch pushes.
+- Initialized presentation FPS sampling only after the MIDI connection handshake, so startup delays do not distort the first sample.
+- No completed CI execution was confirmed using the available GitHub integration. Treat these as **committed test cases, not passing test results**. The experimental workflow itself also needs to be observed after a real GitHub Actions run.
+
+### Remaining software verification (not dependent on FM-1)
+
+- Confirm GitHub Actions runs the new tests successfully, fix any failures, and inspect the site assembly output.
+- Exercise browser layout with real desktop/mobile browser rendering and fixture MIDI state. Browser Web MIDI functionality with actual hardware still requires the FM-1.
+
+### Hardware-only acceptance
+
+- Real-world input-to-display latency, USB transport throughput, frame delivery stability, actual second-panel accuracy, and interference with sound/sequencer activity cannot be established without the instrument.
+- Keep the speed toggle opt-in and all pull requests in draft until those measurements are available.
