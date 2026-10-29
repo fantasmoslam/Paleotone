@@ -75,10 +75,76 @@ The dedicated read-only Actions workflow runs regression checks, stages the
 matching published renderer, verifies the package and uploads a trial artifact.
 It neither builds firmware nor deploys a site.
 
-Next: compare the **same trial page** unchecked versus checked, same firmware,
-pages, sound and 240 BPM stress workload, ideally three repetitions per mode.
-Record definite audio glitches separately from display stepping. Check normal
-play and physical focus switching too. If the cap does not help, investigate
-device capture/USB/audio scheduling rather than simply increasing refresh.
-Keep this change draft; no merge, live-site replacement or firmware flash has
-been authorized as part of this trial.
+## Completed PR #25 hardware smoke test
+
+The subsequent October 28 desktop Chrome/FM-1 Elite session used the separate
+[PR #25 trial](https://fantasmoslam.github.io/Paleotone/webapp/audio-priority-pr25/).
+Expanded mode and a 240 BPM sequencer were requested for the stress passes.
+The user operated and listened to the physical instrument.
+
+| Workload | Audio priority | User report |
+| --- | --- | --- |
+| Sequencer with heavy key/knob activity | Off | No audible glitches reported |
+| Sequencer with heavy key/knob activity | On | No audible glitches reported |
+| Sequencer with macros/effects stress | On | Screen chugged; no definite audible glitches, although macro modulation made judgment harder |
+| Sequencer with macros/effects stress | Off | No audible glitches reported |
+
+Both setting states passed this initial smoke test. **Audio benefit remains
+unverified because the unchecked baseline was also clean.** The earlier
+intermittent report remains relevant but was not reproduced in this comparison.
+Heavy macros still caused visible screen slowdown.
+
+There was one conversational pass per combination, not three controlled
+repetitions. Approximately 30 seconds per pass was requested but not independently
+timed. Exact patches, macro values, input patterns and right-panel state for
+each interval were not recorded. There was no audio recording or automated
+glitch measurement, and the exact firmware binary hash was not captured.
+Successful synchronization establishes session compatibility, not complete
+firmware provenance or quantitative sequencer alignment. No crash or firmware
+flash was reported.
+
+### CI and separate publication
+
+[Actions run 40789424183](https://github.com/fantasmoslam/Paleotone/actions/runs/40789424183)
+passed for tested implementation head
+`91c06fc1aa2d7ce955bd9c2d1d4762da12edda0b`.
+The regression, staging and artifact upload steps succeeded. Artifact:
+`paleotone-browser-audio-priority-trial`, ID `12860817388`;
+ZIP SHA-256 `e0e3344d87d33a3e6e7ad4a122fe832e170d76a4902f9c86ab94c45a556fcd51`.
+This is the archive digest, not the WASM digest.
+
+The separately authorized temporary URL was published on gh-pages by commit
+`aa678bdc1a7d400f4e21c7592413806ddff39cf6` at
+`webapp/audio-priority-pr25/index.html`. It uses PR-head HTML and inlined
+display-performance code, with `<base href="../screen-roar-worker/">` to reuse
+the matching adjacent renderer assets. It is a packaging variant, not a
+byte-identical deployment of the CI archive. The original companion was not
+replaced. The workflow itself does not deploy.
+
+The live trial loaded, connected, synchronized, rendered Expanded mode and
+exercised both checkbox states on real hardware. It depends on mutable sibling
+assets; preserve the full validated artifact and its build.json/WASM hash for
+an exact durable reproduction. No automatic cleanup or expiration was configured
+for the temporary page.
+
+### Acceptance review and next steps
+
+Keep Audio priority opt-in, unchecked by default and labeled experimental.
+Its reduced request pressure is established by scheduler tests; audible benefit
+and optimal cadence are not established. Retaining it as a diagnostic fallback
+is reasonable, but there is no evidence here to recommend enabling it by default.
+
+Before general release, prioritize a short normal-playing/focus-switch check
+with priority on, then reconnect/reload/unplug recovery and hidden/foreground
+transitions. Also review Original/Expanded and compatible-display switching.
+Longer sessions and representative sounds remain broader acceptance gaps.
+These checks are outstanding, not reported failures.
+
+Do not repeat the four completed smoke passes by default. If audio trouble
+returns, record exact pages, tempo, active tracks, sound state, firmware/renderer
+identity and priority state, then compare the same trigger off/on/disconnected.
+If reduced requests do not help, investigate device capture/USB/audio scheduling
+and focus-lease costs. No coordinate fix is justified by the current evidence.
+
+PR #25 remains draft. This documentation update does not merge it, replace the
+production companion or change firmware.
