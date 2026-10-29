@@ -82,7 +82,13 @@ public final class MainActivity extends Activity {
         midi=new MidiInput(this);
         audio.registerAudioDeviceCallback(devices,handler);
     }
-    @Override protected void onResume(){super.onResume();resumed=true;startAudio();handler.post(refresh);}
+    @Override protected void onResume(){super.onResume();resumed=true;startAudio();handler.post(refresh);KioskController.restore(this);}
+    @Override public void onWindowFocusChanged(boolean focused){
+        super.onWindowFocusChanged(focused);
+        if(focused&&resumed)KioskController.restore(this);
+    }
+    void notice(String message){panel.notice=message;panel.invalidate();}
+    void maintenance(){panel.release();KioskController.menu(this);}
     @Override protected void onPause(){
         resumed=false;wantAudio=false;recovery.cancel();handler.removeCallbacks(refresh);
         panel.release();midi.close();Native.stop();running=false;
@@ -92,6 +98,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onDestroy(){audio.unregisterAudioDeviceCallback(devices);midi.destroy();super.onDestroy();}
     @Override public void onBackPressed(){
+        if(KioskController.enabled(this)){maintenance();return;}
         new AlertDialog.Builder(this).setTitle("Leave Paleotone?")
             .setMessage("Save the session and close audio?")
             .setPositiveButton("Save and exit",(d,w)->finish())
@@ -152,7 +159,8 @@ public final class MainActivity extends Activity {
         }else if(id==4){Native.panic();panel.release();}
         else if(id==5){
             new AlertDialog.Builder(this).setTitle("Paleotone Android • early alpha")
-                .setMessage("Play the multitouch keyboard. Drag encoder circles up/down, or tap their −/+ buttons. Hold any panel button for firmware alternate functions. SELECT moves through fields; ENGINE and PRESET choose sounds.\n\nSAVE SESSION briefly stops audio, writes the current project and flash, then resumes. Leaving the app also saves. Android force-stop, power loss, or a crash can lose unsaved changes. The firmware SAVE button retains its original project menu.\n\nMIDI lists Android controller output ports; connect via USB OTG. MIDI channel messages are supported; MIDI clock, SysEx and sample import are not yet bridged.\n\n48 kHz output uses linear conversion from the 44.1 kHz firmware engine. Diagnostics report actual stream settings, not measured physical latency. Firmware UI drawing still shares engine execution in this parity build.\n\nUse wired audio for testing. Audio reconnects automatically after an output disconnect. Tap AUDIO for Normal (+6 dB), Boost (+12 dB), or Original output. A stereo limiter protects digital peaks; begin with low Android media volume. Buffer changes pause audio. Kiosk lockdown is intentionally not enabled yet.\n\nGPL-3.0-only. Paleotone builds on Felucca and GHOULBOX. Third-party notices are included in the APK assets. Full corresponding source accompanies this build.")
+                .setMessage("Play the multitouch keyboard. Drag encoder circles up/down, or tap their −/+ buttons. Hold any panel button for firmware alternate functions. SELECT moves through fields; ENGINE and PRESET choose sounds.\n\nSAVE SESSION briefly stops audio, writes the current project and flash, then resumes. Leaving the app also saves. Android force-stop, power loss, or a crash can lose unsaved changes. The firmware SAVE button retains its original project menu.\n\nMIDI lists Android controller output ports; connect via USB OTG. MIDI channel messages are supported; MIDI clock, SysEx and sample import are not yet bridged.\n\n48 kHz output uses linear conversion from the 44.1 kHz firmware engine. Diagnostics report actual stream settings, not measured physical latency. Firmware UI drawing still shares engine execution in this parity build.\n\nUse wired audio for testing. Audio reconnects automatically after an output disconnect. Tap AUDIO for Normal (+6 dB), Boost (+12 dB), or Original output. A stereo limiter protects digital peaks; begin with low Android media volume. Buffer changes pause audio. Kiosk mode is optional. Hold the PALEOTONE title for three seconds, or use Kiosk / maintenance here, to enter setup or exit to Android settings. Device-owner provisioning is required before enabling full kiosk mode.\n\nGPL-3.0-only. Paleotone builds on Felucca and GHOULBOX. Third-party notices are included in the APK assets. Full corresponding source accompanies this build.")
+                .setNeutralButton("Kiosk / maintenance",(d,w)->maintenance())
                 .setPositiveButton("Close",null).show();
         }
     }

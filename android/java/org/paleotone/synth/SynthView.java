@@ -22,12 +22,15 @@ final class SynthView extends View {
     private final RectF master=new RectF(470,530,1248,562);
     private float scale=1,dx,dy;
     private int keyMask,buttonMask,volume=700,peak;
+    private float holdX,holdY;
+    private final Runnable maintenanceHold;
     private boolean running;
     String notice="Starting native engine…";
     private String stats="";
     private static final class Touch {int kind,index;float y;Touch(int k,int i,float y){kind=k;index=i;this.y=y;}}
     SynthView(Context context){
         super(context);activity=(MainActivity)context;setFocusable(true);
+        maintenanceHold=()->{release();activity.maintenance();};
         for(int i=0;i<6;++i)actions[i]=new RectF(470+i*131,16,594+i*131,52);
         for(int i=0;i<7;++i){
             float x=i<3?538+i*255:507+(i-3)*207;
@@ -57,7 +60,7 @@ final class SynthView extends View {
         super.onDraw(c);c.drawColor(BG);
         scale=Math.min(getWidth()/1280f,getHeight()/800f);dx=(getWidth()-1280*scale)/2;dy=(getHeight()-800*scale)/2;
         c.save();c.translate(dx,dy);c.scale(scale,scale);
-        text(c,"PALEOTONE",24,43,32,AMBER);text(c,"ANDROID / NATIVE ALPHA 0.1.1",252,40,12,MUTED);
+        text(c,"PALEOTONE",24,43,32,AMBER);text(c,"ANDROID / NATIVE ALPHA 0.1.2",252,40,12,MUTED);
         for(int i=0;i<6;++i){rect(c,actions[i],i==4?0xff573d32:PANEL);label(c,actions[i],i==1?(running?"STOP":"START"):actionNames[i],TEXT);}
         text(c,stats,24,74,13,MUTED);
         rect(c,new RectF(16,88,440,512),EDGE);
@@ -95,11 +98,12 @@ final class SynthView extends View {
         if(k!=keyMask){keyMask=k;Native.keys(k);}if(b!=buttonMask){buttonMask=b;Native.buttons(b);}
         invalidate();
     }
-    void release(){touches.clear();keyMask=buttonMask=0;Native.keys(0);Native.buttons(0);invalidate();}
+    void release(){removeCallbacks(maintenanceHold);touches.clear();keyMask=buttonMask=0;Native.keys(0);Native.buttons(0);invalidate();}
     @Override public boolean onTouchEvent(android.view.MotionEvent e){
         int action=e.getActionMasked(),index=e.getActionIndex();
         if(action==MotionEvent.ACTION_CANCEL){release();return true;}
         if(action==MotionEvent.ACTION_DOWN||action==MotionEvent.ACTION_POINTER_DOWN){
+            removeCallbacks(maintenanceHold);
             float x=(e.getX(index)-dx)/scale,y=(e.getY(index)-dy)/scale;
             int id=e.getPointerId(index),key=keyAt(x,y);Touch t=null;
             if(key>=0)t=new Touch(1,key,y);
@@ -111,6 +115,9 @@ final class SynthView extends View {
             }
             for(int i=0;t==null&&i<6;++i)if(actions[i].contains(x,y))t=new Touch(4,i,y);
             if(t==null&&master.contains(x,y)){t=new Touch(5,0,y);setMaster(x);}
+            if(t==null&&touches.size()==0&&x>=24&&x<445&&y>=10&&y<55){
+                t=new Touch(7,0,y);holdX=x;holdY=y;postDelayed(maintenanceHold,3000);
+            }
             if(t!=null)touches.put(id,t);
         }else if(action==MotionEvent.ACTION_MOVE){
             for(int i=0;i<e.getPointerCount();++i){
@@ -119,9 +126,11 @@ final class SynthView extends View {
                 if(t.kind==1)t.index=keyAt(x,y);
                 else if(t.kind==3){int steps=(int)((t.y-y)/8);if(steps!=0){Native.encoder(t.index,Math.max(-32,Math.min(32,steps)));t.y=y;}}
                 else if(t.kind==5)setMaster(x);
+                else if(t.kind==7&&(Math.abs(x-holdX)>16||Math.abs(y-holdY)>16))removeCallbacks(maintenanceHold);
             }
         }else if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_POINTER_UP){
             Touch t=touches.get(e.getPointerId(index));touches.remove(e.getPointerId(index));masks();
+            if(t!=null&&t.kind==7)removeCallbacks(maintenanceHold);
             if(t!=null&&t.kind==4){float x=(e.getX(index)-dx)/scale,y=(e.getY(index)-dy)/scale;if(actions[t.index].contains(x,y))activity.action(t.index);}
             performClick();
         }

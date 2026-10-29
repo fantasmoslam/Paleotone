@@ -12,3 +12,5 @@ cc -O2 -std=c11 android/tests/output_test.c -lm -o build/android-tests/output_te
 build/android-tests/output_test
 javac -d build/android-tests android/java/org/paleotone/synth/AudioRecovery.java android/tests/AudioRecoveryTest.java
 java -ea -cp build/android-tests org.paleotone.synth.AudioRecoveryTest
+javac -d build/android-tests android/java/org/paleotone/synth/KioskSession.java android/tests/KioskSessionTest.java
+java -ea -cp build/android-tests org.paleotone.synth.KioskSessionTest

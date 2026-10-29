@@ -45,3 +45,17 @@ Verify the signed update preserves the saved project, is louder on the same patc
 at the same master/media settings, remains clean with dense playing, and resumes
 after both plugging and unplugging wired headphones without a manual start.
 Also verify pressing STOP during recovery prevents later automatic playback.
+
+## 0.1.1-alpha hardware follow-up
+
+Dylan reports a slight jitter on unplugging headphones, followed by immediate
+automatic recovery. Speaker volume is reasonable for the tablet; headphones are
+great and he would not want them louder. Output gain is accepted; do not increase
+it further by default. The brief route-transition jitter remains a polish item.
+
+## 0.1.2-alpha kiosk boundary
+
+Adds optional Home/device-owner lock task and maintenance/ADB escape paths. None of
+the kiosk provisioning, actual lock-task exit, emergency broadcast or boot behavior
+has yet been reported as device-tested. See KIOSK.md. Audio DSP and output gain are
+unchanged from the accepted 0.1.1 build.

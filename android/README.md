@@ -1,4 +1,4 @@
-# Paleotone Android — native alpha 0.1.1
+# Paleotone Android — native alpha 0.1.2
 
 Standalone synthesis for Dylan's Samsung SM-T510. Initial measured device configuration:
 Android 15 / unofficial LineageOS 22.2-20260910, `armeabi-v7a,armeabi`, 48 kHz
@@ -27,7 +27,7 @@ this as a finished production instrument.
 Download the APK to the PC. In the same `platform-tools` PowerShell window:
 
 ```powershell
-.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.1.1-alpha.apk"
+.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.1.2-alpha.apk"
 .\adb.exe -s 192.168.0.46:33862 shell am start -n org.paleotone.synth/.MainActivity
 ```
 
@@ -79,9 +79,13 @@ measurements on the tablet must determine whether a snapshot renderer or other
 refactoring is needed; the firmware's simulated CPU diagnostics are not physical
 Android timing. The app provides real callback-duration and AAudio underrun counters.
 
-No all-core pinning, root, governor changes, thermal-limit overrides, package
-removal, device-owner provisioning or kiosk lockdown is performed by this app.
-Kiosk configuration follows functional/audio acceptance and a working exit path.
+Optional kiosk mode is available in 0.1.2; installing the app alone leaves it off.
+Hold the PALEOTONE title for three seconds or use HELP → Kiosk / maintenance.
+Device-owner provisioning is performed explicitly through ADB; then the menu can
+set Home and enter lock-task mode. Maintenance clears the lock and Home policy.
+See KIOSK.md for setup, rollback and the permission-gated ADB emergency exit.
+No all-core pinning, root, governor changes, thermal overrides or package removal
+is performed. Existing accepted audio gain is unchanged.
 
 ## Build
 
@@ -95,7 +99,7 @@ python3 android/build.py
 sh android/test.sh
 ```
 
-The APK is `build/android/Paleotone-Android-0.1.1-alpha.apk`.
+The APK is `build/android/Paleotone-Android-0.1.2-alpha.apk`.
 This dependency-light build calls javac, D8, aapt2, the NDK compiler, zipalign and
 apksigner directly. It requires no Gradle/Maven artifacts or proprietary FM-1 SDK.
 Generated tables/fonts/samples use the repository's existing generator.
@@ -116,8 +120,9 @@ Output tests cover gain, finite/stereo-linked limiting and recovery; Java policy
 cover route debounce, bounded retry backoff and cancellation.
 APK validation checks signing, launch activity, API levels, 32-bit ARM ABI and
 native dependencies. The original 0.1.0 APK passed user-reported multitouch playing, display/sequencer
-tracking and save/restore. The 0.1.1 volume and automatic recovery changes still
-need physical verification. See DEVICE-TESTS.md for exact acceptance boundaries.
+tracking and save/restore. The 0.1.1 volume/headphone recovery changes also passed user testing, with a
+brief jitter during unplug transitions. The 0.1.2 kiosk behavior needs physical
+verification. See DEVICE-TESTS.md for exact acceptance boundaries.
 
 Device acceptance, in order:
 
