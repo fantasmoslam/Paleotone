@@ -56,7 +56,7 @@ import {FramePresenter} from './frame_presenter.js';
 import {PanePixels,refreshDelay,DisplayTiming} from './display_performance.js';
 const $=id=>document.getElementById(id),canvas=$('screen'),status=$('status');
 const presenter=new FramePresenter(canvas),panes=[new PanePixels(),new PanePixels()];
-let joined=new Uint8ClampedArray(480*240*4),lastWide=null,paintPending=false,drawMs=0,focusDue=0,focusEnabled=false;
+let joined=new Uint8ClampedArray(480*240*4),lastWide=null,lastSurface=null,paintPending=false,drawMs=0,focusDue=0,focusEnabled=false;
 let access,ex,second,link,sync,focus,running=false,wide=false,generation=0,loading;
 function stop(message='Disconnected'){
   generation++;running=false;link?.close();link=sync=focus=null;
@@ -82,7 +82,9 @@ function paint(bytes=sync?.frameBytes??sync?.bytes,force=false){
     if(current)$('second-view').value=current.id;
     $('second-track').value=String(state.right.track);
   }
-  if(force||changed||paintPending||lastWide!==wide)paintPending=presenter.present(rgba,wide?480:240,240)===false;
+  if(force||changed||paintPending||lastWide!==wide||lastSurface!==presenter.surfaceRevision)
+    paintPending=presenter.present(rgba,wide?480:240,240)===false;
+  lastSurface=presenter.surfaceRevision;
   lastWide=wide;drawMs=performance.now()-began;
   $('target-status').textContent='FM-1 controls: '+state.side.toUpperCase();
   document.body.classList.toggle('target-left',state.side==='left');

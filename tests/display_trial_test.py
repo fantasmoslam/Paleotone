@@ -26,6 +26,8 @@ class TrialTest(unittest.TestCase):
             self.assertEqual((dest / 'felucca.wasm').read_bytes(), (source / 'felucca.wasm').read_bytes())
             self.assertFalse(list(dest.glob('*.fwsc')))
             self.assertIn('audio-priority', (dest / 'index.html').read_text())
+            self.assertEqual((dest / 'frame_presenter.js').read_bytes(),
+                             (Path(trial.__file__).parent / 'frame_presenter.js').read_bytes())
             with self.assertRaises(FileExistsError):
                 trial.prepare(source, dest)
             meta['rendererId'] = 1

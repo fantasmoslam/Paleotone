@@ -22,8 +22,10 @@ own dry/send buffers. Parts use separate modulation and SPREAD scratch state;
 FM6 temporary buses are on the rendering core's stack. LFO random draws are
 completed in track order after the concurrent jobs join.
 
-VOICE (engine 5), SAURUS and ROAR remain on CPU0 to preserve shared-state
-ownership. A PHYS part disables the split for that block: PHYS can draw from
+VOICE (engine 5) and SAURUS remain on CPU0 to preserve shared-state ownership.
+The later [ROAR worker audit](ROAR-WORKER-AUDIT.md) makes ROAR eligible under
+the joined-render ownership contract; this does not establish hardware speedup.
+A PHYS part disables the split for that block: PHYS can draw from
 the same RNG as the LFOs when changing models. This conservative policy is
 applied even to forced test masks. It can be relaxed only after a further
 state audit and fidelity/race tests. The split uses previous-block cost

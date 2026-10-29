@@ -2,7 +2,16 @@
 
 # PALEOTONE: FM-1 Prehistoric Synth
 
-![PALEOTONE (then DINOBOX) 1.0: boot, HOME, PRESETS, MENU](docs/dinobox-1.0.png)
+> **Early alpha:** experimental firmware. Installation can leave the FM-1 unable to boot and require recovery. Back up projects/settings and retain a known-good firmware before installing. Audio and recording issues remain under investigation.
+
+[Play in your browser](https://fantasmoslam.github.io/Paleotone/webapp/emu/) · **[Install on your FM-1](https://fantasmoslam.github.io/Paleotone/webapp/installer/)** · [Manual](https://fantasmoslam.github.io/Paleotone/manual/)
+
+<p>
+  <img src="docs/paleotone-splash.png" width="23%" alt="PALEOTONE boot artwork">
+  <img src="docs/paleotone-home.png" width="23%" alt="PALEOTONE home screen">
+  <img src="docs/paleotone-saurus.png" width="23%" alt="SAURUS creature voices">
+  <img src="docs/paleotone-scape.png" width="23%" alt="SCAPE MUSIC">
+</p>
 
 **PALEOTONE** (formerly DINOBOX) is epic prehistoric firmware for the **M-VAVE FM-1**: roaring beasts, booming war drums, misty jungle
 pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth)
@@ -17,9 +26,12 @@ insufficient. Keep a known-good firmware package and recovery instructions befor
 
 The [USB second-screen app](https://fantasmoslam.github.io/Paleotone/webapp/screen/) follows the FM-1's controls.
 Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. This is the graphics companion:
-it uses the firmware's C screen renderer and provides Original and Expanded views. It is pinned to the
-working companion source `19727a9` and requires the matching firmware already used with that companion.
-Opening the webpage does not install firmware. Phone support remains untested.
+it uses the firmware's C screen renderer and provides Original and Expanded views. This one link covers every
+build: the page reads the connected FM-1 and, when the instrument runs a newer companion build, forwards to the
+page made for it (`screen-unified/`). It defaults to the working companion source `19727a9`; a firmware and a page
+still have to come from matching builds. Opening the webpage does not install firmware. Phone support remains
+untested.
+
 The separate [lightweight display](https://fantasmoslam.github.io/Paleotone/webapp/screen-lite/) uses screen-state
 messages 90/91 and is not a replacement for the graphics companion.
 
@@ -77,7 +89,7 @@ MONSTER, HADRO HORN, COMPY PACK. All synthesised.
 | LOFI | FOSSIL LEAD, DINO CHOIR, BONE WHISTLE, PIXEL RAPTOR, EGG ARP, CAVE ECHO |
 | PHASE | TITAN BRASS, ICE CRYSTAL, RESIN PAD, DEEP PULSE |
 | NOISE | VOLCANO, LAVA CRACKLE, MONSOON, GEYSER, SWARM, WIND RIDGE |
-| ROAR | PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR CHANT, TUNDRA |
+| ROAR | PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR CHANT, TUNDRA, WAR PARADE, JUNGLE CAMP, RITUAL FIRE, TITAN MARCH, HEARTBEAT, HERD RUN, TRIBAL WAR, TALK DRUMS, ODD RITUAL, FIVE MOONS, SPIRAL, CHAOS DRUMS |
 | FM6 | TAR PIT BASS, SLIT DRUM, MAMMOTH, GLACIER PAD, METEOR, CICADA BUZZ, AMBER BELLS (patches F9..F15), TAR GROWL, MAMMOTH CALL, GLACIER WIDE |
 | SAMPLE | JUNGLE NIGHT, ENCOUNTER (the kit, one sound per key from F3), LITHOPHONE, TROPIC STORM |
 | GRAIN | NIGHT SWARM, STONE MIST, STORM CLOUD, AMBER DUST (grains of the jungle, the stones and the storm) |

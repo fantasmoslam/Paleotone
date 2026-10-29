@@ -32,6 +32,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().the
   for (const registration of registrations) if (registration.scope === scope) registration.unregister();
 }).catch(() => {});
 </script>
+<script type="module" src="screen_router.js?v=1"></script>
 </head>
 <body>
 <header><h1>PALEOTONE / FM-1 SCREEN</h1><div class="toolbar">

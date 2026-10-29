@@ -25,12 +25,18 @@ def prepare(source, destination, revision):
     if not physical_focus:
         page = Path(__file__).with_name("companion_page.html").read_text(encoding="utf-8")
         shutil.copyfile(Path(__file__).with_name("frame_presenter.js"), destination / "frame_presenter.js")
+        # Legacy landing page routes already installed candidate firmware.
+        router = Path(__file__).with_name("screen_router.js")
+        if not router.is_file():
+            raise SystemExit(f"graphics companion needs {router}")
+        shutil.copyfile(router, destination / "screen_router.js")
     (destination / "index.html").write_text(page, encoding="utf-8")
     metadata = {"source": revision, "rendererId": layout["rendererId"],
         "kind": "firmware-graphics-companion", "presentation": "android-compatible-v1"}
     if physical_focus:
         metadata["physicalFocusProtocol"] = 2
     (destination / "build.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+
 
 
 if __name__ == "__main__":
