@@ -22,6 +22,9 @@ jobs:
       - name: Generator dependencies
         run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.3.5
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - name: Install SDK packages
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.2.12479018'
       - name: Native engine and session tests
