@@ -35,7 +35,16 @@ def starter_samples(destination):
                         ("JUNGLE/00_JungleNight_C3.wav","Jungle C3.wav")]:
         with wave.open(str(ROOT/"assets/samples-cc0"/source),"rb") as original:
             frames=original.readframes(original.getnframes())
-            align=original.getnchannels()*original.getsampwidth()
+            width=original.getsampwidth()
+            align=original.getnchannels()*width
+            frames=frames[:len(frames)//align*align]
+            # Give the bundled starters useful, consistent headroom. Imported
+            # files keep their original level; this only prepares our two assets.
+            values=[int.from_bytes(frames[i:i+width],"little",signed=True) for i in range(0,len(frames),width)]
+            peak=max((abs(v) for v in values),default=0)
+            if peak:
+                gain=.75*((1<<(width*8-1))-1)/peak
+                frames=b"".join(round(v*gain).to_bytes(width,"little",signed=True) for v in values)
             with wave.open(str(destination/name),"wb") as output:
                 output.setparams(original.getparams())
                 output.writeframes(frames[:len(frames)//align*align])

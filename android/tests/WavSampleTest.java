@@ -20,7 +20,7 @@ final class WavSampleTest {
         w=WavSample.read(fixture(3,32,1,Float.floatToIntBits(Float.NaN),Float.floatToIntBits(9)));close(w.data[0],0);close(w.data[1],1);
         bad(fixture(6,16,1,0,0));bad(fixture(1,16,1,0));bad(fixture(1,16,3,0,0,0,0,0,0));
         File truncated=fixture(1,16,1,0,1);try(RandomAccessFile f=new RandomAccessFile(truncated,"rw")){f.setLength(45);}bad(truncated);
-        for(String path:args){w=WavSample.read(new File(path));assert w.data.length>2;}
+        for(String path:args){w=WavSample.read(new File(path));assert w.data.length>2;float peak=0;for(float x:w.data)peak=Math.max(peak,Math.abs(x));assert peak>.5f&&peak<=.751f;}
         System.out.println("PASS: WAV PCM 8/16/24/32, float32 sanitation, stereo downmix, malformed/truncated rejection and bundled samples");
     }
 }

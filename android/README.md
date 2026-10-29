@@ -73,7 +73,8 @@ layers and evolving-music settings. These edit the same firmware state as the
 original controls and are included in SAVE SESSION. New phrases explicitly asks
 before replacing patterns; it requires evolving music enabled and no active song chain.
 
-LIBRARY includes CC0 Flute C4 and Jungle C3 starter files. **LOAD** activates a
+LIBRARY includes CC0 Flute C4 and Jungle C3 starter files, prepared with 0.75 peak
+headroom. Imported WAVs retain their recorded levels. **LOAD** activates a
 sample; **PLAY ON KEYBOARD** opens the instrument keyboard. **USE INSTRUMENT**
 returns keyboard/MIDI to the firmware sounds. The banner always identifies the
 active mode. Each sample has an adjustable MIDI root note. Import uses the Android
