@@ -13,16 +13,23 @@ export class PanePixels {
     return {rgba:this.rgba,changed};
   }
 }
-export function refreshDelay(elapsed,renderMs,{hidden=false,compatible=false}={}){
-  const fps=hidden?4:Math.min(compatible?15:30,1000/Math.max(1,renderMs*3));
-  return Math.max(0,1000/fps-elapsed);
+export function refreshDelay(elapsed,renderMs,{hidden=false,compatible=false,audioPriority=false}={}){
+  const fps=hidden?4:Math.min(audioPriority?10:30,compatible?15:30,1000/Math.max(1,renderMs*3));
+  // Keep the existing responsive mode. The opt-in trial limits snapshot starts
+  // to 10 Hz AND leaves a gap after a slow transfer rather than chasing a timer.
+  // This reduces request pressure; only a hardware A/B test can establish an audio benefit.
+  return Math.max(audioPriority?12:0,1000/fps-elapsed);
 }
 export class DisplayTiming {
-  constructor(now=()=>performance.now()){this.now=now;this.started=now();this.frames=0;this.last={};}
+  constructor(now=()=>performance.now()){this.now=now;this.started=now();this.frames=0;this.last={};this.rate=null;}
   record(metrics,drawMs){this.frames++;this.last={...metrics,drawMs};}
   text(){
-    const seconds=(this.now()-this.started)/1000;
-    return (this.frames/Math.max(.001,seconds)).toFixed(1)+' updates/s · '+
+    const at=this.now(),seconds=(at-this.started)/1000;
+    // Report the latest completed interval, so changing cadence does not keep
+    // showing a connection-lifetime average. This counts updates, not paints.
+    if(seconds>=1){this.rate=this.frames/seconds;this.frames=0;this.started=at;}
+    return (this.rate===null?'Measuring update rate':this.rate.toFixed(1)+' updates/s (recent)')+' · '+
       (this.last.transferMs||0).toFixed(1)+' ms transfer · '+(this.last.drawMs||0).toFixed(1)+' ms draw';
   }
 }
+

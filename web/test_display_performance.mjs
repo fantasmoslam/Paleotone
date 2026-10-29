@@ -16,6 +16,33 @@ assert.equal(refreshDelay(45,2),0,'a slow USB read must not add a further 20 ms 
 assert.ok(refreshDelay(2,2)>30&&refreshDelay(2,2)<32);
 assert.ok(refreshDelay(20,1,{compatible:true})>46);
 assert.equal(refreshDelay(260,2,{hidden:true}),0);
+// Simulate complete transfers across a range of USB loads. The trial must
+// reduce request pressure without changing the legacy responsive cadence.
+for(const transfer of [2,29,45,99,100,150,260]){
+  const gap=refreshDelay(transfer,2,{audioPriority:true});
+  assert.ok(gap>=12,'even slow transfers must leave a breathing gap');
+  assert.ok(transfer+gap>=100,'audio-priority snapshot starts must be at most 10 Hz');
+  assert.ok(gap>=refreshDelay(transfer,2),'the trial must never poll faster');
+}
+assert.equal(refreshDelay(45,2,{audioPriority:true}),55);
+assert.equal(refreshDelay(150,2,{audioPriority:true}),12);
+assert.equal(refreshDelay(20,1,{audioPriority:true,compatible:true}),80);
+assert.equal(refreshDelay(20,1,{audioPriority:true,hidden:true}),230);
+assert.equal(refreshDelay(260,2,{audioPriority:true,hidden:true}),12);
 let now=0;const timing=new DisplayTiming(()=>now);now=1000;timing.record({transferMs:43},1.2);
-assert.match(timing.text(),/1.0 updates\/s · 43.0 ms transfer · 1.2 ms draw/);
+assert.match(timing.text(),/1.0 updates\/s \(recent\) · 43.0 ms transfer · 1.2 ms draw/);
+// A long fast session must not mask a newly selected slow request cadence.
+let clock=0;const recent=new DisplayTiming(()=>clock);
+assert.match(recent.text(),/^Measuring update rate/);
+for(let second=0;second<60;second++){
+  for(let frame=0;frame<30;frame++)recent.record({transferMs:25},.5);
+  clock+=1000;assert.match(recent.text(),/^30.0 updates\/s \(recent\)/);
+}
+for(let frame=0;frame<10;frame++)recent.record({transferMs:31},.7);
+clock+=1000;assert.match(recent.text(),/^10.0 updates\/s \(recent\) · 31.0 ms transfer · 0.7 ms draw/);
+assert.equal(recent.text(),recent.text(),'reading twice must not reset the last completed interval');
+clock+=1000;assert.match(recent.text(),/^0.0 updates\/s \(recent\)/);
+for(let frame=0;frame<8;frame++)recent.record({},0);
+clock+=2000;assert.match(recent.text(),/^4.0 updates\/s \(recent\)/,'use actual elapsed time after a delayed timer');
 console.log('display performance: all 65536 exact colors, reusable buffers, pane caching and bounded adaptive cadence passed');
+
