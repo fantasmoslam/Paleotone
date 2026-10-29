@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include "engine.h"
+#include "output_stage.h"
 
 #define JNI(name) Java_org_paleotone_synth_Native_##name
 #define PIXELS (240*240)
@@ -17,6 +18,9 @@ static int booted, sample_rate, burst, buffer_frames, sharing, performance;
 static _Atomic unsigned key_mask, button_mask, master_value=700, panic_requested;
 static _Atomic int encoders[7], stream_error;
 static _Atomic unsigned callbacks, max_us, latest_us, peak_q15;
+static _Atomic unsigned output_level=1, limited_frames;
+static pt_output_t output_stage;
+static float output_gain(void){return (float)(1u<<atomic_load(&output_level));}
 static uint32_t screen_pixels[PIXELS];
 static pthread_mutex_t screen_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned snapshot_due;
@@ -56,14 +60,8 @@ static aaudio_data_callback_result_t audio_callback(AAudioStream *s, void *user,
     float *out=data;
     inputs();
     pt_render(out, (unsigned)frames, (unsigned)sample_rate);
-    float peak=0;
-    for (int i=0; i<frames*2; ++i) {
-        float v=out[i];
-        if (v != v) v=0;
-        out[i]=v < -1 ? -1 : v > 1 ? 1 : v;
-        float a=out[i]<0 ? -out[i] : out[i];
-        if (a>peak) peak=a;
-    }
+    float peak=pt_output_process(&output_stage,out,(unsigned)frames,output_gain());
+    atomic_store(&limited_frames,output_stage.limited);
     atomic_store(&peak_q15, (unsigned)(peak*32767));
     snapshot_due+=(unsigned)frames;
     if (snapshot_due >= (unsigned)sample_rate/30) {
@@ -144,11 +142,17 @@ JNIEXPORT jstring JNICALL JNI(start)(JNIEnv *env,jclass cls,jint buffers) {
     if (buffers>8) buffers=8;
     AAudioStream_setBufferSizeInFrames(stream,burst*buffers);
     buffer_frames=AAudioStream_getBufferSizeInFrames(stream);
+    pt_output_init(&output_stage,(unsigned)sample_rate,output_gain());
+    atomic_store(&limited_frames,0);
     result=AAudioStream_requestStart(stream);
     if (result!=AAUDIO_OK) { stop(); return (*env)->NewStringUTF(env,AAudio_convertResultToText(result)); }
     return NULL;
 }
 JNIEXPORT void JNICALL JNI(stop)(JNIEnv *env,jclass cls) {(void)env;(void)cls;stop();}
+JNIEXPORT jint JNICALL JNI(error)(JNIEnv *e,jclass c){(void)e;(void)c;return atomic_load(&stream_error);}
+JNIEXPORT void JNICALL JNI(level)(JNIEnv *e,jclass c,jint value){
+    (void)e;(void)c;if(value>=0&&value<=2)atomic_store(&output_level,(unsigned)value);
+}
 JNIEXPORT jbyteArray JNICALL JNI(save)(JNIEnv *env,jclass cls) {
     (void)cls;
     if (stream || !booted) return NULL;
@@ -187,10 +191,11 @@ JNIEXPORT void JNICALL JNI(pixels)(JNIEnv *env,jclass cls,jintArray out) {
 JNIEXPORT jstring JNICALL JNI(stats)(JNIEnv *env,jclass cls) {
     (void)cls;
     char text[256];
-    if (stream) snprintf(text,sizeof text,"%d Hz | burst %d | buffer %d | %s / %s | xruns %d | render %u us (max %u) | error %d",
+    if (stream) snprintf(text,sizeof text,"%d Hz | burst %d | buffer %d | %s / %s | xruns %d | render %u us (max %u) | +%u dB | limits %u | error %d",
         sample_rate,burst,buffer_frames,sharing==AAUDIO_SHARING_MODE_EXCLUSIVE?"exclusive":"shared",
         performance==AAUDIO_PERFORMANCE_MODE_LOW_LATENCY?"low latency":"normal",
-        AAudioStream_getXRunCount(stream),atomic_load(&latest_us),atomic_load(&max_us),atomic_load(&stream_error));
+        AAudioStream_getXRunCount(stream),atomic_load(&latest_us),atomic_load(&max_us),atomic_load(&output_level)*6,
+        atomic_load(&limited_frames),atomic_load(&stream_error));
     else snprintf(text,sizeof text,"Audio paused — project held in memory");
     return (*env)->NewStringUTF(env,text);
 }

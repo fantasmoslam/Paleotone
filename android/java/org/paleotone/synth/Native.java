@@ -5,6 +5,8 @@ final class Native {
     static native void init(byte[] saved);
     static native String start(int buffers);
     static native void stop();
+    static native int error();
+    static native void level(int value);
     static native byte[] save();
     static native void keys(int mask);
     static native void buttons(int mask);

@@ -1,4 +1,4 @@
-# Paleotone Android — native alpha 0.1
+# Paleotone Android — native alpha 0.1.1
 
 Standalone synthesis for Dylan's Samsung SM-T510. Initial measured device configuration:
 Android 15 / unofficial LineageOS 22.2-20260910, `armeabi-v7a,armeabi`, 48 kHz
@@ -27,7 +27,7 @@ this as a finished production instrument.
 Download the APK to the PC. In the same `platform-tools` PowerShell window:
 
 ```powershell
-.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.1.0-alpha.apk"
+.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.1.1-alpha.apk"
 .\adb.exe -s 192.168.0.46:33862 shell am start -n org.paleotone.synth/.MainActivity
 ```
 
@@ -53,8 +53,15 @@ Bluetooth is not a suitable route for assessing playable latency.
 - MIDI selects Android MIDI output ports from attached controllers. Channel-message
   parsing handles fragments, running status and interspersed real-time bytes.
   External clock, SysEx, BLE discovery and file/sample import are not implemented.
-- STOP/START retries audio after a route disconnect. BUFFER offers 2/3/4/6 bursts;
-  changing it pauses audio. PANIC releases local/controller notes; an active sequencer
+- Audio reconnects automatically after stream errors while foreground and playing,
+  with a short debounce and at most five retries. Stop, backgrounding and lost focus
+  cancel retries. If recovery is exhausted, START provides an explicit retry.
+- AUDIO offers Original (1x), Normal (2x / +6 dB, default), and Boost (4x / +12 dB).
+  Normal restores the FM-1 codec reserve; a stereo-linked limiter bounds digital
+  peaks at 0.98. Gain changes ramp and the limiter releases over 50 ms. Android media
+  volume remains independent. Output level is retained in app preferences.
+- AUDIO also offers 2/3/4/6 buffer bursts; changing it pauses audio and preserves
+  whether playback was stopped. PANIC releases local/controller notes; an active sequencer
   can subsequently trigger more notes. PLAY controls transport.
 
 ## Thread and timing boundaries
@@ -88,7 +95,7 @@ python3 android/build.py
 sh android/test.sh
 ```
 
-The APK is `build/android/Paleotone-Android-0.1.0-alpha.apk`.
+The APK is `build/android/Paleotone-Android-0.1.1-alpha.apk`.
 This dependency-light build calls javac, D8, aapt2, the NDK compiler, zipalign and
 apksigner directly. It requires no Gradle/Maven artifacts or proprietary FM-1 SDK.
 Generated tables/fonts/samples use the repository's existing generator.
@@ -105,8 +112,12 @@ signed build (uninstalling deletes its private session).
 Host tests exercise variable-sized output callbacks, 44.1→48 kHz conversion, finite
 audio, note on/off, MIDI channel messages, sequencer controls, screen conversion,
 save sizing and restoration of the exact portable project in a separate process.
+Output tests cover gain, finite/stereo-linked limiting and recovery; Java policy tests
+cover route debounce, bounded retry backoff and cancellation.
 APK validation checks signing, launch activity, API levels, 32-bit ARM ABI and
-native dependencies. The APK has not yet been launched on the physical SM-T510.
+native dependencies. The original 0.1.0 APK passed user-reported multitouch playing, display/sequencer
+tracking and save/restore. The 0.1.1 volume and automatic recovery changes still
+need physical verification. See DEVICE-TESTS.md for exact acceptance boundaries.
 
 Device acceptance, in order:
 

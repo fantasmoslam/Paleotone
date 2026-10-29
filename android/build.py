@@ -50,7 +50,7 @@ def main():
     shutil.copy(ROOT/"LICENSING.md",OUT/"assets/licenses/LICENSING.md")
     shutil.copy(ROOT/"assets/samples-cc0/ATTRIBUTION.txt",OUT/"assets/licenses/SAMPLES.txt")
     (OUT/"assets/BUILD.txt").write_text(
-        "Paleotone Android 0.1.0-alpha\nGPL-3.0-only\n"+
+        "Paleotone Android 0.1.1-alpha\nGPL-3.0-only\n"+
         subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()+
         "\nBase: 0390a03f732c5eeec9f62cb2b139df8738396766\n"+
         "Local modifications are included in the corresponding source archive.\n")
@@ -66,7 +66,7 @@ def main():
         run("keytool","-genkeypair","-keystore",key,"-storepass","android","-keypass","android",
             "-alias","androiddebugkey","-keyalg","RSA","-keysize","2048","-validity","10000",
             "-dname","CN=Paleotone Development,O=Paleotone,C=US")
-    apk=OUT/"Paleotone-Android-0.1.0-alpha.apk"
+    apk=OUT/"Paleotone-Android-0.1.1-alpha.apk"
     run(TOOLS/"apksigner","sign","--ks",key,"--ks-pass","pass:android","--key-pass","pass:android",
         "--out",apk,OUT/"aligned.apk")
     run(TOOLS/"apksigner","verify","--verbose",apk)
