@@ -1,0 +1,51 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+#include "../native/engine.h"
+#include <assert.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+static float audio[1024*2];
+int main(void) {
+    const char *load=getenv("PT_LOAD_PATH");
+    if(load) {
+        FILE*f=fopen(load,"rb");assert(f);
+        uint8_t *before=malloc(1100000),*after=malloc(1100000);assert(before&&after);
+        size_t n=fread(before,1,1100000,f);fclose(f);assert(n>1048592);
+        pt_boot(before,n);assert(pt_save(after,1100000)==n);
+        /* Compare the exact portable project after a fresh process boot. */
+        assert(!memcmp(before+1048592,after+1048592,n-1048592));
+        pt_render(audio,1024,48000);
+        for(unsigned i=0;i<2048;++i)assert(isfinite(audio[i]));
+        free(before);free(after);puts("PASS: session restored in a fresh process; exact project round trip");return 0;
+    }
+    pt_boot(NULL,0);
+    pt_keys(1u<<7);
+    double sum=0; float peak=0;
+    clock_t start=clock();
+    for(unsigned block=0;block<1200;++block) {
+        unsigned frames=block%3==0?192:block%3==1?384:257;
+        pt_render(audio,frames,48000);
+        for(unsigned i=0;i<frames*2;++i) {
+            assert(isfinite(audio[i]));assert(fabsf(audio[i])<=1.05);
+            sum+=fabsf(audio[i]);if(fabsf(audio[i])>peak)peak=fabsf(audio[i]);
+        }
+        if(block==100)pt_keys(0);
+        if(block==150){pt_midi(0x90,60,100);}
+        if(block==200){pt_midi(0x80,60,0);}
+        if(block==250){pt_buttons(1u<<10);}
+        if(block==260){pt_buttons(0);}
+        if(block==500){pt_encoder(0,1);pt_encoder(1,1);}
+    }
+    assert(sum>1);pt_panic();
+    uint32_t *pixels=calloc(240*240,sizeof *pixels);assert(pixels);pt_screen(pixels);
+    unsigned nonblack=0;for(unsigned i=0;i<240*240;++i){assert((pixels[i]>>24)==255);if(pixels[i]&0xffffff)++nonblack;}
+    assert(nonblack>100);free(pixels);
+    uint8_t *saved=malloc(1100000);assert(saved);
+    size_t n=pt_save(saved,1100000);assert(n>1048576&&n<1100000);assert(!memcmp(saved,"PTANDROID001",12));
+    assert(pt_save(saved,100)==0);
+    const char *path=getenv("PT_SAVE_PATH");if(path){FILE*f=fopen(path,"wb");assert(f);assert(fwrite(saved,1,n,f)==n);fclose(f);}
+    free(saved);
+    printf("PASS: variable callbacks, 44.1->48 kHz, notes, MIDI, sequencer, pixels, save; peak %.4f; CPU %.2fs\n",peak,(double)(clock()-start)/CLOCKS_PER_SEC);
+}
