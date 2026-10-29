@@ -32,6 +32,8 @@ def prepare(source, destination):
     own = Path(__file__).parent
     shutil.copyfile(own / 'screen.html', destination / 'index.html')
     shutil.copyfile(own / 'display_performance.js', destination / 'display_performance.js')
+    # Browser presentation changes travel with their page; transport/WASM stay pinned.
+    shutil.copyfile(own / 'frame_presenter.js', destination / 'frame_presenter.js')
     metadata['browserTrial'] = 'audio-priority-20261028'
     metadata['rendererSha256'] = hashlib.sha256((destination / 'felucca.wasm').read_bytes()).hexdigest()
     (destination / 'build.json').write_text(json.dumps(metadata, indent=2) + '\n')

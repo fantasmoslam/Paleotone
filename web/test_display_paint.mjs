@@ -11,7 +11,7 @@ const contexts=()=>Object.fromEntries([0,1].map(side=>[side?'right':'left',Objec
 apply(original);const ctx=contexts(),elements=new Map();let paints=0,actual,width;
 const sandbox={ex,second,contextSnapshot,joinScreens,performance,Uint16Array,
  focus:{snapshot:()=>({side:ex.web_panel_side()?'right':'left',...ctx})},
- panes:[new PanePixels(),new PanePixels()],joined:new Uint8ClampedArray(480*240*4),lastWide:null,paintPending:false,drawMs:0,
+ panes:[new PanePixels(),new PanePixels()],joined:new Uint8ClampedArray(480*240*4),lastWide:null,lastSurface:null,paintPending:false,drawMs:0,
  document:{body:{classList:{toggle(){}}}},$:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);},
  presenter:{present(rgba,w){paints++;actual=rgba.slice();width=w;return true;}}
 };

@@ -43,4 +43,6 @@ with tempfile.TemporaryDirectory() as temporary:
     module.prepare(source, root / "legacy", "fixture")
     assert "physicalFocusProtocol" not in json.loads((root / "legacy/build.json").read_text())
     assert (root / "legacy/frame_presenter.js").is_file()
+    assert (root / "legacy/screen_router.js").is_file()
+    assert 'screen_router.js' in (root / "legacy/index.html").read_text()
 print("companion packaging: native focus page and dependencies preserved; missing controller rejected; legacy fallback retained")

@@ -115,6 +115,11 @@ def main(pkg, version, out):
             raise SystemExit(f"graphics companion missing {companion / required}; refusing to replace it with the lightweight page")
     shutil.rmtree(out / "webapp/screen", ignore_errors=True)
     shutil.copytree(companion, out / "webapp/screen")
+    from screen_registry import screen_pages
+    pages = screen_pages(out / "webapp")
+    (out / "webapp" / "screens.json").write_text(json.dumps({"pages": pages}, indent=2) + "\n", encoding="utf-8")
+    print("site: webapp/screens.json: " + (", ".join(f"{p['path']} ({p['rendererId']})" for p in pages)
+                                           or "no screen pages"))
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
