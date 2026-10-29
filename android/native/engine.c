@@ -116,8 +116,60 @@ void pt_control_set(unsigned slot,int value){
     const param_desc_t *d=c->track<0?&GP[c->id]:&TP[c->id];
     value=param_fit(d,value);
     if(c->track<0){
-        if(c->id==G_SBIOME&&value!=song.g[c->id])scape_biome((unsigned)value);
+        if(c->id==G_DREAM&&!value){pt_scape(PT_MUSIC_STOP);return;}
+        if(c->id==G_SBIOME)scape_biome((unsigned)value);
         song.g[c->id]=(int16_t)value;
     }else{trk[c->track].p[c->id]=(int16_t)value;motion_capture(&trk[c->track],c->id,(int16_t)value);}
+    ui.force=1;
+}
+
+/* Android performance actions. A switch has an audible action, not merely an
+ * evolution flag. Pattern composition remains a separate confirmed action. */
+static int scape_last_environment=80,scape_last_drone=40;
+unsigned pt_scape_busy(void){return chain_busy()!=0;}
+void pt_scape(unsigned command){
+    switch(command){
+    case PT_ENV_START:
+        if(!song.g[G_SCAPE])song.g[G_SCAPE]=(int16_t)scape_last_environment;
+        break;
+    case PT_ENV_STOP:
+        if(song.g[G_SCAPE]>0)scape_last_environment=song.g[G_SCAPE];
+        song.g[G_SCAPE]=0;break;
+    case PT_DRONE_START:
+        if(song.g[G_SCAPE]>0&&!song.g[G_SDRN])song.g[G_SDRN]=(int16_t)scape_last_drone;
+        break;
+    case PT_DRONE_STOP:
+        if(song.g[G_SDRN]>0)scape_last_drone=song.g[G_SDRN];
+        song.g[G_SDRN]=0;break;
+    case PT_MUSIC_START:
+        if(chain_busy())return;
+        song.g[G_DREAM]=1;
+        if(!dream.valid)dr_rebuild();else dr_arm();
+        transport_req=1;break;
+    case PT_MUSIC_STOP:
+        song.g[G_DREAM]=0;dream_forget();transport_req=0;seq_stop();pt_panic();break;
+    case PT_SCAPE_STOP_ALL:
+        pt_scape(PT_ENV_STOP);pt_scape(PT_DRONE_STOP);pt_scape(PT_MUSIC_STOP);
+        /* Stop All is called with Android audio closed. Clear shared effects and
+         * residual voices too, so a later resume cannot bring back an old drone. */
+        for(unsigned k=0;k<NPART;++k){
+            for(unsigned v=0;v<NVOICE;++v)trk[k].v[v].active=0;
+            trk[k].xp_n=0;trk[k].tail=0;trk[k].dist_hp=trk[k].dist_lp1=trk[k].dist_lp2=0;
+        }
+        memset(dly_buf,0,sizeof dly_buf);memset(cho_buf,0,sizeof cho_buf);
+        memset(rev_comb,0,sizeof rev_comb);memset(&rev_u,0,sizeof rev_u);memset(&fx,0,sizeof fx);
+        memset(&sc,0,sizeof sc);memset(mx,0,sizeof mx);
+        lc_l1=lc_l2=lc_r1=lc_r2=dc_l=dc_r=dce_l=dce_r=0;memset(lce,0,sizeof lce);
+        sb_lp1=sb_lp2=sb_lp3=sb_lp4=sb_env=sb_h1=sb_h2=sb_hl=0;lim_env=LIM_T;
+        memset(&clk,0,sizeof clk);click_req=0;memset(&pf,0,sizeof pf);
+        memset(tp_buf,0,sizeof tp_buf);memset(&tp,0,sizeof tp);
+        memset(abuf,0,sizeof abuf);ring_r=ring_w;cache_pos=128;phase=0;primed=0;break;
+    case PT_SCAPE_GENERATE:
+        if(chain_busy())return;
+        dream_compose(dream.valid?dream.root:(unsigned)((trk[0].p[P_ROOT]%12+12)%12));break;
+    case PT_SCAPE_NEXT:
+        if(scape_music.active&&dream.valid)dr_chord();break;
+    default:return;
+    }
     ui.force=1;
 }

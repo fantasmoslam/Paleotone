@@ -26,7 +26,7 @@ static uint32_t screen_pixels[PIXELS];
 static pthread_mutex_t screen_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned snapshot_due;
 #define CONTROL_CAP 64
-static int control_values[CONTROL_CAP*3+1];
+static int control_values[CONTROL_CAP*3+2];
 static char control_text[CONTROL_CAP][64];
 static _Atomic int control_pending[CONTROL_CAP+1];
 static _Atomic unsigned control_dirty[CONTROL_CAP+1];
@@ -39,6 +39,7 @@ static void snapshot(void){
     unsigned n=pt_control_count();
     for(unsigned i=0;i<n;++i)pt_control_read(i,&control_values[i*3],&control_values[i*3+1],&control_values[i*3+2],control_text[i]);
     control_values[n*3]=(int)pt_playing();
+    control_values[n*3+1]=(int)pt_scape_busy();
 }
 static uint8_t save_data[1100000];
 /* Multiple non-audio producers serialize here. The consumer never locks. */
@@ -75,6 +76,7 @@ static void inputs(void) {
     /* Bound work even if a controller floods the port. */
     for (unsigned i=0; r!=w && i<64; ++i, ++r) {
         uint32_t m=midi_queue[r&255];
+        if((m&255)==0xf0){pt_scape((m>>8)&255);continue;}
         unsigned status=m&240,note=(m>>8)&127,vel=(m>>16)&127;
         if(mode){
             if(status==0x90||status==0x80)sample_note(&sampler,note,status==0x90?vel:0,(unsigned)sample_rate);
@@ -123,6 +125,8 @@ static void stop(void) {
     atomic_store(&key_mask,0); atomic_store(&button_mask,0);
     if (booted) {
         for(unsigned i=0;i<=pt_control_count();++i)if(atomic_exchange(&control_dirty[i],0))pt_control_set(i,atomic_load(&control_pending[i]));
+        unsigned r=atomic_load(&midi_r),w=atomic_load(&midi_w);
+        for(;r!=w;++r){uint32_t m=midi_queue[r&255];if((m&255)==0xf0)pt_scape((m>>8)&255);}
         pt_panic();snapshot();
     }
     sample_panic(&sampler);sample_keys=0;
@@ -242,7 +246,7 @@ JNIEXPORT jobjectArray JNICALL JNI(controlLabels)(JNIEnv *e,jclass c){
     for(unsigned i=0;i<n;++i){jstring t=(*e)->NewStringUTF(e,pt_control_label(i));(*e)->SetObjectArrayElement(e,a,i,t);(*e)->DeleteLocalRef(e,t);}return a;
 }
 JNIEXPORT jintArray JNICALL JNI(controls)(JNIEnv *e,jclass c){
-    (void)c;unsigned n=pt_control_count()*3+1;jint values[CONTROL_CAP*3+1];
+    (void)c;unsigned n=pt_control_count()*3+2;jint values[CONTROL_CAP*3+2];
     pthread_mutex_lock(&screen_mutex);memcpy(values,control_values,n*sizeof(jint));pthread_mutex_unlock(&screen_mutex);
     jintArray a=(*e)->NewIntArray(e,n);if(a)(*e)->SetIntArrayRegion(e,a,0,n,values);return a;
 }
@@ -270,3 +274,14 @@ JNIEXPORT jboolean JNICALL JNI(loadSample)(JNIEnv *e,jclass c,jfloatArray data,j
 }
 JNIEXPORT void JNICALL JNI(sampleMode)(JNIEnv *e,jclass c,jboolean enabled){(void)e;(void)c;atomic_store(&sample_mode,enabled?1:0);}
 JNIEXPORT void JNICALL JNI(sampleRoot)(JNIEnv *e,jclass c,jint note){(void)e;(void)c;if(note>=0&&note<=127)atomic_store(&sample_root,(unsigned)note);}
+
+JNIEXPORT jboolean JNICALL JNI(scape)(JNIEnv *e,jclass c,jint command){
+    (void)e;(void)c;if(command<PT_ENV_START||command>PT_SCAPE_NEXT)return JNI_FALSE;
+    if(!stream){pt_scape((unsigned)command);snapshot();return JNI_TRUE;}
+    /* Reuse the serialized producer queue; 0xf0 is internal, never accepted by MIDI JNI. */
+    pthread_mutex_lock(&midi_mutex);
+    unsigned w=atomic_load(&midi_w),r=atomic_load_explicit(&midi_r,memory_order_acquire);
+    int ok=w-r<256;
+    if(ok){midi_queue[w&255]=0xf0|((unsigned)command<<8);atomic_store_explicit(&midi_w,w+1,memory_order_release);}
+    pthread_mutex_unlock(&midi_mutex);return ok?JNI_TRUE:JNI_FALSE;
+}

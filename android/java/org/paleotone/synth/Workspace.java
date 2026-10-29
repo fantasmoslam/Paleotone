@@ -15,6 +15,10 @@ final class Workspace extends LinearLayout {
     private static final int TEXT=0xffeee8cf,TEAL=0xff77c6aa,MUTED=0xffa8b5a9;
     final MainActivity activity;final SynthView panel;final SampleLibrary library;
     final SharedPreferences prefs;
+    final ScapeView scape;
+    final boolean[] dragging;
+    final int[] pending;
+    final long[] pendingSince;
     final ExecutorService worker=Executors.newSingleThreadExecutor();
     final FrameLayout pages;final TextView status;final Button[] tabs=new Button[4];
     final SeekBar[] sliders;final TextView[] values;final String[] labels;
@@ -28,6 +32,7 @@ final class Workspace extends LinearLayout {
         setOrientation(VERTICAL);setBackgroundColor(0xff111919);
         labels=Native.controlLabels();state=Native.controls();texts=Native.controlTexts();
         sliders=new SeekBar[labels.length];values=new TextView[labels.length];
+        dragging=new boolean[labels.length];pending=new int[labels.length];Arrays.fill(pending,Integer.MIN_VALUE);pendingSince=new long[labels.length];
         LinearLayout bar=row();addView(bar,new LayoutParams(-1,dp(50)));
         String[] names={"INSTRUMENT","MIXER","SCAPE","LIBRARY"};
         for(int i=0;i<4;i++){final int n=i;tabs[i]=button(names[i],()->show(n));bar.addView(tabs[i],new LayoutParams(0,-1,1));}
@@ -41,17 +46,7 @@ final class Workspace extends LinearLayout {
         addControl(mixer,12);
         for(int tr=0;tr<4;tr++){heading(mixer,"TRACK "+(tr+1));addPair(mixer,tr,8+tr);addControl(mixer,4+tr);}
         addPage(scroll(mixer));
-        LinearLayout scape=column();heading(scape,"Scape · a living environment");
-        scape.addView(text("Scape uses the existing sound engine. Enable evolving music and press PLAY to hear generated phrases. New phrases replaces current patterns after confirmation.",15,MUTED));
-        addPair(scape,39,40);addPair(scape,13,14);addPair(scape,15,16);addPair(scape,23,24);
-        LinearLayout commands=row();scape.addView(commands);commands.addView(button("NEXT HARMONY",()->Native.control(25,1)));
-        commands.addView(button("NEW PHRASES…",()->new AlertDialog.Builder(a).setTitle("Replace current patterns?")
-            .setMessage("Scape will generate new phrases in the current project. Save your session first if you want to keep these patterns. Evolving music must be enabled.")
-            .setNegativeButton("Cancel",null).setPositiveButton("Generate",(d,w)->Native.control(26,1)).show()));
-        heading(scape,"Behaviour");for(int i=17;i<=21;i+=2)addPair(scape,i,i+1);
-        heading(scape,"Environment layers");for(int i=27;i<35;i+=2)addPair(scape,i,i+1);
-        heading(scape,"Musical roles");addPair(scape,35,36);addPair(scape,37,38);addPair(scape,41,42);addPair(scape,43,44);addPair(scape,45,46);
-        addPage(scroll(scape));
+        scape=new ScapeView(this);addPage(scape);
         LinearLayout lib=column();heading(lib,"Your sample library");
         lib.addView(text("Load a WAV, then play it on the INSTRUMENT keyboard or via MIDI. One sample at a time, eight voices. The firmware sequencer keeps its own sounds. Stereo files are mixed to mono.",16,MUTED));
         LinearLayout actions=row();lib.addView(actions);actions.addView(button("IMPORT WAV…",this::pick));
@@ -72,7 +67,7 @@ final class Workspace extends LinearLayout {
             }catch(Exception e){report(e);}
         });
     }
-    private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
+    int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
     private LinearLayout row(){LinearLayout l=new LinearLayout(activity);l.setOrientation(HORIZONTAL);return l;}
     private LinearLayout column(){LinearLayout l=new LinearLayout(activity);l.setOrientation(VERTICAL);l.setPadding(dp(12),dp(6),dp(12),dp(12));return l;}
     private TextView text(String t,int size,int color){TextView v=new TextView(activity);v.setText(t);v.setTextSize(size);v.setTextColor(color);v.setPadding(0,dp(5),0,dp(5));return v;}
@@ -104,23 +99,35 @@ final class Workspace extends LinearLayout {
     private ScrollView scroll(View v){ScrollView s=new ScrollView(activity);s.setFillViewport(true);s.addView(v);return s;}
     private void addPage(View v){pages.addView(v,new FrameLayout.LayoutParams(-1,-1));pageViews.add(v);v.setVisibility(GONE);}
     void show(int index){panel.release();activeTab=index;for(int i=0;i<4;i++){pageViews.get(i).setVisibility(i==index?VISIBLE:GONE);tabs[i].setTextColor(i==index?TEAL:MUTED);}updateStatus();}
-    private void updateStatus(){status.setText(sampleMode&&selected!=null?"SAMPLE • "+selected.name+" • root "+note(rootNote):"INSTRUMENT • firmware keyboard & MIDI");mode.setText(sampleMode?"USE INSTRUMENT":"USE SAMPLE");root.setEnabled(selected!=null&&!busy);}
+    private void updateStatus(){status.setText(sampleMode&&selected!=null?"KEYBOARD / MIDI → Sample • "+selected.name+" • root "+note(rootNote):"KEYBOARD / MIDI → Instrument");mode.setText(sampleMode?"USE INSTRUMENT":"USE SAMPLE");root.setEnabled(selected!=null&&!busy);}
     private void addPair(LinearLayout parent,int a,int b){LinearLayout r=row();parent.addView(r);r.addView(control(a),new LayoutParams(0,-2,1));r.addView(control(b),new LayoutParams(0,-2,1));}
     private void addControl(LinearLayout parent,int id){parent.addView(control(id));}
-    private View control(int id){
+    View control(int id){
         LinearLayout box=column();values[id]=text(labels[id]+" · "+texts[id],17,TEXT);box.addView(values[id]);
         SeekBar s=slider(labels[id]);sliders[id]=s;s.setMax(state[id*3+2]-state[id*3+1]);s.setProgress(state[id*3]-state[id*3+1]);box.addView(s,new LayoutParams(-1,dp(64)));
         s.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar bar,int value,boolean user){if(user)Native.control(id,value+state[id*3+1]);}
-            public void onStartTrackingTouch(SeekBar bar){}public void onStopTrackingTouch(SeekBar bar){}
+            public void onProgressChanged(SeekBar bar,int value,boolean user){if(user){
+                pending[id]=value+state[id*3+1];pendingSince[id]=android.os.SystemClock.uptimeMillis();Native.control(id,pending[id]);
+            }}
+            public void onStartTrackingTouch(SeekBar bar){dragging[id]=true;}
+            public void onStopTrackingTouch(SeekBar bar){
+                dragging[id]=false;pending[id]=bar.getProgress()+state[id*3+1];
+                pendingSince[id]=android.os.SystemClock.uptimeMillis();Native.control(id,pending[id]);
+            }
         });return box;
     }
-    void update(){
-        if(++tick%6!=0||(activeTab!=1&&activeTab!=2))return;
+    void update(boolean audio){
+        if(activeTab!=1&&activeTab!=2)return;
+        if(++tick%(activeTab==2?3:6)!=0)return;
         state=Native.controls();texts=Native.controlTexts();
-        for(int i=0;i<labels.length;i++)if(sliders[i]!=null&&!sliders[i].isPressed()){
-            sliders[i].setProgress(state[i*3]-state[i*3+1]);values[i].setText(labels[i]+" · "+texts[i]);
+        long now=android.os.SystemClock.uptimeMillis();
+        for(int i=0;i<labels.length;i++)if(sliders[i]!=null){
+            values[i].setText(labels[i]+" · "+texts[i]);
+            if(dragging[i])continue;
+            if(pending[i]!=Integer.MIN_VALUE&&state[i*3]!=pending[i]&&now-pendingSince[i]<750)continue;
+            pending[i]=Integer.MIN_VALUE;sliders[i].setProgress(state[i*3]-state[i*3+1]);
         }
+        scape.refresh(audio);
         transport.setText(state[labels.length*3]==0?"PLAY SEQUENCE":"STOP SEQUENCE");
     }
     private String note(int n){return new String[]{"C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"}[n%12]+(n/12-1);}

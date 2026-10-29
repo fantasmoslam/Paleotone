@@ -105,3 +105,39 @@ and a 64 dp tall touch area, with amber feedback while pressed. The native SeekB
 continues to handle track tapping, dragging and scroll gestures. Explicit labels
 are supplied for accessibility. Audio and session formats are unchanged. The APK
 build/signature are checked; actual touch comfort needs tablet verification.
+
+
+## 0.2.1-alpha follow-up and Scape issues
+
+Dylan accepts the larger slider handles ("very nice"). Scape initiation was unclear;
+the master, drone and evolution controls did not explain independent playback.
+Dylan reports drone volume sticking after adjustment, and evolution off leaving
+the sequence running. The latter is confirmed in the old adapter: the flag only
+controlled evolution. The exact cause of the perceived drone sticking was not
+reproduced on physical hardware. Do not claim that testing identified a universal
+DSP defect; the redesign adds explicit drone off, stable fader acknowledgement,
+clear state/scope and a stream-closing Stop All.
+
+## 0.3.0-alpha Scape redesign — pending hardware acceptance
+
+New fixed transport/status and Environment/Music/Detail panels. Music Stop now
+stops transport. Generate requires confirmation, preserves playback state and is
+blocked during song chains. Start preserves existing patterns and layer mutes.
+Stop All closes audio and clears voice/effect/tape/filter/DMA/ring/cache history.
+
+Automated adapter tests exercise drone zero/off/restoration, environment mute and
+level restoration, real transport start/stop including old evolution-off, pattern
+preservation on Play, explicit generation without auto-start, chain guard and Stop
+All cleanup. A signal-level silence check excludes intentional independent
+ambience/tape hiss generators. Tests cover engine state, not Android screen layout.
+
+Tablet checks:
+1. Environment starts/pauses without starting the sequence. Biome choices load the
+   named layer balances; dragging and releasing master/drone does not jump backward.
+2. Drone off stops its new tone; effects may decay. The Music transport is separate.
+3. Music Play starts the sequence; Music Stop stops it, with Environment left alone.
+4. Generate cancellation preserves patterns; confirm only after saving if desired.
+5. Stop All is immediately silent. Start again and check no old held notes/tails
+   return. Check the loaded sample and original keys still play after restarting.
+6. Confirm all three panels, named selectors, large sliders, mixer, kiosk exit,
+   session restore and headphone recovery on the SM-T510.

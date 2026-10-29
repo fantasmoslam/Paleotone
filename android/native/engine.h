@@ -17,3 +17,7 @@ unsigned pt_control_count(void);
 const char *pt_control_label(unsigned slot);
 void pt_control_read(unsigned slot,int *value,int *min,int *max,char *text);
 void pt_control_set(unsigned slot,int value);
+enum { PT_ENV_START=1,PT_ENV_STOP,PT_DRONE_START,PT_DRONE_STOP,
+       PT_MUSIC_START,PT_MUSIC_STOP,PT_SCAPE_STOP_ALL,PT_SCAPE_GENERATE,PT_SCAPE_NEXT };
+void pt_scape(unsigned command);
+unsigned pt_scape_busy(void);

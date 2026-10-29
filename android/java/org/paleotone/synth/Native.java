@@ -21,6 +21,7 @@ final class Native {
     static native int[] controls();
     static native String[] controlTexts();
     static native void control(int slot,int value);
+    static native boolean scape(int command);
     static native boolean loadSample(float[] data,int rate,int root);
     static native void sampleMode(boolean enabled);
     static native void sampleRoot(int note);

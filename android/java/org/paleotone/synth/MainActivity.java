@@ -62,7 +62,7 @@ public final class MainActivity extends Activity {
             }
         }
         panel.update(Native.stats(),Native.peak(),running||recovery.pending());
-        workspace.update();
+        workspace.update(running||recovery.pending());
         handler.postDelayed(this,33);
     }};
     @Override public void onCreate(Bundle state) {
@@ -121,6 +121,11 @@ public final class MainActivity extends Activity {
         String error=Native.start(buffers);running=error==null;
         panel.notice=running?"Native Paleotone • hold panel buttons for alternate functions":"Audio error: "+error;
         return running;
+    }
+    void ensureAudio(){if(!running)startAudio();}
+    void stopAllScape(){
+        wantAudio=false;recovery.cancel();panel.release();Native.stop();running=false;
+        Native.scape(7);notice("Stopped • environment, drone, sequence and audio off");
     }
     void pickSample(Intent intent){
         pickerAudio=wantAudio;

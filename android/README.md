@@ -1,4 +1,4 @@
-# Paleotone Android — native alpha 0.2.1
+# Paleotone Android — native alpha 0.3.0
 
 Standalone synthesis for Dylan's Samsung SM-T510. Initial measured device configuration:
 Android 15 / unofficial LineageOS 22.2-20260910, `armeabi-v7a,armeabi`, 48 kHz
@@ -27,7 +27,7 @@ this as a finished production instrument.
 Download the APK to the PC. In the same `platform-tools` PowerShell window:
 
 ```powershell
-.\adb.exe -s 192.168.0.46:33862 install --no-streaming -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.2.1-alpha.apk"
+.\adb.exe -s 192.168.0.46:33862 install --no-streaming -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.3.0-alpha.apk"
 .\adb.exe -s 192.168.0.46:33862 shell am start -n org.paleotone.synth/.MainActivity
 ```
 
@@ -73,7 +73,7 @@ The top navigation keeps the existing **INSTRUMENT** panel and adds **MIXER**,
 and sequencer transport. SCAPE exposes habitat/drone levels, biome, environment
 layers and evolving-music settings. These edit the same firmware state as the
 original controls and are included in SAVE SESSION. New phrases explicitly asks
-before replacing patterns; it requires evolving music enabled and no active song chain.
+before replacing patterns; it requires no active song chain. Generation does not start transport.
 
 LIBRARY includes CC0 Flute C4 and Jungle C3 starter files, prepared with 0.75 peak
 headroom. Imported WAVs retain their recorded levels. **LOAD** activates a
@@ -110,6 +110,45 @@ imports also return to kiosk. On this dedicated personal instrument the picker i
 an explicit maintenance route; it is not a secure public kiosk import workflow.
 Physical verification of picker return/relatching is still required.
 
+## Scape performance workspace (0.3.0)
+
+Scape now has a fixed transport/status strip above three panels: **Environment**,
+**Music**, and **Detail**. Start/Pause Environment, Play/Stop Music, and Stop All
+remain visible while scrolling. Status badges distinguish actual environment,
+sequence/music and drone state, including audio off. Biomes, moods, call routing
+and track roles use named choice dialogs instead of numeric sliders. Large sliders
+remain for continuous values. Readouts follow engine state; while dragging, stale
+snapshots cannot reposition the handle. Final slider values are resubmitted on
+release and await acknowledgement before accepting an older snapshot (bounded to
+750 ms so future changes from the original controls still appear).
+
+- Start Environment restores its last positive master level and preserves the
+  layer balance, including intentional zero levels. Pause Environment sets its
+  master to zero, including its procedural drone. Music is independent.
+- Environment Drone has a dedicated on/off action and level. Its last positive
+  level is remembered. It is distinct from a sustained instrument in a musical
+  track. Normal environment/drone/musical stops allow effects/release tails.
+- Play Music enables the director and starts the shared four-track sequencer;
+  it does not silently replace patterns. Stop Music disables evolution **and**
+  stops that sequencer, releasing its notes. The old Android evolution flag's
+  off action also stops music. Mixer and Scape share the same transport.
+- Hold Current Harmony holds evolution while notes continue; it is not Stop.
+- Generate New Phrases replaces the four track patterns only after confirmation,
+  using the chosen mood/roles, without starting transport. An active song chain
+  disables generation and music-start controls. Stop Music cancels that chain.
+- Stop All closes Android audio immediately, clears Scape/master/drone/music
+  states, releases sample voices and discards old effect, output/filter, DMA,
+  ring and resampling history. Starting Environment or Music reopens audio.
+  The sample remains loaded. Existing separate ambience/tape settings and preset
+  parameters are retained; fresh hiss/ambience configured there can return when
+  audio resumes. Stop All itself is silent because the stream is closed.
+
+Last positive environment/drone levels are retained in Android preferences. The
+firmware session format, accepted output gain and device-owner provisioning stay
+unchanged. Only the Android adapter changes; FM-1/browser firmware sources do not.
+This redesign still needs physical tablet acceptance for layout, fader response,
+state transitions, tails and Stop All/restart.
+
 ## Thread and timing boundaries
 
 The audio callback is the sole live engine owner. JNI uses atomic key/button states,
@@ -120,7 +159,7 @@ publication uses trylock and skips a snapshot when the UI owns the buffer.
 
 **The portable firmware's control loop and UI drawing still execute on the engine
 owner inside render calls.** This first parity port has not separated firmware
-UI rendering from DSP. The visible instrument panel refreshes at about 30 Hz; tablet parameter readouts update at about 5 Hz. Hidden pages skip Java display updates. Real-time deadline
+UI rendering from DSP. The visible instrument panel refreshes at about 30 Hz; mixer readouts update at about 5 Hz and Scape at about 10 Hz. Hidden pages skip Java display updates. Real-time deadline
 measurements on the tablet must determine whether a snapshot renderer or other
 refactoring is needed; the firmware's simulated CPU diagnostics are not physical
 Android timing. The app provides real callback-duration and AAudio underrun counters.
@@ -145,7 +184,7 @@ python3 android/build.py
 sh android/test.sh
 ```
 
-The APK is `build/android/Paleotone-Android-0.2.1-alpha.apk`.
+The APK is `build/android/Paleotone-Android-0.3.0-alpha.apk`.
 This dependency-light build calls javac, D8, aapt2, the NDK compiler, zipalign and
 apksigner directly. It requires no Gradle/Maven artifacts or proprietary FM-1 SDK.
 Generated tables/fonts/samples use the repository's existing generator.
