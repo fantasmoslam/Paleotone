@@ -134,11 +134,11 @@ Its reduced request pressure is established by scheduler tests; audible benefit
 and optimal cadence are not established. Retaining it as a diagnostic fallback
 is reasonable, but there is no evidence here to recommend enabling it by default.
 
-Before general release, prioritize a short normal-playing/focus-switch check
-with priority on, then reconnect/reload/unplug recovery and hidden/foreground
-transitions. Also review Original/Expanded and compatible-display switching.
-Longer sessions and representative sounds remain broader acceptance gaps.
-These checks are outstanding, not reported failures.
+Normal playing and physical focus switching with priority on are confirmed
+working by the user. Browser reconnect/reload and display-mode switching also
+passed the follow-up checks below. Actual USB unplug/replug and verified
+hidden/foreground transitions remain untested. Longer sessions and representative
+sounds remain broader coverage gaps, not known failures.
 
 Do not repeat the four completed smoke passes by default. If audio trouble
 returns, record exact pages, tempo, active tracks, sound state, firmware/renderer
@@ -163,7 +163,24 @@ synchronization without a device power cycle. The page was then left synchronize
 Expanded, compatible display off, Audio priority on, right Sequencer/Track 1,
 physical controls LEFT. A screenshot confirmed both rendered panels.
 
-These are browser/UI recovery observations, not audio acceptance or a physical
-USB unplug/replug test. Physical focus switching with priority on, normal-playing
-audio judgment, actual unplug/replug and verified hidden/foreground transitions
-remain outstanding. No firmware changes were made.
+These browser/UI observations do not establish physical USB unplug/replug
+behavior. In the subsequent user response, normal playing and physical focus
+switching were confirmed fine; the user emphasized that switching has never been
+a problem. Those checks are complete and should not be requested again without
+a new symptom. Actual unplug/replug and verified hidden/foreground transitions
+remain untested. No firmware changes were made.
+
+## Recent update-rate reporting
+
+The timing label now reports the latest completed interval of at least one
+second, rather than a connection-lifetime average. It is labeled
+`updates/s (recent)` and displays `Measuring update rate` during the first interval.
+Transfer/draw values remain latest-frame samples. This counts snapshot update
+callbacks, not painted frames, and an interval straddling a setting change can
+include both cadences. The next complete interval reflects the new cadence.
+
+Regression coverage simulates 60 seconds at 30 updates/s followed by 10 updates/s,
+repeated label reads, an idle interval and a delayed two-second interval.
+The existing exact-color, pixel-cache and scheduling tests also pass locally.
+This change is on the PR branch; the existing live trial still contains its
+previous inlined timing implementation until deliberately repackaged.

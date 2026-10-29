@@ -21,11 +21,15 @@ export function refreshDelay(elapsed,renderMs,{hidden=false,compatible=false,aud
   return Math.max(audioPriority?12:0,1000/fps-elapsed);
 }
 export class DisplayTiming {
-  constructor(now=()=>performance.now()){this.now=now;this.started=now();this.frames=0;this.last={};}
+  constructor(now=()=>performance.now()){this.now=now;this.started=now();this.frames=0;this.last={};this.rate=null;}
   record(metrics,drawMs){this.frames++;this.last={...metrics,drawMs};}
   text(){
-    const seconds=(this.now()-this.started)/1000;
-    return (this.frames/Math.max(.001,seconds)).toFixed(1)+' updates/s · '+
+    const at=this.now(),seconds=(at-this.started)/1000;
+    // Report the latest completed interval, so changing cadence does not keep
+    // showing a connection-lifetime average. This counts updates, not paints.
+    if(seconds>=1){this.rate=this.frames/seconds;this.frames=0;this.started=at;}
+    return (this.rate===null?'Measuring update rate':this.rate.toFixed(1)+' updates/s (recent)')+' · '+
       (this.last.transferMs||0).toFixed(1)+' ms transfer · '+(this.last.drawMs||0).toFixed(1)+' ms draw';
   }
 }
+

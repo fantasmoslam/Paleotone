@@ -30,5 +30,19 @@ assert.equal(refreshDelay(20,1,{audioPriority:true,compatible:true}),80);
 assert.equal(refreshDelay(20,1,{audioPriority:true,hidden:true}),230);
 assert.equal(refreshDelay(260,2,{audioPriority:true,hidden:true}),12);
 let now=0;const timing=new DisplayTiming(()=>now);now=1000;timing.record({transferMs:43},1.2);
-assert.match(timing.text(),/1.0 updates\/s · 43.0 ms transfer · 1.2 ms draw/);
+assert.match(timing.text(),/1.0 updates\/s \(recent\) · 43.0 ms transfer · 1.2 ms draw/);
+// A long fast session must not mask a newly selected slow request cadence.
+let clock=0;const recent=new DisplayTiming(()=>clock);
+assert.match(recent.text(),/^Measuring update rate/);
+for(let second=0;second<60;second++){
+  for(let frame=0;frame<30;frame++)recent.record({transferMs:25},.5);
+  clock+=1000;assert.match(recent.text(),/^30.0 updates\/s \(recent\)/);
+}
+for(let frame=0;frame<10;frame++)recent.record({transferMs:31},.7);
+clock+=1000;assert.match(recent.text(),/^10.0 updates\/s \(recent\) · 31.0 ms transfer · 0.7 ms draw/);
+assert.equal(recent.text(),recent.text(),'reading twice must not reset the last completed interval');
+clock+=1000;assert.match(recent.text(),/^0.0 updates\/s \(recent\)/);
+for(let frame=0;frame<8;frame++)recent.record({},0);
+clock+=2000;assert.match(recent.text(),/^4.0 updates\/s \(recent\)/,'use actual elapsed time after a delayed timer');
 console.log('display performance: all 65536 exact colors, reusable buffers, pane caching and bounded adaptive cadence passed');
+
