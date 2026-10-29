@@ -85,3 +85,23 @@ On the tablet:
 8. Repeat wired-headphone connect/disconnect while playing a sample, then run a
    sustained session to assess CPU, underruns and temperature. External MIDI still
    requires hardware verification, including note release on controller detach.
+
+
+## 0.2.0-alpha hardware follow-up
+
+Dylan confirms successful install via `adb install --no-streaming -r` after the
+streaming installer stalled. The workspace launches and starter playback works.
+Canceling the WAV picker returns to Paleotone with kiosk still active. Jungle
+sample playback and switching back to the firmware instrument work. The mixer
+sequence and per-track level/mute/pan checks work as expected. Slider handles are
+reported too small and difficult to press. Successful import of an external WAV,
+invalid import, delete/persistence, Scape confirmation and sustained-load/MIDI
+checks are still not individually recorded.
+
+## 0.2.1-alpha slider usability fix
+
+Mixer, Scape and sample-root sliders now use a 36 dp visible handle, an 8 dp track
+and a 64 dp tall touch area, with amber feedback while pressed. The native SeekBar
+continues to handle track tapping, dragging and scroll gestures. Explicit labels
+are supplied for accessibility. Audio and session formats are unchanged. The APK
+build/signature are checked; actual touch comfort needs tablet verification.

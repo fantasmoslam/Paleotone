@@ -1,4 +1,4 @@
-# Paleotone Android — native alpha 0.2.0
+# Paleotone Android — native alpha 0.2.1
 
 Standalone synthesis for Dylan's Samsung SM-T510. Initial measured device configuration:
 Android 15 / unofficial LineageOS 22.2-20260910, `armeabi-v7a,armeabi`, 48 kHz
@@ -27,7 +27,7 @@ this as a finished production instrument.
 Download the APK to the PC. In the same `platform-tools` PowerShell window:
 
 ```powershell
-.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.2.0-alpha.apk"
+.\adb.exe -s 192.168.0.46:33862 install --no-streaming -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.2.1-alpha.apk"
 .\adb.exe -s 192.168.0.46:33862 shell am start -n org.paleotone.synth/.MainActivity
 ```
 
@@ -65,6 +65,8 @@ Bluetooth is not a suitable route for assessing playable latency.
   can subsequently trigger more notes. PLAY controls transport.
 
 ## Tablet workspace and sample library (0.2.0)
+
+In 0.2.1, these sliders use 36 dp handles, 8 dp tracks and 64 dp tall touch areas.
 
 The top navigation keeps the existing **INSTRUMENT** panel and adds **MIXER**,
 **SCAPE**, and **LIBRARY**. MIXER exposes each track's level, mute and pan, tempo,
@@ -143,7 +145,7 @@ python3 android/build.py
 sh android/test.sh
 ```
 
-The APK is `build/android/Paleotone-Android-0.2.0-alpha.apk`.
+The APK is `build/android/Paleotone-Android-0.2.1-alpha.apk`.
 This dependency-light build calls javac, D8, aapt2, the NDK compiler, zipalign and
 apksigner directly. It requires no Gradle/Maven artifacts or proprietary FM-1 SDK.
 Generated tables/fonts/samples use the repository's existing generator.

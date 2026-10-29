@@ -2,7 +2,7 @@
 package org.paleotone.synth;
 import android.app.*;
 import android.content.*;
-import android.graphics.Color;
+import android.graphics.drawable.*;
 import android.net.Uri;
 import android.view.*;
 import android.widget.*;
@@ -59,7 +59,7 @@ final class Workspace extends LinearLayout {
         actions.addView(button("PLAY ON KEYBOARD",()->show(0)));
         sampleInfo=text("Preparing starter samples…",18,TEXT);lib.addView(sampleInfo);
         rootText=text("Root note · C4 (60)",16,TEAL);lib.addView(rootText);
-        root=new SeekBar(a);root.setMax(127);root.setProgress(rootNote);lib.addView(root,new LayoutParams(-1,dp(48)));
+        root=slider("Sample root note");root.setMax(127);root.setProgress(rootNote);lib.addView(root,new LayoutParams(-1,dp(64)));
         root.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar s,int v,boolean user){if(user){rootNote=v;Native.sampleRoot(v);saveSelection();}rootText.setText("Root note · "+note(rootNote)+" ("+rootNote+")");}
             public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}
@@ -77,6 +77,29 @@ final class Workspace extends LinearLayout {
     private LinearLayout column(){LinearLayout l=new LinearLayout(activity);l.setOrientation(VERTICAL);l.setPadding(dp(12),dp(6),dp(12),dp(12));return l;}
     private TextView text(String t,int size,int color){TextView v=new TextView(activity);v.setText(t);v.setTextSize(size);v.setTextColor(color);v.setPadding(0,dp(5),0,dp(5));return v;}
     private Button button(String t,Runnable r){Button b=new Button(activity);b.setText(t);b.setTextSize(13);b.setTextColor(TEXT);b.setMinHeight(dp(48));b.setOnClickListener(v->r.run());return b;}
+    private GradientDrawable sliderHandle(int color){
+        GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);
+        d.setColor(color);d.setSize(dp(36),dp(36));d.setStroke(dp(2),0xff111919);return d;
+    }
+    private GradientDrawable sliderRail(int color){
+        GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(4));d.setSize(dp(1),dp(8));return d;
+    }
+    private SeekBar slider(String label){
+        SeekBar s=new SeekBar(activity);s.setContentDescription(label);
+        StateListDrawable handle=new StateListDrawable();
+        handle.addState(new int[]{-android.R.attr.state_enabled},sliderHandle(0xff627069));
+        handle.addState(new int[]{android.R.attr.state_pressed},sliderHandle(0xffedb75b));
+        handle.addState(new int[]{},sliderHandle(TEAL));
+        LayerDrawable rail=new LayerDrawable(new Drawable[]{sliderRail(0xff40534a),
+            new ClipDrawable(sliderRail(TEAL),Gravity.LEFT,ClipDrawable.HORIZONTAL)});
+        rail.setId(0,android.R.id.background);rail.setId(1,android.R.id.progress);
+        s.setProgressDrawable(rail);s.setProgressTintList(null);s.setProgressBackgroundTintList(null);
+        s.setMinHeight(dp(8));s.setMaxHeight(dp(8));s.setMinimumHeight(dp(64));
+        s.setThumb(handle);s.setThumbTintList(null);s.setThumbOffset(dp(18));s.setSplitTrack(false);
+        // Keep the whole handle inside the widget at either end; native SeekBar
+        // retains track taps, horizontal dragging and vertical ScrollView gestures.
+        s.setPadding(dp(24),dp(8),dp(24),dp(8));return s;
+    }
     private void heading(LinearLayout c,String t){c.addView(text(t,22,TEAL));}
     private ScrollView scroll(View v){ScrollView s=new ScrollView(activity);s.setFillViewport(true);s.addView(v);return s;}
     private void addPage(View v){pages.addView(v,new FrameLayout.LayoutParams(-1,-1));pageViews.add(v);v.setVisibility(GONE);}
@@ -86,7 +109,7 @@ final class Workspace extends LinearLayout {
     private void addControl(LinearLayout parent,int id){parent.addView(control(id));}
     private View control(int id){
         LinearLayout box=column();values[id]=text(labels[id]+" · "+texts[id],17,TEXT);box.addView(values[id]);
-        SeekBar s=new SeekBar(activity);sliders[id]=s;s.setMax(state[id*3+2]-state[id*3+1]);s.setProgress(state[id*3]-state[id*3+1]);box.addView(s,new LayoutParams(-1,dp(48)));
+        SeekBar s=slider(labels[id]);sliders[id]=s;s.setMax(state[id*3+2]-state[id*3+1]);s.setProgress(state[id*3]-state[id*3+1]);box.addView(s,new LayoutParams(-1,dp(64)));
         s.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar bar,int value,boolean user){if(user)Native.control(id,value+state[id*3+1]);}
             public void onStartTrackingTouch(SeekBar bar){}public void onStopTrackingTouch(SeekBar bar){}
