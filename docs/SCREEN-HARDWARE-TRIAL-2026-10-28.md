@@ -148,3 +148,22 @@ and focus-lease costs. No coordinate fix is justified by the current evidence.
 
 PR #25 remains draft. This documentation update does not merge it, replace the
 production companion or change firmware.
+
+## Follow-up browser recovery smoke checks
+
+On the same real FM-1 connection in desktop Chrome, the trial was checked with
+Audio priority enabled. UI Disconnect changed status to Disconnected; Connect
+restored Felucca synchronized. Original then Expanded switching preserved
+synchronization. Compatible display enabled the live-image fallback and retained
+synchronization; disabling it returned to normal display.
+
+Reload reset the page to disconnected Original mode with Audio priority unchecked,
+as expected for non-persisted page settings. Clicking Connect restored
+synchronization without a device power cycle. The page was then left synchronized,
+Expanded, compatible display off, Audio priority on, right Sequencer/Track 1,
+physical controls LEFT. A screenshot confirmed both rendered panels.
+
+These are browser/UI recovery observations, not audio acceptance or a physical
+USB unplug/replug test. Physical focus switching with priority on, normal-playing
+audio judgment, actual unplug/replug and verified hidden/foreground transitions
+remain outstanding. No firmware changes were made.
