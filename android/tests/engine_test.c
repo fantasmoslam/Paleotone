@@ -21,6 +21,21 @@ int main(void) {
         free(before);free(after);puts("PASS: session restored in a fresh process; exact project round trip");return 0;
     }
     pt_boot(NULL,0);
+    assert(pt_control_count()==47);
+    for(unsigned i=0;i<pt_control_count();++i){
+        int v,lo,hi;char t[64];pt_control_read(i,&v,&lo,&hi,t);
+        assert(lo<=v&&v<=hi&&t[0]&&pt_control_label(i)[0]);
+    }
+    int v,lo,hi,other;char text[64];
+    pt_control_read(1,&other,&lo,&hi,text);
+    pt_control_set(0,9999);pt_control_read(0,&v,&lo,&hi,text);assert(v==hi);
+    pt_control_set(0,-9999);pt_control_read(0,&v,&lo,&hi,text);assert(v==lo);
+    pt_control_read(1,&v,&lo,&hi,text);assert(v==other);
+    pt_control_set(0,104);pt_control_set(8,-31);pt_control_read(8,&v,&lo,&hi,text);assert(v==-31);
+    pt_control_set(12,96);pt_control_read(12,&v,&lo,&hi,text);assert(v==96);
+    pt_control_set(39,1);pt_control_read(39,&v,&lo,&hi,text);assert(v==1);
+    pt_control_set(13,0);pt_control_set(14,0);pt_control_set(999,123);
+    puts("PASS: 47 tablet controls, range clamping, per-track isolation, tempo and biome");
     pt_keys(1u<<7);
     double sum=0; float peak=0;
     clock_t start=clock();

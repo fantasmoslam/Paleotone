@@ -1,4 +1,4 @@
-# Paleotone Android — native alpha 0.1.2
+# Paleotone Android — native alpha 0.2.0
 
 Standalone synthesis for Dylan's Samsung SM-T510. Initial measured device configuration:
 Android 15 / unofficial LineageOS 22.2-20260910, `armeabi-v7a,armeabi`, 48 kHz
@@ -27,7 +27,7 @@ this as a finished production instrument.
 Download the APK to the PC. In the same `platform-tools` PowerShell window:
 
 ```powershell
-.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.1.2-alpha.apk"
+.\adb.exe -s 192.168.0.46:33862 install -r "$env:USERPROFILE\Downloads\Paleotone-Android-0.2.0-alpha.apk"
 .\adb.exe -s 192.168.0.46:33862 shell am start -n org.paleotone.synth/.MainActivity
 ```
 
@@ -52,7 +52,7 @@ Bluetooth is not a suitable route for assessing playable latency.
 - Sessions are in app-private storage (`session.ptandroid`). Uninstalling removes them.
 - MIDI selects Android MIDI output ports from attached controllers. Channel-message
   parsing handles fragments, running status and interspersed real-time bytes.
-  External clock, SysEx, BLE discovery and file/sample import are not implemented.
+  External clock, SysEx and BLE discovery are not implemented. WAV import is available in LIBRARY.
 - Audio reconnects automatically after stream errors while foreground and playing,
   with a short debounce and at most five retries. Stop, backgrounding and lost focus
   cancel retries. If recovery is exhausted, START provides an explicit retry.
@@ -64,17 +64,60 @@ Bluetooth is not a suitable route for assessing playable latency.
   whether playback was stopped. PANIC releases local/controller notes; an active sequencer
   can subsequently trigger more notes. PLAY controls transport.
 
+## Tablet workspace and sample library (0.2.0)
+
+The top navigation keeps the existing **INSTRUMENT** panel and adds **MIXER**,
+**SCAPE**, and **LIBRARY**. MIXER exposes each track's level, mute and pan, tempo,
+and sequencer transport. SCAPE exposes habitat/drone levels, biome, environment
+layers and evolving-music settings. These edit the same firmware state as the
+original controls and are included in SAVE SESSION. New phrases explicitly asks
+before replacing patterns; it requires evolving music enabled and no active song chain.
+
+LIBRARY includes CC0 Flute C4 and Jungle C3 starter files. **LOAD** activates a
+sample; **PLAY ON KEYBOARD** opens the instrument keyboard. **USE INSTRUMENT**
+returns keyboard/MIDI to the firmware sounds. The banner always identifies the
+active mode. Each sample has an adjustable MIDI root note. Import uses the Android
+file picker, copies to private storage, validates before saving, and deduplicates
+identical files by SHA-256. DELETE removes only Paleotone's copy after confirmation.
+No broad storage permission is requested. Starter files are installed once, so a
+deleted starter is not recreated on every launch.
+
+Supported: RIFF WAV PCM 8/16/24/32-bit or float32, mono/stereo, 8–192 kHz, up to
+32 MiB and 4 million frames per file. Stereo is downmixed to mono; nonfinite float
+values are zeroed. One decoded sample is shared by eight voices with linear pitch
+conversion, a short attack/release and an end fade. Loading briefly pauses audio;
+copying/decoding runs on a worker. No sample allocation or disk I/O occurs inside
+the callback. The panel master slider and accepted output limiter also apply to
+sample audio. Sample keyboard notes are F3–G5; its octave buttons still belong to
+the firmware panel. MIDI note-on/off and all-notes-off are supported in sample mode;
+sustain pedal and other expression controls are not implemented for this layer.
+
+**Imported samples are a separate playable layer, not new firmware track presets.**
+They are not yet sequencer-triggered or assigned to Scape roles. Firmware sequencer
+sounds continue independently. There is no looping, slicing, recording, multisample
+mapping, or sample-library export in this release. Voice stealing can produce a
+transient under heavy retriggering; long ambient files are memory-bounded rather
+than streamed. Selection, root note and mode are retained separately from the
+unchanged session format. Samples survive app updates, but uninstalling removes
+the private library. Copies of original imports should be kept elsewhere.
+
+Import temporarily leaves lock-task mode for the system picker, then restores
+kiosk when returning. It retains device-owner/Home provisioning. Cancel and failed
+imports also return to kiosk. On this dedicated personal instrument the picker is
+an explicit maintenance route; it is not a secure public kiosk import workflow.
+Physical verification of picker return/relatching is still required.
+
 ## Thread and timing boundaries
 
 The audio callback is the sole live engine owner. JNI uses atomic key/button states,
-atomic encoder deltas and a bounded MIDI queue; MIDI producers serialize outside
+atomic encoder deltas, coalesced control values and a bounded MIDI queue; MIDI producers serialize outside
 the audio callback. Queue overflow requests a panic. There is no allocation, disk
 I/O, Java callback or blocking mutex acquisition on the audio thread. Display
 publication uses trylock and skips a snapshot when the UI owns the buffer.
 
 **The portable firmware's control loop and UI drawing still execute on the engine
 owner inside render calls.** This first parity port has not separated firmware
-UI rendering from DSP. The Java panel refreshes at about 30 Hz. Real-time deadline
+UI rendering from DSP. The visible instrument panel refreshes at about 30 Hz; tablet parameter readouts update at about 5 Hz. Hidden pages skip Java display updates. Real-time deadline
 measurements on the tablet must determine whether a snapshot renderer or other
 refactoring is needed; the firmware's simulated CPU diagnostics are not physical
 Android timing. The app provides real callback-duration and AAudio underrun counters.
@@ -99,7 +142,7 @@ python3 android/build.py
 sh android/test.sh
 ```
 
-The APK is `build/android/Paleotone-Android-0.1.2-alpha.apk`.
+The APK is `build/android/Paleotone-Android-0.2.0-alpha.apk`.
 This dependency-light build calls javac, D8, aapt2, the NDK compiler, zipalign and
 apksigner directly. It requires no Gradle/Maven artifacts or proprietary FM-1 SDK.
 Generated tables/fonts/samples use the repository's existing generator.
@@ -121,8 +164,9 @@ cover route debounce, bounded retry backoff and cancellation.
 APK validation checks signing, launch activity, API levels, 32-bit ARM ABI and
 native dependencies. The original 0.1.0 APK passed user-reported multitouch playing, display/sequencer
 tracking and save/restore. The 0.1.1 volume/headphone recovery changes also passed user testing, with a
-brief jitter during unplug transitions. The 0.1.2 kiosk behavior needs physical
-verification. See DEVICE-TESTS.md for exact acceptance boundaries.
+brief jitter during unplug transitions. The user reports 0.1.2 works as expected;
+specific emergency-exit and boot checks are not individually documented. The new
+0.2.0 workspace/library requires physical-device acceptance. See DEVICE-TESTS.md for exact acceptance boundaries.
 
 Device acceptance, in order:
 
@@ -133,7 +177,8 @@ Device acceptance, in order:
 5. SAVE SESSION, exit, reopen; verify project/preset retention and stopped transport.
 6. Test audio-focus interruption, headphones/USB routing and controller detach.
 7. Measure physical latency with suitable loopback equipment if required.
-8. Add kiosk/Home integration and provision device owner only after these pass.
+8. Test new library imports, sample mode, root note, reload after reopening and kiosk picker return.
+9. Verify kiosk maintenance and emergency exit; do not reprovision an existing owner for updates.
 
 ## Licensing
 

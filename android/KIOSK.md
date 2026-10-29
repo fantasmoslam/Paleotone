@@ -98,3 +98,16 @@ still require the above physical acceptance; no emulator/device-owner test was r
 Primary platform references:
 - https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode
 - https://developer.android.com/work/dpc/dedicated-devices/cookbook
+
+
+## Sample import in 0.2.0
+
+LIBRARY → IMPORT WAV temporarily calls stopLockTask for the Android document picker.
+Paleotone retains its saved kiosk-enabled flag and Home/device-owner policy, and
+restores lock-task on return, including cancellation. Import copies only the selected
+file. This intentionally exposes the system picker on a personal instrument; use
+maintenance restrictions appropriate to a public installation before offering it to
+untrusted users. Picker return still requires a physical-device check. Existing
+installs should update in place; do not repeat device-owner provisioning.
+
+File picker reference: https://developer.android.com/training/data-storage/shared/documents-files

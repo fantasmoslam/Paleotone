@@ -10,6 +10,7 @@
 #include <time.h>
 #include "engine.h"
 #include "output_stage.h"
+#include "sample_layer.h"
 
 #define JNI(name) Java_org_paleotone_synth_Native_##name
 #define PIXELS (240*240)
@@ -24,6 +25,21 @@ static float output_gain(void){return (float)(1u<<atomic_load(&output_level));}
 static uint32_t screen_pixels[PIXELS];
 static pthread_mutex_t screen_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned snapshot_due;
+#define CONTROL_CAP 64
+static int control_values[CONTROL_CAP*3+1];
+static char control_text[CONTROL_CAP][64];
+static _Atomic int control_pending[CONTROL_CAP+1];
+static _Atomic unsigned control_dirty[CONTROL_CAP+1];
+static pt_sample_layer sampler;
+static float *sample_data;
+static _Atomic unsigned sample_mode, sample_root=60;
+static unsigned sample_keys, previous_mode;
+static void snapshot(void){
+    pt_screen(screen_pixels);
+    unsigned n=pt_control_count();
+    for(unsigned i=0;i<n;++i)pt_control_read(i,&control_values[i*3],&control_values[i*3+1],&control_values[i*3+2],control_text[i]);
+    control_values[n*3]=(int)pt_playing();
+}
 static uint8_t save_data[1100000];
 /* Multiple non-audio producers serialize here. The consumer never locks. */
 static pthread_mutex_t midi_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -35,10 +51,20 @@ static uint64_t nanos(void) {
 }
 static void inputs(void) {
     if (atomic_exchange(&panic_requested, 0)) {
-        pt_panic();
+        pt_panic(); sample_panic(&sampler); sample_keys=0;
         atomic_store(&midi_r, atomic_load(&midi_w));
     }
-    pt_keys(atomic_load(&key_mask)); pt_buttons(atomic_load(&button_mask));
+    unsigned mode=atomic_load(&sample_mode), keys=atomic_load(&key_mask);
+    if(mode!=previous_mode){pt_panic();sample_panic(&sampler);sample_keys=0;previous_mode=mode;}
+    sampler.root=atomic_load(&sample_root);
+    if(mode){
+        unsigned changed=keys^sample_keys;
+        for(unsigned k=0;k<27;++k)if(changed&(1u<<k))sample_note(&sampler,53+k,keys&(1u<<k)?100:0,(unsigned)sample_rate);
+        sample_keys=keys;pt_keys(0);
+    }else pt_keys(keys);
+    pt_buttons(atomic_load(&button_mask));
+    for(unsigned i=0;i<=pt_control_count();++i)if(atomic_exchange_explicit(&control_dirty[i],0,memory_order_acquire))
+        pt_control_set(i,atomic_load(&control_pending[i]));
     pt_master(atomic_load(&master_value));
     for (unsigned i=0; i<7; ++i) {
         int n=atomic_exchange(&encoders[i], 0);
@@ -49,7 +75,11 @@ static void inputs(void) {
     /* Bound work even if a controller floods the port. */
     for (unsigned i=0; r!=w && i<64; ++i, ++r) {
         uint32_t m=midi_queue[r&255];
-        pt_midi(m&255, (m>>8)&127, (m>>16)&127);
+        unsigned status=m&240,note=(m>>8)&127,vel=(m>>16)&127;
+        if(mode){
+            if(status==0x90||status==0x80)sample_note(&sampler,note,status==0x90?vel:0,(unsigned)sample_rate);
+            if(status==0xb0&&(note==120||note==123))sample_panic(&sampler);
+        }else pt_midi(m&255,note,vel);
     }
     atomic_store_explicit(&midi_r, r, memory_order_release);
 }
@@ -60,6 +90,7 @@ static aaudio_data_callback_result_t audio_callback(AAudioStream *s, void *user,
     float *out=data;
     inputs();
     pt_render(out, (unsigned)frames, (unsigned)sample_rate);
+    if(atomic_load(&sample_mode))sample_mix(&sampler,out,(unsigned)frames,(unsigned)sample_rate,atomic_load(&master_value)/1023.0f);
     float peak=pt_output_process(&output_stage,out,(unsigned)frames,output_gain());
     atomic_store(&limited_frames,output_stage.limited);
     atomic_store(&peak_q15, (unsigned)(peak*32767));
@@ -68,7 +99,7 @@ static aaudio_data_callback_result_t audio_callback(AAudioStream *s, void *user,
         snapshot_due=0;
         /* UI may hold this mutex. Never wait for it on the audio thread. */
         if (!pthread_mutex_trylock(&screen_mutex)) {
-            pt_screen(screen_pixels);
+            snapshot();
             pthread_mutex_unlock(&screen_mutex);
         }
     }
@@ -90,7 +121,11 @@ static void stop(void) {
         AAudioStream_close(stream); stream=NULL;
     }
     atomic_store(&key_mask,0); atomic_store(&button_mask,0);
-    if (booted) pt_panic();
+    if (booted) {
+        for(unsigned i=0;i<=pt_control_count();++i)if(atomic_exchange(&control_dirty[i],0))pt_control_set(i,atomic_load(&control_pending[i]));
+        pt_panic();snapshot();
+    }
+    sample_panic(&sampler);sample_keys=0;
     atomic_store(&midi_r, atomic_load(&midi_w));
     for (unsigned i=0;i<7;++i) atomic_store(&encoders[i],0);
 }
@@ -101,7 +136,7 @@ JNIEXPORT void JNICALL JNI(init)(JNIEnv *env,jclass cls,jbyteArray saved) {
     if (n>sizeof save_data) n=0;
     if (n) (*env)->GetByteArrayRegion(env,saved,0,(jsize)n,(jbyte*)save_data);
     pt_boot(n ? save_data : NULL,n); booted=1;
-    pt_screen(screen_pixels);
+    snapshot();
 }
 JNIEXPORT jstring JNICALL JNI(start)(JNIEnv *env,jclass cls,jint buffers) {
     (void)cls;
@@ -200,3 +235,38 @@ JNIEXPORT jstring JNICALL JNI(stats)(JNIEnv *env,jclass cls) {
     return (*env)->NewStringUTF(env,text);
 }
 JNIEXPORT jint JNICALL JNI(peak)(JNIEnv *e,jclass c) {(void)e;(void)c;return (jint)atomic_load(&peak_q15);}
+
+JNIEXPORT jobjectArray JNICALL JNI(controlLabels)(JNIEnv *e,jclass c){
+    (void)c;unsigned n=pt_control_count();jclass string=(*e)->FindClass(e,"java/lang/String");
+    jobjectArray a=(*e)->NewObjectArray(e,n,string,NULL);if(!a)return NULL;
+    for(unsigned i=0;i<n;++i){jstring t=(*e)->NewStringUTF(e,pt_control_label(i));(*e)->SetObjectArrayElement(e,a,i,t);(*e)->DeleteLocalRef(e,t);}return a;
+}
+JNIEXPORT jintArray JNICALL JNI(controls)(JNIEnv *e,jclass c){
+    (void)c;unsigned n=pt_control_count()*3+1;jint values[CONTROL_CAP*3+1];
+    pthread_mutex_lock(&screen_mutex);memcpy(values,control_values,n*sizeof(jint));pthread_mutex_unlock(&screen_mutex);
+    jintArray a=(*e)->NewIntArray(e,n);if(a)(*e)->SetIntArrayRegion(e,a,0,n,values);return a;
+}
+JNIEXPORT jobjectArray JNICALL JNI(controlTexts)(JNIEnv *e,jclass c){
+    (void)c;unsigned n=pt_control_count();char values[CONTROL_CAP][64];
+    pthread_mutex_lock(&screen_mutex);memcpy(values,control_text,sizeof values);pthread_mutex_unlock(&screen_mutex);
+    jobjectArray a=(*e)->NewObjectArray(e,n,(*e)->FindClass(e,"java/lang/String"),NULL);if(!a)return NULL;
+    for(unsigned i=0;i<n;++i){jstring t=(*e)->NewStringUTF(e,values[i]);(*e)->SetObjectArrayElement(e,a,i,t);(*e)->DeleteLocalRef(e,t);}return a;
+}
+JNIEXPORT void JNICALL JNI(control)(JNIEnv *e,jclass c,jint slot,jint value){
+    (void)e;(void)c;if(slot<0||(unsigned)slot>pt_control_count())return;
+    if(!stream){pt_control_set((unsigned)slot,value);snapshot();return;}
+    atomic_store(&control_pending[slot],value);atomic_store_explicit(&control_dirty[slot],1,memory_order_release);
+}
+/* Called only on the activity thread after Native.stop: allocation never touches the callback. */
+JNIEXPORT jboolean JNICALL JNI(loadSample)(JNIEnv *e,jclass c,jfloatArray data,jint rate,jint root){
+    (void)c;if(stream)return JNI_FALSE;
+    unsigned n=data?(unsigned)(*e)->GetArrayLength(e,data):0;
+    if(data&&(n<2||n>4000000||rate<8000||rate>192000||root<0||root>127))return JNI_FALSE;
+    float *next=n?malloc(n*sizeof(float)):NULL;if(n&&!next)return JNI_FALSE;
+    if(n){(*e)->GetFloatArrayRegion(e,data,0,n,next);if((*e)->ExceptionCheck(e)){free(next);return JNI_FALSE;}}
+    sample_panic(&sampler);free(sample_data);sample_data=next;
+    sampler.data=next;sampler.frames=n;sampler.rate=rate;sample_keys=0;
+    atomic_store(&sample_root,root);if(!n)atomic_store(&sample_mode,0);return JNI_TRUE;
+}
+JNIEXPORT void JNICALL JNI(sampleMode)(JNIEnv *e,jclass c,jboolean enabled){(void)e;(void)c;atomic_store(&sample_mode,enabled?1:0);}
+JNIEXPORT void JNICALL JNI(sampleRoot)(JNIEnv *e,jclass c,jint note){(void)e;(void)c;if(note>=0&&note<=127)atomic_store(&sample_root,(unsigned)note);}

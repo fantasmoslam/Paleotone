@@ -55,7 +55,33 @@ it further by default. The brief route-transition jitter remains a polish item.
 
 ## 0.1.2-alpha kiosk boundary
 
-Adds optional Home/device-owner lock task and maintenance/ADB escape paths. None of
-the kiosk provisioning, actual lock-task exit, emergency broadcast or boot behavior
-has yet been reported as device-tested. See KIOSK.md. Audio DSP and output gain are
+Adds optional Home/device-owner lock task and maintenance/ADB escape paths. Dylan
+reports that everything works as it should. Individual provisioning, emergency
+broadcast and reboot results were not separately recorded. See KIOSK.md. Audio DSP and output gain are
 unchanged from the accepted 0.1.1 build.
+
+
+## 0.2.0-alpha workspace and samples — pending hardware acceptance
+
+Host checks pass for 47 parameter descriptors, range clamping, track isolation,
+tempo/biome changes, project persistence, WAV PCM/float conversion, invalid-file
+rejection and actual packaged starter decoding. Native sample tests exercise
+8-voice bounds, note release, panic, pitch/rate conversion and end-of-file behavior.
+The APK compiles and verifies; no Android emulator or physical tablet was available
+for this release's UI/picker checks. Do not describe host tests as device acceptance.
+
+On the tablet:
+
+1. Install with `adb install -r`; confirm the prior project and kiosk provisioning remain.
+2. Check all four tabs, legibility, original keys/encoders and title/⋮ maintenance escape.
+3. In MIXER, change one track at a time; confirm level/mute/pan and sequence Play/Stop.
+4. In SCAPE, test biome/layers and evolution. Confirm New phrases cancels without edits.
+5. In LIBRARY, load Flute C4 and Jungle C3, play rapidly with several fingers, change
+   root note and switch back to instrument. Listen for glitches and inspect xruns.
+6. Import a known valid WAV via the file picker; cancel once, then try an invalid file.
+   Confirm kiosk resumes and an earlier loaded sample remains usable after failure.
+7. Delete the active sample; confirm firmware mode returns. Reopen/reboot and check
+   selected sample/root/mode, library contents and session retention.
+8. Repeat wired-headphone connect/disconnect while playing a sample, then run a
+   sustained session to assess CPU, underruns and temperature. External MIDI still
+   requires hardware verification, including note release on controller detach.

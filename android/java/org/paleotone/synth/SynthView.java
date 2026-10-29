@@ -51,6 +51,7 @@ final class SynthView extends View {
     }
     void update(String stats,int peak,boolean running){
         this.stats=stats;this.peak=peak;this.running=running;
+        if(getVisibility()!=VISIBLE)return;
         Native.pixels(pixels);screen.setPixels(pixels,0,240,0,0,240,240);invalidate();
     }
     private void text(Canvas c,String s,float x,float y,float size,int color){paint.setColor(color);paint.setTextSize(size);paint.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));c.drawText(s,x,y,paint);}
@@ -60,7 +61,7 @@ final class SynthView extends View {
         super.onDraw(c);c.drawColor(BG);
         scale=Math.min(getWidth()/1280f,getHeight()/800f);dx=(getWidth()-1280*scale)/2;dy=(getHeight()-800*scale)/2;
         c.save();c.translate(dx,dy);c.scale(scale,scale);
-        text(c,"PALEOTONE",24,43,32,AMBER);text(c,"ANDROID / NATIVE ALPHA 0.1.2",252,40,12,MUTED);
+        text(c,"PALEOTONE",24,43,32,AMBER);text(c,"ANDROID / NATIVE ALPHA 0.2.0",252,40,12,MUTED);
         for(int i=0;i<6;++i){rect(c,actions[i],i==4?0xff573d32:PANEL);label(c,actions[i],i==1?(running?"STOP":"START"):actionNames[i],TEXT);}
         text(c,stats,24,74,13,MUTED);
         rect(c,new RectF(16,88,440,512),EDGE);

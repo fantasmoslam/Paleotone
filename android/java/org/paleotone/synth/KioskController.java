@@ -54,6 +54,12 @@ final class KioskController {
         KioskSession.exit(new AndroidPlatform(context,activity));
         if(activity!=null)activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
     }
+    static void suspendForPicker(Activity activity){
+        maintenanceRequested=true;
+        AndroidPlatform p=new AndroidPlatform(activity,activity);
+        if(p.locked())p.unlock();
+    }
+    static void resumeAfterPicker(Activity activity){maintenanceRequested=false;restore(activity);}
     static void menu(MainActivity activity){
         boolean owner=new AndroidPlatform(activity,activity).owner();
         String title=enabled(activity)?"Kiosk maintenance":"Paleotone kiosk setup";

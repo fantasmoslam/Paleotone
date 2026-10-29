@@ -13,3 +13,7 @@ void pt_panic(void);
 void pt_screen(uint32_t *argb);
 size_t pt_save(uint8_t *out, size_t cap);
 unsigned pt_playing(void);
+unsigned pt_control_count(void);
+const char *pt_control_label(unsigned slot);
+void pt_control_read(unsigned slot,int *value,int *min,int *max,char *text);
+void pt_control_set(unsigned slot,int value);

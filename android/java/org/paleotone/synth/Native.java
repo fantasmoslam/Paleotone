@@ -17,4 +17,11 @@ final class Native {
     static native void pixels(int[] pixels);
     static native String stats();
     static native int peak();
+    static native String[] controlLabels();
+    static native int[] controls();
+    static native String[] controlTexts();
+    static native void control(int slot,int value);
+    static native boolean loadSample(float[] data,int rate,int root);
+    static native void sampleMode(boolean enabled);
+    static native void sampleRoot(int note);
 }

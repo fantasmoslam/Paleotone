@@ -13,6 +13,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import zipfile
+import wave
 
 ROOT = Path(__file__).resolve().parents[1]
 SDK = Path(os.environ.get("ANDROID_HOME", os.environ.get("ANDROID_SDK_ROOT", "")))
@@ -24,6 +25,20 @@ NDK = SDK / "ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin"
 def run(*args):
     print("+", " ".join(map(str, args)), flush=True)
     subprocess.run(list(map(str, args)), cwd=ROOT, check=True)
+
+def starter_samples(destination):
+    destination.mkdir(parents=True,exist_ok=True)
+    # The repository flute is an intentionally shortened source with its original
+    # RIFF lengths. Write the available complete PCM frames with a correct header;
+    # Android user imports remain strict about truncated files.
+    for source,name in [("FLUTE/00_LDFlute_susvib_C4_v1_1.wav","Flute C4.wav"),
+                        ("JUNGLE/00_JungleNight_C3.wav","Jungle C3.wav")]:
+        with wave.open(str(ROOT/"assets/samples-cc0"/source),"rb") as original:
+            frames=original.readframes(original.getnframes())
+            align=original.getnchannels()*original.getsampwidth()
+            with wave.open(str(destination/name),"wb") as output:
+                output.setparams(original.getparams())
+                output.writeframes(frames[:len(frames)//align*align])
 
 def main():
     if not PLATFORM.is_file() or not (NDK/"armv7a-linux-androideabi28-clang").is_file():
@@ -49,8 +64,9 @@ def main():
         if file.is_file():shutil.copy(file,OUT/"assets/licenses"/file.name)
     shutil.copy(ROOT/"LICENSING.md",OUT/"assets/licenses/LICENSING.md")
     shutil.copy(ROOT/"assets/samples-cc0/ATTRIBUTION.txt",OUT/"assets/licenses/SAMPLES.txt")
+    starter_samples(OUT/"assets/starter")
     (OUT/"assets/BUILD.txt").write_text(
-        "Paleotone Android 0.1.2-alpha\nGPL-3.0-only\n"+
+        "Paleotone Android 0.2.0-alpha\nGPL-3.0-only\n"+
         subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()+
         "\nBase: 0390a03f732c5eeec9f62cb2b139df8738396766\n"+
         "Local modifications are included in the corresponding source archive.\n")
@@ -67,7 +83,7 @@ def main():
         run("keytool","-genkeypair","-keystore",key,"-storepass","android","-keypass","android",
             "-alias","androiddebugkey","-keyalg","RSA","-keysize","2048","-validity","10000",
             "-dname","CN=Paleotone Development,O=Paleotone,C=US")
-    apk=OUT/"Paleotone-Android-0.1.2-alpha.apk"
+    apk=OUT/"Paleotone-Android-0.2.0-alpha.apk"
     run(TOOLS/"apksigner","sign","--ks",key,"--ks-pass","pass:android","--key-pass","pass:android",
         "--out",apk,OUT/"aligned.apk")
     run(TOOLS/"apksigner","verify","--verbose",apk)

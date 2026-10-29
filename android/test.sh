@@ -14,3 +14,8 @@ javac -d build/android-tests android/java/org/paleotone/synth/AudioRecovery.java
 java -ea -cp build/android-tests org.paleotone.synth.AudioRecoveryTest
 javac -d build/android-tests android/java/org/paleotone/synth/KioskSession.java android/tests/KioskSessionTest.java
 java -ea -cp build/android-tests org.paleotone.synth.KioskSessionTest
+cc -O2 -std=c11 android/tests/sample_test.c -lm -o build/android-tests/sample_test
+build/android-tests/sample_test
+javac -d build/android-tests android/java/org/paleotone/synth/WavSample.java android/tests/WavSampleTest.java
+python3 -c 'from android.build import starter_samples; from pathlib import Path; starter_samples(Path("build/android-tests/starter"))'
+java -ea -cp build/android-tests org.paleotone.synth.WavSampleTest "build/android-tests/starter/Flute C4.wav" "build/android-tests/starter/Jungle C3.wav"
