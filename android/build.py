@@ -21,6 +21,9 @@ OUT = ROOT / "build/android"
 TOOLS = SDK / "build-tools/35.0.0"
 PLATFORM = SDK / "platforms/android-35/android.jar"
 NDK = SDK / "ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin"
+# 32-bit ARM for the SM-T510 (32-bit userspace), 64-bit ARM for the Tab S6 Lite and newer tablets.
+ABIS = [("armeabi-v7a", "armv7a-linux-androideabi28-clang"),
+        ("arm64-v8a", "aarch64-linux-android28-clang")]
 
 def run(*args):
     print("+", " ".join(map(str, args)), flush=True)
@@ -50,19 +53,21 @@ def starter_samples(destination):
                 output.writeframes(frames[:len(frames)//align*align])
 
 def main():
-    if not PLATFORM.is_file() or not (NDK/"armv7a-linux-androideabi28-clang").is_file():
+    if not PLATFORM.is_file() or not all((NDK/compiler).is_file() for _,compiler in ABIS):
         raise SystemExit("Install the documented Android SDK/NDK packages and set ANDROID_HOME.")
     if OUT.exists(): shutil.rmtree(OUT)
-    for name in ("lib/armeabi-v7a", "classes", "dex", "assets/licenses"):
+    for name in [f"lib/{abi}" for abi,_ in ABIS]+["classes", "dex", "assets/licenses"]:
         (OUT/name).mkdir(parents=True, exist_ok=True)
     run("python3", "tools/build.py", "--gen-only")
-    run(NDK/"armv7a-linux-androideabi28-clang", "-std=gnu11", "-O2",
-        "-ffp-contract=off", "-fwrapv", "-fPIC", "-shared", "-fvisibility=hidden",
-        "-ffunction-sections", "-fdata-sections", "-Wl,--gc-sections", "-Wl,-z,max-page-size=16384",
-        "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-unused-function",
-        "-Ibuild/gen", "-Ifirmware/src", "android/native/engine.c", "android/native/android_audio.c",
-        "-laaudio", "-llog", "-lm", "-o", OUT/"lib/armeabi-v7a/libpaleotone.so")
-    run(NDK/"llvm-strip", "--strip-unneeded", OUT/"lib/armeabi-v7a/libpaleotone.so")
+    for abi,compiler in ABIS:
+        library=OUT/"lib"/abi/"libpaleotone.so"
+        run(NDK/compiler, "-std=gnu11", "-O2",
+            "-ffp-contract=off", "-fwrapv", "-fPIC", "-shared", "-fvisibility=hidden",
+            "-ffunction-sections", "-fdata-sections", "-Wl,--gc-sections", "-Wl,-z,max-page-size=16384",
+            "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-unused-function",
+            "-Ibuild/gen", "-Ifirmware/src", "android/native/engine.c", "android/native/android_audio.c",
+            "-laaudio", "-llog", "-lm", "-o", library)
+        run(NDK/"llvm-strip", "--strip-unneeded", library)
     java = sorted((ROOT/"android/java").rglob("*.java"))
     run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", PLATFORM,
         "-d", OUT/"classes", *java)
@@ -84,7 +89,8 @@ def main():
         "--manifest", ROOT/"android/AndroidManifest.xml", "-A", OUT/"assets", OUT/"resources.zip")
     with zipfile.ZipFile(OUT/"unsigned.apk","a",zipfile.ZIP_DEFLATED) as archive:
         archive.write(OUT/"dex/classes.dex","classes.dex")
-        archive.write(OUT/"lib/armeabi-v7a/libpaleotone.so","lib/armeabi-v7a/libpaleotone.so")
+        for abi,_ in ABIS:
+            archive.write(OUT/"lib"/abi/"libpaleotone.so",f"lib/{abi}/libpaleotone.so")
     run(TOOLS/"zipalign", "-f", "-P", "16", "4", OUT/"unsigned.apk", OUT/"aligned.apk")
     key=Path(os.environ.get("ANDROID_KEYSTORE",str(ROOT/"build/android-signing/debug.keystore")))
     if not key.exists():
@@ -96,6 +102,9 @@ def main():
     run(TOOLS/"apksigner","sign","--ks",key,"--ks-pass","pass:android","--key-pass","pass:android",
         "--out",apk,OUT/"aligned.apk")
     run(TOOLS/"apksigner","verify","--verbose",apk)
+    with zipfile.ZipFile(apk) as archive:
+        missing=[abi for abi,_ in ABIS if f"lib/{abi}/libpaleotone.so" not in archive.namelist()]
+    if missing:raise SystemExit("APK is missing native libraries for: "+", ".join(missing))
     (OUT/"SHA256SUMS").write_text(hashlib.sha256(apk.read_bytes()).hexdigest()+"  "+apk.name+"\n")
     print(apk)
 

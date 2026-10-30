@@ -29,7 +29,7 @@ jobs:
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.2.12479018'
       - name: Native engine and session tests
         run: sh android/test.sh
-      - name: Build and verify ARM APK
+      - name: Build and verify ARM APK (32- and 64-bit)
         run: python3 android/build.py
       - name: Package corresponding source
         run: git archive --format=zip --output=build/android/Paleotone-Android-source.zip HEAD

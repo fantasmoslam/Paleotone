@@ -6,6 +6,10 @@ stereo, FAST hardware output at 192 frames. MIDI and USB host are advertised;
 the low-latency/pro-audio feature flags are absent. A hardware buffer spans 4 ms;
 this is **not** a physical latency measurement or an accepted synth performance result.
 
+The APK carries native libraries for both `armeabi-v7a` (the SM-T510's 32-bit userspace) and
+`arm64-v8a` (64-bit tablets such as the Galaxy Tab S6 Lite SM-P610 on official LineageOS 23.2).
+The 64-bit build has not yet been accepted on a device.
+
 ## Source baseline and scope
 
 Based on integration PR #26, `0390a03f732c5eeec9f62cb2b139df8738396766`.
@@ -203,7 +207,7 @@ audio, note on/off, MIDI channel messages, sequencer controls, screen conversion
 save sizing and restoration of the exact portable project in a separate process.
 Output tests cover gain, finite/stereo-linked limiting and recovery; Java policy tests
 cover route debounce, bounded retry backoff and cancellation.
-APK validation checks signing, launch activity, API levels, 32-bit ARM ABI and
+APK validation checks signing, launch activity, API levels, 32- and 64-bit ARM ABIs and
 native dependencies. The original 0.1.0 APK passed user-reported multitouch playing, display/sequencer
 tracking and save/restore. The 0.1.1 volume/headphone recovery changes also passed user testing, with a
 brief jitter during unplug transitions. The user reports 0.1.2 works as expected;
