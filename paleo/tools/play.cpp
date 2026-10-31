@@ -3,6 +3,9 @@
    paleo-play SCORE [--lead horn|fiddle|choir|blend] [--ostinato spiccato|mouthbow|both] [--threads N]
               [--period MS] [--gain DB] [--stem FILE] [--null]
    Prints, once a second: the time, the live voices, and how much of each audio period the engine used. */
+#ifndef NOMINMAX
+#define NOMINMAX /* keep windows.h from defining min and max macros */
+#endif
 #define MINIAUDIO_IMPLEMENTATION
 #define MA_NO_DECODING
 #define MA_NO_ENCODING

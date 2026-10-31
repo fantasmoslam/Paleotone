@@ -35,8 +35,8 @@ jobs:
         run: |
           mkdir build\paleo
           set SRC=paleo\engine\paleo.cpp paleo\faust\gen\taiko.cpp paleo\faust\gen\bigdrum.cpp paleo\faust\gen\logdrum.cpp paleo\faust\gen\rattle.cpp paleo\faust\gen\stone.cpp paleo\faust\gen\mouthbow.cpp paleo\faust\gen\horn.cpp paleo\faust\gen\pipe.cpp paleo\faust\gen\fiddle.cpp paleo\faust\gen\choir.cpp paleo\faust\gen\reverb.cpp
-          cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Ipaleo /Fe:build\paleo\paleo-play.exe paleo\tools\play.cpp %SRC%
-          cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Ipaleo /Fe:build\paleo\paleo-render.exe paleo\tools\render.cpp %SRC%
+          cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Ipaleo /Fe:build\paleo\paleo-play.exe paleo\tools\play.cpp %SRC% || exit /b 1
+          cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Ipaleo /Fe:build\paleo\paleo-render.exe paleo\tools\render.cpp %SRC% || exit /b 1
           copy paleo\scores\stampede.txt build\paleo\
       - name: Smoke test
         run: build\paleo\paleo-render.exe paleo\scores\stampede.txt build\paleo\test.wav --seconds 20
