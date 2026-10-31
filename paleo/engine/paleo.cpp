@@ -61,7 +61,7 @@ const PartDef kParts[] = {
   {"slitdrum", make_slitdrum, Ctl::struck, 32, 1, 0, 1.5f, {0,     70,   0,    260, .3f,  0,    0,   .720f,     9,    .3f,   0,   0,   0,    0,  .15f, .2f, 1}},
   {"claypot",  make_claypot,  Ctl::struck, 16, 1, 0, 1.5f, {0,     30,   0,    300, .25f, 0,    0,   .28f,      -1,   0,     0,   0,   0,    0,  .15f, .25f,1}},
   {"framedrum",make_framedrum,Ctl::struck, 32, 1, 0, 1.2f, {0,     40,   0,    300, .3f,  0,    0,   .348f,     9,    -.35f, 0,   0,   0,    0,  .15f, .2f, 1}},
-  {"rasp",     make_rasp,     Ctl::held,   16, 1, 0, .4f,  {0,     300,  6500, 0,   0,    0,    0,   1.51f,     14,   .4f,   0,   0,   0,    0,  0,    .2f, 1}},
+  {"rasp",     make_rasp,     Ctl::held,   16, 1, 0, .4f,  {0,     120,  6500, 0,   0,    0,    0,   .661f,     14,   .4f,   0,   0,   0,    0,  0,    .2f, 1}},
   {"bullroarer",make_bullroarer,Ctl::held, 4,  1, 0, 3.0f, {0,     50,   3000, 0,   0,    0,    0,   1.0f,      21,   0,     0,   0,   0,    1,  .4f,  0,   1}},
 };
 const int kNumParts = int(sizeof kParts / sizeof kParts[0]);
