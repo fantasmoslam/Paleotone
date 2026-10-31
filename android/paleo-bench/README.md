@@ -4,9 +4,8 @@ Times every PALEO instrument, the hall reverb, the echo, sample playback and the
 a tablet, so the engine can be planned around real numbers. It is a command-line program run through adb; it
 changes nothing on the tablet.
 
-- `dsp/`: the Faust designs (the prehistoric kit, gut fiddle, throat choir, hall and echo).
-- `gen/`: C++ generated from them by `gen.sh` (Faust 2.70), committed so builds need no Faust.
-- `bench.cpp`: the test. `faust_min.h`: the declarations the generated code expects.
+- The Faust designs and their generated C++ now live in `paleo/faust/` (shared with the PALEO engine).
+- `bench.cpp`: the test.
 - `build.sh`: builds `build/paleo-bench/<abi>/paleo-bench` with the NDK (or `build.sh host` for a computer).
 
 Run on the Tab S6 Lite (Windows PowerShell, from the folder holding the arm64-v8a build):

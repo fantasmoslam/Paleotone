@@ -2,7 +2,7 @@ name: PALEO speed test
 on:
   workflow_dispatch:
   push:
-    paths: ['android/paleo-bench/**', '.github/workflows/paleo-bench.yml']
+    paths: ['android/paleo-bench/**', 'paleo/faust/**', '.github/workflows/paleo-bench.yml']
 permissions:
   contents: read
 jobs:
@@ -36,7 +36,7 @@ jobs:
         shell: cmd
         run: |
           mkdir build\paleo-bench\windows-x64
-          cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Fe:build\paleo-bench\windows-x64\paleo-bench.exe android\paleo-bench\bench.cpp android\paleo-bench\gen\*.cpp
+          cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Fe:build\paleo-bench\windows-x64\paleo-bench.exe /Ipaleo\faust android\paleo-bench\bench.cpp paleo\faust\gen\*.cpp
       - name: Smoke test
         run: build\paleo-bench\windows-x64\paleo-bench.exe
       - uses: actions/upload-artifact@v4
