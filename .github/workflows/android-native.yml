@@ -29,6 +29,18 @@ jobs:
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.2.12479018'
       - name: Native engine and session tests
         run: sh android/test.sh
+      - name: Permanent signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          # Without the secret (forks, first setup) build.py generates a throwaway key.
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            mkdir -p build/android-signing
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > build/android-signing/debug.keystore
+            echo "Using the permanent signing key"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; this APK will not update over earlier installs"
+          fi
       - name: Build and verify ARM APK (32- and 64-bit)
         run: python3 android/build.py
       - name: Package corresponding source
