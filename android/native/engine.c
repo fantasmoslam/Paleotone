@@ -5,13 +5,23 @@
  */
 #include "engine.h"
 #include <string.h>
+#ifndef PT_ENGINE_DRAWS
+/* The engine runs the firmware's whole UI frame, every state change of ui_draw
+ * included, but rasterizes nothing: each canvas opens 0 x 0, so all drawing clips
+ * away. display.c draws the picture on the UI thread from pt_snapshot. */
+#define GFX_HOOKS 0
+#define GFX_HOOK_TEXT(x0, y0, x1, y1, s, flags) ((void)0)
+#define GFX_HOOK_BLIT(x, y, r0) ((void)0)
+#define GFX_HOOK_BEGIN() (w = h = 0)
+#define GFX_HOOK_PIXELS(n) ((void)0)
+#endif
 #include "../../web/emu/felucca_web.c"
+#include "controls.h"
+#include "converter.h"
 
 static float cache_l[128], cache_r[128];
 static unsigned cache_pos = 128;
-static float a[2], b[2];
-static double phase;
-static unsigned primed;
+static pt_converter conv;
 static void next(float *v) {
     if (cache_pos == 128) {
         web_render(128);
@@ -21,6 +31,7 @@ static void next(float *v) {
     }
     v[0] = cache_l[cache_pos]; v[1] = cache_r[cache_pos++];
 }
+void pt_prepare(unsigned rate) { conv_prepare(&conv, web_sample_rate(), rate); }
 void pt_boot(const uint8_t *saved, size_t size) {
     web_nor_erase();
     size_t nor_size = web_nor_size(), project_size = web_project_size();
@@ -34,19 +45,11 @@ void pt_boot(const uint8_t *saved, size_t size) {
         memcpy(web_project_import_buffer(), saved + 16 + nor_size, project_size);
         web_project_restore((uint32_t)project_size);
     }
-    cache_pos = 128; phase = 0; primed = 0;
+    cache_pos = 128; conv_reset(&conv);
 }
 void pt_render(float *out, unsigned frames, unsigned rate) {
-    if (!primed) { next(a); next(b); primed = 1; }
-    const double step = (double)web_sample_rate() / rate;
-    for (unsigned i = 0; i < frames; ++i) {
-        out[i*2] = a[0] + (b[0]-a[0]) * (float)phase;
-        out[i*2+1] = a[1] + (b[1]-a[1]) * (float)phase;
-        phase += step;
-        while (phase >= 1.0) {
-            a[0]=b[0]; a[1]=b[1]; next(b); phase-=1.0;
-        }
-    }
+    if (rate != conv.rate) pt_prepare(rate);   /* (tests; the app prepares before start) */
+    conv_run(&conv, out, frames, next);
 }
 void pt_keys(uint32_t mask) { web_keys(mask); }
 void pt_buttons(uint32_t mask) { web_buttons(mask); }
@@ -61,15 +64,6 @@ void pt_panic(void) {
     }
 }
 unsigned pt_playing(void) { return web_playing(); }
-void pt_screen(uint32_t *argb) {
-    const uint16_t *pixels = web_screen();
-    for (unsigned i = 0; i < 240*240; ++i) {
-        unsigned c = (pixels[i] >> 8) | ((pixels[i] & 255) << 8);
-        unsigned r=(c>>11)&31, g=(c>>5)&63, b=c&31;
-        argb[i] = 0xff000000u | ((r<<3 | r>>2)<<16) |
-            ((g<<2 | g>>4)<<8) | (b<<3 | b>>2);
-    }
-}
 size_t pt_save(uint8_t *out, size_t cap) {
     size_t n = web_nor_size(), p = web_project_size();
     if (cap < 16+n+p) return 0;
@@ -80,35 +74,9 @@ size_t pt_save(uint8_t *out, size_t cap) {
     return 16+n+p;
 }
 
-typedef struct {const char *label;int track;unsigned id;} pt_control;
-/* Track >=0 is explicit: dragging a mixer fader cannot edit another selected track. */
-static const pt_control controls[]={
- {"Track 1 level",0,P_LEVEL},{"Track 2 level",1,P_LEVEL},{"Track 3 level",2,P_LEVEL},{"Track 4 level",3,P_LEVEL},
- {"Track 1 mute",0,P_MUTE},{"Track 2 mute",1,P_MUTE},{"Track 3 mute",2,P_MUTE},{"Track 4 mute",3,P_MUTE},
- {"Track 1 pan",0,P_PAN},{"Track 2 pan",1,P_PAN},{"Track 3 pan",2,P_PAN},{"Track 4 pan",3,P_PAN},
- {"Tempo",-1,G_BPM},{"Habitat level",-1,G_SCAPE},{"Drone level",-1,G_SDRN},
- {"Day / night",-1,G_STIME},{"Distance",-1,G_SDIST},{"Music activity",-1,G_DDENS},
- {"Evolution",-1,G_DDRFT},{"Motion",-1,G_SMOTION},{"Creature call rate",-1,G_SCRATE},
- {"Danger",-1,G_SDNGR},{"Creature size",-1,G_SDSIZ},{"Evolving music",-1,G_DREAM},
- {"Hold harmony",-1,G_SCHOLD},{"Next harmony",-1,G_SCNEXT},{"New phrases",-1,G_SCNEW},
- {"Wind",-1,G_SL0},{"Water",-1,G_SL1},{"Rain",-1,G_SL2},{"Insects",-1,G_SL3},
- {"Frogs",-1,G_SL4},{"Birds",-1,G_SL5},{"Drips",-1,G_SL6},{"Rumble",-1,G_SL7},
- {"Track 1 role",-1,G_SROLE0},{"Track 2 role",-1,G_SROLE1},{"Track 3 role",-1,G_SROLE2},{"Track 4 role",-1,G_SROLE3},
- {"Biome",-1,G_SBIOME},{"Music mood",-1,G_DMOOD},{"Call track",-1,G_SCTRK},
- {"Pitch spread",-1,G_SCSPRD},{"Bed",-1,G_SBED},{"Melody",-1,G_SMELO},{"Bass",-1,G_SBASS},{"Pulse",-1,G_SPULSE}
-};
-unsigned pt_control_count(void){return sizeof controls/sizeof controls[0];}
-const char *pt_control_label(unsigned slot){return slot<pt_control_count()?controls[slot].label:"";}
-void pt_control_read(unsigned slot,int *value,int *min,int *max,char *text){
-    if(slot>=pt_control_count()){*value=*min=*max=0;text[0]=0;return;}
-    const pt_control *c=&controls[slot];
-    const param_desc_t *d=c->track<0?&GP[c->id]:&TP[c->id];
-    *value=c->track<0?song.g[c->id]:trk[c->track].p[c->id];*min=d->min;*max=d->max;
-    uint8_t before=fmt_named;
-    char formatted[64];const char *unit=0;param_format(d,*value,formatted,&unit);
-    fmt_named=before;
-    snprintf(text,64,"%s%s%s",formatted,unit&&*unit?" ":"",unit?unit:"");
-}
+unsigned pt_control_count(void){return PT_CONTROL_COUNT;}
+const char *pt_control_label(unsigned slot){return slot<PT_CONTROL_COUNT?controls[slot].label:"";}
+void pt_control_read(unsigned slot,int *value,int *min,int *max,char *text){control_read(slot,value,min,max,text);}
 void pt_control_set(unsigned slot,int value){
     if(slot==pt_control_count()){transport_req=value?1:2;return;}
     if(slot>=pt_control_count())return;
@@ -163,7 +131,7 @@ void pt_scape(unsigned command){
         sb_lp1=sb_lp2=sb_lp3=sb_lp4=sb_env=sb_h1=sb_h2=sb_hl=0;lim_env=LIM_T;
         memset(&clk,0,sizeof clk);click_req=0;memset(&pf,0,sizeof pf);
         memset(tp_buf,0,sizeof tp_buf);memset(&tp,0,sizeof tp);
-        memset(abuf,0,sizeof abuf);ring_r=ring_w;cache_pos=128;phase=0;primed=0;break;
+        memset(abuf,0,sizeof abuf);ring_r=ring_w;cache_pos=128;conv_reset(&conv);break;
     case PT_SCAPE_GENERATE:
         if(chain_busy())return;
         dream_compose(dream.valid?dream.root:(unsigned)((trk[0].p[P_ROOT]%12+12)%12));break;
@@ -172,4 +140,13 @@ void pt_scape(unsigned command){
     default:return;
     }
     ui.force=1;
+}
+
+unsigned pt_ui_frames(void){return felucca_dbg.ui_frames;}
+/* The display projection after the latest UI frame: transport and chain flags,
+ * then the firmware's own second-screen snapshot (remote_state.c). */
+uint32_t pt_snapshot(uint8_t *out,uint32_t cap){
+    if(cap<2+RS_MAX||!rs_capture())return 0;
+    out[0]=(uint8_t)(song.playing!=0);out[1]=(uint8_t)(chain_busy()!=0);
+    memcpy(out+2,rs_buf,rs_len);return 2+rs_len;
 }
