@@ -200,6 +200,12 @@ release key. A different build environment generates a different key: retain it
 with `ANDROID_KEYSTORE` or uninstall the old app before installing a differently
 signed build (uninstalling deletes its private session).
 
+CI signs with one permanent key stored in the repository secret
+`ANDROID_KEYSTORE_BASE64` (the keystore file, base64-encoded), so every CI build
+updates over the last. Local builds use the same key when that keystore is placed at
+`build/android-signing/debug.keystore`. Without the secret, CI falls back to a
+throwaway key and warns.
+
 ## Validation and remaining device checks
 
 Host tests exercise variable-sized output callbacks, 44.1→48 kHz conversion, finite
