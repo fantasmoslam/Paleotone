@@ -16,6 +16,8 @@ final class Native {
     static native void midi(int status,int d1,int d2);
     static native void pixels(int[] pixels);
     static native String stats();
+    /** Full diagnostics line for logcat, or null while audio is stopped. */
+    static native String report();
     static native int peak();
     static native String[] controlLabels();
     static native int[] controls();

@@ -22,9 +22,11 @@ Android's C AAudio API is used directly in this first build (API 28+), with
 low-latency/exclusive requests, a shared fallback, and a query of actual stream
 settings. Oboe remains a future option if measured driver behavior warrants its
 quirk handling. No claim is made that exclusive or MMAP operation is obtained.
-The stream selects its native rate; a continuous linear converter preserves the
-44.1 kHz firmware engine. Higher-quality conversion is a follow-up before treating
-this as a finished production instrument.
+The stream selects its native rate. A polyphase windowed-sinc converter
+(native/converter.h: 48 taps, 160 phases for 44.1→48 kHz) carries the 44.1 kHz
+firmware engine to it: flat within 0.1 dB to 18 kHz, folded images below −65 dB,
+0.54 ms of delay. The earlier linear converter lost 1.5 dB at 10 kHz and folded
+images back into the audio band only 20 dB down there (android/tests/converter_test.c).
 
 ## Install on the tablet
 
@@ -158,15 +160,38 @@ state transitions, tails and Stop All/restart.
 The audio callback is the sole live engine owner. JNI uses atomic key/button states,
 atomic encoder deltas, coalesced control values and a bounded MIDI queue; MIDI producers serialize outside
 the audio callback. Queue overflow requests a panic. There is no allocation, disk
-I/O, Java callback or blocking mutex acquisition on the audio thread. Display
-publication uses trylock and skips a snapshot when the UI owns the buffer.
+I/O, Java callback or blocking mutex acquisition on the audio thread.
 
-**The portable firmware's control loop and UI drawing still execute on the engine
-owner inside render calls.** This first parity port has not separated firmware
-UI rendering from DSP. The visible instrument panel refreshes at about 30 Hz; mixer readouts update at about 5 Hz and Scape at about 10 Hz. Hidden pages skip Java display updates. Real-time deadline
-measurements on the tablet must determine whether a snapshot renderer or other
-refactoring is needed; the firmware's simulated CPU diagnostics are not physical
-Android timing. The app provides real callback-duration and AAudio underrun counters.
+**Firmware screen drawing is off the audio thread.** The engine still runs the
+firmware's whole UI frame (ui_input, and every state change ui_draw makes) but its
+canvases open 0 × 0, so nothing is rasterized there (GFX_HOOK_BEGIN in engine.c).
+When the UI has taken the previous picture, the callback captures the firmware's own
+second-screen snapshot (remote_state.c, about 30 µs on a desktop CPU) into a lock-free
+triple buffer. The UI thread draws it with a second, drawing-only copy of the
+firmware (native/display.c, linked with every symbol local but its entry points),
+which also formats the mixer and Scape readouts. On a desktop CPU this removed
+screen drawing's 20% of render time and its spikes of up to 450 µs per callback.
+android/tests/display_test.c drives 120 s of random panel, MIDI and Scape input and
+requires the audio and every snapshot to be bit-identical with and without drawing
+in the engine. The display copy matches the firmware's own drawing pixel for pixel
+in about 75% of frames; the rest differ in about 1–3% of their pixels, because a
+snapshot redraws its page whole: value-change digit rolls show the new value at once,
+and the picture can be a frame ahead. The visible instrument panel refreshes at about
+30 Hz; mixer readouts update at about 5 Hz and Scape at about 10 Hz. Hidden pages take
+no snapshots.
+
+**Diagnostics.** The panel shows the stream settings, AAudio underruns (xruns),
+late callbacks (a callback that took longer than the audio it produced), render
+time and the output latency the stream reports from its timestamps (HAL and DSP path,
+not acoustic). Every 10 s while playing, and on each stop, a full line goes to logcat:
+
+    adb logcat -d -s PaleotoneAudio
+
+It names the tablet model and 32/64-bit build, then rate, burst, buffer and capacity,
+sharing mode, seconds running, callbacks, underruns, late callbacks, the longest gap
+between callbacks, average and maximum render time, current and maximum output
+latency, screen snapshots and their maximum capture time. Counters restart with
+each audio start.
 
 Optional kiosk mode is available in 0.1.2; installing the app alone leaves it off.
 Hold the PALEOTONE title for three seconds or use HELP → Kiosk / maintenance.
@@ -209,7 +234,8 @@ throwaway key and warns.
 ## Validation and remaining device checks
 
 Host tests exercise variable-sized output callbacks, 44.1→48 kHz conversion, finite
-audio, note on/off, MIDI channel messages, sequencer controls, screen conversion,
+audio, note on/off, MIDI channel messages, sequencer controls, display snapshots and
+the drawing-free engine's equivalence, converter response,
 save sizing and restoration of the exact portable project in a separate process.
 Output tests cover gain, finite/stereo-linked limiting and recovery; Java policy tests
 cover route debounce, bounded retry backoff and cancellation.
@@ -224,7 +250,8 @@ Device acceptance, in order:
 
 1. Launch, play a note, release it; check multitouch and all panel controls.
 2. Confirm sound and readable pixels; collect the displayed actual stream settings.
-3. Run a sequencer pattern while moving macros; watch/listen for underruns.
+3. Run a sequencer pattern while moving macros; listen, then read underruns and
+   late callbacks with `adb logcat -d -s PaleotoneAudio`.
 4. Try a larger buffer if needed; compare sustained operation and heat.
 5. SAVE SESSION, exit, reopen; verify project/preset retention and stopped transport.
 6. Test audio-focus interruption, headphones/USB routing and controller detach.

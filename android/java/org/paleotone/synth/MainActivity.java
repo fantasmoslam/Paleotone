@@ -10,6 +10,7 @@ import android.media.AudioDeviceInfo;
 import android.view.*;
 import android.widget.Toast;
 import android.util.AtomicFile;
+import android.util.Log;
 import java.io.*;
 
 public final class MainActivity extends Activity {
@@ -24,6 +25,7 @@ public final class MainActivity extends Activity {
     private AudioManager audio;
     private AtomicFile session;
     private final Handler handler=new Handler(Looper.getMainLooper());
+    private long lastReport;
     private final AudioManager.OnAudioFocusChangeListener focus=change->{
         if(change==AudioManager.AUDIOFOCUS_GAIN){
             focusHeld=true;
@@ -60,6 +62,11 @@ public final class MainActivity extends Activity {
                 recovery.failed(now);
                 if(recovery.exhausted()){recovery.cancel();wantAudio=false;panel.notice="Audio unavailable — tap START to retry";}
             }
+        }
+        /* Every 10 s while playing: adb logcat -d -s PaleotoneAudio */
+        if(running&&now-lastReport>=10000){
+            lastReport=now;String report=Native.report();
+            if(report!=null)Log.i("PaleotoneAudio",Build.MODEL+" | "+report);
         }
         panel.update(Native.stats(),Native.peak(),running||recovery.pending());
         workspace.update(running||recovery.pending());
@@ -180,7 +187,7 @@ public final class MainActivity extends Activity {
         }else if(id==4){Native.panic();panel.release();}
         else if(id==5){
             new AlertDialog.Builder(this).setTitle("Paleotone Android • early alpha")
-                .setMessage("Play the multitouch keyboard. Drag encoder circles up/down, or tap their −/+ buttons. Hold any panel button for firmware alternate functions. SELECT moves through fields; ENGINE and PRESET choose sounds.\n\nSAVE SESSION briefly stops audio, writes the current project and flash, then resumes. Leaving the app also saves. Android force-stop, power loss, or a crash can lose unsaved changes. The firmware SAVE button retains its original project menu.\n\nMIDI lists Android controller output ports; connect via USB OTG. MIDI channel messages are supported; MIDI clock and SysEx are not yet bridged. LIBRARY imports uncompressed WAV files into a separate eight-voice sample layer; switch between sample and firmware keyboard/MIDI there. Samples are not mapped to sequencer tracks yet.\n\n48 kHz output uses linear conversion from the 44.1 kHz firmware engine. Diagnostics report actual stream settings, not measured physical latency. Firmware UI drawing still shares engine execution in this parity build.\n\nUse wired audio for testing. Audio reconnects automatically after an output disconnect. Tap AUDIO for Normal (+6 dB), Boost (+12 dB), or Original output. A stereo limiter protects digital peaks; begin with low Android media volume. Buffer changes pause audio. Kiosk mode is optional. Hold the PALEOTONE title for three seconds, or use Kiosk / maintenance here, to enter setup or exit to Android settings. Device-owner provisioning is required before enabling full kiosk mode.\n\nGPL-3.0-only. Paleotone builds on Felucca and GHOULBOX. Third-party notices are included in the APK assets. Full corresponding source accompanies this build.")
+                .setMessage("Play the multitouch keyboard. Drag encoder circles up/down, or tap their −/+ buttons. Hold any panel button for firmware alternate functions. SELECT moves through fields; ENGINE and PRESET choose sounds.\n\nSAVE SESSION briefly stops audio, writes the current project and flash, then resumes. Leaving the app also saves. Android force-stop, power loss, or a crash can lose unsaved changes. The firmware SAVE button retains its original project menu.\n\nMIDI lists Android controller output ports; connect via USB OTG. MIDI channel messages are supported; MIDI clock and SysEx are not yet bridged. LIBRARY imports uncompressed WAV files into a separate eight-voice sample layer; switch between sample and firmware keyboard/MIDI there. Samples are not mapped to sequencer tracks yet.\n\nThe 44.1 kHz firmware engine reaches the device rate through a windowed-sinc converter. The firmware screen is drawn off the audio thread from snapshots. Diagnostics show underruns, late callbacks and the output latency the audio stream reports (not acoustic latency); a full line is logged every 10 seconds under PaleotoneAudio.\n\nUse wired audio for testing. Audio reconnects automatically after an output disconnect. Tap AUDIO for Normal (+6 dB), Boost (+12 dB), or Original output. A stereo limiter protects digital peaks; begin with low Android media volume. Buffer changes pause audio. Kiosk mode is optional. Hold the PALEOTONE title for three seconds, or use Kiosk / maintenance here, to enter setup or exit to Android settings. Device-owner provisioning is required before enabling full kiosk mode.\n\nGPL-3.0-only. Paleotone builds on Felucca and GHOULBOX. Third-party notices are included in the APK assets. Full corresponding source accompanies this build.")
                 .setNeutralButton("Kiosk / maintenance",(d,w)->maintenance())
                 .setPositiveButton("Close",null).show();
         }

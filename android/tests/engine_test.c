@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #include "../native/engine.h"
+#include "../native/display.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -54,7 +55,17 @@ int main(void) {
         if(block==500){pt_encoder(0,1);pt_encoder(1,1);}
     }
     assert(sum>1);pt_panic();
-    uint32_t *pixels=calloc(240*240,sizeof *pixels);assert(pixels);pt_screen(pixels);
+    /* The screen is drawn by the display copy from the engine's snapshot. */
+    uint8_t *snap=malloc(PT_SNAPSHOT_MAX);assert(snap);uint32_t size=pt_snapshot(snap,PT_SNAPSHOT_MAX);
+    assert(size>2&&!pt_snapshot(snap,100));
+    pt_display_boot();assert(pt_display_apply(snap,size));assert(!pt_display_apply(snap,1));
+    assert(pt_display_playing()==pt_playing());
+    for(unsigned i=0;i<pt_control_count();++i){
+        int a,b,c,d,e,f;char x[64],y[64];pt_control_read(i,&a,&b,&c,x);pt_display_control_read(i,&d,&e,&f,y);
+        assert(a==d&&b==e&&c==f&&!strcmp(x,y));
+    }
+    free(snap);
+    uint32_t *pixels=calloc(240*240,sizeof *pixels);assert(pixels);pt_display_screen(pixels);
     unsigned nonblack=0;for(unsigned i=0;i<240*240;++i){assert((pixels[i]>>24)==255);if(pixels[i]&0xffffff)++nonblack;}
     assert(nonblack>100);free(pixels);
     uint8_t *saved=malloc(1100000);assert(saved);
@@ -62,5 +73,5 @@ int main(void) {
     assert(pt_save(saved,100)==0);
     const char *path=getenv("PT_SAVE_PATH");if(path){FILE*f=fopen(path,"wb");assert(f);assert(fwrite(saved,1,n,f)==n);fclose(f);}
     free(saved);
-    printf("PASS: variable callbacks, 44.1->48 kHz, notes, MIDI, sequencer, pixels, save; peak %.4f; CPU %.2fs\n",peak,(double)(clock()-start)/CLOCKS_PER_SEC);
+    printf("PASS: variable callbacks, 44.1->48 kHz, notes, MIDI, sequencer, display snapshot and controls, save; peak %.4f; CPU %.2fs\n",peak,(double)(clock()-start)/CLOCKS_PER_SEC);
 }

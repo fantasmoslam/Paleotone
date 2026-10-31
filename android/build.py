@@ -61,12 +61,19 @@ def main():
     run("python3", "tools/build.py", "--gen-only")
     for abi,compiler in ABIS:
         library=OUT/"lib"/abi/"libpaleotone.so"
-        run(NDK/compiler, "-std=gnu11", "-O2",
-            "-ffp-contract=off", "-fwrapv", "-fPIC", "-shared", "-fvisibility=hidden",
-            "-ffunction-sections", "-fdata-sections", "-Wl,--gc-sections", "-Wl,-z,max-page-size=16384",
+        flags=["-std=gnu11", "-O2", "-ffp-contract=off", "-fwrapv", "-fPIC", "-fvisibility=hidden",
+            "-ffunction-sections", "-fdata-sections",
             "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-unused-function",
-            "-Ibuild/gen", "-Ifirmware/src", "android/native/engine.c", "android/native/android_audio.c",
+            "-Ibuild/gen", "-Ifirmware/src"]
+        # The display copy of the firmware: every symbol local but its entry points,
+        # so it shares nothing with the engine's copy.
+        display=OUT/"lib"/abi/"display.o"
+        run(NDK/compiler, *flags, "-c", "android/native/display.c", "-o", display)
+        run(NDK/"llvm-objcopy", "--wildcard", "--keep-global-symbol=pt_display_*", display)
+        run(NDK/compiler, *flags, "-shared", "-Wl,--gc-sections", "-Wl,-z,max-page-size=16384",
+            "android/native/engine.c", "android/native/android_audio.c", display,
             "-laaudio", "-llog", "-lm", "-o", library)
+        display.unlink()
         run(NDK/"llvm-strip", "--strip-unneeded", library)
     java = sorted((ROOT/"android/java").rglob("*.java"))
     run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", PLATFORM,
@@ -80,7 +87,7 @@ def main():
     shutil.copy(ROOT/"assets/samples-cc0/ATTRIBUTION.txt",OUT/"assets/licenses/SAMPLES.txt")
     starter_samples(OUT/"assets/starter")
     (OUT/"assets/BUILD.txt").write_text(
-        "Paleotone Android 0.3.0-alpha\nGPL-3.0-only\n"+
+        "Paleotone Android 0.3.1-alpha\nGPL-3.0-only\n"+
         subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()+
         "\nBase: 0390a03f732c5eeec9f62cb2b139df8738396766\n"+
         "Local modifications are included in the corresponding source archive.\n")
@@ -98,7 +105,7 @@ def main():
         run("keytool","-genkeypair","-keystore",key,"-storepass","android","-keypass","android",
             "-alias","androiddebugkey","-keyalg","RSA","-keysize","2048","-validity","10000",
             "-dname","CN=Paleotone Development,O=Paleotone,C=US")
-    apk=OUT/"Paleotone-Android-0.3.0-alpha.apk"
+    apk=OUT/"Paleotone-Android-0.3.1-alpha.apk"
     run(TOOLS/"apksigner","sign","--ks",key,"--ks-pass","pass:android","--key-pass","pass:android",
         "--out",apk,OUT/"aligned.apk")
     run(TOOLS/"apksigner","verify","--verbose",apk)
