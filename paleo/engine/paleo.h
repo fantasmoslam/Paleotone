@@ -17,7 +17,7 @@ std::vector<Event> read_score(const char* path);
 
 enum class Lead { horn, fiddle, choir, blend };
 enum class Ostinato { spiccato, mouthbow, both };
-struct Options { int sample_rate = 48000; int threads = 0; /* 0 = all but one core */ Lead lead = Lead::blend;
+struct Options { int sample_rate = 48000; int threads = 0; /* 0 = all but one core */ Lead lead = Lead::fiddle;
                  Ostinato ostinato = Ostinato::spiccato; };
 
 class Engine {
