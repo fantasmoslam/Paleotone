@@ -4,7 +4,11 @@
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
 #endif
+#ifdef _MSC_VER
+#define RESTRICT __restrict
+#else
 #define RESTRICT __restrict__
+#endif
 struct Soundfile;
 struct Meta { virtual ~Meta() {} virtual void declare(const char*, const char*) = 0; };
 struct UI {

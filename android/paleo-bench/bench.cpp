@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* PALEO speed test (Step 0): times every instrument and a full STAMPEDE-sized moment on this device.
-   Run: adb push paleo-bench /data/local/tmp/ && adb shell /data/local/tmp/paleo-bench */
+   Run: adb push paleo-bench /data/local/tmp/ && adb shell /data/local/tmp/paleo-bench (or paleo-bench.exe on Windows) */
 #include "faust_min.h"
 #include <chrono>
 #include <cmath>
@@ -8,12 +8,16 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <thread>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sched.h>
-#include <unistd.h>
+#endif
 #ifdef __ANDROID__
 #include <sys/system_properties.h>
 #endif
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64)
 #include <xmmintrin.h>
 #endif
 #define DECL(n) dsp* make_##n();
@@ -75,21 +79,28 @@ static double sampler(int voices, double secs) {
   }
   return 100.0 * (now() - t0) / secs;
 }
+#ifdef _WIN32
+static void pin(int cpu) { SetThreadAffinityMask(GetCurrentThread(), DWORD_PTR(1) << cpu); }
+#else
 static void pin(int cpu) { cpu_set_t s; CPU_ZERO(&s); CPU_SET(cpu, &s); sched_setaffinity(0, sizeof s, &s); }
+#endif
 static void freeall(std::vector<Voice*>& vs) { for (auto* v : vs) { delete v->d; delete v; } vs.clear(); }
 
 int main() {
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64)
   _mm_setcsr(_mm_getcsr() | 0x8040);
 #elif defined(__aarch64__)
   { uint64_t f; asm volatile("mrs %0, fpcr" : "=r"(f)); asm volatile("msr fpcr, %0" :: "r"(f | (1 << 24))); }
 #endif
   setvbuf(stdout, nullptr, _IONBF, 0);
   char model[96] = "unknown", soc[96] = "unknown";
+#ifdef _WIN32
+  strcpy(model, "Windows PC");
+#endif
 #ifdef __ANDROID__
   __system_property_get("ro.product.model", model); __system_property_get("ro.soc.model", soc);
 #endif
-  int ncpu = int(sysconf(_SC_NPROCESSORS_CONF));
+  int ncpu = int(std::thread::hardware_concurrency()); if (ncpu < 1) ncpu = 1; if (ncpu > 64) ncpu = 64;
   printf("PALEO speed test 1\ndevice %s, chip %s, %d cores, %s, block %d frames at %d Hz\n\n", model, soc, ncpu,
          sizeof(void*) == 8 ? "64-bit" : "32-bit", BLOCK, SR);
   /* 1. Find the fastest core with the same small job on each. */
