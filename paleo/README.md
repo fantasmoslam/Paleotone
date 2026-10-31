@@ -6,7 +6,7 @@ in the browser. Plan: https://claude.ai/artifact/3Kagh8rE2YXGsjbAeCzrmX (Step 1)
 
 | Folder | What |
 | --- | --- |
-| `faust/dsp` | The instrument designs in Faust: taiko, big skin drum, log drum, seed rattle, struck stones, mouth bow, horn (and braam), drone pipe, gut fiddle, throat choir, and the reverb buses |
+| `faust/dsp` | The instrument designs in Faust: taiko, big skin drum, log drum, seed rattle, struck stones, mouth bow, horn (and braam), drone pipe, gut fiddle, throat choir, the batch-1 instruments (bone flute, reed panpipes, bowed bone, slit drum, clay pot drum, frame drum, bone rasp, bullroarer), and the reverb buses |
 | `faust/gen` | C++ generated from them by `faust/gen.sh` (Faust 2.70), committed so builds need no Faust |
 | `engine` | The engine: voices and their control, per-part channel strips, hall/room/tail, ducking, risers, sub drops, bus glue, a worker pool across cores |
 | `tools/render.cpp` | `paleo-render`: a score to a float WAV, offline |
@@ -17,6 +17,9 @@ in the browser. Plan: https://claude.ai/artifact/3Kagh8rE2YXGsjbAeCzrmX (Step 1)
 The mix levels in `engine/paleo.cpp` (`kParts`) were measured from the STAMPEDE v5 renders: each part's gain is
 the song's target level divided by that part's measured active RMS after its drive and EQ, so the engine's
 render matches v5 to within about 0.3 dB in every 8-second section.
+
+The batch-1 instruments have no song to match yet. Their gains were set against the STAMPEDE parts by active level
+(for example bone flute 4 dB under the fiddle, rasp 2 dB under the rattle). `scores/kit-demo.txt` plays all eight in one groove.
 
 Build here: `sh paleo/build.sh` (Linux or macOS). CI (`.github/workflows/paleo.yml`) builds the Windows
 programs and renders STAMPEDE to MP3.

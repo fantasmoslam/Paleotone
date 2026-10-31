@@ -38,6 +38,7 @@ jobs:
           cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Ipaleo /Fe:build\paleo\paleo-play.exe paleo\tools\play.cpp %SRC% || exit /b 1
           cl /nologo /O2 /std:c++17 /EHsc /w /arch:AVX2 /Ipaleo /Fe:build\paleo\paleo-render.exe paleo\tools\render.cpp %SRC% || exit /b 1
           copy paleo\scores\stampede.txt build\paleo\
+          copy paleo\scores\kit-demo.txt build\paleo\
       - name: Smoke test
         run: build\paleo\paleo-render.exe paleo\scores\stampede.txt build\paleo\test.wav --seconds 20
       - uses: actions/upload-artifact@v4
@@ -47,4 +48,5 @@ jobs:
             build/paleo/paleo-play.exe
             build/paleo/paleo-render.exe
             build/paleo/stampede.txt
+            build/paleo/kit-demo.txt
           retention-days: 30

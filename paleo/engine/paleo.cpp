@@ -21,6 +21,8 @@
 
 dsp* make_taiko(); dsp* make_bigdrum(); dsp* make_logdrum(); dsp* make_rattle(); dsp* make_stone();
 dsp* make_mouthbow(); dsp* make_horn(); dsp* make_pipe(); dsp* make_fiddle(); dsp* make_choir(); dsp* make_reverb();
+dsp* make_boneflute(); dsp* make_panpipes(); dsp* make_bowedbone(); dsp* make_slitdrum(); dsp* make_claypot();
+dsp* make_framedrum(); dsp* make_rasp(); dsp* make_bullroarer();
 
 namespace paleo {
 namespace {
@@ -28,7 +30,7 @@ const int kChunk = 32;       /* control rate: parameters update every 32 frames 
 const int kMaxBlock = 1024;  /* render() splits longer requests */
 const int kTaskVoices = 6;   /* voices per worker task */
 
-enum class Ctl { struck, horn, pipe, lead, spiccato };
+enum class Ctl { struck, horn, pipe, lead, spiccato, held };   /* held: gate and gain on for the note, the voice shapes itself */
 struct Strip {                /* mix4.py's chain for one part */
   float pre;                  /* drive into tanh, 0 = clean */
   float lo, hi, dipf, dipd, bf, bb, k;
@@ -52,6 +54,15 @@ const PartDef kParts[] = {
   {"choir",    make_choir,    Ctl::lead,   96, 4, 12,.6f,  {0,     75,   8000, 280, .4f,  2600, .7f, .353994f,  24,   0,     .75f,.2f, .08f, .3f,.35f, 0,   .7f}},
   {"braam",    make_horn,     Ctl::horn,   12, 1, 0, .5f,  {1.5f,  65,   3200, 0,   0,    1200, .8f, .122933f,  17,   0,     0,   0,   0,    0,  .45f, 0,   1}},
   {"pipe",     make_pipe,     Ctl::pipe,   4,  1, 0, .5f,  {0,     70,   2400, 260, .3f,  0,    0,   .0367254f, 21,   0,     0,   0,   0,    1,  .4f,  0,   1}},
+  /* batch 1 of new instruments; k set against the parts above by active level (see paleo/README.md) */
+  {"boneflute", make_boneflute, Ctl::held, 16, 1, 0, .8f,  {0,     200,  7500, 0,   0,    0,    0,   .606f,     15,   .3f,   .375f,.25f,.12f, .3f,.35f, 0,   1}},
+  {"panpipes", make_panpipes, Ctl::held,   24, 1, 0, .6f,  {0,     150,  7000, 0,   0,    0,    0,   .752f,     12,   -.3f,  .25f,.25f,.12f, .3f,.3f,  0,   1}},
+  {"bowedbone",make_bowedbone,Ctl::held,   12, 1, 0, 3.5f, {0,     60,   8000, 0,   0,    0,    0,   .448f,     20,   0,     0,   0,   0,    .5f,.5f,  0,   1}},
+  {"slitdrum", make_slitdrum, Ctl::struck, 32, 1, 0, 1.5f, {0,     70,   0,    260, .3f,  0,    0,   .720f,     9,    .3f,   0,   0,   0,    0,  .15f, .2f, 1}},
+  {"claypot",  make_claypot,  Ctl::struck, 16, 1, 0, 1.5f, {0,     30,   0,    300, .25f, 0,    0,   .28f,      -1,   0,     0,   0,   0,    0,  .15f, .25f,1}},
+  {"framedrum",make_framedrum,Ctl::struck, 32, 1, 0, 1.2f, {0,     40,   0,    300, .3f,  0,    0,   .348f,     9,    -.35f, 0,   0,   0,    0,  .15f, .2f, 1}},
+  {"rasp",     make_rasp,     Ctl::held,   16, 1, 0, .4f,  {0,     300,  6500, 0,   0,    0,    0,   1.51f,     14,   .4f,   0,   0,   0,    0,  0,    .2f, 1}},
+  {"bullroarer",make_bullroarer,Ctl::held, 4,  1, 0, 3.0f, {0,     50,   3000, 0,   0,    0,    0,   1.0f,      21,   0,     0,   0,   0,    1,  .4f,  0,   1}},
 };
 const int kNumParts = int(sizeof kParts / sizeof kParts[0]);
 const float kDuckRef = 1.07775f, kGlueThr = 1.36736f, kOutGain = 1 / 2.36579f;
@@ -87,9 +98,9 @@ struct Voice {
   dsp* d = nullptr; Params p;
   bool active = false;
   long long start = 0, end = 0;      /* in frames */
-  double dur = 0, pre = 0; float vel = 0; int midi = 0; int idx = 0; float ens_div = 1;
+  double dur = 0, pre = 0; float vel = 0; int midi = 0; int idx = 0; float ens_div = 1; float p1 = -1;
 };
-struct Pending { long long start; int part; double dur, pre; float vel, freq; int midi, idx; float ens_div; };
+struct Pending { long long start; int part; double dur, pre; float vel, freq; int midi, idx; float ens_div; float p1 = -1; };
 
 struct Part {
   const PartDef* def; std::vector<Voice> v; std::vector<int> act; int notes = 0; bool on = true;
@@ -199,7 +210,7 @@ struct Engine::Impl {
         double det = ens > 1 ? D.cents * (2.0 * v / (ens - 1) - 1) : 0;
         Pending p; p.start = (long long)(std::max(0.0, e.t + lag - pre) * sr); p.part = pi; p.dur = e.d; p.pre = pre;
         p.vel = e.vel; p.midi = e.midi; p.freq = float(440 * pow(2, (e.midi - 69) / 12.0) * pow(2, det / 1200));
-        p.idx = notes[pi]++; p.ens_div = float(ens); pend.push_back(p);
+        p.idx = notes[pi]++; p.ens_div = float(ens); p.p1 = e.p1; pend.push_back(p);
       }
       len = std::max(len, e.t + e.d + D.ring + 1);
     };
@@ -241,6 +252,7 @@ struct Engine::Impl {
     if (D.ctl == Ctl::lead || D.ctl == Ctl::spiccato) Params::set(v.p.p2, float(4.4 + 1.3 * fmod(q.idx * 0.618, 1.0)));
     if (!strcmp(D.name, "mouthbow")) Params::set(v.p.p1, float(3.6 - 3.4 * (0.5 + 0.5 * sin(q.idx * 0.9))));
     if (D.ctl == Ctl::horn) Params::set(v.p.p1, 3.3f);
+    if (q.p1 >= 0) Params::set(v.p.p1, q.p1);   /* the score's own p1 (e.g. where a frame drum is hit) */
     v.active = true; v.start = q.start; v.dur = q.dur; v.pre = q.pre; v.vel = q.vel; v.midi = q.midi; v.idx = q.idx;
     v.ens_div = q.ens_div; v.end = q.start + (long long)((q.dur + D.ring) * sr);
     P.act.push_back(slot);
@@ -250,6 +262,7 @@ struct Engine::Impl {
   float control(const PartDef& D, Voice& v, double tt) {
     switch (D.ctl) {
       case Ctl::struck: Params::set(v.p.gate, tt < v.dur ? 1.f : 0.f); return 1;
+      case Ctl::held: { bool on = tt < v.dur; Params::set(v.p.gate, on ? 1.f : 0.f); Params::set(v.p.gain, on ? v.vel : 0.f); return 1; }
       case Ctl::horn: {
         double env = tt < v.dur ? std::min(1.0, tt / .08) * (1 - .15 * tt / v.dur) : 0;
         Params::set(v.p.gate, tt < v.dur ? 1.f : 0.f); Params::set(v.p.gain, float(v.vel * env));
@@ -425,7 +438,8 @@ std::vector<Event> read_score(const char* path) {
   std::vector<Event> out; std::ifstream f(path); std::string line;
   while (std::getline(f, line)) {
     if (line.empty() || line[0] == '#') continue;
-    std::istringstream s(line); Event e; if (s >> e.t >> e.d >> e.part >> e.midi >> e.vel) out.push_back(e);
+    std::istringstream s(line); Event e;
+    if (s >> e.t >> e.d >> e.part >> e.midi >> e.vel) { float p; if (s >> p) e.p1 = p; out.push_back(e); }
   }
   return out;
 }
