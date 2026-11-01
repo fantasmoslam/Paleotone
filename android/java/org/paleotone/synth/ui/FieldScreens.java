@@ -160,7 +160,7 @@ final class FieldScreens {
         for(int i=0;i<8;i++){
             final int a=i;
             ui.button("action."+i,x+i*(bw+gap),y,bw,h,Expedition.ACTIONS[i],ex.requested==i?Ui.SELECTED:Ui.NORMAL,s.runPhase==UiState.RUNNING,
-                ()->{ex.act(a);s.encounterStage=-1;});
+                ()->{ex.act(a);sc.action(a);s.encounterStage=-1;});
         }
     }
 

@@ -10,7 +10,7 @@ The APK carries native libraries for both `armeabi-v7a` (the SM-T510's 32-bit us
 `arm64-v8a` (64-bit tablets such as the Galaxy Tab S6 Lite SM-P610 on official LineageOS 23.2).
 The 64-bit build has not yet been accepted on a device.
 
-## Round-three interface (0.4.0, phases 1 to 3 and 5)
+## Round-three interface (0.4.0, phases 1 to 5)
 
 The signed-off round-three design (Focus by default, Performance switchable) is the whole
 app; the old firmware panel and four-tab workspace are gone. `java/org/paleotone/synth/ui/`
@@ -85,7 +85,10 @@ sample layer are unaffected. The run clock therefore stays still for now.
 
 Knobs follow the review's zero rule: unipolar knobs sweep from 7 o'clock to 5 o'clock; only
 engine-marked bipolar parameters point to 12 at zero, with a centre tick. Not built yet: the
-notes are saved but not connected (their gauges show a dash or IDLE, phase 4).
+notes go to the new Scape conductor (phase 4): each change is sent at once, and every
+note is sent again after a restart. The eight gauges show the conductor's answer and its word
+(a dash or IDLE while it is not answering, for example the habitat gauge until the habitat is
+ported). The eight expedition actions go to the conductor as well as to the stand-in expedition.
 
 Fonts (SIL OFL 1.1, licences in the APK's `assets/licenses`): Michroma, IBM Plex Mono,
 Caveat and IM FELL English. `android/tests/UiTest.java` checks the knob zero rule, both

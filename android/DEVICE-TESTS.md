@@ -173,3 +173,6 @@ Check on the SM-T510 (and the Tab S6 Lite when available), in Focus and Performa
 11. Journal and Bestiary: the encounter's page and plate appear; Open bestiary selects it; Read
     first encounter returns to its page. Start: pick Jonesy and a new seed, Begin expedition, and
     confirm a new valley, base camp and the header naming the new run.
+12. Conductor notes: with music playing, turn Danger up and Silence down; the music answers within a
+    bar or two and the gauges move (the habitat gauge stays a dash). Tap Observe or Move on and hear
+    the turn. Restart the app and confirm the notes come back and the music still follows them.

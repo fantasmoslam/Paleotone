@@ -23,6 +23,11 @@ public final class UiTest {
     }
     static final class FakeEngine implements Engine {
         final int[] v=new int[48];int scapeCommands;boolean stopped;
+        final int[] notes={-1,-1,-1,-1,-1,-1,-1,-1};int lastAction=-1;float[] gauges;
+        public void conductorNote(int n,int value){notes[n]=value;}
+        public void conductorAction(int a){lastAction=a;}
+        public float[] conductorGauges(){return gauges;}
+        public String conductorGaugeText(int g){return g==3?"WALKING":"";}
         public int value(int s){return v[s];}
         public int min(int s){return 0;}
         public int max(int s){return 100;}
@@ -185,6 +190,7 @@ public final class UiTest {
         copy=new UiState();copy.load("FOCUS;LEGACY;1;2;3;4;5;6;7;8");
         if(copy.screen!=UiState.Screen.INSTRUMENT||copy.notes[7]!=8)throw new AssertionError("a saved legacy screen falls back to INSTRUMENT");
         expedition();
+        conductor();
         System.out.println("PASS: interface rules (knob zero, layouts, dragging, Stop All over sheets and quick mix, dock, sound design, layer mutes, run timer and end, saved state, valley, expedition, map, journal, bestiary, start)");
     }
 
@@ -269,5 +275,19 @@ public final class UiTest {
         final java.util.HashMap<String,Float> sizes=new java.util.HashMap<>();
         @Override public void text(String t,float x,float y,int f,float size,int c,int a,float tr){super.text(t,x,y,f,size,c,a,tr);sizes.put(t,size);}
         float size(String t){Float v=sizes.get(t);return v==null?-1:v;}
+    }
+
+    /** Phase 4: notes and actions reach the conductor; its gauges and words show. */
+    static void conductor(){
+        UiState s=new UiState();FakeEngine fe=new FakeEngine();Ui ui=new Ui();Screens sc=new Screens(ui,s,fe);
+        s.notes[2]=71;fe.gauges=new float[]{.62f,.48f,.75f,.3f,-1,.2f,.5f,.9f};
+        RecordingGfx g=new RecordingGfx();ui.begin(g,1280,800,0);sc.draw();ui.end();
+        for(int i=0;i<8;i++)if(fe.notes[i]!=s.notes[i])throw new AssertionError("note "+i+" sent on the first frame");
+        if(Math.abs(s.response[0]-.62f)>1e-6||!Float.isNaN(s.response[4])||!"WALKING".equals(s.responseText[3]))throw new AssertionError("gauges read");
+        if(!g.texts.contains("62")||!g.texts.contains("WALKING"))throw new AssertionError("gauge values drawn");
+        s.screen=UiState.Screen.EXPEDITION;ui.begin(new RecordingGfx(),1280,800,0);sc.draw();ui.end();
+        float bw=(1123-9*7)/8f,ax=140+6*(bw+9)+bw/2,ay=94+591-29;
+        ui.down(1,ax,ay);ui.up(1,ax,ay);
+        if(fe.lastAction!=Expedition.OBSERVE)throw new AssertionError("Observe reaches the conductor: "+fe.lastAction);
     }
 }

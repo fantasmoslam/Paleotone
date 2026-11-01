@@ -23,6 +23,7 @@ public final class Screens {
     public void draw(){
         g=ui.g;W=ui.width;H=ui.height;
         s.expedition(); // names the run from its valley before the header draws
+        conductor();
         g.rect(0,0,W,H,Theme.BACKGROUND);
         header();
         boolean focus=s.layout==UiState.Layout.FOCUS;
@@ -47,6 +48,24 @@ public final class Screens {
         bottomBar();
         notice();
     }
+
+    // ---- the conductor (phase 4) -----------------------------------------------------
+    /** Notes last sent to the conductor; -1 sends every note on the first frame (after a restore). */
+    private final int[] sentNotes={-1,-1,-1,-1,-1,-1,-1,-1};
+    /** Sends changed notes, and reads the eight gauges into the state the screens draw. */
+    private void conductor(){
+        if(!e.musicEngine())return;
+        for(int i=0;i<8;i++)if(s.notes[i]!=sentNotes[i]){e.conductorNote(i,s.notes[i]);sentNotes[i]=s.notes[i];}
+        float[] g=e.conductorGauges();
+        for(int i=0;i<8;i++){
+            float v=g==null||i>=g.length?-1:g[i];
+            s.response[i]=v<0?Float.NaN:Math.min(1,v);
+            String t=v<0?null:e.conductorGaugeText(i);
+            s.responseText[i]=t==null||t.isEmpty()?null:t;
+        }
+    }
+    /** An expedition action goes to the conductor as well as to the expedition. */
+    void action(int i){if(e.musicEngine())e.conductorAction(i);}
 
     // ---- header ----------------------------------------------------------------------
     private void header(){
@@ -133,7 +152,8 @@ public final class Screens {
         int v=s.notes[i];
         ui.knob("note."+i,kx,ky,d,v,0,100,false,Integer.toString(Math.round(ui.shown("note."+i,v))),value->s.notes[i]=value);
         float gx=x+w*(performance?.73f:.75f)-5,gy=y+(performance?66:86),gh=performance?75:70;
-        ui.gauge(gx,gy,10,gh,s.response[i],UiState.RESPONSE_NAMES[i],s.responseText[i],performance?14:13);
+        String said=s.responseText[i]!=null?s.responseText[i]:Float.isNaN(s.response[i])?null:Integer.toString(Math.round(s.response[i]*100));
+        ui.gauge(gx,gy,10,gh,s.response[i],UiState.RESPONSE_NAMES[i],said,performance?14:13);
         g.text(UiState.NOTE_ENDS[i],x+13,y+h-16,Gfx.MONO,10,Theme.MUTED,Gfx.LEFT,.05f);
     }
     private void controlRow(float x,float y,float w,float h,boolean performance){
