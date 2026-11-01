@@ -1,4 +1,4 @@
-# Paleotone Android — native alpha 0.3.0
+# Paleotone Android — native alpha 0.4.0
 
 Standalone synthesis for Dylan's Samsung SM-T510. Initial measured device configuration:
 Android 15 / unofficial LineageOS 22.2-20260910, `armeabi-v7a,armeabi`, 48 kHz
@@ -9,6 +9,94 @@ this is **not** a physical latency measurement or an accepted synth performance 
 The APK carries native libraries for both `armeabi-v7a` (the SM-T510's 32-bit userspace) and
 `arm64-v8a` (64-bit tablets such as the Galaxy Tab S6 Lite SM-P610 on official LineageOS 23.2).
 The 64-bit build has not yet been accepted on a device.
+
+## Round-three interface (0.4.0, phases 1 to 5)
+
+The signed-off round-three design (Focus by default, Performance switchable) is the whole
+app; the old firmware panel and four-tab workspace are gone. `java/org/paleotone/synth/ui/`
+holds the screens and controls as plain Java drawing through `Gfx`, so the same code runs on
+the tablet (`PhosphorView`, Android Canvas) and on a desktop JDK for review screenshots:
+
+```sh
+sh android/preview/render.sh build/preview
+```
+
+- **Shell:** header, navigation rail and Performance dock, the fixed bottom bar (environment,
+  music, Stop All, save, Quick mix), choice sheets (paged when long) and notices.
+- **INSTRUMENT:** the eight notes to the conductor, Hold/Next, Biome, Music mood, Live balance.
+- **Mixer → Parts:** per part voice (opens Sound design), level, mute, pan (drag sideways; tap
+  for centre) and role; Output with Environment, Master and Tempo.
+- **Mixer → Habitat layers:** eight layer levels with mute, and the environment drone. The engine
+  has no layer mute, so mute sets the level to 0 and the interface remembers the old level.
+- **Sound design:** part, voice (engine) and preset, and the voice's eight edit parameters with the
+  firmware's own descriptors, ranges and wording (`Native.voice`). List parameters open a sheet;
+  the rest are knobs. Blank parameter slots are shown empty.
+- **Quick mix:** part levels, mutes and pans over any screen.
+- **Library:** imported WAV sound files with waveform, Load, Preview, root note and Delete, and the
+  playing source (imported sample or Paleotone sounds) for keyboard and MIDI. Preview plays the root
+  note through the sample layer for up to four seconds.
+
+- **Recording:** Record (bottom bar or Library → Recordings → Open recording) captures the final
+  stereo mix after the limiter as 16-bit WAV at the output rate (48 kHz on the test tablets). The
+  audio callback writes into a lock-free ring (`native/capture.h`, about 11 s); a writer thread
+  drains it into a private part file, and Stop completes the WAV header and copies the take to
+  Music/Paleotone (MediaStore; Android 9 uses the app's own Music folder). Only a completed copy is
+  reported saved. A failed or interrupted take keeps its part file for Retry save (also after a
+  restart) and blocks new takes until it is saved or discarded. Leaving the app or Stop All saves
+  the active take.
+- **Run timer:** 15, 30, 60, 120 minutes, Continuous, or Custom (5–240). The run clock counts while
+  the environment or music plays; a new length applies to the next run (Start, or Start a new run). At the length, or
+  on End run, the clock holds, the mix fades over five seconds (an active take records the fade),
+  then the take saves and audio stops. Stop All or Stop now during the fade ends at once.
+- **Run end:** the closing card during the fade, then Run complete with the take's name and length,
+  or No recording, with a strip of the map below.
+- **Valley map (phase 5):** a flat top-down valley generated from the run's valley seed
+  (`ui/Valley.java`); no real geography is used. Seven terrain regions (forest, swamp, plains,
+  volcanic, desert, ridge, mangrove) with the design's glyph textures, a river, a lake and a pond,
+  sixteen stations along a route, two landmarks, herds and a predator, the travelled trail, the route
+  ahead and your position. `ui/ValleyMap.java` draws it at any zoom: terrain and creatures scale,
+  but every label is drawn at one fixed on-screen size (review amendment 1) and labels never overlap
+  (lower-priority names are left out where there is no room).
+- **Expedition:** status strip (valley, day and time, habitat, weather, station), Survey (opens the
+  map), Danger and Majesty (the same notes as INSTRUMENT), the encounter card or the expedition log,
+  and the eight actions. **Valley Survey** pans with one finger and zooms with a pinch; View tools has
+  Zoom, Centre on me and Whole valley; Plot a path adds points with each tap and draws your path in
+  amber until Clear path. **Encounter:** the eight stages (Signs to Coda) with the stage text, the
+  creature once identified, Conductor response and a position map.
+- **Journal:** base camp, each night camp and each identified encounter as a page in the leader's
+  hand, with a plate for the creature. **Bestiary:** 24 species in pages of 12, recorded ones named,
+  with Find species (group or name order) and Read first encounter. **Start:** choose the next run's
+  leader (Dr. Wellington / Cinematic, Miss Veronica / Lo-fi, Jonesy / Dark ambient), valley seed and
+  run length, then Begin expedition.
+
+The expedition itself is a seeded stand-in (`ui/Expedition.java`) until the conductor's expedition
+runs on the tablet: while the run clock counts it moves one station per fifteenth of the run (two
+minutes on Continuous) and raises encounters from a fixed catalogue; the actions answer simply (Move on
+goes to the next station, Observe and the others advance an encounter, Shelter and Defend end a
+dangerous one). The leader's sound flavour and the actions reach the conductor once it is ported.
+
+**The old DINOBOX Scape is switched off** (Dylan, 1 November 2026). Its habitat, drone, creature
+calls and loop music came from the FM-1 firmware and do not belong in the rebuild. The firmware still
+contains it; the tablet never starts it (`PT_OLD_SCAPE` in `native/android_audio.c` refuses Scape
+commands, holds the habitat, drone, layer, evolving-music and transport controls, and clears a saved
+session's Scape at launch). Environment, Drone, the habitat layers and Music show as waiting for the new
+engine until the new conductor and habitat are ported. MIDI, the four synth parts, sound design and the
+sample layer are unaffected. The run clock therefore stays still for now.
+
+Knobs follow the review's zero rule: unipolar knobs sweep from 7 o'clock to 5 o'clock; only
+engine-marked bipolar parameters point to 12 at zero, with a centre tick. Not built yet: the
+notes go to the new Scape conductor (phase 4): each change is sent at once, and every
+note is sent again after a restart. The eight gauges show the conductor's answer and its word
+(a dash or IDLE while it is not answering, for example the habitat gauge until the habitat is
+ported). The eight expedition actions go to the conductor as well as to the stand-in expedition.
+
+Fonts (SIL OFL 1.1, licences in the APK's `assets/licenses`): Michroma, IBM Plex Mono,
+Caveat and IM FELL English. `android/tests/UiTest.java` checks the knob zero rule, both
+layouts on every screen at 1280 and 1333 units wide, dragging, layout switching, Stop All
+over sheets and quick mix, the dock, sound design edits, layer mutes, the run timer and end, the
+seeded valley (200 seeds), the stand-in expedition and journal, fixed-size map labels at two zooms,
+pinch, pan and path plotting, and a new run taking the chosen leader and seed.
+`android/tests/capture_test.c` checks the recording tap and the fade.
 
 ## Source baseline and scope
 
@@ -96,9 +184,9 @@ Supported: RIFF WAV PCM 8/16/24/32-bit or float32, mono/stereo, 8–192 kHz, up 
 values are zeroed. One decoded sample is shared by eight voices with linear pitch
 conversion, a short attack/release and an end fade. Loading briefly pauses audio;
 copying/decoding runs on a worker. No sample allocation or disk I/O occurs inside
-the callback. The panel master slider and accepted output limiter also apply to
-sample audio. Sample keyboard notes are F3–G5; its octave buttons still belong to
-the firmware panel. MIDI note-on/off and all-notes-off are supported in sample mode;
+the callback. Master and the accepted output limiter also apply to
+sample audio. Since 0.4.0 there is no on-screen keyboard: the sample layer is played from
+MIDI, and from Preview in Library. MIDI note-on/off and all-notes-off are supported in sample mode;
 sustain pedal and other expression controls are not implemented for this layer.
 
 **Imported samples are a separate playable layer, not new firmware track presets.**

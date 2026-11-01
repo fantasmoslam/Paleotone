@@ -38,6 +38,8 @@ javac -d build/android-tests android/java/org/paleotone/synth/AudioRecovery.java
 java -ea -cp build/android-tests org.paleotone.synth.AudioRecoveryTest
 javac -d build/android-tests android/java/org/paleotone/synth/KioskSession.java android/tests/KioskSessionTest.java
 java -ea -cp build/android-tests org.paleotone.synth.KioskSessionTest
+cc -O2 -std=c11 android/tests/capture_test.c -o build/android-tests/capture_test
+build/android-tests/capture_test
 cc -O2 -std=c11 android/tests/sample_test.c -lm -o build/android-tests/sample_test
 build/android-tests/sample_test
 javac -d build/android-tests android/java/org/paleotone/synth/WavSample.java android/tests/WavSampleTest.java
@@ -45,3 +47,10 @@ python3 -c 'from android.build import starter_samples; from pathlib import Path;
 java -ea -cp build/android-tests org.paleotone.synth.WavSampleTest "build/android-tests/starter/Flute C4.wav" "build/android-tests/starter/Jungle C3.wav"
 cc $FIRMWARE android/tests/scape_test.c -lm -o build/android-tests/scape_test
 build/android-tests/scape_test
+javac -encoding UTF-8 -d build/android-tests android/java/org/paleotone/synth/ui/*.java android/tests/UiTest.java
+java -ea -cp build/android-tests org.paleotone.synth.ui.UiTest
+# PALEO and the live Scape conductor, through the tablet's bridge.
+c++ -O2 -std=c++17 -w -pthread -Ipaleo android/tests/paleo_bridge_test.cpp android/native/paleo_bridge.cpp \
+    paleo/engine/paleo.cpp paleo/engine/conductor.cpp paleo/faust/gen/[!he]*.cpp paleo/faust/gen/horn.cpp \
+    paleo/faust/gen/harmonium.cpp -o build/android-tests/paleo_bridge_test
+build/android-tests/paleo_bridge_test

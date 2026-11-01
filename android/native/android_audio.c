@@ -13,6 +13,18 @@
 #include "display.h"
 #include "output_stage.h"
 #include "sample_layer.h"
+#include "capture.h"
+#include "paleo_bridge.h"   /* PALEO and the live Scape conductor */
+static pt_capture capture;   /* recording tap and run-end fade on the final mix */
+/* The old DINOBOX Scape (habitat, drone, creature calls, loop music) is switched off in the
+ * round-three app until the new conductor and habitat replace it. The firmware keeps it;
+ * the tablet never starts it: Scape commands are refused, and the controls that would make
+ * it sound (habitat and drone levels, layer levels, evolving music, the sequence transport)
+ * are held at zero. MIDI, the synth parts and the sample layer are unaffected. */
+#define PT_OLD_SCAPE 0
+static int old_scape_control(unsigned slot){
+    return slot==13||slot==14||slot==23||(slot>=27&&slot<=34)||slot==pt_control_count();
+}
 
 #define JNI(name) Java_org_paleotone_synth_Native_##name
 #define PIXELS (240*240)
@@ -93,6 +105,18 @@ static uint8_t save_data[1100000];
 static pthread_mutex_t midi_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t midi_queue[256];
 static _Atomic unsigned midi_w, midi_r;
+/* Internal commands share the serialized queue: 0xf0 Scape, 0xf1 a voice's EDIT
+ * parameter, 0xf2 its engine, 0xf3 its preset. MIDI JNI never accepts 0xf0..0xff. */
+static int internal(uint32_t m){
+    unsigned tag=m&255,tr=(m>>8)&3,k=(m>>10)&7;int value=(int16_t)(m>>16);
+    switch(tag){
+    case 0xf0:pt_scape((m>>8)&255);return 1;
+    case 0xf1:pt_voice_set(tr,k,value);return 1;
+    case 0xf2:pt_voice_engine(tr,(unsigned)value);return 1;
+    case 0xf3:pt_voice_preset(tr,(unsigned)value);return 1;
+    default:return 0;
+    }
+}
 static void inputs(void) {
     if (atomic_exchange(&panic_requested, 0)) {
         pt_panic(); sample_panic(&sampler); sample_keys=0;
@@ -119,7 +143,7 @@ static void inputs(void) {
     /* Bound work even if a controller floods the port. */
     for (unsigned i=0; r!=w && i<64; ++i, ++r) {
         uint32_t m=midi_queue[r&255];
-        if((m&255)==0xf0){pt_scape((m>>8)&255);continue;}
+        if(internal(m))continue;
         unsigned status=m&240,note=(m>>8)&127,vel=(m>>16)&127;
         if(mode){
             if(status==0x90||status==0x80)sample_note(&sampler,note,status==0x90?vel:0,(unsigned)sample_rate);
@@ -136,7 +160,9 @@ static aaudio_data_callback_result_t audio_callback(AAudioStream *s, void *user,
     inputs();
     pt_render(out, (unsigned)frames, (unsigned)sample_rate);
     if(atomic_load(&sample_mode))sample_mix(&sampler,out,(unsigned)frames,(unsigned)sample_rate,atomic_load(&master_value)/1023.0f);
+    paleo_mix(out,(unsigned)frames,.8f*atomic_load(&master_value)/1023.0f);
     float peak=pt_output_process(&output_stage,out,(unsigned)frames,output_gain());
+    capture_process(&capture,out,(unsigned)frames);
     atomic_store(&limited_frames,output_stage.limited);
     atomic_store(&peak_q15, (unsigned)(peak*32767));
     if(atomic_load_explicit(&snapshot_wanted,memory_order_relaxed)&&pt_ui_frames()!=snapshot_frame)publish_snapshot();
@@ -207,7 +233,7 @@ static void stop(void) {
     if (booted) {
         for(unsigned i=0;i<=pt_control_count();++i)if(atomic_exchange(&control_dirty[i],0))pt_control_set(i,atomic_load(&control_pending[i]));
         unsigned r=atomic_load(&midi_r),w=atomic_load(&midi_w);
-        for(;r!=w;++r){uint32_t m=midi_queue[r&255];if((m&255)==0xf0)pt_scape((m>>8)&255);}
+        for(;r!=w;++r)internal(midi_queue[r&255]);
         pt_panic();display_stale=1;
     }
     sample_panic(&sampler);sample_keys=0;
@@ -221,6 +247,7 @@ JNIEXPORT void JNICALL JNI(init)(JNIEnv *env,jclass cls,jbyteArray saved) {
     if (n>sizeof save_data) n=0;
     if (n) (*env)->GetByteArrayRegion(env,saved,0,(jsize)n,(jbyte*)save_data);
     pt_boot(n ? save_data : NULL,n); booted=1;
+    if(!PT_OLD_SCAPE)pt_scape(PT_SCAPE_STOP_ALL);   /* a saved session may have had it running */
     pt_display_boot(); display_stale=1;
 }
 JNIEXPORT jstring JNICALL JNI(start)(JNIEnv *env,jclass cls,jint buffers) {
@@ -267,6 +294,7 @@ JNIEXPORT jstring JNICALL JNI(start)(JNIEnv *env,jclass cls,jint buffers) {
     buffer_frames=AAudioStream_getBufferSizeInFrames(stream);
     pt_output_init(&output_stage,(unsigned)sample_rate,output_gain());
     if (sample_rate!=prepared_rate) { pt_prepare((unsigned)sample_rate); prepared_rate=sample_rate; }
+    paleo_prepare((unsigned)sample_rate);
     started_ns=nanos();
     atomic_store(&limited_frames,0);
     result=AAudioStream_requestStart(stream);
@@ -347,6 +375,7 @@ JNIEXPORT jobjectArray JNICALL JNI(controlTexts)(JNIEnv *e,jclass c){
 }
 JNIEXPORT void JNICALL JNI(control)(JNIEnv *e,jclass c,jint slot,jint value){
     (void)e;(void)c;if(slot<0||(unsigned)slot>pt_control_count())return;
+    if(!PT_OLD_SCAPE&&old_scape_control((unsigned)slot))return;
     if(!stream){pt_control_set((unsigned)slot,value);display_stale=1;return;}
     atomic_store(&control_pending[slot],value);atomic_store_explicit(&control_dirty[slot],1,memory_order_release);
 }
@@ -364,13 +393,95 @@ JNIEXPORT jboolean JNICALL JNI(loadSample)(JNIEnv *e,jclass c,jfloatArray data,j
 JNIEXPORT void JNICALL JNI(sampleMode)(JNIEnv *e,jclass c,jboolean enabled){(void)e;(void)c;atomic_store(&sample_mode,enabled?1:0);}
 JNIEXPORT void JNICALL JNI(sampleRoot)(JNIEnv *e,jclass c,jint note){(void)e;(void)c;if(note>=0&&note<=127)atomic_store(&sample_root,(unsigned)note);}
 
-JNIEXPORT jboolean JNICALL JNI(scape)(JNIEnv *e,jclass c,jint command){
-    (void)e;(void)c;if(command<PT_ENV_START||command>PT_SCAPE_NEXT)return JNI_FALSE;
-    if(!stream){pt_scape((unsigned)command);display_stale=1;return JNI_TRUE;}
-    /* Reuse the serialized producer queue; 0xf0 is internal, never accepted by MIDI JNI. */
+/* Reuse the serialized producer queue for an internal command (see internal()). */
+static int command_push(uint32_t m){
     pthread_mutex_lock(&midi_mutex);
     unsigned w=atomic_load(&midi_w),r=atomic_load_explicit(&midi_r,memory_order_acquire);
     int ok=w-r<256;
-    if(ok){midi_queue[w&255]=0xf0|((unsigned)command<<8);atomic_store_explicit(&midi_w,w+1,memory_order_release);}
-    pthread_mutex_unlock(&midi_mutex);return ok?JNI_TRUE:JNI_FALSE;
+    if(ok){midi_queue[w&255]=m;atomic_store_explicit(&midi_w,w+1,memory_order_release);}
+    pthread_mutex_unlock(&midi_mutex);return ok;
+}
+JNIEXPORT jboolean JNICALL JNI(scape)(JNIEnv *e,jclass c,jint command){
+    (void)e;(void)c;if(command<PT_ENV_START||command>PT_SCAPE_NEXT)return JNI_FALSE;
+    if(!PT_OLD_SCAPE&&command!=PT_SCAPE_STOP_ALL)return JNI_FALSE;
+    if(!stream){pt_scape((unsigned)command);display_stale=1;return JNI_TRUE;}
+    return command_push(0xf0|((unsigned)command<<8))?JNI_TRUE:JNI_FALSE;
+}
+
+/* Sound design (round-three interface). Reads come from the display copy's last
+ * snapshot; writes go to the engine's owner like the other controls. */
+static jobjectArray strings(JNIEnv *e,unsigned n){return (*e)->NewObjectArray(e,n,(*e)->FindClass(e,"java/lang/String"),NULL);}
+static void put(JNIEnv *e,jobjectArray a,unsigned i,const char *s){jstring t=(*e)->NewStringUTF(e,s);(*e)->SetObjectArrayElement(e,a,i,t);(*e)->DeleteLocalRef(e,t);}
+/* [engine index, engine name, preset name, then per EDIT parameter "label\tfmt\tmin\tmax\tvalue\tbipolar\ttext"] */
+JNIEXPORT jobjectArray JNICALL JNI(voice)(JNIEnv *e,jclass c,jint track){
+    (void)c;if(track<0||track>3)return NULL;
+    refresh_display();
+    char engine[16],preset[24],line[96];pt_voice_param p[8];
+    unsigned ei=pt_display_voice((unsigned)track,engine,preset,p);
+    jobjectArray a=strings(e,11);if(!a)return NULL;
+    snprintf(line,sizeof line,"%u",ei);put(e,a,0,line);put(e,a,1,engine);put(e,a,2,preset);
+    for(unsigned k=0;k<8;++k){
+        snprintf(line,sizeof line,"%s\t%d\t%d\t%d\t%d\t%d\t%s",p[k].label,p[k].fmt,p[k].min,p[k].max,p[k].value,p[k].bipolar,p[k].text);
+        put(e,a,3+k,line);
+    }
+    return a;
+}
+JNIEXPORT jobjectArray JNICALL JNI(voiceNames)(JNIEnv *e,jclass c,jint track,jint k){
+    (void)c;if(track<0||track>3||k<0||k>7)return NULL;
+    static char names[128][16];refresh_display();
+    unsigned n=pt_display_voice_names((unsigned)track,(unsigned)k,names,128);
+    jobjectArray a=strings(e,n);if(!a)return NULL;
+    for(unsigned i=0;i<n;++i)put(e,a,i,names[i]);
+    return a;
+}
+JNIEXPORT jobjectArray JNICALL JNI(controlNames)(JNIEnv *e,jclass c,jint slot){
+    (void)c;if(slot<0)return NULL;
+    static char names[64][16];refresh_display();
+    unsigned n=pt_display_control_names((unsigned)slot,names,64);
+    jobjectArray a=strings(e,n);if(!a)return NULL;
+    for(unsigned i=0;i<n;++i)put(e,a,i,names[i]);
+    return a;
+}
+/* Recording and the run-end fade (capture.h). */
+JNIEXPORT void JNICALL JNI(recordStart)(JNIEnv *e,jclass c){(void)e;(void)c;capture_start(&capture);}
+JNIEXPORT void JNICALL JNI(recordStop)(JNIEnv *e,jclass c){(void)e;(void)c;capture_stop(&capture);}
+/* Copies captured interleaved stereo 16-bit samples; returns the count. */
+JNIEXPORT jint JNICALL JNI(recordRead)(JNIEnv *e,jclass c,jshortArray out){
+    (void)c;jsize cap=(*e)->GetArrayLength(e,out);static int16_t buffer[1u<<16];
+    unsigned n=capture_read(&capture,buffer,(unsigned)(cap<(jsize)(1u<<16)?cap:(jsize)(1u<<16)));
+    if(n)(*e)->SetShortArrayRegion(e,out,0,(jsize)n,buffer);
+    return (jint)n;
+}
+JNIEXPORT jint JNICALL JNI(recordDropped)(JNIEnv *e,jclass c){(void)e;(void)c;return (jint)atomic_load(&capture.dropped);}
+JNIEXPORT jint JNICALL JNI(sampleRate)(JNIEnv *e,jclass c){(void)e;(void)c;return sample_rate>0?sample_rate:48000;}
+JNIEXPORT void JNICALL JNI(fade)(JNIEnv *e,jclass c,jint ms){
+    (void)e;(void)c;capture_fade(&capture,ms<=0?0u:(unsigned)((long long)ms*(sample_rate>0?sample_rate:48000)/1000));
+}
+JNIEXPORT jboolean JNICALL JNI(faded)(JNIEnv *e,jclass c){(void)e;(void)c;return capture_faded(&capture)?JNI_TRUE:JNI_FALSE;}
+static jboolean voice_command(unsigned tag,jint track,jint k,jint value){
+    if(track<0||track>3||value<-32768||value>32767)return JNI_FALSE;
+    if(!stream){
+        if(tag==0xf1)pt_voice_set((unsigned)track,(unsigned)k&7u,value);
+        else if(tag==0xf2)pt_voice_engine((unsigned)track,(unsigned)value);
+        else pt_voice_preset((unsigned)track,(unsigned)value);
+        display_stale=1;return JNI_TRUE;
+    }
+    return command_push(tag|((unsigned)track<<8)|(((unsigned)k&7u)<<10)|((uint32_t)(uint16_t)value<<16))?JNI_TRUE:JNI_FALSE;
+}
+JNIEXPORT jboolean JNICALL JNI(voiceSet)(JNIEnv *e,jclass c,jint track,jint k,jint value){(void)e;(void)c;return voice_command(0xf1,track,k,value);}
+JNIEXPORT jboolean JNICALL JNI(voiceEngine)(JNIEnv *e,jclass c,jint track,jint engine){(void)e;(void)c;return voice_command(0xf2,track,0,engine);}
+JNIEXPORT jboolean JNICALL JNI(voicePreset)(JNIEnv *e,jclass c,jint track,jint preset){(void)e;(void)c;return voice_command(0xf3,track,0,preset);}
+/* "index\tname" per engine the interface offers, in the firmware's order. */
+JNIEXPORT jobjectArray JNICALL JNI(engines)(JNIEnv *e,jclass c){
+    (void)c;unsigned list[32],n=pt_engine_list(list,32);char line[32];
+    jobjectArray a=strings(e,n);if(!a)return NULL;
+    for(unsigned i=0;i<n;++i){snprintf(line,sizeof line,"%u\t%s",list[i],pt_engine_name(list[i]));put(e,a,i,line);}
+    return a;
+}
+/* "index\tname" per preset of an engine that browsing shows. */
+JNIEXPORT jobjectArray JNICALL JNI(presets)(JNIEnv *e,jclass c,jint engine){
+    (void)c;unsigned list[128],n=engine<0?0:pt_preset_list((unsigned)engine,list,128);char line[48];
+    jobjectArray a=strings(e,n);if(!a)return NULL;
+    for(unsigned i=0;i<n;++i){snprintf(line,sizeof line,"%u\t%s",list[i],pt_preset_name((unsigned)engine,list[i]));put(e,a,i,line);}
+    return a;
 }

@@ -52,6 +52,14 @@ def starter_samples(destination):
                 output.setparams(original.getparams())
                 output.writeframes(frames[:len(frames)//align*align])
 
+def PALEO_SOURCES():
+    """The engine, the conductor, the bridge, and the Faust instruments PALEO uses (not the hall or echo)."""
+    gen=sorted(p for p in (ROOT/"paleo/faust/gen").glob("*.cpp") if p.name[0] not in "he")
+    gen+=[ROOT/"paleo/faust/gen/horn.cpp",ROOT/"paleo/faust/gen/harmonium.cpp"]
+    return ["paleo/engine/paleo.cpp","paleo/engine/conductor.cpp","android/native/paleo_bridge.cpp"]+[str(p.relative_to(ROOT)) for p in gen]
+
+INTERFACE_FONTS=["IBMPlexMono-Regular.ttf","IBMPlexMono-Medium.ttf","Michroma-Regular.ttf","Caveat[wght].ttf","IMFeENrm28P.ttf"]
+
 def main():
     if not PLATFORM.is_file() or not all((NDK/compiler).is_file() for _,compiler in ABIS):
         raise SystemExit("Install the documented Android SDK/NDK packages and set ANDROID_HOME.")
@@ -70,10 +78,20 @@ def main():
         display=OUT/"lib"/abi/"display.o"
         run(NDK/compiler, *flags, "-c", "android/native/display.c", "-o", display)
         run(NDK/"llvm-objcopy", "--wildcard", "--keep-global-symbol=pt_display_*", display)
-        run(NDK/compiler, *flags, "-shared", "-Wl,--gc-sections", "-Wl,-z,max-page-size=16384",
-            "android/native/engine.c", "android/native/android_audio.c", display,
-            "-laaudio", "-llog", "-lm", "-o", library)
-        display.unlink()
+        objects=[display]
+        for source in ["android/native/engine.c", "android/native/android_audio.c"]:
+            objects.append(OUT/"lib"/abi/(Path(source).stem+".o"))
+            run(NDK/compiler, *flags, "-c", source, "-o", objects[-1])
+        # PALEO and the live Scape conductor (C++17), with the approved Faust instruments.
+        cxx=[NDK/(compiler+"++"), "-std=c++17", "-O2", "-fPIC", "-fvisibility=hidden", "-w",
+            "-ffunction-sections", "-fdata-sections", "-Ipaleo"]
+        if abi=="armeabi-v7a":cxx+=["-mfpu=neon", "-mfloat-abi=softfp"]
+        for source in PALEO_SOURCES():
+            objects.append(OUT/"lib"/abi/("paleo-"+Path(source).stem+".o"))
+            run(*cxx, "-c", source, "-o", objects[-1])
+        run(NDK/(compiler+"++"), "-shared", "-static-libstdc++", "-Wl,--gc-sections", "-Wl,-z,max-page-size=16384",
+            *objects, "-laaudio", "-llog", "-landroid", "-lm", "-o", library)
+        for o in objects:o.unlink()
         run(NDK/"llvm-strip", "--strip-unneeded", library)
     java = sorted((ROOT/"android/java").rglob("*.java"))
     run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", PLATFORM,
@@ -86,8 +104,14 @@ def main():
     shutil.copy(ROOT/"LICENSING.md",OUT/"assets/licenses/LICENSING.md")
     shutil.copy(ROOT/"assets/samples-cc0/ATTRIBUTION.txt",OUT/"assets/licenses/SAMPLES.txt")
     starter_samples(OUT/"assets/starter")
+    # PALEO's creature library (FLAC, read straight from the APK) and its credits.
+    shutil.copytree(ROOT/"paleo/creatures/lib",OUT/"assets/creatures")
+    shutil.copy(ROOT/"paleo/creatures/CREDITS.md",OUT/"assets/licenses/CREATURES.md")
+    # The round-three interface fonts (SIL OFL 1.1; licences are in assets/licenses).
+    (OUT/"assets/fonts").mkdir(parents=True,exist_ok=True)
+    for name in INTERFACE_FONTS:shutil.copy(ROOT/"assets/fonts"/name,OUT/"assets/fonts"/name)
     (OUT/"assets/BUILD.txt").write_text(
-        "Paleotone Android 0.3.1-alpha\nGPL-3.0-only\n"+
+        "Paleotone Android 0.4.0-alpha\nGPL-3.0-only\n"+
         subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()+
         "\nBase: 0390a03f732c5eeec9f62cb2b139df8738396766\n"+
         "Local modifications are included in the corresponding source archive.\n")
@@ -105,7 +129,7 @@ def main():
         run("keytool","-genkeypair","-keystore",key,"-storepass","android","-keypass","android",
             "-alias","androiddebugkey","-keyalg","RSA","-keysize","2048","-validity","10000",
             "-dname","CN=Paleotone Development,O=Paleotone,C=US")
-    apk=OUT/"Paleotone-Android-0.3.1-alpha.apk"
+    apk=OUT/"Paleotone-Android-0.4.0-alpha.apk"
     run(TOOLS/"apksigner","sign","--ks",key,"--ks-pass","pass:android","--key-pass","pass:android",
         "--out",apk,OUT/"aligned.apk")
     run(TOOLS/"apksigner","verify","--verbose",apk)
