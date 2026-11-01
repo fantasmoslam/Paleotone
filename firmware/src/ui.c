@@ -72,6 +72,7 @@ static uint32_t up_gen;                      /* bumped on every user bank change
 #define PREF_SCOPE_MIX (0x01u << 16)
 #define PREF_PREVIEW (0x02u << 16)
 #define PREF_CHORD_ADD (0x04u << 16)
+#define PREF_CPU2_ON (0x80u << 16) /* positive opt-in; zero in old settings */
 #define PREF_NAMES_OFF (0x08u << 16)           /* GHOULBOX 2.1: MENU > CONTROL > NOTE NAMES OFF (ui_input.c names_notice) */
 /* 1.3 (Discussions #112, #134): MENU > DISPLAY > HOME, what the HOME page shows under its four cards: 0 SCOPE (the
  * oscilloscope, as before), 1 TRACKS (the four tracks as rows: ui_graph.c draw_home_tracks). A byte of its own no engine
@@ -251,7 +252,7 @@ static void scr_wake_now(void)                         /* main.c: the crash scre
 /* ui_input, every pass: 1 = the pass is swallowed (the screen dark or waking, or the wake gesture going on) */
 static int scr_input(uint32_t pressed, uint32_t notes)
 {
-    uint32_t held = fm1_in.buttons | fm1_in.notes, k;
+    uint32_t held = panel_buttons() | fm1_in.notes, k;
     int32_t moved = 0;
     if (pressed | notes | held | panel_moved)
         scrn.idle = fm1_ms;
@@ -338,6 +339,7 @@ enum { LK_OFF, LK_LABEL, LK_TALL };
 static uint32_t large_kind(void)
 {
     uint32_t g;
+    if (!ui.home && !memcmp(cur_page()->title,"SCAPE",5)) return (ui_prefs & PREF_LARGE) ? LK_LABEL : LK_OFF;
     if (!(ui_prefs & PREF_LARGE))
         return LK_OFF;
     if (ui.layer)
@@ -469,6 +471,31 @@ static uint32_t lock_id(uint32_t k)
 }
 
 static void ev_enter(void);
+/* SCAPE is one workspace. Page IDs remain stable for editor/second-screen views;
+ * SELECT visits its control banks without walking the HOME page family. */
+static int scape_page(uint32_t p)
+{
+    return p < NPAGES && !memcmp(PAGES[p].title, "SCAPE", 5);
+}
+static int scape_workspace(void) { return !ui.home && scape_page(ui.page); }
+static const uint8_t SCAPE_ORDER[]={0,3,4,1,2,5,6,7,8,9};
+static uint32_t scape_bank(void)
+{
+    uint32_t first=ui.page;
+    while(first && scape_page(first-1u)) first--;
+    uint32_t offset=ui.page-first;
+    return offset<NELEM(SCAPE_ORDER)?SCAPE_ORDER[offset]:0;
+}
+static void page_entered(void);
+static void scape_bank_turn(int32_t steps)
+{
+    uint32_t first=ui.page, bank=(uint32_t)clamp((int32_t)scape_bank()+steps,0,9);
+    while(first && scape_page(first-1u)) first--;
+    if(first+SCAPE_ORDER[bank]>=NPAGES || first+SCAPE_ORDER[bank]==ui.page) return;
+    ui.page=(uint8_t)(first+SCAPE_ORDER[bank]);
+    ui.fam_last[FAM_TRK]=ui.page;
+    page_entered();
+}
 static void page_entered(void)
 {
     const page_t *pg = cur_page();
@@ -481,8 +508,8 @@ static void page_entered(void)
     ui.hot_t = 0;                                /* clear the previous page's emphasis */
     ui.act = pg->graph == GR_USER ? 4u : 0u;     /* the save screen is ready for OCT+ */
     ui.force = 1;
-    if (!ui.home && pg->scope == SC_GLOBAL && pg->id[0] == G_DREAM)
-        ui_message("A KEY: AN EPOCH");           /* GHOULBOX 2.3: DREAM's keys (DINOBOX: EPOCH) */
+    if (!ui.home && pg->scope == SC_GLOBAL && pg->id[0] == G_DDENS)
+        ui_message("A KEY: SCAPE MUSIC");           /* GHOULBOX 2.3: DREAM's keys (DINOBOX: EPOCH) */
 }
 
 static int step_on(const step_t *st) { return st->time == ST_NOTE && (st->n || st->hit); }
@@ -511,7 +538,7 @@ static int song_keys_on(void) { return !ui.home && !ui.menu && !ui.confirm && !u
 /* GHOULBOX 2.3: HOME > DREAM, its keys compose (dream.c dream_keys) */
 static int dream_keys_on(void)
 {
-    return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->scope == SC_GLOBAL && cur_page()->id[0] == G_DREAM;
+    return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->scope == SC_GLOBAL && cur_page()->id[0] == G_DDENS;
 }
 
 /* black key place p (seq.c key_place) held, 0 = not */
@@ -647,7 +674,9 @@ static void go_home(void)
 static void home_tap(void)
 {
     uint32_t i = ui.page + 1u;
-    if (ui.home) {
+    if (scape_workspace()) {
+        go_home();
+    } else if (ui.home) {
         ui.fam_last[FAM_TRK] = 0;                     /* (open_family: the family's first, the MIXER) */
         open_family(FAM_TRK);
     } else if (cur_page()->fam == FAM_TRK && i < NPAGES && PAGES[i].fam == FAM_TRK) {
@@ -1271,6 +1300,7 @@ static void track_defaults(track_t *t)
 static void gb_scene_load(uint32_t s)
 {
     uint32_t i;
+    dream_forget();
     if (s >= GB_NSCENE)
         s = 0;
     for (i = 0; i < G_COUNT; i++)

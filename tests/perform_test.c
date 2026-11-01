@@ -69,8 +69,6 @@ static void perf_reset(void)
     perf_kill = 0;
     memcpy((void *)perf_map, PF_DEF, sizeof PF_DEF);
     memset((void *)perf_k, 0, sizeof perf_k);
-    sl_lent = 0;
-    memset(sl, 0, sizeof sl);
 }
 /* the stage alone on the test signal: samples [t0, t1); ev: press (+e + 1) / let go (-(e + 1)) at block bt */
 typedef struct { uint32_t t; int e; } ev_t;
@@ -152,7 +150,7 @@ static int test_timing(void)
         snprintf(what, sizeof what, "  then the 1/16 from that 1/16, looped (error L %d R %d, 2nd pass %d of 12000)", el, er, el2);
         bad += check(what, el < 100 && er < 100 && el2 < 100);
         bad += check("  let go: the live signal again after the ramp, bit for bit", same(20000 + 160, 40000));
-        bad += check("  the buffer given back, nothing left running", !sl_lent && pf.mode == BM_NONE && !pf.busy);
+        bad += check("  the buffer given back, nothing left running", pf.mode == BM_NONE && !pf.busy);
     }
     {   /* REVERSE: the next 1/8 recorded, then played backwards */
         ev_t ev[] = {{992, PF_REV + 1}, {40000, -(PF_REV + 1)}};
@@ -243,7 +241,7 @@ static int test_too_long(void)
     test_signal(440, 12000, 277, 9000);
     run(72, 1, ev, 2, 50000);
     bad += check("REPEAT 1/8 at 72 BPM (417 ms, the loop holds 371): nothing happens, bit for bit",
-                 same(0, 50000) && !busy_seen && !sl_lent && !(perf_avail() & PF_BIT(PF_R8)));
+                 same(0, 50000) && !busy_seen && !(perf_avail() & PF_BIT(PF_R8)));
     run(120, 1, ev, 2, 50000);
     bad += check("REPEAT 1/8 at 120 BPM (250 ms): it plays", !same(0, 40000) && (perf_avail() & PF_BIT(PF_R8)));
     song.g[G_BPM] = 81;
@@ -277,7 +275,7 @@ static int test_too_long(void)
         }
         perf_press(PF_R8, 0);
         bad += check("  a REPEAT 1/8 held while the tempo drops below its fit: it ends, no click",
-                     pf.mode == BM_NONE && !sl_lent && mx < 4 * 190);
+                     pf.mode == BM_NONE && mx < 4 * 190);
     }
     return bad;
 }
@@ -326,41 +324,6 @@ static void song_render(uint32_t frames, void (*at)(uint32_t t))
     }
     transport_req = 2;
     mix_block(o, CTL);
-}
-
-/* ------------------------------------------------------------ 4. SLICER --- */
-static int slicer_ok;
-static void stut_at(uint32_t t)
-{
-    uint32_t k;
-    if (t == 44032u)
-        perf_press(PF_R16, 1);
-    if (t > 50000u && t < 80000u)
-        for (k = 0; k < NTRK; k++)
-            if (sl[k].rec_on || sl[k].loop)
-                slicer_ok = 0;
-    if (t > 50000u && t < 80000u && !sl_lent)
-        slicer_ok = 0;
-    if (t == 80000u)
-        perf_press(PF_R16, 0);
-    if (t == 80000u + 320u)
-        for (k = 0; k < NTRK; k++)
-            if (sl_lent || sl[k].rec || sl[k].loop)
-                slicer_ok = 0;
-}
-static int test_slicer(void)
-{
-    uint32_t k;
-    song_setup();
-    for (k = 0; k < NTRK; k++) {
-        trk[k].p[P_SLCR] = SL_STUT;
-        trk[k].p[P_SLPAT] = 1;
-        trk[k].p[P_SLRATE] = 1;
-        trk[k].p[P_SLDEPTH] = 127;
-    }
-    slicer_ok = 1;
-    song_render(120000, stut_at);
-    return check("SLICER STUT: live (no recording, no repeat) while REPEAT has the buffer, dropped after", slicer_ok);
 }
 
 /* -------------------------------------------------------------- 5. keys --- */
@@ -678,7 +641,7 @@ static int test_harm(void)
                  k ? "OCT DN" : "OCT UP", mx, own);
         bad += check(what, mx <= 4 * own);
         bad += check("  back to the live signal, bit for bit; the buffer given back",
-                     same(40000 + 3000, 49000) && !sl_lent && pf.mode == BM_NONE);
+                     same(40000 + 3000, 49000) && pf.mode == BM_NONE);
     }
     {   /* the shimmer at its most: bounded, and it dies away */
         ev_t ev[] = {{0, PF_OUP + 1}};
@@ -703,7 +666,7 @@ static int test_harm(void)
         run(120, 1, ev, 1, 20000);
         for (f = 1; f <= 2048u; f++) {
             uint32_t s = 20000u - f;
-            const int16_t *q = &sl_buf[0][0] + 2u * ((pf.wr - f) & HB_MASK);
+            const int16_t *q = perf_buffer + 2u * ((pf.wr - f) & HB_MASK);
             diff += q[0] != (int16_t)(in_l[s] >> 1) || q[1] != (int16_t)(in_r[s] >> 1);
         }
         bad += check("OCT UP, KNOB 4 at 0: no shimmer (the delay holds the input alone)", !diff && !pf.hfb);
@@ -1203,7 +1166,6 @@ int main(int argc, char **argv)
     bad += test_timing();
     bad += test_stereo();
     bad += test_too_long();
-    bad += test_slicer();
     bad += test_keys();
     bad += test_idle();
     bad += test_misc();

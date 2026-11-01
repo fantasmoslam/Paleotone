@@ -280,14 +280,13 @@ static void turn(uint32_t role, int32_t s)
     host_ticks += 200000u;                        /* (no knob acceleration between the turns) */
 }
 static void stop_transport(void) { transport_req = 0; song.playing = 0; }
-/* DINOBOX: HOME tapped on EPOCH goes through SCAPE's seven pages (scape.c), then HOME. 1 = so */
+/* SCAPE banks are selected in-place; HOME exits the whole workspace. */
 static int home_through_scape(void)
 {
-    static const char *const T[7] = {"SCAPE", "SCAPE DRONE", "SCAPE CALLS", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE DENSITY",
-                                     "SCAPE DENSITY 2"};
+    static const char *const T[] = {"SCAPE SETUP", "SCAPE ROLES", "SCAPE MIX", "SCAPE", "SCAPE DRONE", "SCAPE LIFE", "SCAPE LEVELS", "SCAPE LEVELS 2", "SCAPE SCENE"};
     int ok = 1;
-    for (uint32_t i = 0; i < 7u; i++) {
-        press(B_HOME);
+    for (uint32_t i = 0; i < NELEM(T); i++) {
+        turn(EN_SELECT, 1);
         ok &= !ui.home && str_eq(cur_page()->title, T[i]);
     }
     press(B_HOME);
@@ -1714,7 +1713,7 @@ static int test_menu_tabs(void)
                  "constant (S, LARGE)",
                  ok && MTAB_COUNT == 5u && str_eq(MTAB_NAME[0], "DISPLAY") && str_eq(MTAB_NAME[MTAB_MIDI], "MIDI") &&
                  mtab_rows(MTAB_DISPLAY) == 8u && MI_TAB[MI_HOME] == MTAB_DISPLAY && mtab_rows(MTAB_CONTROL) == 8u && MI_TAB[MI_NAMES] == MTAB_CONTROL && mtab_rows(MTAB_AUDIO) == 6u &&
-                 mtab_rows(MTAB_MIDI) == 6u && mtab_rows(MTAB_SYSTEM) == 6u && MI_TAB[MI_SCENE] == MTAB_SYSTEM && MI_TAB[MI_TUNE] == MTAB_AUDIO &&
+                 mtab_rows(MTAB_MIDI) == 6u && mtab_rows(MTAB_SYSTEM) == 7u && MI_TAB[MI_CPU2] == MTAB_SYSTEM && MI_TAB[MI_SCENE] == MTAB_SYSTEM && MI_TAB[MI_TUNE] == MTAB_AUDIO &&
                  MI_TAB[MI_MIDIIN] == MTAB_MIDI && MI_TAB[MI_INFO] == MTAB_SYSTEM && MI_INFO >= MI_VALUES);
 
     ui_power_on();
@@ -2764,9 +2763,9 @@ static int test_page_cycles(void)
     for (i = 0; i < NPAGES; i++) {                       /* every page in a family its button reaches, and its LED */
         uint32_t f = PAGES[i].fam;
         ok &= f != FAM_SEQ || PAGES[i].graph == GR_ROLL || PAGES[i].graph == GR_EVENTS;
-        ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG;   /* (1.2: GLO's only page) */
+        ok &= f != FAM_GLO || PAGES[i].graph == GR_SONG;   /* SONG stays GLO's only page. */
         ok &= f != FAM_TRK || PAGES[i].graph == GR_TRK || str_eq(PAGES[i].title, "CLOCK") ||
-              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "EPOCH") ||   /* HOME's: MIXER CLOCK KEYS (2.1)
+              str_eq(PAGES[i].title, "KEYS") || str_eq(PAGES[i].title, "SCAPE MUSIC") ||   /* HOME's: MIXER CLOCK KEYS (2.1)
                                                                                      * DREAM (2.3) */
               !memcmp(PAGES[i].title, "SCAPE", 5);   /* DINOBOX: SCAPE's five */
         ok &= PAGES[i].graph != GR_TRK || f == FAM_TRK;
@@ -2807,12 +2806,12 @@ static int test_page_cycles(void)
     open_family(FAM_SEQ); ok &= cur_page()->graph == GR_ROLL;
     open_family(FAM_ENV); ok &= str_eq(cur_page()->title, "ENV");
     open_family(FAM_SAVE); ok &= str_eq(cur_page()->title, "USER");
-    open_family(FAM_GLO); open_family(FAM_GLO);          /* SONG again (its only page) */
+    open_family(FAM_GLO); open_family(FAM_GLO);
     ok &= str_eq(cur_page()->title, "SONG");
     go_home(); open_family(FAM_GLO); ok &= str_eq(cur_page()->title, "SONG");
     for (i = 0; i < 256u; i++) {                         /* any remembered index (the old GLOBAL 25, SYSTEM 27, ..) */
         go_home(); ui.fam_last[FAM_GLO] = (uint8_t)i; open_family(FAM_GLO);
-        ok &= str_eq(cur_page()->title, "SONG") && ui.fam_last[FAM_GLO] == ui.page;
+        ok &= (i < NPAGES && PAGES[i].fam == FAM_GLO ? ui.page == i : str_eq(cur_page()->title, "SONG")) && ui.fam_last[FAM_GLO] == ui.page;
         go_home(); ui.fam_last[FAM_TRK] = (uint8_t)i; press(B_HOME);
         ok &= cur_page()->graph == GR_TRK && !ui.home;
     }
@@ -2948,7 +2947,7 @@ static int test_product_ux(void)
     press(B_HOME);                                      /* (2.1: CLOCK > KEYS; 2.3: > DREAM > HOME) */
     ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
     press(B_HOME);
-    ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
+    ok &= !ui.home && str_eq(cur_page()->title, "SCAPE MUSIC");
     ok &= home_through_scape() && !ui.menu;
     press(B_HOME);
     ok &= cur_page()->graph == GR_TRK;
@@ -2965,17 +2964,17 @@ static int test_product_ux(void)
         memcpy(song.g, g0, sizeof g0);
     }
     press(B_HOME);
-    ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");   /* (2.3: DREAM after KEYS) */
+    ok &= !ui.home && str_eq(cur_page()->title, "SCAPE MUSIC");   /* (2.3: DREAM after KEYS) */
     {   /* DREAM's knobs: EVOL DENS DRFT MOOD, nothing else */
         int16_t g0[G_COUNT];
         memcpy(g0, song.g, sizeof g0);
         turn(EN_K1, 1); turn(EN_K2, 1); turn(EN_K3, -1); turn(EN_K4, 1);
-        ok &= song.g[G_DREAM] == g0[G_DREAM] + 1 && song.g[G_DDENS] == g0[G_DDENS] + 1 &&
-              song.g[G_DDRFT] == g0[G_DDRFT] - 1 && song.g[G_DMOOD] == g0[G_DMOOD] + 1 && song.g[G_BPM] == g0[G_BPM];
+        ok &= song.g[G_DDENS] == g0[G_DDENS] + 1 && song.g[G_DDRFT] == g0[G_DDRFT] + 1 &&
+              song.g[G_SMOTION] == g0[G_SMOTION] - 1 && song.g[G_SCHORD] == g0[G_SCHORD] + 1 && song.g[G_BPM] == g0[G_BPM];
         memcpy(song.g, g0, sizeof g0);
     }
     ok &= home_through_scape();
-    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x7 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
+    bad += check("HOME cycles HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (CLOCK: BPM SWG CLK; KEYS: MODE TRK SPLT OCT; "
                  "DREAM: EVOL DENS DRFT MOOD); elsewhere HOME", ok);
     hold(B_HOME);
     bad += check("1.2: HOME held still opens the menu", ui.menu == 1);
@@ -3186,7 +3185,7 @@ static int test_layer(void)
     bad += check("FX tap: nothing on press, the FX page when let go", ok && !ui.home && cur_page()->fam == FAM_FX);
     frames(320);                                       /* (not a double tap: #83) */
     press(B_FX);
-    bad += check("  a second tap: the next page of the family (SLICER)", str_eq(cur_page()->title, "SLICER"));
+    bad += check("  a second tap: the next page of the family (DLY)", str_eq(cur_page()->title, "DLY"));
     ui_power_on();
     btn_down(B_FX);
     for (flash = 0, i = 0; i < 22u; i++) { frame(); flash |= ui.layer; }      /* 0.35 s */
@@ -4983,7 +4982,7 @@ static int test_bughunt_ui2(void)
     return bad;
 }
 
-#ifndef UI_TEST_NO_MAIN
+#if !defined(UI_TEST_NO_MAIN) || defined(UI_TEST_WITH_CASES)
 /* L is a sparse face (tools/gen_aa_font.py L_CHARS): every string drawn in it has all its glyphs */
 static int test_large_face(void)
 {
@@ -7546,7 +7545,7 @@ static int test_div_order(void)
         uint32_t prev = 0xFFFFFFFFu, len;
         for (n = 0; n < 40; n++) v = param_turn(d, v, -1);
         for (n = 0; n <= d->max - d->min; n++) {
-            len = d->names == N_SLDIV ? 1000000u / SL_DEN[v] : div_samples((uint32_t)v);
+            len = d->names == N_SLDIV ? 1000000u / ((const uint8_t[]){2, 4, 8, 3, 6, 12})[v] : div_samples((uint32_t)v);
             if (!(len < prev && enum_rank(d, v) == d->min + n && !((seen >> v) & 1))) {
                 printf("  %s: %s (value %d, place %d, length %u) after %u\n", d->label, d->names[v], (int)v,
                        (int)enum_rank(d, v), len, prev);
@@ -7588,7 +7587,7 @@ static int test_div_order(void)
     turn(EN_K2, -2);
     ok &= TSEL->p[P_SDIV] == 4;
     btn_up(B_SEQ); frame();
-    bad += check("#48 the pages' knobs step the divisions by length (SEQ TOOLS, ARP, DLY, SLICER)", ok && found >= 3u);
+    bad += check("#48 the pages' knobs step the divisions by length (SEQ TOOLS, ARP, DLY)", ok && found >= 2u);
     return bad;
 }
 
@@ -9231,11 +9230,11 @@ static int test_home_tracks(void)
     press(B_HOME); ok = !ui.home && cur_page()->graph == GR_TRK;
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "CLOCK");
     press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "KEYS");
-    press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "EPOCH");
+    press(B_HOME); ok &= !ui.home && str_eq(cur_page()->title, "SCAPE MUSIC");
     ok &= home_through_scape();
     frame();
     ok &= tr_px(3 + 22, tr_y(3) + 1) == T_THEME;
-    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x7 > HOME (the rows back)", ok);
+    bad += check("1.3 HOME > TRACKS: HOME tapped still goes HOME > MIXER > CLOCK > KEYS > DREAM > SCAPE x5 > HOME (the rows back)", ok);
 
     ui_prefs |= PREF_LARGE;                             /* MENU > LARGE: the cards as on a list page, the rows */
     ui.force = 1; frame();
@@ -9856,6 +9855,7 @@ static int test_midi_cc(void)
     return bad;
 }
 
+#ifndef UI_TEST_NO_MAIN
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -9954,4 +9954,5 @@ int main(void)
     printf(bad ? "ui: %d FAILED\n" : "ui: all passed\n", bad);
     return bad ? 1 : 0;
 }
+#endif /* UI_TEST_NO_MAIN */
 #endif

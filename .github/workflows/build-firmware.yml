@@ -6,7 +6,7 @@ name: build firmware
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/paleotone-remote-screen, feature/fm1-physical-screen-focus, feature/paleotone-unified, feature/display-latency, feature/scape-garden, feature/paleotone-dualcore, feature/audio-diagnostics, feature/audio-hotpath-inline, feature/effects-hotpath-inline, feature/engine-hotpath-inline, feature/usb-buffer-margin, feature/midi-path-trace, fix/editor-updater-dispatch, feature/roar-worker-audit]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +29,9 @@ jobs:
       - name: JieLi toolchain
         run: tools/get_toolchain.sh "$HOME/.jieli"
 
+      - name: SDK retry regression
+        run: python3 tests/sdk_fetch_test.py
+
       - name: JieLi AC79 SDK
         run: sh tools/get_ac79_sdk.sh "$HOME/fw-AC79_AIoT_SDK"
 
@@ -39,6 +42,14 @@ jobs:
           ./build.sh 2>&1 | tee build.log
           cp build/felucca.fwsc paleotone.fwsc
           sha256sum paleotone.fwsc | tee -a build.log
+
+      - name: Code size diagnostics
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/felucca.elf ]; then
+            "$HOME/.jieli/toolchain/common/bin/objdump" -t build/felucca.elf | sort -k5,5r | sed -n '1,80p'
+          fi
 
       - name: Image tests (the update entry, the loader from another app, the render loops' cost)
         shell: bash
@@ -52,16 +63,22 @@ jobs:
           head -c 200000 build/felucca.bin > build/host/old_app.bin
           python3 tools/fm1pkg_make.py build/host/old_app.bin build/loader/ota.bin build/host/old.fwsc > /dev/null
           cc -O1 -w -o build/host/ldr_test tests/ldr_test.c && build/host/ldr_test build/host/old.fwsc build/felucca.fwsc | tail -1 | tee -a build.log
-          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt | tail -1 | tee -a build.log
+          python3 tests/target_budget.py build/felucca.dis tests/target_budget.txt | tee -a build.log
 
       - uses: actions/upload-artifact@v4
         with:
           name: paleotone-firmware
-          path: paleotone.fwsc
+          path: |
+            paleotone.fwsc
+            build.log
+            build/felucca.bin
+            build/felucca.elf
+            build/felucca.dis
+            build/loader/loader.dis
           if-no-files-found: error
 
       - name: Put the result on the build-output branch
-        if: always()
+        if: always() && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config --global --add safe.directory "$PWD"

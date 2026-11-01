@@ -18,6 +18,11 @@ static void lcd_wake_now(void) {}
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p)
 { (void)x; (void)y; (void)w; (void)h; (void)p; }
 #include "../firmware/src/gfx.c"
+/* Standalone settings harness also supplies the physical-panel clock and button register. */
+static uint32_t fm1_ms;
+static struct { uint32_t buttons; } fm1_in;
+static inline int32_t clamp(int32_t v, int32_t lo, int32_t hi)   /* panel.c's, from dsp.c, which the firmware */
+{ return v < lo ? lo : v > hi ? hi : v; }                         /* includes before it */
 #include "../firmware/src/panel.c"
 static void settings_save(void) {}
 #if __has_include("../firmware/src/favorites.c")

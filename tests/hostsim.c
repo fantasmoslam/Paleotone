@@ -33,7 +33,6 @@ static struct { volatile uint32_t notes, buttons; uint32_t frames, enc_dfr[7]; }
 #include "../firmware/src/params.c"
 #include "../firmware/src/mod.c"
 #include "../firmware/src/voice.c"
-#include "../firmware/src/slicer.c"
 #include "../firmware/src/fx.c"
 static void fm1_delay_ms(uint32_t ms) { (void)ms; }
 #include "../firmware/src/usb.c"

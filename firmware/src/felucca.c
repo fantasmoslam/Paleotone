@@ -38,6 +38,10 @@
 #ifndef FELUCCA_VERSION
 #define FELUCCA_VERSION "v1.4.1" /* shown in the menu, the console and the editor; build.py --release X.Y */
 #endif
+#ifndef FELUCCA_CPU2
+#define FELUCCA_CPU2 1
+#endif
+#define FM1_CPU1_USED FELUCCA_CPU2
 #if FELUCCA_OTA && !FELUCCA_FLASH
 #error "FELUCCA_OTA needs FELUCCA_FLASH"
 #endif
@@ -48,6 +52,12 @@
 #include "fm1_sys.h"
 #include "fm1_irq.h"
 #include "fm1_guard.h"
+#if FELUCCA_CPU2
+#include "fm1_cpu1.h"
+#define C1_ON() fm1_c1_on
+#define C1_RUN(fn, arg) fm1_cpu1_run(fn, arg)
+#define C1_WAIT() fm1_cpu1_wait()
+#endif
 #include "fm1_input.h"
 #include "fm1_timer.h"
 #include "fm1_audio.h"
@@ -66,7 +76,7 @@
 #include "params.c"
 #include "mod.c"               /* the modulation matrix, used by voice.c and fx.c */
 #include "voice.c"
-#include "slicer.c"              /* per-track SLICER insert, used by fx.c */
+#define AUDIO_PROFILE_TARGET 1
 #include "fx.c"
 
 /* ------------------------------------------------- MIDI, sequencer --- */
@@ -101,6 +111,7 @@
 #include "ota.c"
 #include "ota_hw.c"
 #include "rescue.c"              /* the USB RESCUE: two failed boots, or OCT- held at power-on (main.c) */
+#define FELUCCA_REMOTE_STATE 1
 #include "editor.c"              /* web editor SysEx (needs the OTA SysEx plumbing) */
 #endif
 #if FELUCCA_CDC

@@ -8,6 +8,9 @@
 #include <stdint.h>
 
 /* ------------------------------------------------------------ sizes --- */
+#ifndef FELUCCA_CPU2
+#define FELUCCA_CPU2 0 /* host/browser remain single-core unless explicitly tested */
+#endif
 #define NVOICE 12                /* voices per part, and the budget shared by all parts */
 #define NPART 4                  /* synth parts: tracks 1..4 */
 #define NTRK NPART               /* tracks (the formats and the protocol count these): every track is a part */
@@ -26,6 +29,7 @@
 #ifndef GHOULBOX_VERSION
 #define GHOULBOX_VERSION "2.3.2"   /* GHOULBOX's own: the ABOUT screen; the editor's version string ends " GB" it */
 #endif
+enum { SL_OFF, SL_GATE, SL_STUT }; /* legacy stored values only; no insert DSP */
 #define NENGINES 16u             /* SLICE 13 (reserved without FELUCCA_SLICE: never offered), GURDY 14 (GHOULBOX), SAURUS 15 (DINOBOX):
                                   * every engine keeps its number in every build */
 #define ENGI_SLICE 13u
@@ -65,7 +69,7 @@ enum {                          /* per-track parameters */
     P_DIST, P_CHOR, P_DLY, P_REV,
     P_VOICE, P_GLIDE, P_PAN, P_MUTE,
     P_GLMODE, P_PRIO, P_ALLOC, P_DETUNE,
-    P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH,      /* SLICER insert (slicer.c) */
+    P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH,      /* retired insert slots: numeric IDs kept for saved projects */
     P_M1SRC, P_M1DST, P_M1AMT,                 /* modulation matrix (mod.c): 4 slots of SRC, DST, AMT; */
     P_M2SRC, P_M2DST, P_M2AMT,                 /* new common parameters go just before P_E0 (user presets */
     P_M3SRC, P_M3DST, P_M3AMT,                 /* and projects map by count) */
@@ -119,6 +123,11 @@ enum {                          /* global parameters */
     G_SDRN, G_SDTYP, G_SDKEY, G_SDMOV,   /* .. the drone: its level (0: none), type, key (AUTO: track 1's ROOT), movement */
     G_SCTRK, G_SCRATE, G_SCNOTE, G_SCSPRD,   /* .. the calls: the track that calls (OFF, T1..T4), how often, PTCH (D3 +),
                                  * the spread of notes round it */
+    G_SDNGR, G_SDSIZ, G_SDSTP, G_SDROR,   /* .. DANGER: how often a beast comes by (0: never), its SIZE, its STEPs'
+                                 * level, the track that ROARs as it passes (OFF, the CALLS track, T1..T4) */
+    G_SMOTION, G_SCHORD, G_SBED, G_SMELO, G_SBASS, G_SPULSE,
+    G_SROLE0, G_SROLE1, G_SROLE2, G_SROLE3, /* append-only: director controls in SCAPE sidecar */
+    G_SCHOLD, G_SCNEXT, G_SCNEW,            /* DINOBOX: the performance actions: HOLD, NEXT chord, NEW start */
     G_COUNT
 };
 
@@ -386,6 +395,7 @@ typedef struct track {
     int32_t peak;
     int32_t dist_hp, dist_lp1, dist_lp2;   /* DIST insert state (fx.c) */
     uint8_t tail;                /* blocks to mix after the last voice (the DIST tail) */
+    uint8_t lfo_wrap, spread_on;  /* per-part render state; never saved in project payloads */
     int16_t armp, aholdp;        /* P_AMODE / P_AHOLD as last seen by the ISR */
     /* engine switch (voice.c engine_block): the old engine's voices fade out, then it switches */
     uint8_t xf_on, xf;           /* fading; blocks of the fade still to render */
@@ -430,7 +440,7 @@ static song_t song;
 #define TSEL (&trk[song.sel])    /* the selected track */
 
 /* SWING of a track's step clock: the track's own plus the global one, at most 100 (#31). The sequencer
- * (seq.c step_samples) and the SLICER (slicer.c sl_enter) both time steps with it. At 100 the even
+ * (seq.c step_samples) uses it. At 100 the even
  * steps are 1.4 x the straight length and the odd ones 0.6 x. */
 #define SWING_MAX 100
 static inline int32_t track_swing(const track_t *t)

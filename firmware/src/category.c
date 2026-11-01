@@ -47,8 +47,9 @@ static const char *const PRESET_CAT[16] = {   /* Felucca's sounds, then DINOBOX'
     "DD",                        /* 13 SLICE: CHOP, STUTTER */
     "LPLLLLLP" "DDDDDDDDDDDD",   /* 14 ROAR: PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR
                                   * CHANT, TUNDRA; the rhythms WAR PARADE .. CHAOS DRUMS */
-    "FFFFLFFFFPFFFFPB" "FFLF",   /* 15 SAURUS (DINOBOX): the calls FX, CREST HOOT a lead, DEEP RUMBLE and DISTANT HERD
-                                  * pads, LOW GROWL a bass; BABY REX, SEA MONSTER, HADRO HORN (a lead), COMPY PACK */
+    "FFFFLFFFFPFFFFPB" "FFLF" "FF",   /* 15 SAURUS (DINOBOX): the calls FX, CREST HOOT a lead, DEEP RUMBLE and DISTANT
+                                  * HERD pads, LOW GROWL a bass; BABY REX, SEA MONSTER, HADRO HORN (a lead), COMPY PACK;
+                                  * PALEOTONE 2's RAPTOR CRY, TITAN BOOM */
 };
 static uint32_t preset_cat(uint32_t e, uint32_t k)    /* factory preset k of engine e */
 {

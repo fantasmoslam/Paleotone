@@ -293,9 +293,6 @@ if [ -f build/gen/felucca_tables.h ]; then
     mkdir -p build/sound14_demo
     run "sound items: matrix S&H / SLEW / DEPTH, ANALOG SYNC / SUB, SPREAD (bit for bit at 0, L / R, mono sum), cost, demos" \
         "$OUT/sound14_test" build/sound14_demo
-    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/slicer_test" tests/slicer_test.c -lm
-    mkdir -p build/slicer_demo
-    run "SLICER: no clicks, timing, sync with the sequencer, STUT, cost, demos" "$OUT/slicer_test" build/slicer_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/sample_sets_test" tests/sample_sets_test.c -lm
     run "SAMPLE: DINOBOX's own sets (zones, loops, decay, flash)" "$OUT/sample_sets_test"
     run "SAMPLE: a missing CC0 set stops gen_samples.py (no set moves down a place)" python3 tests/gen_samples_missing_test.py

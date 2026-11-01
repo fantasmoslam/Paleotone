@@ -17,11 +17,13 @@ SRC = _ROOT / "firmware" / "src" if (_ROOT / "firmware" / "src").is_dir() else _
 # the UI, the stores, the editor and the console: main loop only, never called by sound code; and (1.1) every
 # other file without DSP: USB, MIDI, the sequencer, the drawing, the LCD, OTA, ... Of those, what an interrupt
 # reaches (ISR_ROOTS and everything they call or name, from the IR) keeps -Os (isr_reach)
-SIZE_FILES = ["ui.c", "favorites.c", "menu_items.c", "icons.c", "ui_graph.c", "ui_draw.c", "ui_menu.c", "ui_input.c",
+SIZE_FILES = ["ui.c", "favorites.c", "menu_items.c", "icons.c", "ui_graph.c", "ui_draw.c", "ui_scape.c", "ui_menu.c", "ui_input.c",
+              "remote_state.c", "editor_remote.c", "ui_panel_views.c", "remote_codec.h",
               "storage.c", "upreset.c", "project.c", "settings_persist.c",
               "editor.c", "editor_preferences.c", "editor_backup.c", "editor_menu.c", "console.c",
               "usb.c", "midi_uart.c", "midi_control.c", "midi_clock.c", "seq.c", "song_chain.c", "chord.c", "motion.c",
               "panel.c", "lcd.c", "gfx.c", "ota.c", "ota_hw.c", "up_fm6.c", "slice_store.c", "params.c", "editor_fm6.c",
+              "ui_fm6op.c", "ui_tools.c", "editor_screen.c", "remote_catalog.h",
               "ui_layer.c", "ui_name.c", "ui_slice.c", "ui_events.c", "dream.c", "main.c", "libc.c", "storage_hw.c", "engines.c", "fm4_convert.c"]
 ISR_ROOTS = ("fm1_alnk0_irq", "fm1_timer5_irq")      # hal/fm1_isr.S: the audio ISR, the key / LED scan (+ USB poll)
 DEF = re.compile(r"^(?:static|void|int|uint\w*|int\w*|const)\b[^;=(]*?\b([A-Za-z_]\w*)\s*\(", re.M)

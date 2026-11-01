@@ -1,3 +1,4 @@
+#include "midi_trace.h"
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Serial console on the CDC-ACM function (FELUCCA_CDC=1): read-only
@@ -183,6 +184,10 @@ static void con_uac(void)                              /* USB audio input: strea
     con_kv("uac_stalls", (int32_t)uac.stalls);
     con_kv("uac_adj_up", (int32_t)uac.adj_up);
     con_kv("uac_adj_down", (int32_t)uac.adj_down);
+    con_kv("uac_raw_fill_lo",uac.raw_fill_lo==0xFFFFFFFFu?-1:(int32_t)uac.raw_fill_lo);
+#ifdef AUDIO_PROFILE_TARGET
+    con_kv("uac_feed_gap_max_us",uac_feed_gap_max_us);
+#endif
     con_kv("uac_fill", (int32_t)uac.fill_min);
     con_kv("uac_fill_lo", uac.fill_lo == 0xFFFFFFFFu ? -1 : (int32_t)uac.fill_lo);
     con_kv("uac_fill_hi", (int32_t)uac.fill_hi);
@@ -198,6 +203,10 @@ static void con_status(void)
     con_kv("uptime_ms", (int32_t)fm1_ms);
     con_kv("cpu_pct", (int32_t)(song.cpu_q8 * 100u / 256u));
     con_kv("audio_max_us", (int32_t)felucca_dbg.max_us);
+    con_kv("audio_wall_max_us",audio_wall_max_us);
+    con_kv("audio_nested_max_us",audio_nested_max_us);
+    con_kv("audio_deadline_us",HALF_FRAMES*1000000u/FS);
+    con_kv("lcd_timeouts",fm1_lcd_timeouts);
     con_kv("audio_late", (int32_t)felucca_dbg.late);
     con_kv("voices_shed", (int32_t)shed_count);
     con_kv("voices_given_up", (int32_t)voice_kills);
@@ -211,6 +220,15 @@ static void con_status(void)
     con_puts("\r\n");
     con_kv("bpm", song.g[G_BPM]);
     con_kv("playing", song.playing);
+#if FELUCCA_CPU2
+    con_kv("cpu2_set", !!(ui_prefs2 & (PREF_CPU2_ON>>16)));
+    con_kv("cpu2",fm1_c1_on);
+    con_kv("cpu2_blocks",c1_blocks);
+    con_kv("cpu2_bad",fm1_c1_mb.bad);
+    con_kv("cpu2_gave_up",fm1_c1_gave_up);
+    con_kv("cpu2_wait_max_us",fm1_c1_wait_max/24u);
+    con_kv("cpu2_stack",fm1_cpu1_stack_used());
+#endif
     con_kv("boots", (int32_t)felucca_dbg.boots);
     con_kv("usb_resets", (int32_t)usb.resets);
     con_kv("usb_sof", (int32_t)usb.sof_seen);
@@ -219,6 +237,19 @@ static void con_status(void)
     con_kv("usb_frame", (int32_t)usb.frame);
     con_kv("usb_frame_stalls", (int32_t)usb.frame_stalls);
     con_kv("usb_max_gap_polls", (int32_t)usb.max_gap);
+    con_kv("mt_rx_start",midi_trace.rx_start);
+    con_kv("mt_rx_busy",midi_trace.rx_busy);
+    con_kv("mt_rx_done",midi_trace.rx_done);
+    con_kv("mt_rx_cmd",midi_trace.rx_cmd);
+    con_kv("mt_rx_track",midi_trace.rx_track);
+    con_kv("mt_handle29",midi_trace.handle29);
+    con_kv("mt_handle96",midi_trace.handle96);
+    con_kv("mt_tx29",midi_trace.tx29);
+    con_kv("mt_done29",midi_trace.done29);
+    con_kv("mt_tx96",midi_trace.tx96);
+    con_kv("mt_done96",midi_trace.done96);
+    con_kv("mt_tx_timeout",midi_trace.tx_timeout);
+    con_kv("mt_tx_fail_cmd",midi_trace.tx_fail_cmd);
     con_kv("midi_rx_pkts", (int32_t)usb.rx_pkts);
     con_kv("midi_tx_pkts", (int32_t)usb.tx_pkts);
 #if FELUCCA_UAC
@@ -341,8 +372,28 @@ static void con_params(void)
     }
 }
 
+#ifdef AUDIO_PROFILE_TARGET
+static void con_profile(void)
+{
+    static const char *const names[10]={"track1","track2","track3","track4","events","parts","scape","effects","master","usb_copy"};
+    con_kv("profile_on",ap_on);
+    for(uint32_t i=0;i<10;i++) {
+        con_puts(names[i]); con_putc(' '); con_dec(ap_metric[i].calls);
+        con_putc(' '); con_dec(ap_metric[i].sum_us);
+        con_putc(' '); con_dec(ap_metric[i].max_us);con_puts("\r\n");
+    }
+}
+#endif
+
 static void con_exec(const char *p)
 {
+#ifdef AUDIO_PROFILE_TARGET
+    if(con_word(&p,"profile")) {
+        if(con_word(&p,"on")) {ap_on=0;memset(ap_metric,0,sizeof ap_metric);ap_on=1;}
+        else if(con_word(&p,"off")) ap_on=0;
+        con_profile();
+    } else
+#endif
     if (con_word(&p, "help") || con_word(&p, "?"))
         con_puts("status  dbg  inp  crash  params  memr ADDR [LEN]  flr OFF [LEN]  uboot yes\r\n");
     else if (con_word(&p, "status"))

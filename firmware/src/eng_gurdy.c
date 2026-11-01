@@ -168,7 +168,7 @@ static void gurdy_note_on(track_t *t, voice_t *v)
 }
 
 /* the SVF's band-pass (tsvf_lp's v1): the same state update, the other output */
-static inline int32_t gurdy_bp(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t *ic2)
+static inline __attribute__((always_inline)) int32_t gurdy_bp(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t *ic2)
 {
     int32_t v3 = in - *ic2;
     int32_t v1 = (c->a1 * *ic1 + c->a2 * v3) >> 13;

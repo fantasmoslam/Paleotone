@@ -15,10 +15,12 @@ static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", 
                                     "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH",
                                     "PHDOM", "HUNG", "DHARM"};   /* (stored: append-only; GHOULBOX's from PHDOM, seq.c) */
 static const char *const N_ONOFF[] = {"OFF", "ON"};
+static const char *const N_SHOLD[] = {"20S", "30S", "45S", "60S", "90S", "120S", "180S", "300S"};
+static const char *const N_SROLE[] = {"AUTO", "BED", "MELO", "BASS", "PULSE", "BEAST"};
 static const char *const N_DMOOD[] = {"MIN", "DOR", "PHRY", "HARM", "MAJ", "MIX"};   /* GHOULBOX 2.3: DREAM's (dream.c) */
-static const char *const N_DTYPE[] = {"HUM", "WIND", "CHOIR", "EARTH"};   /* DINOBOX: SCAPE's drone (scape.c) */
 static const char *const N_SKEY[] = {"AUTO", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const N_SCTRK[] = {"OFF", "T1", "T2", "T3", "T4"};   /* .. the track its calls play */
+static const char *const N_DSIZE[] = {"SMALL", "BIG", "HUGE"};   /* .. DANGER's beast (scape.c sc_danger) */
 static const char *const N_BIOME[] = {"WATER", "JUNGL", "TUNDR", "FORST", "PLAIN", "MOUNT", "CANYN", "CALDR"};   /* DINOBOX:
                                                      * SCAPE's biomes (scape.c SC_BIOME, in that order) */
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
@@ -195,10 +197,10 @@ static const param_desc_t GP[G_COUNT] = {
     [G_KSPLIT] = PE("SPLT", N_KSPLIT, 4),          /* (C4: F3..B3 below, seven keys) */
     [G_KOCT] = PE("OCT", N_KOCT, 2),               /* (0) */
     [G_DREAM] = PE("EVOL", N_ONOFF, 0),            /* GHOULBOX 2.3: HOME > DREAM (dream.c) */
-    [G_DDENS] = PD("DENS", F_INT, 1, 8, 4),
-    [G_DDRFT] = PD("DRFT", F_INT, 1, 8, 6),        /* (a change every 3 passes: ~80 s at 72 BPM) */
+    [G_DDENS] = PD("ACTV", F_INT, 1, 8, 4),
+    [G_DDRFT] = PD("EVOL", F_INT, 1, 8, 6),        /* (a change every 3 passes: ~80 s at 72 BPM) */
     [G_DMOOD] = PE("MOOD", N_DMOOD, 0),
-    /* DINOBOX: SCAPE (scape.c), HOME > EPOCH tapped again. LEVEL 0 = off (nothing runs, as before); a BIOME turned on
+    /* DINOBOX: SCAPE (scape.c), HOME > SCAPE MUSIC tapped again. LEVEL 0 = off (nothing runs, as before); a BIOME turned on
      * its page sets the layers, DIST and TIME (ui_input.c); the defaults are JUNGLE's (scape.c SC_BIOME[1]) */
     [G_SCAPE] = PD("LEVEL", F_PCT, 0, 127, 0),
     [G_SBIOME] = PE("BIOME", N_BIOME, 1),
@@ -213,13 +215,30 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SD4] = PD("FROGS", F_PCT, 0, 127, 50), [G_SD5] = PD("BIRDS", F_PCT, 0, 127, 55),
     [G_SD6] = PD("DRIPS", F_PCT, 0, 127, 20), [G_SD7] = PD("RUMBL", F_PCT, 0, 127, 30),
     [G_SDRN] = PD("DRONE", F_PCT, 0, 127, 0),       /* the drone: 0 none */
-    [G_SDTYP] = PE("TYPE", N_DTYPE, 0),
+    [G_SDTYP] = PD("LEGACY", F_INT, 0, 3, 0),
     [G_SDKEY] = PE("KEY", N_SKEY, 0),               /* AUTO: track 1's ROOT */
     [G_SDMOV] = PD("MOVE", F_PCT, 0, 127, 40),
     [G_SCTRK] = PE("TRK", N_SCTRK, 0),              /* the calls: OFF none */
     [G_SCRATE] = PD("RATE", F_PCT, 0, 127, 40),
     [G_SCNOTE] = PD("PTCH", F_SEMI, -24, 24, 0),   /* the note: D3 + PTCH semitones */
     [G_SCSPRD] = PD("SPRD", F_INT, 0, 24, 5),       /* semitones each way */
+    [G_SDNGR] = PD("DANGR", F_PCT, 0, 127, 0),      /* DANGER: 0 never .. 127 a beast every ~40 s */
+    [G_SDSIZ] = PE("SIZE", N_DSIZE, 1),
+    [G_SDSTP] = PD("STEP", F_PCT, 0, 127, 100),     /* the footsteps' level */
+    [G_SMOTION] = PD("MOTN", F_PCT, 0, 127, 64),
+    [G_SCHORD] = PE("CHORD", N_SHOLD, 3),
+    [G_SBED] = PD("BED", F_PCT, 0, 127, 100),
+    [G_SMELO] = PD("MELO", F_PCT, 0, 127, 90),
+    [G_SBASS] = PD("BASS", F_PCT, 0, 127, 100),
+    [G_SPULSE] = PD("PULSE", F_PCT, 0, 127, 80),
+    [G_SROLE0] = PE("T1", N_SROLE, 0), [G_SROLE1] = PE("T2", N_SROLE, 0),
+    [G_SROLE2] = PE("T3", N_SROLE, 0), [G_SROLE3] = PE("T4", N_SROLE, 0),
+    /* the performance actions (SCAPE SCENE), each its own control: HOLD keeps the state the piece
+     * reached, NEXT moves the harmony on, NEW starts a new piece in the same key */
+    [G_SCHOLD] = PE("HOLD", N_ONOFF, 0),
+    [G_SCNEXT] = PE("NEXT", N_GO, 0),
+    [G_SCNEW] = PE("NEW", N_GO, 0),
+    [G_SDROR] = PD("LEGACY", F_INT, 0, 5, 1),             /* CALLS: the SCAPE CALLS track */
 };
 
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
@@ -456,7 +475,7 @@ static const page_t PAGES[] = {
     {"LFO DEST", FAM_LFO, SC_TRACK, GR_NONE, {P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP}},
     {"MOD", FAM_LFO, SC_TRACK, GR_MOD, {0xFF, P_M1SRC, P_M1DST, P_M1AMT}},   /* KNOB 1: the slot (mod_ui_slot) */
     {"FX", FAM_FX, SC_TRACK, GR_FX, {P_DIST, P_CHOR, P_DLY, P_REV}},
-    {"SLICER", FAM_FX, SC_TRACK, GR_SLCR, {P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH}},
+
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
     {"REVERB", FAM_FX, SC_GLOBAL, GR_NONE, {G_RTYPE, G_RSIZE, G_RDAMP, 0xFF}},   /* TYPE: ROOM / SPRING / HALL */
     {"CHORUS", FAM_FX, SC_GLOBAL, GR_NONE, {G_CRATE, G_CDEPTH, 0xFF, 0xFF}},
@@ -499,16 +518,19 @@ static const page_t PAGES[] = {
     {"MIXER", FAM_TRK, SC_TRK, GR_TRK, {0, 1, 2, 3}},
     {"CLOCK", FAM_TRK, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, 0xFF}},
     {"KEYS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_KMODE, G_KTRK, G_KSPLIT, G_KOCT}},   /* GHOULBOX 2.1: CLOCK tapped again */
-    {"EPOCH", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DREAM, G_DDENS, G_DDRFT, G_DMOOD}},   /* GHOULBOX 2.3: KEYS tapped again;
-                                                                                    * a key composes (dream.c) */
-    /* DINOBOX: SCAPE, the soundscape (scape.c), EPOCH tapped again: the whole, then each layer's level and density */
-    {"SCAPE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCAPE, G_SBIOME, G_SDIST, G_STIME}},
-    {"SCAPE DRONE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SDRN, G_SDTYP, G_SDKEY, G_SDMOV}},
-    {"SCAPE CALLS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCTRK, G_SCRATE, G_SCNOTE, G_SCSPRD}},
+    /* One SCAPE feature: music, habitat, drone, creatures and layer mix.
+     * Retired fine controls keep their stored IDs; the editor can import older projects. */
+    {"SCAPE MUSIC", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DDENS, G_DDRFT, G_SMOTION, G_SCHORD}},
+    {"SCAPE MIX", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SBED, G_SMELO, G_SBASS, G_SPULSE}},
+    {"SCAPE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SBIOME, G_STIME, G_SDIST, G_SCRATE}},
+    {"SCAPE SETUP", FAM_TRK, SC_GLOBAL, GR_NONE, {G_DREAM, G_DMOOD, G_SCAPE, G_SDRN}},
+    {"SCAPE ROLES", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SROLE0, G_SROLE1, G_SROLE2, G_SROLE3}},
+    {"SCAPE DRONE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SDRN, G_SDKEY, G_SDMOV, G_SCNOTE}},
+    {"SCAPE LIFE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCTRK, G_SDNGR, G_SDSIZ, G_SCNOTE}},
     {"SCAPE LEVELS", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL0, G_SL1, G_SL2, G_SL3}},
     {"SCAPE LEVELS 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SL4, G_SL5, G_SL6, G_SL7}},
-    {"SCAPE DENSITY", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SD0, G_SD1, G_SD2, G_SD3}},
-    {"SCAPE DENSITY 2", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SD4, G_SD5, G_SD6, G_SD7}},
+    /* the performance actions, each its own knob, with the chord-change time beside them */
+    {"SCAPE SCENE", FAM_TRK, SC_GLOBAL, GR_NONE, {G_SCHOLD, G_SCNEXT, G_SCNEW, G_SCHORD}},
 };
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */

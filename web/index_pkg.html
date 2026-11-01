@@ -79,6 +79,7 @@
     <img class="skull" src="../art/skull.png?v=paleotone-20261025" alt="">
     <img class="logo" src="../art/logo.png?v=paleotone-20261025" alt="PALEOTONE">
   </header>
+  <nav><a href="../../">Home</a> · <a href="../app-setup/">Check display compatibility</a> · <a href="../screen-unified/">Open hardware display</a></nav>
   <p class="tagline" data-t="tagline"></p>
   <div class="stage">
   <div class="torch" aria-hidden="true"></div>
@@ -113,7 +114,7 @@
     <a class="kofi" href="https://ghoulbox-shop.fourthwall.com/" target="_blank" rel="noopener" data-t="merch"></a> <span class="small" data-t="supportWhy"></span></p>
   </section>
   <section class="plaque">
-  <p class="small">PALEOTONE, a fork of GHOULBOX by Jason Persinger: <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth" target="_blank" rel="noopener">source</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/issues" target="_blank" rel="noopener">problems</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases" target="_blank" rel="noopener">user guide</a>. The name is set in Pirata One (SIL OFL 1.1).<br>
+  <p class="small">PALEOTONE, built on GHOULBOX by Jason Persinger: <a href="https://github.com/fantasmoslam/Paleotone" target="_blank" rel="noopener">source</a>, <a href="https://github.com/fantasmoslam/Paleotone/issues" target="_blank" rel="noopener">problems</a>, <a href="https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/releases" target="_blank" rel="noopener">user guide</a>. The name is set in Pirata One (SIL OFL 1.1).<br>
     On Felucca by Leo Kuroshita (@kurogedelic), <a href="https://hugelton.com" target="_blank" rel="noopener">Hügelton Instruments</a>, with its CrispyZebra waveforms, drum voices, Sample Pack and Fukiai icons (MIT).<br>
     Font: Inter Tight (The Inter Project Authors, SIL OFL 1.1). Samples: Versilian Studios VSCO-2 Community Edition and VCSL (CC0 1.0).<br>
     FM6 engine: msfa from Dexed (Google Inc., Pascal Gauthier, Apache-2.0). The package also holds three JieLi AC79 SDK files, uboot.boot, cfg_tool.bin and eq_cfg_hw.bin (JieLi Technology, Apache-2.0). <a href="../../firmware/LICENSING.md">Licences</a>: <a href="../../firmware/LICENSE">GPL-3.0</a>, <a href="../../firmware/LICENSES/Apache-2.0.txt">Apache-2.0</a>, <a href="../../firmware/LICENSES/">all</a>.<br>
@@ -176,7 +177,7 @@ const TEXT = {
     editor: "Editor (after installing: edit sounds and sequences from the computer)",
     direct: "Connect the USB cable directly to the computer. No probe or Transporter is needed.",
     brick: "If an install fails and the FM-1 no longer starts, recovering it needs a Transporter:",
-    beta: "PALEOTONE is a hobby fork of GHOULBOX and has not been tested on a real FM-1 yet; please report problems on GitHub. The authors accept no responsibility if your FM-1 is damaged or misbehaves because of this custom firmware. Use it at your own risk.",
+    beta: "This PALEOTONE build has been tested on an FM-1 with compressed dual-screen display. Save your music before changing firmware, and report problems on the PALEOTONE GitHub project.",
     back: "Get official FM-1 V15 from M-VAVE and select the unmodified FM-1.fwsc. The browser validates it locally; it is not sent to a server.",
     stockTitle: "Return to official V15", stockFile: "Official FM-1.fwsc", stockGo: "Back up and return to official V15",
     stockBackup: "Current music, saved music, sound banks, samples and settings are saved first. Older firmware needs a Felucca update for complete backups. To restore an archive later, reinstall Felucca and use the editor.",
@@ -207,6 +208,7 @@ let lang = (navigator.language || "en").toLowerCase().startsWith("ja") ? "ja" : 
 const t = (k) => TEXT[lang][k];
 let lastKey = null, lastArg = "";
 const meta = /*META*/;
+const RESUME_KEY="paleotone-resume-"+(meta.sha256||meta.version), RELOAD_KEY=RESUME_KEY+"-reloads";
 const VER = String(meta.version).replace(/^gb/, "");   // GHOULBOX: the release's number (make_site.py's "gbX.Y")
 function applyLang() {
   document.documentElement.lang = lang;
@@ -231,12 +233,13 @@ window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault
     const r = await fetch(meta.pkg);
     if (!r.ok) throw new Error(`${meta.pkg}: HTTP ${r.status}`);
     const pkg = new Uint8Array(await r.arrayBuffer());
+    if (meta.sha256 && await sha256hex(pkg) !== meta.sha256) throw new Error("Firmware SHA-256 verification failed. Reload before installing.");
     if (productOf(pkg) !== meta.product) { sayK("badpkg"); return; }
     image = logicalImage(pkg);
     say(`PALEOTONE ${VER}`);
     $("go").disabled = false;
     let resume = null;
-    try { resume = sessionStorage.getItem("ghoulbox-resume"); sessionStorage.removeItem("ghoulbox-resume"); } catch (_) {}
+    try { resume = sessionStorage.getItem(RESUME_KEY); sessionStorage.removeItem(RESUME_KEY); } catch (_) {}
     if (resume) { resumed = true; sayK("resuming"); $("go").click(); }   // (GHOULBOX: back from the "reload" below)
   } catch (e) { sayK("loadfail", e.message); }
 })();
@@ -262,7 +265,7 @@ $("go").addEventListener("click", async () => {
     if (resumed) {                                   // GHOULBOX: reloaded to reach the loader: wait for it (its ports can be
       resumed = false;                               // listed a moment late), never fall back to looking for a running FM-1
       const ok = await up.resume(image, step, meta.product, 15000);
-      if (ok) { try { sessionStorage.removeItem("ghoulbox-reloads"); } catch (_) {} }
+      if (ok) { try { sessionStorage.removeItem(RELOAD_KEY); } catch (_) {} }
       sayK(ok ? "done" : "noloader");
       lockInstaller(false);
       return;
@@ -276,9 +279,9 @@ $("go").addEventListener("click", async () => {
     }
   } catch (e) {
     let reloads = 0;
-    try { reloads = +(sessionStorage.getItem("ghoulbox-reloads") || 0); } catch (_) {}
+    try { reloads = +(sessionStorage.getItem(RELOAD_KEY) || 0); } catch (_) {}
     if (e && e.code === "reload" && reloads >= 2) {   // GHOULBOX: two reloads did not reach it: the cable, not the page
-      try { sessionStorage.removeItem("ghoulbox-reloads"); } catch (_) {}
+      try { sessionStorage.removeItem(RELOAD_KEY); } catch (_) {}
       sayK("noloader");
       log(String(e && e.stack || e));
       lockInstaller(false);
@@ -286,7 +289,7 @@ $("go").addEventListener("click", async () => {
     }
     if (e && e.code === "reload") {                    // GHOULBOX: Chrome on Linux hides the loader's input from this page;
       sayK("reload");                                  // a reloaded page sees it and resumes (the loader waits for us)
-      try { sessionStorage.setItem("ghoulbox-resume", "1"); sessionStorage.setItem("ghoulbox-reloads", String(reloads + 1)); } catch (_) {}
+      try { sessionStorage.setItem(RESUME_KEY, "1"); sessionStorage.setItem(RELOAD_KEY, String(reloads + 1)); } catch (_) {}
       writing = false;                                 // (no "leave this page?" prompt)
       setTimeout(() => location.reload(), 500);
       return;

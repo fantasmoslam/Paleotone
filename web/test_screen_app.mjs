@@ -46,4 +46,10 @@ output.state='disconnected';input.state='disconnected';midi.onstatechange();
 assert.match(element('st').textContent,/No FM-1 found/);
 output.state=input.state='connected';midi.onstatechange();await new Promise(resolve=>setImmediate(resolve));
 assert.equal(typeof input.onmidimessage,'function');
+// A stalled connection should recover automatically without another permission prompt.
+now=14000;vm.runInContext('disconnected("Simulated timeout")',context);
+intervals.find(i=>i.ms===1500).fn();assert.equal(vm.runInContext('out',context),null);
+now=20000;intervals.find(i=>i.ms===1500).fn();await new Promise(resolve=>setImmediate(resolve));
+assert.equal(vm.runInContext('out',context),output);
+assert.equal(typeof input.onmidimessage,'function');
 console.log('screen app: packaged paths, relative install scope, handshake, malformed state, enum labels, read-only commands and USB reconnection passed');

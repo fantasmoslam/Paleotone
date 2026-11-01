@@ -9,7 +9,12 @@ def screen_pages(webapp):
         if nested.is_file():
             build = nested
         try:
-            ident = json.loads(build.read_text(encoding='utf-8')).get('rendererId')
+            metadata = json.loads(build.read_text(encoding='utf-8'))
+            # An explicit browser experiment must not become the automatic
+            # destination for every instrument sharing its renderer identity.
+            if metadata.get('browserTrial'):
+                continue
+            ident = metadata.get('rendererId')
         except (OSError, ValueError):
             continue
         if ident:

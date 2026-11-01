@@ -58,7 +58,8 @@ static inline int32_t osc_tri(uint32_t ph)
 
 /* tanh(x / 32768) * 32767, linearly interpolated (a plain lookup gives
  * 256-unit steps, audible on quiet signals) */
-static inline int32_t softclip(int32_t x)
+/* The master uses the exact same arithmetic inline; other users keep the compact wrapper. */
+static inline __attribute__((always_inline)) int32_t softclip_inline(int32_t x)
 {
     int32_t a = x < 0 ? -x : x, i = a >> 8, y;
     if (i >= 256)
@@ -67,6 +68,8 @@ static inline int32_t softclip(int32_t x)
         y = TANH_Q15[i] + (((TANH_Q15[i + 1] - TANH_Q15[i]) * (a & 255)) >> 8);
     return x < 0 ? -y : y;
 }
+
+static inline int32_t softclip(int32_t x) { return softclip_inline(x); }
 
 /* xorshift32 */
 static inline uint32_t noise32(int32_t *st)

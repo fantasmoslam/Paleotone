@@ -171,8 +171,9 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
  * defaults) or 1 + EVOL + 2 x (DENS - 1 + 8 x (DRFT - 1 + 8 x MOOD)), up to 768. Two bytes left below it */
 #define PROJ_DREAM_OFF (PROJ_KEYS_OFF - 2u)
 typedef union { uint32_t align; uint8_t raw[PROJ_STORE_SIZE]; } project_store_t;
-_Static_assert(PROJ_NG == 27u && G_COUNT == PROJ_NG + 38u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
-               "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store)");
+_Static_assert(PROJ_NG == 27u && G_SDROR == 68u && G_SMOTION == 69u && G_COUNT == 82u, "FUN7 globals retain original IDs; GHOULBOX's ten in the tail; "
+               "DINOBOX's SCAPE twenty in no project (the settings' sidecar: scape.c scape_store), and the "
+               "performance actions appended after the director's");
 _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUN10 / FUN7 sizes");
 typedef struct {                               /* a track of format 4, read only */
     int16_t p[PROJ_NP_V4];
@@ -987,6 +988,18 @@ static uint32_t proj_density(const proj_trk_t *t, uint8_t *n)
 /* .. and, den not 0, each track's picture (proj_density: den[k], its cells n[k]; 0 for an empty slot) */
 static int project_info(uint32_t slot, char *b, uint16_t *len48, uint32_t *den, uint8_t *n)
 {
+#if FELUCCA_REMOTE
+    if (remote_display) {
+        const remote_project_t *p = &remote_projects[slot & 3u];
+        memcpy(b, p->name, 13);
+        for (uint32_t j = 0; j < NTRK; j++) {
+            if (len48) len48[j] = p->len[j];
+            if (den) den[j] = p->density[j];
+            if (n) n[j] = p->cells[j];
+        }
+        return p->used;
+    }
+#endif
     uint32_t k;
     b[0] = 0;
     if (len48)
@@ -1234,9 +1247,12 @@ static uint32_t chain_prepare(void)
  * object written after it), put back with it; a slot with none stored: SCAPE off, its defaults */
 #define SCAPE_SIDE_N (G_SD7 - G_SCAPE + 1u)
 _Static_assert(SCAPE_SIDE_N + 1u <= sizeof scape_side[0], "SCAPE's sidecar entry");
-/* (stage 2, the drone and the calls: G_SDRN .. G_SCSPRD, each stored as its value - min + 1 after the twenty, 0 = none
- * stored, its default: an entry of the first SCAPE firmware holds 0 there) */
-#define SCAPE_SIDE_N2 (G_SCSPRD - G_SDRN + 1u)
+/* (stage 2, the drone and the calls, and DANGER after them: G_SDRN .. G_SDROR, each stored as its value - min + 1
+ * after the twenty, 0 = none stored, its default: an entry of an earlier SCAPE firmware holds 0 there) */
+#define SCAPE_SIDE_N2 (G_SDROR - G_SDRN + 1u)
+#define SCAPE_SIDE_N3 (G_SCNEW - G_SMOTION + 1u)   /* (the director's controls, then its performance actions) */
+#define SCAPE_DIR_OFF (1u + SCAPE_SIDE_N + SCAPE_SIDE_N2)
+_Static_assert(SCAPE_DIR_OFF + SCAPE_SIDE_N3 <= sizeof scape_side[0], "SCAPE director sidecar");
 _Static_assert(1u + SCAPE_SIDE_N + SCAPE_SIDE_N2 <= sizeof scape_side[0], "SCAPE's sidecar entry, stage 2");
 static void scape_side_put(uint32_t s)
 {
@@ -1249,6 +1265,8 @@ static void scape_side_put(uint32_t s)
     for (i = 0; i < SCAPE_SIDE_N2; i++)
         e[1u + SCAPE_SIDE_N + i] = (uint8_t)(clamp(song.g[G_SDRN + i], GP[G_SDRN + i].min, GP[G_SDRN + i].max) -
                                              GP[G_SDRN + i].min + 1);
+    for (i = 0; i < SCAPE_SIDE_N3; i++)
+        e[SCAPE_DIR_OFF+i] = (uint8_t)(clamp(song.g[G_SMOTION+i], GP[G_SMOTION+i].min, GP[G_SMOTION+i].max) - GP[G_SMOTION+i].min + 1);
 #if FELUCCA_FLASH
     persist_pending = 1;                                /* (settings_poll writes it once the transport is free) */
 #endif
@@ -1263,6 +1281,10 @@ static void scape_side_get(uint32_t s)
         const uint8_t v = e[0] == 1u ? e[1u + SCAPE_SIDE_N + i] : 0u;
         song.g[G_SDRN + i] = v ? (int16_t)clamp(GP[G_SDRN + i].min + v - 1, GP[G_SDRN + i].min, GP[G_SDRN + i].max)
                                : GP[G_SDRN + i].def;
+    }
+    for (i = 0; i < SCAPE_SIDE_N3; i++) {
+        uint8_t v = e[0] == 1u ? e[SCAPE_DIR_OFF+i] : 0;
+        song.g[G_SMOTION+i] = v ? (int16_t)clamp(v-1+GP[G_SMOTION+i].min, GP[G_SMOTION+i].min, GP[G_SMOTION+i].max) : GP[G_SMOTION+i].def;
     }
 }
 

@@ -1,3 +1,4 @@
+#include "midi_trace.h"
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* USB full-speed device on USB0: a
@@ -64,25 +65,22 @@ static struct {
 #endif
 
 #if FELUCCA_UAC
-/* USB audio input. The I2S clock is not locked to USB (about 44,117.6 Hz against the host's 44,100):
- * the endpoint is asynchronous, so each 1 ms packet carries what the ring holds, 44 or 45 frames
- * (the 44.1 pattern) and one more or one fewer while the ring's fill drifts out of its band.
- * The render writes HALF_FRAMES (128) frames every 2.9 ms; the fill measured when a render starts is
- * the low point of that saw tooth, and is kept in UA_LO..UA_HI. A frame waits in the ring for that fill
- * plus its place in the render: 80..256 frames, ~3.8 ms on average (256-frame halves and a 96..160
- * band: ~5.8 ms). Measured under load (65 % CPU): a 64..112 band started renders at
- * 48..119 with no glitch; one render was once seen 29 frames under the floor: a packet (46) must
- * still be in hand then. */
-#define UA_N 512u                /* ring, frames (16-bit L | R << 16); a power of two */
-#define UA_PRIME 104u            /* silence ahead of the first rendered frame */
-#define UA_LO 80u                /* a render may start late: keep a packet and more in hand */
-#define UA_HI 128u
+/* USB audio input. The I2S clock is independent of USB. Packets carry 44/45 frames
+ * (+/-1 for clock drift), controlled by the fill at the start of a 128-frame render.
+ * Keep an extra render (128 frames, 2.90 ms at 44.1 kHz) queued versus the former
+ * 80..128 band: measured publication gaps approached 4 ms under load. This spends
+ * USB latency, not SRAM or synthesis time; I2S deadline overruns are independent.
+ * The existing 512-frame ring still holds the band, a render and a packet. */
+#define UA_N 512u                /* ring frames (16-bit L | R << 16), power of two */
+#define UA_PRIME 232u            /* silence ahead of first render, midpoint of band */
+#define UA_LO 208u
+#define UA_HI 256u
 #define UAC_RATE 44100u
 #if FELUCCA_UAC_48K
 /* 48 kHz: the same times in 48 kHz frames (x 160 / 147); a render of HALF_FRAMES gives 139..140 frames */
-#define UA_PRIME48 113u
-#define UA_LO48 87u
-#define UA_HI48 139u
+#define UA_PRIME48 253u
+#define UA_LO48 227u
+#define UA_HI48 279u
 #define UA_REND48 ((HALF_FRAMES * 160u + 146u) / 147u)
 #define UA_MAXF 49u              /* frames in the largest packet: 48 + 1 */
 _Static_assert(UA_HI48 + UA_REND48 + UA_MAXF < UA_N, "the ring holds the band, a render and a packet (48 kHz)");
@@ -108,6 +106,7 @@ static struct {
     uint32_t acc;                /* 44.1 frames per ms: 0.1 frame steps */
     uint32_t last;               /* the last frame sent, repeated on an underrun */
     uint32_t starts, pkts, frames;               /* frames in packets sent from the ring */
+    uint32_t raw_fill_lo;
     uint32_t underruns, overruns, missed;        /* glitches: ring empty (repeat), ring full (drop), no packet ready */
     uint32_t stalls;                             /* the host stopped reading for > 20 ms (alt still 1) */
     uint32_t adj_up, adj_down;                   /* packets one frame longer / shorter than the pattern */
@@ -766,6 +765,21 @@ stall:
     sie_wr(S_CSR0, 0x60);
 }
 
+#if FELUCCA_OTA
+/* Keep event-only diagnostics out of the nested USB packet/byte loop body. */
+static __attribute__((noinline)) void mt_receive_start(void)
+{
+    midi_trace.rx_start++;
+    if(sx_ready)midi_trace.rx_busy++;
+}
+static __attribute__((noinline)) void mt_receive_done(void)
+{
+    midi_trace.rx_done++;
+    midi_trace.rx_cmd=sx_pos>3u?sx_frame[3]:127u;
+    midi_trace.rx_track=sx_pos>4u?sx_frame[4]:127u;
+}
+#endif
+
 /* SysEx assembly: only short commands matter here */
 static void sysex_byte(uint8_t b)
 {
@@ -783,6 +797,7 @@ static void sysex_byte(uint8_t b)
         usb.sx_on = 1;
         usb.sx_len = 0;
 #if FELUCCA_OTA
+        mt_receive_start();
         sx_collect = !sx_ready;
         sx_pos = 0;
 #endif
@@ -810,6 +825,7 @@ static void sysex_byte(uint8_t b)
                  usb.sysex[4] == 0x7F)
             usb.ota_req = 1;
         else if (sx_collect && sx_pos) {
+            mt_receive_done();
             sx_frame_len = sx_pos;
             RING_PUBLISH();
             sx_ready = 1;                               /* main loop: ota_take() / ed_service() */
@@ -893,6 +909,7 @@ static void ota_idle(void);
 static int ota_wire_send(const uint8_t *p, uint32_t n)   /* F0..F7 -> USB-MIDI SysEx packets */
 {
     uint32_t i = 0, t0 = ota_now_ms();
+    if(n>4u&&p[1]==125u&&p[2]==70u&&p[3]==76u){if(p[4]==29u)midi_trace.tx29++;if(p[4]==96u)midi_trace.tx96++;}
     sx_busy = 1;
     while (i < n) {
         uint32_t k = n - i >= 3u ? 3u : n - i, pkt;
@@ -901,6 +918,7 @@ static int ota_wire_send(const uint8_t *p, uint32_t n)   /* F0..F7 -> USB-MIDI S
               (k > 2u ? (uint32_t)p[i + 2] << 24 : 0u);
         while (so_w - so_r >= SXQ) {
             if (!*(volatile uint8_t *)&usb.config || ota_now_ms() - t0 > 200u) {
+                midi_trace.tx_timeout++;midi_trace.tx_fail_cmd=n>4u?p[4]:127u;
                 sx_busy = 0;
                 return -1;
             }
@@ -912,6 +930,7 @@ static int ota_wire_send(const uint8_t *p, uint32_t n)   /* F0..F7 -> USB-MIDI S
         i += k;
     }
     sx_busy = 0;
+    if(n>4u&&p[1]==125u&&p[2]==70u&&p[3]==76u){if(p[4]==29u)midi_trace.done29++;if(p[4]==96u)midi_trace.done96++;}
     return 0;
 }
 static int ota_frame_get(const uint8_t **p, uint32_t *n)
@@ -1026,6 +1045,9 @@ static void ep3_tx(void)                                /* <= 63 bytes per packe
 
 #if FELUCCA_UAC
 /* ---- the audio input: audio.c produces (render start, then each block), TIMER5 consumes ---- */
+#ifdef AUDIO_PROFILE_TARGET
+static uint32_t uac_last_feed_tick,uac_feed_gap_max_us;
+#endif
 static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, before a half buffer renders */
 {
     uint32_t fill;
@@ -1051,6 +1073,10 @@ static __attribute__((noinline)) void uac_render_start(void)   /* audio ISR, bef
         RING_PUBLISH();
         ua_w = r + prime;
         uac.fill_min = prime;
+        uac.raw_fill_lo=0xFFFFFFFFu;
+#ifdef AUDIO_PROFILE_TARGET
+        uac_last_feed_tick=0; uac_feed_gap_max_us=0;
+#endif
         RING_PUBLISH();
         uac.go = 1;
         return;
@@ -1160,6 +1186,9 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)   
 #endif
     RING_PUBLISH();
     ua_w = w + n;
+#ifdef AUDIO_PROFILE_TARGET
+    { uint32_t now=fm1_ticks(); if(uac_last_feed_tick){uint32_t us=(now-uac_last_feed_tick)/FM1_TICKS_PER_US;if(us>uac_feed_gap_max_us)uac_feed_gap_max_us=us;} uac_last_feed_tick=now; }
+#endif
 }
 
 /* the next packet into d: 44 / 45 frames (+-1 to hold the ring's fill), from the ring or, until it is
@@ -1195,6 +1224,7 @@ static uint32_t uac_packet(uint32_t *d)
     }
     r = ua_r;
     fill = ua_w - r;
+    if(fill<uac.raw_fill_lo)uac.raw_fill_lo=fill;
     RING_PUBLISH();                                     /* the slots after the index */
     k = fill < n ? fill : n;
     for (i = 0; i < k; i++)

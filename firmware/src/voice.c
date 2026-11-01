@@ -11,6 +11,7 @@
  * over one block (stage 4: the envelope goes to 0, the block's amplitude ramp
  * declicks it); one of the part's own is restarted in place, as before. Extra UNISON
  * voices only start when there is room. GHOULBOX: a latched note's voice is not taken (lt_voice). */
+static uint8_t c1_parallel; /* stable for the entire rendering job */
 static uint32_t vage;                                   /* voice ages: one clock for every part */
 static int32_t lfo_wave(track_t *t, uint32_t ph)
 {
@@ -59,11 +60,19 @@ static __attribute__((noinline)) uint32_t lfo_sync_inc(const track_t *t)   /* (n
     return q * CTL + (r * CTL + CTL) / cyc;
 }
 
-static void track_lfo_tick(track_t *t)
+/* the LFO's block, in two: its phase on the part's own core, in track_render (at the RATE the matrix may have moved,
+ * mod.c), and the rest after the parts (fx.c mix_block, part by part as before: lfo_rand's shared generator is drawn
+ * in the same order on one core or two). Nothing reads the LFO between the two */
+static void track_lfo_adv(track_t *t)
 {
     uint32_t old = t->lfo_ph;
     t->lfo_ph += t->p[P_LSYNC] ? lfo_sync_inc(t) : LFO_INC[t->p[P_LRATE] & 127];
-    if (t->lfo_ph < old) {
+    t->lfo_wrap = t->lfo_ph < old;
+}
+static void track_lfo_end(track_t *t)
+{
+    if (t->lfo_wrap) {
+        t->lfo_wrap = 0;
         t->lfo_prev = (int16_t)mod_sh(t);               /* mod.c SLEW: it glides on from there */
         t->lfo_rnd = lfo_rand(t);
     }
@@ -74,6 +83,11 @@ static void track_lfo_tick(track_t *t)
         int32_t step = (int32_t)(ENV_LIN[t->p[P_LFADE] & 127] >> 9);
         t->lfo_fade = t->p[P_LFADE] ? clamp(t->lfo_fade + (step ? step : 1), 0, 32767) : 32767;
     }
+}
+static void track_lfo_tick(track_t *t)                  /* (both at once: the tests) */
+{
+    track_lfo_adv(t);
+    track_lfo_end(t);
 }
 
 /* voices the engine may use (POLY and UNISON): its cap, else all of them */
@@ -562,22 +576,22 @@ static int32_t env_tick(track_t *t, voice_t *v)
     return v->env >> 9;
 }
 
-/* SPREAD (#148, fx.c mix_spread): while spread_on (mix_part sets it for the part it renders), track_render renders the
- * voices of side 0 into spread_buf and the others into out, then adds spread_buf to out: out is every voice, as always
- * (the engines add into either the same way), spread_buf the left ones. A cost per block, none per voice */
-static uint8_t spread_on;
-static int32_t spread_buf[CTL];
-static __attribute__((noinline)) void spread_clear(void)
+/* SPREAD (#148, fx.c mix_spread): while t->spread_on (mix_part sets it for the part it renders), track_render renders
+ * the voices of side 0 into the part's spread_buf and the others into out, then adds spread_buf to out: out is every
+ * voice, as always (the engines add into either the same way), spread_buf the left ones. A cost per block, none per
+ * voice. A buffer per part (the two cores render parts at once, fx.c mix_block) */
+static int32_t spread_buf[NTRK][CTL];
+static __attribute__((noinline)) void spread_clear(int32_t *sb)
 {
     uint32_t i;
     for (i = 0; i < CTL; i++)
-        spread_buf[i] = 0;
+        sb[i] = 0;
 }
-static __attribute__((noinline)) void spread_sum(int32_t *out)
+static __attribute__((noinline)) void spread_sum(int32_t *out, const int32_t *sb)
 {
     uint32_t i;
     for (i = 0; i < CTL; i++)
-        out[i] += spread_buf[i];
+        out[i] += sb[i];
 }
 
 /* render one block of a part into out (cleared here); returns the voices rendered */
@@ -594,6 +608,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     int32_t tune_fine = (song.g[G_TUNE] * 16 - tune * 100) * 2367 / 16000;   /* rest, in 1/4096 (1 ct = 2.367) */
     int32_t bend, bend16, bend_fine;
     uint32_t ti = (uint32_t)(t - trk);
+    const modw_t *mw = &MOD(t);
     if (ENGINES[eng_idx(t->eng_req)] == &ENG_DRUM) {
         midi_bend_q8[ti] = midi_bend_target[ti] = 0;
     } else {
@@ -608,16 +623,17 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     int16_t pe_new[8];
     for (i = 0; i < n; i++)
         out[i] = 0;
-    if (mod.on && mod.ldep < 32767)                     /* the matrix's DEPTH (mod.c) */
-        lfo = mulq15(lfo, mod.ldep);
-    if (spread_on)
-        spread_clear();
+    if (mw->on && mw->ldep < 32767)                     /* the matrix's DEPTH (mod.c) */
+        lfo = mulq15(lfo, mw->ldep);
+    if (t->spread_on)
+        spread_clear(spread_buf[ti]);
     if (fade)                                           /* engine switch: the old engine, its own values */
         for (i = 0; i < 8u; i++) {
             pe_new[i] = t->p[P_E0 + i];
             t->p[P_E0 + i] = t->pe_old[i];
         }
-    track_lfo_tick(t);
+    track_lfo_adv(t);
+    if (!c1_parallel) track_lfo_end(t);
     if (e->block)                                       /* the engine's per-part work (WHEEL: bars, rotor) */
         e->block(t);
     for (i = 0; i < NVOICE; i++) {
@@ -668,13 +684,13 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         if (v->vel > 110)                               /* accent opens the filter with the env */
             m.cutoff += (m.envq15 * 24) >> 7;
         m.shape = (64 << 8) + ((lfo * p[P_LD_SHP]) >> 7) + ((m.envq15 * p[P_ED_SHP]) >> 7);
-        if (mod.on)                                     /* the modulation matrix (mod.c) */
+        if (mw->on)                                     /* the modulation matrix (mod.c) */
             mod_voice(t, v, &m, m.fine);
-        e->render(t, v, spread_on > v->side ? spread_buf : out, n, &m);   /* (SPREAD: the left ones) */
+        e->render(t, v, t->spread_on > v->side ? spread_buf[ti] : out, n, &m);   /* (SPREAD: the left ones) */
         nr++;
     }
-    if (spread_on)
-        spread_sum(out);                                /* out: every voice; spread_buf: the left ones */
+    if (t->spread_on)
+        spread_sum(out, spread_buf[ti]);                                /* out: every voice; spread_buf: the left ones */
     if (fade) {
         for (i = 0; i < 8u; i++)
             t->p[P_E0 + i] = pe_new[i];
