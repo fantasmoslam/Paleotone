@@ -38,6 +38,8 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 #include "eng_noise.c"          /* NOISE: from Felucca 1.0; SLOOP 2.5 */
 #include "eng_saurus.c"         /* SAURUS: the creature voice, from PALEOTONE (after eng_formant.c: its resonators) */
 #include "eng_sfx.c"            /* SFX: the world's sounds (after eng_noise.c: its source and filter) */
+#include "eng_drum.c"           /* DRUM: Paleotone's 8-lane kit (drum_voice.c) */
+#include "eng_gurdy.c"          /* ROAR: Paleotone's (GHOULBOX's GURDY): drones, calls, the jungle rhythms */
 
 typedef union {
     gr_part_t grain;
@@ -45,6 +47,7 @@ typedef union {
     fm6_part_t fm6;                      /* eng_fm6.c: six notes and the operator buses */
     uint32_t phys[PHYS_ARENA / 4u];      /* eng_phys.c: two SYMP slots or three small ones */
     struct sfx_part sfx;                 /* eng_sfx.c: each voice's envelope, sweep, LFO and thump */
+    drum_lane_t drum[DV_NLANE];          /* eng_drum.c: Paleotone's DRUM, its eight lanes */
 } eng_arena_t;
 static eng_arena_t eng_arena[NPART] __attribute__((section(".pool")));
 static uint8_t eng_arena_own[NPART];            /* the engine + 1 whose state is in it, 0 = none */
@@ -98,12 +101,14 @@ static const engine_t *const ENGINES[NENGINES] = {&ENG_ANALOG, &ENG_DIGITAL, &EN
                                                     &ENG_PHYS, &ENG_NOISE,
                                                     &ENG_SAURUS, /* 12 (ENGI_SAURUS) */
                                                     &ENG_SFX,    /* 13 (ENGI_SFX) */
+                                                    &ENG_GURDY,  /* 14 (ENGI_ROAR): Paleotone's ROAR */
+                                                    &ENG_DRUM,   /* 15 (ENGI_DRUM): Paleotone's DRUM */
 #if FELUCCA_SLICE
                                                     &ENG_SLICE,
 #endif
 };
 _Static_assert(ENGI_FM6 == 9u, "ENGINES[ENGI_FM6] is FM6");
-_Static_assert(ENGI_GRAIN == 8u && ENGI_PHYS == 10u && ENGI_NOISE == 11u && ENGI_SAURUS == 12u && ENGI_SFX == 13u && ENGI_SLICE == 14u, "ENGINES[] order");
+_Static_assert(ENGI_GRAIN == 8u && ENGI_PHYS == 10u && ENGI_NOISE == 11u && ENGI_SAURUS == 12u && ENGI_SFX == 13u && ENGI_ROAR == 14u && ENGI_DRUM == 15u && ENGI_SLICE == 16u, "ENGINES[] order");
 
 /* every factory sound as loud as the others: a level trim per preset, 1/2 dB, measured on a phrase
  * that fits the sound (tools/level_presets.py writes preset_trim.h); a track keeps it in P_ED_FX */

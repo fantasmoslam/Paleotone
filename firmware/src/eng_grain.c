@@ -44,8 +44,8 @@
 #define GR_MAXZ 32               /* zones per set (PERC has 24, a user slot <= 16) */
 #define GR_RB 128                /* reverse window, source samples */
 #define GR_LOAD_MAX (8u << 16)   /* decodes per output sample of all a part's grains (a reverse grain counts twice) */
-#define GR_STEP_MAX GR_LOAD_MAX  /* grain rate cap: as much as the part's load allows (it was 2 source samples an output
-                                  * sample: a source went flat 2.5 octaves over its root, LOFI CLOUD above C7) */
+#define GR_STEP_MAX (2u << 16)   /* grain rate cap: 2 source samples per output sample (RAPTOR: Paleotone's, as its
+                                  * grains play; SLOOP lifted it to GR_LOAD_MAX) */
 
 /* sin^2(pi i / 256), Q15: the grain window */
 static const int16_t GR_HANN[257] = {
@@ -238,7 +238,7 @@ static void gr_spawn(gr_part_t *P, const track_t *t, uint32_t vi, uint32_t zl, u
     /* rate: the note against the zone's root, PITCH, the random detune (RAND^2, up to +-1 oct) */
     amt = p[P_E6] * p[P_E6] * 192 / (127 * 127);
     d16 = m->pitch16 - z->root16 + p[P_E4] * 16 + (((int32_t)(r1 & 0xFFFFu) - 32768) * amt >> 15);
-    step = (pow2_q16(clamp(d16, -1536, 1536)) >> 8) * (z->rate >> 8);
+    step = (pow2_q16(clamp(d16, -1536, 576)) >> 8) * (z->rate >> 8);   /* (RAPTOR: Paleotone's range) */
     step = step > GR_STEP_MAX ? GR_STEP_MAX : step < 256u ? 256u : step;
     rev = ((r1 >> 16) & 255u) < (uint32_t)p[P_E6];  /* RAND 127: half of them */
     span = (uint32_t)(((uint64_t)len * step) >> 16);   /* source samples the grain reads */
@@ -436,17 +436,18 @@ static void grain_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
 }
 
 static const preset_t GRAIN_PRESETS[] = {
-    /* name, {SRC, POS, SIZE, DENS, PTCH, SPRD, RAND, TONE}, {A D S R}, fenv, mono.
-     * SRC: the SAMPLE sets (0 PIANO, 2 VIBES, 5 FLUTE...: tools/gen_samples.py CC0_SETS) */
-    {"LOFI CLOUD", {0, 45, 95, 85, 0, 35, 12, 80}, {70, 90, 120, 90}, 0, 0, FX(0, 45, 20, 70)},
-    {"VIBE HAZE", {2, 30, 100, 90, 0, 25, 10, 90}, {50, 100, 120, 95}, 0, 0, FX(0, 40, 25, 75)},
-    {"FLUTE DUST", {5, 50, 108, 72, 0, 10, 10, 85}, {50, 100, 127, 100}, 0, 0, FX(0, 30, 20, 70)},
-    /* SLOOP 2.5: strings as a cloud, a piano shimmer an octave up, a dark horn drone */
-    {"STR CLOUD", {4, 40, 100, 90, 0, 30, 12, 80}, {70, 100, 120, 95}, 0, 0, FX(0, 50, 20, 75)},
-    {"SHIMMER", {0, 30, 90, 95, 12, 40, 15, 110}, {60, 100, 120, 100}, 0, 0, FX(0, 40, 35, 85)},
-    {"DRONE", {3, 50, 115, 80, -12, 20, 20, 50}, {90, 100, 127, 100}, 0, 0, FX(0, 30, 15, 70)},
-    {"PNO FREEZE", {0, 40, 127, 127, 0, 5, 0, 100}, {80, 100, 127, 100}, 0, 0, FX(0, 30, 20, 75)},
-    {"HORN CLOUD", {3, 30, 100, 90, 0, 30, 15, 90}, {70, 100, 120, 95}, 0, 0, FX(0, 40, 20, 70)},
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
+    /* name, {SRC, POS, SIZE, DENS, PTCH, SPRD, RAND, TONE}, {A D S R}, fenv, mono */
+    {"CLOUD PAD", {1, 50, 92, 88, 0, 40, 14, 100}, {70, 90, 120, 90}, 0, 0, FX(0, 40, 25, 85), PAT(5)},
+    {"GLITCH", {2, 64, 24, 112, 0, 100, 90, 127}, {0, 70, 100, 30}, 0, 0, FX(10, 0, 50, 25), PAT(4)},
+    {"FROZEN", {0, 40, 108, 72, 0, 0, 10, 92}, {50, 100, 127, 100}, 0, 0, FX(0, 30, 20, 95), PAT(5)},
+    {"SHIMMER", {0, 30, 70, 100, 12, 30, 24, 110}, {30, 90, 110, 90}, 0, 0, FX(0, 50, 40, 90), PAT(7)},
+    /* DINOBOX's */
+    {"NIGHT SWARM", {3, 30, 60, 110, 0, 60, 70, 110}, {60, 90, 127, 100}, 0, 0, FX(0, 40, 30, 110), PAT(17)},
+    {"STONE MIST", {5, 10, 100, 90, 12, 40, 30, 90}, {80, 90, 127, 110}, 0, 0, FX(0, 60, 30, 120), PAT(5)},
+    {"STORM CLOUD", {6, 40, 90, 100, -12, 80, 50, 70}, {90, 90, 127, 120}, 0, 0, FX(0, 40, 20, 120), PAT(17)},
+    {"AMBER DUST", {5, 50, 20, 120, 24, 100, 100, 127}, {30, 90, 110, 80}, 0, 0, FX(0, 30, 50, 110), PAT(7)},
+    /* DINOBOX's end */
 };
 
 static const engine_t ENG_GRAIN = {

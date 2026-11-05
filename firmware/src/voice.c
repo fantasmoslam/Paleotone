@@ -501,7 +501,7 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
         t->nmono = 0;                                   /* no stale mono stack after a mode change */
         t->mono_note = 0;
         v->fine = 0;
-        voice_start(t, v, note, vel, t->p[P_GLIDE] != 0);
+        voice_start(t, v, note, vel, t->p[P_GLIDE] != 0 && t->engine != ENGI_DRUM);   /* (DRUM: hits, no glide) */
         return;
     }
     {
@@ -532,6 +532,15 @@ static void strum_cancel(const track_t *t, uint32_t note, int all)
         if (stq[i].on && stq[i].trk == (uint8_t)(t - trk) && (all || stq[i].note == note))
             stq[i].on = 0;
 }
+/* a note's end: the release, or (RAPTOR: Paleotone's RING) a ROAR's drones ringing on at the sustain, the voice kept
+ * (gate 0, stage 1 / 2: only RING makes that); eng_gurdy.c fades its melody string and releases it once RING stops */
+static void voice_release(track_t *t, voice_t *v)
+{
+    v->gate = 0;
+    if (!gurdy_rings(t))
+        v->stage = 3;
+}
+
 static void trk_note_off(track_t *t, uint32_t note)
 {
     uint32_t i, k = 0, mode = (uint32_t)t->p[P_VOICE];
@@ -554,20 +563,16 @@ static void trk_note_off(track_t *t, uint32_t note)
                 mono_play(t, next, t->v[0].vel, 0, t->p[P_GLIDE] != 0);
             } else {
                 for (i = 0; i < nv; i++)
-                    if (t->v[i].gate) {
-                        t->v[i].gate = 0;
-                        t->v[i].stage = 3;
-                    }
+                    if (t->v[i].gate)
+                        voice_release(t, &t->v[i]);
                 t->mono_note = 0;
             }
         }
     }
     for (i = 0; i < NVOICE; i++) {                      /* POLY voices (also ones left from another mode: */
         if (t->v[i].note == note && t->v[i].gate &&     /* VOICE changed while they were held) */
-            (mode == V_POLY || i >= (mode == V_UNISON ? trk_nvoice(t) : 1u) || t->mono_note != note)) {
-            t->v[i].gate = 0;
-            t->v[i].stage = 3;
-        }
+            (mode == V_POLY || i >= (mode == V_UNISON ? trk_nvoice(t) : 1u) || t->mono_note != note))
+            voice_release(t, &t->v[i]);
         if ((t->v[i].pend & VP_ON) && t->v[i].pend_note == note && t->mono_note != note)
             t->v[i].pend |= VP_OFF;                     /* (2.8.3) waiting for its fade: it starts, then releases */
     }

@@ -204,15 +204,22 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 }
 
 static const preset_t LOFI_PRESETS[] = {
-    {"GAME LEAD", {0, 0, 32, 0, 0, 20, 0, 127}, {0, 60, 90, 30}, 0, 1, FX(0, 0, 36, 18)},
-    {"GB BASS", {1, 1, 0, 0, 0, 0, 0, 90}, {0, 50, 70, 20}, 0, 1, FX(0, 0, 6, 0), XP(P_TRANS + 1, -12)},
-    {"8BIT ARP", {2, 0, 96, 0, 0, 0, 2, 110}, {0, 60, 80, 40}, 0, 0, FX(0, 0, 30, 20), ARP(1, 2, 2, 40)},
-    /* SLOOP 2.5: {CHIP, WAVE, DUTY, CRSH, SWP, VIB, ARP, TONE} */
-    {"NES BASS", {2, 1, 64, 0, 0, 0, 0, 127}, {0, 50, 80, 20}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -12)},
-    {"CHIP CHORD", {2, 0, 32, 0, 0, 0, 2, 110}, {0, 60, 80, 40}, 0, 0, FX(0, 0, 30, 20)},
-    {"1BIT BEEP", {3, 0, 64, 0, 0, 0, 0, 100}, {0, 40, 60, 20}, 0, 0, FX(0, 0, 25, 15)},
-    {"WAVE LEAD", {0, 4, 40, 0, 0, 40, 0, 120}, {2, 60, 100, 30}, 0, 1, FX(0, 0, 30, 20), XP(P_GLIDE + 1, 30)},
-    {"CHIP NOISE", {2, 3, 64, 0, 90, 0, 0, 127}, {0, 55, 0, 24}, 0, 0, FX(0, 0, 10, 10)},
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
+    {"PULSE LD", {0, 0, 32, 0, 0, 20, 0, 127}, {0, 60, 90, 30}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
+    {"WAVE BASS", {1, 1, 0, 0, 0, 0, 0, 90}, {0, 50, 70, 20}, 0, 1, FX(0, 0, 10, 0), PAT(2)},
+    {"ARP 8BIT", {2, 0, 96, 0, 0, 0, 2, 110}, {0, 60, 80, 40}, 0, 0, FX(0, 0, 30, 20), PAT(13)},
+    /* wave RAM VOXA (DUTY 92 / 8 = 11), a little vibrato */
+    {"WAVE LEAD", {0, 4, 92, 0, 0, 18, 0, 110}, {0, 70, 90, 30}, 0, 1, FX(0, 0, 40, 25), PAT(3)},
+    /* STEP: 25 % pulse, DCY 34 = D7 (a 15-step decay over 0.5 s), REL ~54 ms of staircase after note-off */
+    {"STEP LEAD", {4, 0, 40, 34, 0, 16, 0, 127}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
+    /* DINOBOX's */
+    {"FOSSIL LEAD", {2, 2, 80, 30, 6, 50, 0, 100}, {0, 70, 110, 50}, 0, 1, FX(0, 15, 35, 85), PAT(4)},
+    {"DINO CHOIR", {1, 4, 40, 10, 0, 35, 0, 75}, {70, 90, 115, 100}, 0, 0, FX(0, 70, 25, 105), PAT(5)},
+    {"BONE WHISTLE", {3, 1, 30, 12, 4, 60, 0, 40}, {15, 70, 110, 40}, 0, 1, FX(0, 25, 30, 95), PAT(4)},
+    {"PIXEL RAPTOR", {2, 0, 20, 40, 90, 20, 0, 110}, {0, 50, 50, 20}, 0, 1, FX(0, 0, 30, 70), PAT(4)},
+    {"EGG ARP", {0, 0, 32, 0, 0, 0, 2, 100}, {0, 60, 90, 40}, 0, 0, FX(0, 10, 40, 80), PAT(13)},
+    {"CAVE ECHO", {1, 1, 48, 20, 0, 18, 0, 66}, {20, 80, 110, 90}, 0, 0, FX(0, 20, 90, 110), PAT(3)},
+    /* DINOBOX's end */
 };
 
 /* (after Clipper 1.2) UNISON (voice.c unison_spread): the oscillator moved by r (Q32) of a turn of the note and

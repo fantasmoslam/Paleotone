@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-"""FM6 factory patches (firmware/src/eng_fm6.c) -> a C header of packed 128-byte voices.
+"""FM6 factory patches (src/eng_fm6.c) -> a C header of packed 128-byte voices.
 
   tools/gen_fm6_patches.py OUT.h
 
-Felucca 1.0's own patches (ported into SLOOP 2.4 with the FM6 engine) (no factory ROM data of any instrument): written here as readable
+Felucca's own patches, made for it (no factory ROM data of any instrument): written here as readable
 operator settings, packed in the generic 128-byte 6-operator voice layout (the 32-voice bank's record).
 Operators are listed as OP1..OP6; the packed record starts with OP6, as the format does.
 """
@@ -117,6 +117,65 @@ PATCHES = [
         op(r=(99, 75, 40, 60), l=(99, 30, 0, 0), ol=68, kvs=3, rs=2),
         op(ol=0),
         op(ol=0)],
+        fb=0, lpms=0)),
+    # DINOBOX's patches F9..F15 (in GHOULBOX's slots: appended after Felucca's F1..F8, OWN at 15, see FM6_NFACTORY_V1
+    # in eng_fm6.c; a GHOULBOX project keeps the patch it saved, shown as OWN). Rates 99 fastest, levels 99 loudest;
+    # the pitch EG's levels 50 = no bend
+    ("TAR PIT BASS", voice("TARPITBASS", 1, [     # alg 1: 1<-2 the note, 3 (a little sharp) <- 4 <- 5 <- 6 a gritty stack
+        op(r=(99, 50, 35, 70), l=(99, 94, 90, 0), ol=99),
+        op(r=(99, 55, 30, 70), l=(99, 70, 55, 0), ol=78, kvs=4),
+        op(r=(99, 45, 35, 70), l=(99, 92, 88, 0), ol=96, det=9),
+        op(r=(99, 70, 40, 70), l=(99, 60, 45, 0), ol=70, kvs=3),
+        op(r=(99, 60, 40, 70), l=(99, 65, 50, 0), ol=60),
+        op(r=(99, 60, 40, 70), l=(99, 70, 60, 0), ol=55)],
+        fb=6, lpms=0)),
+    ("SLIT DRUM", voice("SLIT DRUM", 5, [          # a hollow log struck: a low tone, a short woody "tok", a pitch drop
+        op(r=(99, 58, 45, 60), l=(99, 0, 0, 0), ol=99, kvs=2, rs=3),
+        op(r=(99, 85, 50, 60), l=(99, 0, 0, 0), ol=72, fc=3, ff=30, kvs=4, rs=3),
+        op(r=(99, 80, 50, 60), l=(99, 0, 0, 0), ol=70, fc=4, kvs=2, rs=3),
+        op(r=(99, 90, 50, 60), l=(99, 0, 0, 0), ol=50, kvs=3),
+        op(ol=0),
+        op(ol=0)],
+        fb=0, pr=(85, 99, 99, 99), pl=(50, 50, 50, 58), lpms=0)),
+    ("MAMMOTH", voice("MAMMOTH", 1, [              # a huge low brass: an octave under it, a rasping stack, a scoop up
+        op(r=(55, 40, 35, 55), l=(99, 94, 92, 0), ol=99, kvs=1),
+        op(r=(50, 35, 30, 55), l=(95, 86, 82, 0), ol=82, kvs=3),
+        op(r=(52, 40, 35, 55), l=(99, 92, 90, 0), ol=90, fc=0, det=9),
+        op(r=(48, 35, 30, 55), l=(94, 84, 80, 0), ol=74),
+        op(r=(48, 35, 30, 55), l=(92, 82, 78, 0), ol=62),
+        op(r=(46, 35, 30, 55), l=(90, 80, 76, 0), ol=58, fc=2)],
+        fb=7, pr=(60, 99, 99, 99), pl=(50, 50, 50, 46), lfs=30, lfd=60, lpmd=4, lfw=4, lpms=3)),
+    ("GLACIER PAD", voice("GLACIER", 5, [          # three detuned pairs, slow, an octave of glass on top, a slow sway
+        op(r=(30, 25, 35, 35), l=(99, 95, 92, 0), ol=92, det=4),
+        op(r=(25, 20, 30, 35), l=(85, 90, 85, 0), ol=50, fc=3),
+        op(r=(30, 25, 35, 35), l=(99, 95, 92, 0), ol=90, det=10),
+        op(r=(25, 20, 30, 35), l=(85, 88, 85, 0), ol=58),
+        op(r=(28, 25, 35, 35), l=(99, 95, 92, 0), ol=70, fc=2, det=7),
+        op(r=(25, 20, 30, 35), l=(80, 85, 80, 0), ol=40, fc=5)],
+        fb=2, lfs=20, lfd=50, lpmd=4, lamd=8, lfw=4, lpms=2, oks=1)),
+    ("METEOR", voice("METEOR", 5, [               # a bright tone falling from above the note to below it
+        op(r=(99, 40, 30, 65), l=(99, 90, 85, 0), ol=97),
+        op(r=(99, 35, 30, 65), l=(99, 80, 70, 0), ol=80, kvs=2),
+        op(r=(99, 40, 30, 65), l=(99, 88, 82, 0), ol=88, det=12),
+        op(r=(99, 35, 30, 65), l=(99, 78, 68, 0), ol=85, fc=2),
+        op(r=(99, 45, 30, 65), l=(99, 80, 0, 0), ol=60, fc=4),
+        op(r=(99, 45, 30, 65), l=(99, 70, 0, 0), ol=66, fc=1)],
+        fb=5, pr=(30, 25, 99, 99), pl=(50, 30, 30, 85), lpms=0)),
+    ("CICADA BUZZ", voice("CICADA", 1, [            # a high buzz warbling fast (the LFO on its pitch), a noisy stack under it
+        op(r=(80, 50, 40, 70), l=(99, 92, 90, 0), ol=85, fc=2),
+        op(r=(80, 50, 40, 70), l=(99, 92, 90, 0), ol=80, fc=7),
+        op(r=(80, 50, 40, 70), l=(99, 90, 88, 0), ol=70, fc=3, ff=50),
+        op(r=(80, 50, 40, 70), l=(99, 90, 88, 0), ol=70, fc=9),
+        op(r=(80, 50, 40, 70), l=(99, 85, 80, 0), ol=55, fc=1),
+        op(r=(80, 50, 40, 70), l=(99, 85, 80, 0), ol=50, fc=1)],
+        fb=7, lfs=85, lfd=0, lpmd=12, lfw=0, lpms=4)),
+    ("AMBER BELLS", voice("AMBERBELLS", 5, [         # resin-glass bells: inharmonic pairs, a low hum that rings on
+        op(r=(99, 32, 34, 40), l=(99, 70, 0, 0), ol=96, kvs=1),
+        op(r=(99, 35, 34, 40), l=(99, 65, 0, 0), ol=70, fc=3, ff=50, kvs=3),
+        op(r=(99, 45, 38, 45), l=(99, 60, 0, 0), ol=75, fc=4, ff=20, det=9),
+        op(r=(99, 50, 38, 45), l=(99, 50, 0, 0), ol=65, fc=1, ff=41),
+        op(r=(99, 28, 32, 40), l=(99, 80, 0, 0), ol=70, fc=0),
+        op(r=(99, 40, 30, 30), l=(99, 50, 0, 0), ol=45, fc=7)],
         fb=0, lpms=0)),
 ]
 

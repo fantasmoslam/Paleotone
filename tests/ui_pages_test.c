@@ -188,7 +188,7 @@ int main(int argc, char **argv)
                 fails++;
             }
         for (e = 0; e < NENGINES; e++)
-            for (k = 0; k < ENGINES[e]->npresets; k++) {
+            for (k = 0; k < ENGINES[e]->npresets && e != 1u; k++) {   /* (RAPTOR: DIGITAL hidden, not listed) */
                 for (hits = 0, n = 0; n < NBANK; n++)
                     hits += BANK[n].e == e && bank_pi[n] == k;
                 if (hits != 1) {
@@ -204,6 +204,9 @@ int main(int argc, char **argv)
     host_tracks_init();
     for (i = 0; i < NPART; i++) { set_engine_of(&trk[i], TRK_DEF[i][0]); apply_preset_to(&trk[i], TRK_DEF[i][1]); trk[i].engine = trk[i].eng_req; }
     TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;
+    /* RAPTOR: the default scene opens on a PHYS SYMP (a chord a key); these checks were written for a one-note
+     * sound on track 1: ANALOG's first */
+    set_engine_of(&trk[0], 0); apply_preset_to(&trk[0], 0); trk[0].engine = 0;
     sloop_splash(); ppm("page-splash");
     ui.menu = 2; ui.force = 1; frame(); ppm("page-about"); ui.menu = 0;
     go_home(); ui.force = 1; frame(); ppm("page-tracks");
@@ -973,13 +976,13 @@ int main(int argc, char **argv)
             apply_preset_to(t, t->preset + 1u);
             frame(); frame();
             ok &= t->p[P_AMODE] == 1 && t->p[P_ARATE] == 3 && t->p[P_AHOLD] == 1 && t->p[P_AORDER] == 1 && t->nheld == 2;
-            for (k = 0; k < NENGINES; k++)
-                if (!strcmp(ENGINES[k]->name, "LOFI"))
-                    eng = k;
-            if (eng < NENGINES)
-                for (k = 0; k < ENGINES[eng]->npresets; k++)
-                    if (!strcmp(ENGINES[eng]->presets[k].name, "8BIT ARP"))
-                        pi = k;
+            /* a factory sound that brings an arp (SLOOP's 8BIT ARP); RAPTOR's (Paleotone's) have none: then skipped */
+            for (k = 0; k < NENGINES && eng == NENGINES; k++)
+                for (i = 0; i < ENGINES[k]->npresets; i++)
+                    if (ENGINES[k]->presets[i].arp[0] > 1u) {
+                        eng = k, pi = i;
+                        break;
+                    }
             t->p[P_AMODE] = 0;                       /* arp OFF: the preset brings its own */
             frame();
             t->p[P_AHOLD] = 0, t->nheld = 0;
@@ -987,7 +990,7 @@ int main(int argc, char **argv)
                 uint8_t er = t->eng_req;
                 t->eng_req = (uint8_t)eng;
                 apply_preset_to(t, pi);
-                ok &= eng < NENGINES && t->p[P_AMODE] == 1 && t->p[P_ARATE] == 2;
+                ok &= eng == NENGINES || t->p[P_AMODE] == ENGINES[eng]->presets[pi].arp[0] - 1;
                 t->eng_req = er;
                 t->p[P_AMODE] = 0, t->p[P_AHOLD] = 0, t->nheld = 0;
                 apply_preset_to(t, 0);
@@ -1855,6 +1858,7 @@ int main(int argc, char **argv)
         uint32_t total0, total1, cur, e0, p0, k, e;
         int ok;
         ui.menu = 0; song.sel = 1; go_home(); frames(2);
+        set_engine_of(&trk[1], TRK_DEF[1][0]); apply_preset_to(&trk[1], TRK_DEF[1][1]); frames(2);   /* (RAPTOR: a listed sound, not DIGITAL) */
         for (k = 0; k < FAV_N; k++) fav[k] = FAV_NONE;
         fav_at = -1;
         preset_pos(&total0);

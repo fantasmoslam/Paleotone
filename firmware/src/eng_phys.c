@@ -38,8 +38,7 @@ enum { PM_MODAL, PM_STRING, PM_MEMB, PM_SYMP, PM_COUNT };
 #define PHYS_POLY 3
 /* output: model 1.0 -> this (VOICE_FS scale), then a soft knee; per model (a strike of all the modes in
  * phase peaks high but is short) */
-static const int32_t PHYS_GAIN[PM_COUNT] = {56000, 48000, 135000, 36000};   /* (SLOOP 2.5: x2, x4, x1.5, x3: the
-                                                                               * level of SLOOP's other engines) */
+static const int32_t PHYS_GAIN[PM_COUNT] = {28000, 12000, 90000, 12000};   /* RAPTOR: Paleotone's levels */
 
 typedef struct {
     uint8_t model;               /* PM_* the state belongs to */
@@ -224,40 +223,30 @@ static void phys_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 /* MODAL partials by STRC: 34 harmonic, 70 1 : 2.83 : 5.48 : 8.90 (a free bar, a chime: 1 : 2.76 : 5.40 : 8.93),
  * 98 1 : 3.57 : 7.65, 116 1 : 4.0 : 9.0 (a tuned bar: 1 : 4 : 10) */
 static const preset_t PHYS_PRESETS[] = {
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
     /* name, {MODEL, STRC, BRIT, DAMP, POS, ACC, BOW, EXC}, {A D S R}, fenv, mono */
-    {"BELL TREE", {PM_MODAL, 70, 100, 106, 12, 100, 0, 6}, {0, 100, 127, 96}, 0, 0, FX(0, 20, 30, 60)},
-    {"MODAL BAR", {PM_MODAL, 116, 38, 40, 24, 90, 0, 30}, {0, 90, 127, 52}, 0, 0, FX(0, 0, 15, 30)},
-    {"STR PLUCK", {PM_STRING, 56, 72, 84, 40, 96, 0, 0}, {0, 100, 127, 58}, 0, 0, FX(0, 10, 30, 30)},
-    {"BOWED MTL", {PM_MODAL, 98, 70, 112, 10, 80, 90, 0}, {60, 90, 127, 90}, 0, 0, FX(0, 40, 20, 70)},
-    {"THUMB PNO", {PM_MODAL, 34, 16, 56, 100, 90, 0, 48}, {0, 100, 127, 60}, 0, 0, FX(0, 10, 20, 40)},
+    {"BELL TREE", {PM_MODAL, 70, 100, 106, 12, 100, 0, 6}, {0, 100, 127, 96}, 0, 0, FX(0, 20, 30, 60), PAT(7)},
+    {"MARIMBA", {PM_MODAL, 116, 38, 40, 24, 90, 0, 30}, {0, 90, 127, 52}, 0, 0, FX(0, 0, 15, 30), PAT(6)},
+    {"PLUCK", {PM_STRING, 56, 72, 84, 40, 96, 0, 0}, {0, 100, 127, 58}, 0, 0, FX(0, 10, 30, 30), PAT(3)},
+    {"BOWED METAL", {PM_MODAL, 98, 70, 112, 10, 80, 90, 0}, {60, 90, 127, 90}, 0, 0, FX(0, 40, 20, 70), PAT(5)},
+    {"KALIMBA", {PM_MODAL, 34, 16, 56, 100, 90, 0, 48}, {0, 100, 127, 60}, 0, 0, FX(0, 10, 20, 40), PAT(7)},
     /* MEMB: {MODEL, HARM, BRIT, DAMP, POS, ACC, BEND, EXC} */
-    {"HAND DRUM", {PM_MEMB, 112, 76, 56, 44, 100, 14, 24}, {0, 100, 127, 64}, 0, 0, FX(0, 0, 10, 30)},
-    {"MEMB TOMS", {PM_MEMB, 0, 52, 40, 30, 100, 40, 30}, {0, 100, 127, 70}, 0, 0, FX(0, 0, 0, 40)},
+    {"HAND DRUM", {PM_MEMB, 112, 76, 56, 44, 100, 14, 24}, {0, 100, 127, 64}, 0, 0, FX(0, 0, 10, 30), PAT(6)},
+    {"TOMS", {PM_MEMB, 0, 52, 40, 30, 100, 40, 30}, {0, 100, 127, 70}, 0, 0, FX(0, 0, 0, 40), PAT(2)},
     /* SYMP: {MODEL, CHRD, BRIT, DAMP, SYMP, ACC, BUZZ, EXC} */
-    {"SITAR", {PM_SYMP, 127, 80, 88, 64, 100, 92, 0}, {0, 100, 127, 90}, 0, 0, FX(0, 10, 20, 50)},
-    {"PHYS HARP", {PM_SYMP, 8, 62, 74, 60, 90, 0, 0}, {0, 100, 127, 80}, 0, 0, FX(0, 20, 20, 60)},
-    /* SLOOP 2.5: more models. STRNG: {MODEL, STRC, BRIT, DAMP, POS, ACC, BOW, EXC} */
-    {"NYLON GTR", {PM_STRING, 40, 50, 80, 30, 80, 0, 10}, {0, 100, 127, 50}, 0, 0, FX(0, 10, 15, 35)},
-    {"STEEL GTR", {PM_STRING, 56, 85, 88, 22, 96, 0, 6}, {0, 100, 127, 56}, 0, 0, FX(0, 15, 18, 35)},
-    {"MUTED GTR", {PM_STRING, 50, 40, 55, 30, 90, 0, 20}, {0, 100, 127, 20}, 0, 0, FX(0, 0, 20, 20)},
-    {"PLUCK BASS", {PM_STRING, 60, 45, 74, 35, 100, 0, 8}, {0, 100, 127, 30}, 0, 1, FX(0, 0, 0, 6), XP(P_TRANS + 1, -12)},
-    {"KOTO", {PM_STRING, 20, 70, 82, 15, 96, 0, 4}, {0, 100, 127, 60}, 0, 0, FX(0, 10, 25, 45)},
-    {"BANJO", {PM_STRING, 70, 100, 60, 12, 110, 0, 12}, {0, 100, 127, 40}, 0, 0, FX(0, 0, 15, 25)},
-    {"CELLO BOW", {PM_MODAL, 34, 60, 110, 12, 70, 90, 0}, {60, 90, 127, 70}, 0, 0, FX(0, 20, 10, 55)},
-    /* SYMP: {MODEL, CHRD, BRIT, DAMP, SYMP, ACC, BUZZ, EXC} */
-    {"TANPURA", {PM_SYMP, 0, 70, 120, 90, 80, 110, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 10, 10, 60)},
-    /* MODAL: chimes, bells, bars, a glass bowl, a pan, a block */
-    {"CHIMES", {PM_MODAL, 70, 110, 118, 8, 110, 0, 4}, {0, 100, 127, 100}, 0, 0, FX(0, 15, 25, 65)},
-    {"BIG BELL", {PM_MODAL, 80, 90, 124, 16, 120, 0, 8}, {0, 100, 127, 110}, 0, 0, FX(0, 10, 20, 70), XP(P_TRANS + 1, -12)},
-    {"VIBRA BAR", {PM_MODAL, 116, 60, 100, 20, 80, 0, 10}, {0, 100, 127, 70}, 0, 0, FX(0, 20, 15, 40),
-     XP(P_LD_AMP + 1, 20, P_LRATE + 1, 70)},
-    {"GLASS BOWL", {PM_MODAL, 98, 90, 120, 6, 60, 70, 0}, {70, 90, 127, 100}, 0, 0, FX(0, 30, 20, 75)},
-    {"STEEL PAN", {PM_MODAL, 36, 80, 90, 30, 100, 0, 20}, {0, 100, 127, 60}, 0, 0, FX(0, 10, 20, 35)},
-    {"WOOD BLOCK", {PM_MODAL, 116, 30, 35, 40, 110, 0, 60}, {0, 100, 127, 20}, 0, 0, FX(0, 0, 10, 20)},
-    /* MEMB: {MODEL, HARM, BRIT, DAMP, POS, ACC, BEND, EXC} */
-    {"TABLA", {PM_MEMB, 120, 70, 70, 50, 110, 20, 30}, {0, 100, 127, 50}, 0, 0, FX(0, 0, 10, 25)},
-    {"CONGA", {PM_MEMB, 90, 60, 50, 40, 100, 8, 40}, {0, 100, 127, 40}, 0, 0, FX(0, 0, 10, 25)},
-    {"TIMPANI", {PM_MEMB, 10, 50, 100, 20, 110, 6, 10}, {0, 100, 127, 90}, 0, 0, FX(0, 0, 0, 50), XP(P_TRANS + 1, -12)},
+    {"DRONE STRING", {PM_SYMP, 127, 80, 88, 64, 100, 92, 0}, {0, 100, 127, 90}, 0, 0, FX(0, 10, 20, 50), PAT(3)},
+    {"HARP", {PM_SYMP, 8, 62, 74, 60, 90, 0, 0}, {0, 100, 127, 80}, 0, 0, FX(0, 20, 20, 60), PAT(3)},
+    /* DINOBOX's */
+    {"LOG MARIMBA", {0, 100, 22, 60, 40, 110, 0, 55}, {0, 95, 127, 55}, 0, 0, FX(0, 10, 20, 85), PAT(3)},
+    {"GEODE BELLS", {0, 50, 120, 115, 8, 100, 0, 20}, {0, 100, 127, 95}, 0, 0, FX(0, 25, 20, 105), PAT(7)},
+    {"VALLEY HARP", {1, 10, 85, 70, 55, 115, 0, 10}, {0, 100, 127, 90}, 0, 0, FX(0, 30, 25, 110), PAT(20)},
+    {"TARPIT DRONE", {3, 6, 30, 110, 95, 120, 110, 30}, {30, 100, 127, 95}, 0, 0, FX(8, 10, 0, 100), PAT(17)},
+    {"HIDE DRUM", {2, 80, 40, 50, 30, 120, 0, 50}, {0, 90, 127, 50}, 0, 0, FX(0, 0, 10, 80), PAT(18)},
+    {"WATER DROPS", {0, 20, 110, 90, 90, 90, 0, 100}, {0, 90, 127, 70}, 0, 0, FX(0, 20, 60, 110), PAT(7)},
+    {"BOWED BONE", {1, 0, 60, 100, 30, 110, 100, 0}, {60, 95, 127, 90}, 0, 0, FX(0, 20, 10, 110), PAT(17)},
+    {"SITAR VINE", {3, 30, 100, 90, 20, 120, 0, 60}, {0, 100, 127, 80}, 0, 0, FX(0, 10, 30, 95), PAT(20)},
+    {"TUSK TINES", {0, 40, 70, 100, 60, 100, 0, 0}, {0, 100, 127, 80}, 0, 0, FX(0, 30, 30, 95), PAT(13)},
+    /* DINOBOX's end */
 };
 
 static const engine_t ENG_PHYS = {

@@ -6,7 +6,7 @@
  * turn opens it for PICK_MS. Pad hits never reach the notes while it is up (smk_input.h smk_pad_pick). */
 #define PICK_MS 1500u
 enum { PK_USER = 8, PK_KITS = 9 };
-static const char *const PICK_KIND[10] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX", "USER", "KITS"};
+static const char *const PICK_KIND[10] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX", "USER", "KITS"};
 static const uint8_t PICK_RGB[10][3] = {           /* a colour a kind (pads and screen) */
     {255, 40, 40},  {255, 140, 0},  {255, 220, 0}, {40, 220, 80},  {0, 200, 255},
     {60, 80, 255},  {170, 60, 255}, {255, 60, 170}, {220, 210, 170}, {255, 98, 26}};

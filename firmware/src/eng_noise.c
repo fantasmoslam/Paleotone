@@ -108,6 +108,9 @@ static void noise_note_on(track_t *t, voice_t *v)
     v->ph[2] = 0;
 }
 
+/* RAPTOR: the NOISE engine plays as Paleotone's (its LFSR clock stops at one step a sample, as there: ARCADE's top
+ * keys); SFX (eng_sfx.c) keeps SLOOP's unbounded clock */
+static uint8_t noise_pal;
 /* pe: the eight EDIT values P_E0..P_E7 (the track's own, or eng_sfx.c's recipe) */
 static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
@@ -118,6 +121,7 @@ static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, 
     int32_t drift = (int32_t)v->ph[2], d16 = 0, gain = 32767, gq, colr, cut, k, a1, a2, a3, g, bpg, mix, cf, thr = 0;
     uint32_t inc = 0, taps = NOISE_TAPS[sel];
     uint64_t inc64 = 0;                               /* (after 2.8.3) LFSR: its clock, Q32, past the sample rate too */
+    const int32_t plim = noise_pal ? 0x7FFFFFFF : 65535;   /* the colour poles' bound (RAPTOR: none on NOISE, as Paleotone) */
     /* drift: a new random target every 0.7..3 s, followed with a 0.7 s lag */
     if (drft) {
         int32_t tg = v->s[3] >> 16, cnt = v->s[3] & 0xFFFF;
@@ -164,7 +168,8 @@ static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, 
     }
     if (mode == NZ_LFSR) {
         uint32_t mask = taps;                         /* the register's own bits (MODE / LEN changes) */
-        inc64 = noise_inc64(m->pitch16 + pe[7] * 16 + d16);
+        inc64 = noise_pal ? (uint64_t)noise_inc(m->pitch16 + pe[7] * 16 + d16)   /* (Paleotone: one step a sample at most) */
+                          : noise_inc64(m->pitch16 + pe[7] * 16 + d16);
         mask |= mask >> 1;
         mask |= mask >> 2;
         mask |= mask >> 4;
@@ -208,14 +213,14 @@ static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, 
         x = w;
         if (colr) {                                   /* pink: three leaky poles (Kellet), brown: a leaky integrator */
             int32_t pk;
-            b0 = clamp(((b0 * 32690) >> 15) + ((w * 3245) >> 15), -65535, 65535);   /* (after 2.8.3: bounded: a held */
-            b1 = clamp(((b1 * 31555) >> 15) + ((w * 9716) >> 15), -65535, 65535);   /* LFSR level grew them past 2^31 / 32690) */
+            b0 = clamp(((b0 * 32690) >> 15) + ((w * 3245) >> 15), -plim, plim);   /* (after 2.8.3: bounded: a held */
+            b1 = clamp(((b1 * 31555) >> 15) + ((w * 9716) >> 15), -plim, plim);   /* LFSR level grew them past 2^31 / 32690) */
             b2 = ((b2 * 18678) >> 15) + ((w * 17247) >> 14);
             pk = (b0 + b1 + b2 + ((w * 6055) >> 15)) >> 2;
             if (colr <= (64 << 8)) {
                 x = w + mulq15(pk - w, cf);
             } else {
-                br = clamp(((br * 32580) >> 15) + ((w * 3480) >> 15), -65535, 65535);
+                br = clamp(((br * 32580) >> 15) + ((w * 3480) >> 15), -plim, plim);
                 x = pk + mulq15(br - pk, cf);
             }
         }
@@ -256,25 +261,28 @@ static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, 
 
 static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
+    noise_pal = 1;
     noise_core(&t->p[P_E0], v, out, n, m);
+    noise_pal = 0;
 }
 
 /* {MODE, COLR, FREQ, RES, TRK, DENS, DRFT, CRSH / CLK} */
 static const preset_t NOISE_PRESETS[] = {
-    {"WIND", {NZ_ANLG, 64, 70, 100, 127, 0, 70, 0}, {90, 90, 110, 90}, 0, 0, FX(0, 30, 20, 80)},
-    {"RAIN", {NZ_DUST, 30, 88, 80, 64, 105, 40, 0}, {10, 90, 127, 70}, 0, 0, FX(0, 0, 20, 70)},
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
+    {"WIND", {NZ_ANLG, 64, 70, 100, 127, 0, 70, 0}, {90, 90, 110, 90}, 0, 0, FX(0, 30, 20, 80), PAT(5)},
+    {"RAIN", {NZ_DUST, 30, 88, 80, 64, 105, 40, 0}, {10, 90, 127, 70}, 0, 0, FX(0, 0, 20, 70), PAT(5)},
     /* a 7-bit register (127 steps) clocked 84 semitones (7 octaves) above the key: one period per key period,
      * a pitched chip-style buzz */
-    {"NZ ARCADE", {NZ_LFSR, 0, 127, 0, 127, 112, 0, 84}, {0, 80, 0, 50}, 0, 0, FX(0, 0, 10, 20)},
-    {"NZ METAL", {NZ_META, 0, 100, 40, 100, 32, 0, 0}, {0, 75, 40, 60}, 10, 0, FX(0, 20, 30, 45)},
-    /* SLOOP 2.5 */
-    {"OCEAN", {NZ_ANLG, 100, 50, 20, 0, 0, 110, 0}, {100, 90, 127, 100}, 0, 0, FX(0, 20, 0, 70)},
-    {"VINYL", {NZ_DUST, 0, 110, 10, 0, 70, 20, 0}, {0, 64, 127, 40}, 0, 0, FX(0, 0, 0, 10)},
-    {"HISS", {NZ_ANLG, 0, 115, 0, 0, 0, 0, 0}, {20, 64, 127, 40}, 0, 0, FX(0, 0, 0, 20)},
-    {"RISER", {NZ_ANLG, 30, 60, 110, 127, 0, 0, 0}, {100, 90, 127, 60}, 0, 0, FX(0, 20, 30, 60)},
-    {"NZ SNARE", {NZ_ANLG, 20, 90, 30, 64, 0, 0, 0}, {0, 60, 0, 44}, 0, 0, FX(0, 0, 0, 25)},
-    {"BITCRUSH", {NZ_ANLG, 40, 90, 40, 64, 0, 0, 100}, {0, 70, 110, 40}, 0, 0, FX(0, 0, 20, 30)},
-    {"RADIO", {NZ_LFSR, 20, 70, 90, 64, 0, 60, 48}, {10, 70, 120, 50}, 0, 0, FX(0, 10, 30, 40)},
+    {"ARCADE", {NZ_LFSR, 0, 127, 0, 127, 112, 0, 84}, {0, 80, 0, 50}, 0, 0, FX(0, 0, 10, 20), PAT(3)},
+    {"METAL", {NZ_META, 0, 100, 40, 100, 32, 0, 0}, {0, 75, 40, 60}, 10, 0, FX(0, 20, 30, 45), PAT(7)},
+    /* DINOBOX's */
+    {"VOLCANO", {0, 120, 22, 40, 0, 40, 110, 0}, {100, 90, 127, 120}, 0, 0, FX(20, 0, 10, 110), PAT(17)},
+    {"LAVA CRACKLE", {1, 40, 90, 50, 0, 70, 30, 0}, {30, 90, 127, 90}, 0, 0, FX(0, 0, 0, 80), PAT(17)},
+    {"MONSOON", {1, 20, 108, 10, 0, 127, 50, 0}, {80, 90, 127, 110}, 0, 0, FX(0, 0, 0, 100), PAT(17)},
+    {"GEYSER", {0, 60, 60, 100, 20, 0, 80, 0}, {40, 90, 127, 100}, 0, 0, FX(0, 0, 20, 100), PAT(17)},
+    {"SWARM", {3, 40, 110, 90, 0, 60, 100, 30}, {40, 90, 127, 80}, 0, 0, FX(0, 30, 20, 90), PAT(17)},
+    {"WIND RIDGE", {0, 90, 45, 110, 10, 0, 127, 0}, {110, 90, 127, 120}, 0, 0, FX(0, 20, 0, 115), PAT(17)},
+    /* DINOBOX's end */
 };
 
 /* (after Clipper 1.2) UNISON (voice.c unison_spread): the phase moved by r (Q32) and the noise from its own

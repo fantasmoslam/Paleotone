@@ -22,14 +22,16 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 /* SLOOP 2.4: FM6 (eng_fm6.c) is engine 9 in every build; SLICE, when built, comes last (10). Projects and user
  * presets store the engine index as a byte, and no shipped SLOOP was built with SLICE, so its number is stored
  * nowhere: FM6 may take 9 and SLICE moves up (engines.c ENGINES[], params.c N_ENGNAME follow this order) */
-#define NENGINES (14 + FELUCCA_SLICE)
+#define NENGINES (16 + FELUCCA_SLICE)
 #define ENGI_GRAIN 8u            /* GRAIN, PHYS, NOISE (SLOOP 2.5, appended after FM6: the stores keep the numbers) */
 #define ENGI_PHYS 10u
 #define ENGI_NOISE 11u
 #define ENGI_SAURUS 12u          /* the dino groovebox: SAURUS, the creature voice (eng_saurus.c, from PALEOTONE). No SLOOP
                                   * build had SLICE, so its number was stored nowhere and it moves up after SAURUS */
 #define ENGI_SFX 13u             /* the dino groovebox: SFX, the world's sounds (eng_sfx.c) */
-#define ENGI_SLICE 14u           /* with FELUCCA_SLICE: after SFX */
+#define ENGI_ROAR 14u            /* RAPTOR: ROAR, Paleotone's drones and jungle rhythms (eng_gurdy.c) */
+#define ENGI_DRUM 15u            /* RAPTOR: DRUM, Paleotone's kits (eng_drum.c, drum_voice.c) */
+#define ENGI_SLICE 16u           /* with FELUCCA_SLICE: after DRUM */
 #define ENGI_FM6 9u              /* the FM6 engine's index (eng_fm6.c, the stores: append-only) */
 #define UP_SLOTS 32u             /* user presets (upreset.c) */
 #define NELEM(a) (sizeof(a) / sizeof((a)[0]))
@@ -130,6 +132,8 @@ typedef struct {
     uint32_t ph[3];
     int32_t s[8];                /* engine state (filters, envs) */
     uint32_t age;
+    uint8_t ring;                /* RAPTOR (Paleotone's GHOULBOX 2.3, ROAR's RING): the melody string's level while the
+                                  * drones ring on, 255 full (eng_gurdy.c) */
 } voice_t;
 
 typedef struct {                 /* per-voice control-rate modulation, computed in voice.c */

@@ -37,7 +37,7 @@ typedef struct {                 /* a part's FM6 state: its engine arena (engine
     int32_t bus[2][FM6_N];       /* fm6_core_render's modulator buses: the part's own, so parts render on both cores */
 } fm6_part_t;
 #define FM6_BANK_N 27u           /* patch bank slots (fm6_bank.c) */
-#define FM6_NSLOT (FM6_NFACTORY + FM6_BANK_N)   /* PTCH: F1..F8, B1..B27 */
+#define FM6_NSLOT (FM6_NFACTORY + FM6_BANK_N)   /* PTCH: F1..F15 (RAPTOR: Paleotone's F9..F15 too), B1..B27 */
 #define FM6_PACKED 128u
 
 static uint8_t fm6_patch[NPART][FP_SIZE + 1u];  /* the parts' patches (main loop writes, then fm6_pgen) */
@@ -355,7 +355,7 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
 static const char *const N_FM6_ALG[] = {"PAT", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
                                         "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25",
                                         "26", "27", "28", "29", "30", "31", "32", 0};
-static const char *const N_FM6_PATCH[] = {"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "B1", "B2", "B3", "B4",
+static const char *const N_FM6_PATCH[] = {"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "B1", "B2", "B3", "B4",
                                           "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15",
                                           "B16", "B17", "B18", "B19", "B20", "B21", "B22", "B23", "B24", "B25",
                                           "B26", "B27", 0};
@@ -364,14 +364,27 @@ _Static_assert(NELEM(N_FM6_PATCH) == FM6_NSLOT + 1u, "a PTCH name per slot");
 /* {ALG, FB, MLVL, MRAT, MEG, VMOD, DTUN, PTCH}: the factory patch F1..F8 as it is, DTUN on the pad. The ADSR
  * does nothing on this engine (ownenv): kept at its defaults. Names as ui.c BANK[] lists them (by kind) */
 static const preset_t FM6_PRESETS[] = {
-    {"TINE EP", {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 127, 0}, 0, 0, FX(0, 45, 25, 35)},
-    {"GLASS BELL", {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 30, 70)},
-    {"ROUND BASS", {0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 10, 10)},
-    {"BRASS SECT", {0, 0, 0, 0, 0, 0, 0, 3}, {0, 0, 127, 0}, 0, 0, FX(0, 25, 20, 40)},
-    {"SOFT PAD", {0, 0, 0, 0, 0, 0, 30, 4}, {0, 0, 127, 0}, 0, 0, FX(0, 60, 30, 70)},
-    {"WOOD BARS", {0, 0, 0, 0, 0, 0, 0, 5}, {0, 0, 127, 0}, 0, 0, FX(0, 0, 25, 40)},
-    {"DRAWBARS", {0, 0, 0, 0, 0, 0, 0, 6}, {0, 0, 127, 0}, 0, 0, FX(10, 40, 0, 30)},
-    {"NYLON PICK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30)},
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
+    {"TINE EP", {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 127, 0}, 0, 0, FX(0, 45, 25, 35), PAT(6)},
+    {"BELL", {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 30, 70), PAT(7)},
+    {"FM BASS", {0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 10, 10), PAT(2)},
+    {"BRASS", {0, 0, 0, 0, 0, 0, 0, 3}, {0, 0, 127, 0}, 0, 0, FX(0, 25, 20, 40), PAT(4)},
+    {"PAD", {0, 0, 0, 0, 0, 0, 30, 4}, {0, 0, 127, 0}, 0, 0, FX(0, 60, 30, 70), PAT(5)},
+    {"MARIMBA", {0, 0, 0, 0, 0, 0, 0, 5}, {0, 0, 127, 0}, 0, 0, FX(0, 0, 25, 40), PAT(3)},
+    {"ORGAN", {0, 0, 0, 0, 0, 0, 0, 6}, {0, 0, 127, 0}, 0, 0, FX(10, 40, 0, 30), PAT(6)},
+    {"PLUCK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30), PAT(13)},
+    /* DINOBOX's */
+    {"TAR PIT BASS", {0, 0, 0, 0, 0, 0, 0, 8}, {0, 0, 127, 0}, 0, 1, FX(10, 0, 0, 40), PAT(8)},
+    {"SLIT DRUM", {0, 0, 0, 0, 0, 0, 0, 9}, {0, 0, 127, 0}, 0, 0, FX(0, 0, 20, 70), PAT(20)},
+    {"MAMMOTH", {0, 0, 0, 0, 0, 0, 0, 10}, {0, 0, 127, 0}, 0, 1, FX(10, 10, 10, 95), PAT(17)},
+    {"GLACIER PAD", {0, 0, 0, 0, 0, 0, 30, 11}, {0, 0, 127, 0}, 0, 0, FX(0, 60, 20, 120), PAT(5)},
+    {"METEOR", {0, 0, 0, 0, 0, 0, 0, 12}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 50, 115), PAT(4)},
+    {"CICADA BUZZ", {0, 0, 0, 0, 0, 0, 0, 13}, {0, 0, 127, 0}, 0, 0, FX(0, 0, 20, 90), PAT(17)},
+    {"AMBER BELLS", {0, 0, 0, 0, 0, 0, 0, 14}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 40, 110), PAT(7)},
+    {"TAR GROWL", {0, 3, 20, 0, 0, 0, 0, 8}, {0, 0, 127, 0}, 0, 1, FX(25, 0, 0, 40), PAT(22)},
+    {"MAMMOTH CALL", {0, 0, 15, 0, 10, 3, 0, 10}, {0, 0, 127, 0}, 0, 1, FX(10, 0, 20, 110), PAT(17)},
+    {"GLACIER WIDE", {0, 0, -10, 0, 0, 0, 70, 11}, {0, 0, 127, 0}, 0, 0, FX(0, 90, 30, 127), PAT(5)},
+    /* DINOBOX's end */
 };
 
 /* (after Clipper 1.2) UNISON (voice.c unison_spread): the six operators moved together by r (Q32) of a turn of
