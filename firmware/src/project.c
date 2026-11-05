@@ -42,7 +42,8 @@
                                                 * so the format and its size do not change */
 _Static_assert(G_DRDLY == PROJ_NG && G_TXSRC == PROJ_NG + 5u,
                "the globals a project holds, then G_DRDLY (then 2.6's GLO > MIDI: settings of the FM-1)");
-_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_COUNT == G_FXFADE + 1u, "G_FXFADE (2.7.2) is the last global, a setting of the FM-1");
+_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_RTYPE == G_FXFADE + 1u && G_COUNT == G_CRKL + 1u,
+               "G_FXFADE (2.7.2) a setting of the FM-1, then RAPTOR's G_RTYPE (in G_SYNC's slot of a project)");
 #define PROJ_NC6 ((uint32_t)P_ITYPE)           /* format 6: the parameters kept in 16 bits, P_LEVEL .. P_VLEAD (as 5), */
 #define PROJ_NX6 ((uint32_t)(P_E0 - P_ITYPE))  /* the 2.6 ones in a byte (0..127), then P_E0 .. P_E7 */
 _Static_assert(PROJ_NC6 == PROJ_NP_V5 - 8u && PROJ_NX6 == 10u, "format 6: format 5's parameters, then ten bytes");
@@ -536,6 +537,9 @@ UI_SMALL static void proj_capture(project_t *p)        /* what is playing now, a
         p->g[i] = song.g[i];
     p->sel = song.sel;
     p->drdly = (uint8_t)song.g[G_DRDLY];
+    p->g[G_SYNC] = (int16_t)(0x100 | (song.g[G_RTYPE] & 3));   /* RAPTOR: the reverb's model (SYNC: not a project's) */
+    p->g[G_MIDI] = (int16_t)(0x4000 | (song.g[G_TAPE] & 127) | (song.g[G_CRSH] & 127) << 7);   /* .. TAPE, CRSH (MIDI, */
+    p->g[G_ROUTE] = (int16_t)(0x4000 | (song.g[G_AMB] & 127) | (song.g[G_CRKL] & 127) << 7);   /* ROUTE: settings) AMB, CRKL */
     proj_tx_put(p);
     for (i = 0; i < NTRK; i++) {
         uint32_t k;
@@ -565,6 +569,15 @@ static void proj_apply(const project_t *p, int all)
                                                                  * its slot and G_INFO's hold the TEXTURE) */
             song.g[i] = (int16_t)clamp(p->g[i], GP[i].min, GP[i].max);
     song.g[G_DRDLY] = (int16_t)clamp(p->drdly, GP[G_DRDLY].min, GP[G_DRDLY].max);   /* (a load and a section, as REV) */
+    if (all)                                            /* RAPTOR: the reverb's model (none stored: HALL, Paleotone's) */
+        song.g[G_RTYPE] = (int16_t)((p->g[G_SYNC] & 0x100) ? clamp(p->g[G_SYNC] & 3, 0, 2) : GP[G_RTYPE].def);
+    if (all) {                                          /* .. TAPE, CRSH, AMB, CRKL (none stored: Paleotone's defaults) */
+        int m = (p->g[G_MIDI] & 0x4000) != 0, r = (p->g[G_ROUTE] & 0x4000) != 0;
+        song.g[G_TAPE] = (int16_t)(m ? p->g[G_MIDI] & 127 : GP[G_TAPE].def);
+        song.g[G_CRSH] = (int16_t)(m ? (p->g[G_MIDI] >> 7) & 127 : GP[G_CRSH].def);
+        song.g[G_AMB] = (int16_t)(r ? p->g[G_ROUTE] & 127 : GP[G_AMB].def);
+        song.g[G_CRKL] = (int16_t)(r ? (p->g[G_ROUTE] >> 7) & 127 : GP[G_CRKL].def);
+    }
     proj_tx_get(p);                                     /* GLO > TEXTURE (2.6): a load and a section */
     drum_tw_get(p);                                     /* (2.7) the drum sounds' TUNE and DECAY: a load and a section */
     for (k = 0; k < NTRK; k++) {

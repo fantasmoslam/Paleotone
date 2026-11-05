@@ -17,15 +17,25 @@
 #define DRUM_PAIR (DRUM_USR + SMP_USER_SLOTS)   /* USR3+4: one kit in two slots (the editor splits it), ~15 s */
 #define DRUM_SYN (DRUM_PAIR + 1u)                /* SLOOP 2.5: SYN1..SYN4, your synthesised kits (drum_synth.c dsu) */
 #define DRUM_KITS (DRUM_SYN + DSU_N)
-static const char *const DRUM_KIT_NAMES[] = {"ACOUSTIC", "DEEP", "TIGHT", "BRIGHT", "DUST", DS_KIT_NAME_LIST,
+static const char *const DRUM_KIT_NAMES[] = {"DRUM KIT", "TRIBAL KIT", "WAR DRUMS", "BONE RATTLE", "RITUAL", DS_KIT_NAME_LIST,
                                              "USR1", "USR2", "USR3", "USR4", "USR3+4",
                                              "SYN1", "SYN2", "SYN3", "SYN4"};
-static const char *const DRUM_KIT_STYLES[] = {"STUDIO", "SOFT", "PUNCHY", "BRIGHT", "DUSTY", DS_KIT_STYLE_LIST,
+static const char *const DRUM_KIT_STYLES[] = {"PALEOTONE", "PALEOTONE", "PALEOTONE", "PALEOTONE", "PALEOTONE", DS_KIT_STYLE_LIST,
                                               "YOUR KIT", "YOUR KIT", "YOUR KIT", "YOUR KIT", "BIG KIT",
                                               "YOUR SYNTH", "YOUR SYNTH", "YOUR SYNTH", "YOUR SYNTH"};
 _Static_assert(sizeof(DRUM_KIT_NAMES) / sizeof(DRUM_KIT_NAMES[0]) == DRUM_KITS, "a name per kit");
 static uint32_t drum_kit(void) { return (uint32_t)clamp(TDRUM->p[P_E0], 0, DRUM_KITS - 1); }
-#define DRUM_DEFAULT_KIT DRUM_SAMPLED   /* power-on: 808 */
+#define DRUM_DEFAULT_KIT 0u             /* power-on: Paleotone's DRUM KIT (RAPTOR) */
+
+/* RAPTOR: kits 0..4 are Paleotone's (its DRUM engine's five sounds, eng_drum.c DRUM_PRESETS: DRUM KIT, TRIBAL KIT,
+ * WAR DRUMS, BONE RATTLE, RITUAL), in the slots of SLOOP's GM sample kit and its treatments (Paleotone has no GM
+ * sample set). Played as Paleotone's DRUM engine plays them: a note picks its drum and its lane (drum_gm,
+ * drum_lane), one drum_voice.c voice a lane, a closed hat chokes the open one; the drum track's LEVEL, PAN, sends,
+ * mute and each sound's TUNE / DECAY (the SOUND page) as for the other kits */
+_Static_assert(DRUM_SAMPLED == 5u, "kits 0..4: Paleotone's five");
+static drum_lane_t pal_lane[DV_NLANE] __attribute__((section(".lowram")));
+static int16_t pal_p[P_COUNT];                       /* the kit's DRUM values at P_E0 .. P_E7 (drum_gm reads them) */
+static uint8_t pal_kit = 0xFFu, pal_vel[DV_NLANE], pal_ln[DV_NLANE], pal_ok;   /* pal_ln: the drum track's lane */
 
 static struct {
     voice_t v[NDRUM];
@@ -288,6 +298,50 @@ static void drum_on(uint32_t note, uint32_t vel)
         drums.hits |= (uint16_t)(1u << lane_of_note(note));
     if (note == 35u || note == 36u)
         drums.kick = 1;                             /* (DUCK) */
+    if (kit < DRUM_SAMPLED) {                       /* RAPTOR: Paleotone's kits */
+        uint32_t role, lane;
+        int32_t st;
+        drum_lane_t *L;
+        if (!(pal_ok & 1u)) {
+            for (i = 0; i < DV_NLANE; i++) {
+                dv_init(&pal_lane[i].v, 0);
+                pal_lane[i].key.type = 0xFF;
+                pal_lane[i].role = 0;
+            }
+            pal_ok = 1;
+        }
+        if (pal_kit != kit) {
+            for (i = 0; i < 8u; i++)
+                pal_p[P_E0 + i] = DRUM_PRESETS[kit].e[i];
+            pal_kit = (uint8_t)kit;
+        }
+        role = drum_gm(pal_p, note, &st);
+        lane = drum_lane(note);
+        L = &pal_lane[lane];
+        if (L->role != role || L->v.type != dv_run_type(role)) {   /* another drum on this lane: from rest */
+            dv_init(&L->v, role);
+            L->key.type = 0xFF;
+            L->role = (uint8_t)role;
+        }
+        L->st = (int8_t)st;
+        pal_vel[lane] = (uint8_t)vel;
+        pal_ln[lane] = (uint8_t)(DRUM_CLICK(note) ? 0xFFu : lane_of_note(note));
+        dv_trigger(&L->v);
+        if (lane == DV_HATC && pal_lane[DV_HATO].v.live)
+            dv_choke(&pal_lane[DV_HATO].v);
+        for (i = 1; i < NDRUM; i++)                 /* (the hit's note, velocity and age in the oldest voice, as the
+                                                     * other kits leave them: the lanes play it, the voice stays free) */
+            if (drums.v[i].age < v->age)
+                v = &drums.v[i];
+        if (v->active)
+            drums.tail += v->s[7];
+        v->active = 0;
+        v->note = (uint8_t)note;
+        v->vel = (uint8_t)vel;
+        v->age = ++drums.age;
+        v->s[7] = 0;
+        return;
+    }
     if (kit >= DRUM_SYN) {                          /* SYN1..SYN4: your synthesised kit */
         const dsu_kit_t *u = dsu_kit(kit - DRUM_SYN);
         drum_synth_on(note, vel, kit, u->s, u->crush, 1);
@@ -412,6 +466,54 @@ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dl
             v->s[7] = 0;
         }
     }
+    for (k = 0; k < DV_NLANE && pal_ok; k++) {     /* RAPTOR: Paleotone's kits (eng_drum.c drum_render's sound) */
+        drum_lane_t *L = &pal_lane[k];
+        dv_param_t q;
+        int32_t y[CTL], mb[CTL], acc = clamp(pal_p[P_E5] * pal_vel[k] * 4, 0, 65536), drv = pal_p[P_E7], g = 0, mk = 0, a;
+        uint32_t m = n < CTL ? n : CTL, ln = pal_ln[k];
+        if (!L->v.live && !L->v.trig)
+            continue;
+        dv_default(&q, L->role);
+        q.decay = (uint8_t)clamp(q.decay + pal_p[P_E3] - 64 + (ln < DRUM_LANES ? drum_dec[ln] * 12 : 0), 0, 127);
+        q.tone = (uint8_t)clamp(q.tone + pal_p[P_E2] - 64, 0, 127);
+        q.extra = (uint8_t)clamp(q.extra + pal_p[P_E4] - 64, 0, 127);
+        q.accent = (uint8_t)clamp(acc >> 9, 0, 127);
+        q.tune = (int16_t)(L->st * 16 + (pal_p[P_E1] - 64) * 3 + (ln < DRUM_LANES ? drum_tune[ln] * 16 : 0));
+        if (((const uint32_t *)&q)[0] != ((const uint32_t *)&L->key)[0] ||
+            ((const uint32_t *)&q)[1] != ((const uint32_t *)&L->key)[1]) {
+            dv_setup(&L->c, &q);
+            L->key = q;
+            if (dv_uses_metal(L->c.type))
+                dv_metal_tune(&L->mb, &L->c);
+        }
+        if (dv_uses_metal(L->c.type))
+            dv_metal_run(&L->mb, mb, m);
+        dv_run(&L->c, &L->v, mb, y, m);
+        if (drv > 0) {
+            g = 4096 + drv * 3 * 4096 / 127;
+            mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * g) >> 12));
+        }
+        a = mulq15(lvl, pal_vel[k] * 258);          /* the hit's level (the DRUM engine's voice_amp) and LEVEL */
+        for (i = 0; i < m; i++) {
+            int32_t s = y[i];
+            if (g)
+                s = (softclip((s * g) >> 12) * mk) >> 15;
+            s = mulq15(mulq15(soft_knee(s + (s >> 2), 24000), a), VOICE_FS) << 1;
+            s = mulq15(s, 32767 - drums.a0 - (((drums.a1 - drums.a0) * (int32_t)i) >> CTL_LOG2));
+            if (s > pk || -s > pk)
+                pk = s < 0 ? -s : s;
+            if (mono) {
+                mono[i] += s;
+                continue;
+            }
+            ml[i] += (s * gl) >> 12;
+            mr[i] += (s * gr) >> 12;
+            if (send)
+                rev[i] += mulq15(s, send);
+            if (dsend)
+                dly[i] += mulq15(s, dsend);
+        }
+    }
     for (k = 0; k < NDRUM; k++) {
         voice_t *v = &drums.v[k];
         const smp_zone_t *z;
@@ -471,6 +573,18 @@ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dl
         v->ph[1] = frac;
     }
     drums.peak = pk;
+}
+/* a drum sounds: a voice, or a lane of Paleotone's kits (RAPTOR) */
+static int drums_sounding(void)
+{
+    uint32_t k;
+    for (k = 0; k < NDRUM; k++)
+        if (drums.v[k].active)
+            return 1;
+    for (k = 0; k < DV_NLANE && pal_ok; k++)
+        if (pal_lane[k].v.live || pal_lane[k].v.trig)
+            return 1;
+    return 0;
 }
 static void drums_render(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n) { drums_mix(ml, mr, rev, dly, 0, n); }
 static void drums_render_mono(int32_t *mono, uint32_t n) { drums_mix(0, 0, 0, 0, mono, n); }

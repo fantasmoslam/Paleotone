@@ -37,7 +37,12 @@ int main(int argc, char **argv)
     check(!strcmp(a, "PAD") && !b[0], "short names: a short word, one line");
 
     np = pick_walk(0, &pg, 0xFFFFu, 0);
-    check(pg.first == 0 && pg.len == 16 && pg.kind == 0 && pg.nsub == 2, "page 1: the first 16 basses, BASS 1/2");
+    {   /* (RAPTOR: Paleotone's basses, however many) */
+        uint32_t nb = 0;
+        while (nb < NBANK && BANK[nb].kind == BK_BASS) nb++;
+        check(pg.first == 0 && pg.len == (nb < 16u ? nb : 16u) && pg.kind == 0 && pg.nsub == (nb + 15u) / 16u,
+              "page 1: the first basses (16 at most), BASS 1/n");
+    }
     for (i = 0; i < np; i++) {
         pick_walk(i, &pg, 0xFFFFu, 0);
         if (pg.first != sum || pg.len == 0 || pg.len > 16) break;

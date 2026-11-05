@@ -97,11 +97,14 @@ static void setup(void)
     trk[0].p[P_LD_PIT] = trk[0].p[P_LD_FLT] = trk[0].p[P_LD_SHP] = trk[0].p[P_LD_AMP] = 0;
     trk[0].p[P_VOICE] = V_POLY, trk[0].p[P_GLIDE] = 0, trk[0].p[P_DIST] = 0, trk[0].p[P_TRANS] = 0;
     trk[0].p[P_ED_FX] = 0;
+    trk[0].p[P_REV] = trk[0].p[P_CHOR] = trk[0].p[P_DLY] = 0;   /* (RAPTOR: Paleotone's SAW LEAD has sends) */
     for (i = 0; i < NVOICE; i++)
         trk[0].v[i].active = 0;
     song.playing = 0;
     song.master_q12 = 2048;
     texture_reset(0);                                   /* (GLO > TEXTURE off, at rest) */
+    rev_clear(), hall_clear();                          /* (RAPTOR: Paleotone's HALL rings for seconds: from silence) */
+    memset(dly_buf, 0, sizeof dly_buf), memset(cho_buf, 0, sizeof cho_buf);
     memset(&lim_dac, 0, sizeof lim_dac);                /* (the master's one-block delay: nothing of the last render) */
     lim_dac.env = LIM_T, lim_dac.g = 32768, lim_dac.hold = 0;
     tx.g = 0;

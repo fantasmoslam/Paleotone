@@ -69,7 +69,7 @@ int main(int argc, char **argv)
         for (i = 0; i < NPART; i++)
             for (k = 0; k < NVOICE; k++)
                 if (trk[i].v[k].active) sounding |= 1u << i;
-        for (k = 0; k < NDRUM; k++) if (drums.v[k].active) sounding |= 8;
+        if (drums_sounding()) sounding |= 8;   /* (RAPTOR: Paleotone's kits play on lanes, not voices) */
         active_tracks |= sounding;
         if (sounding == 15u) simultaneous++;
         for (k = 0; k < CTL; k++) {

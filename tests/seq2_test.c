@@ -1613,10 +1613,10 @@ static void t_plock(void)
     transport_req = 2; run_block();
     check(ok3 && t->p[P_E0] == 4 && t->lk_n == 0, "2.4: STOP during the locked step: the base (4) is back");
     /* the lock's value is clamped to the parameter's range; a lock on every step of two params fits NLOCK */
-    ok4 = lock_set(t, 5, P_E0, 99) && t->lock[lock_find(t, 5, P_E0, 0)].val == 4;
+    ok4 = lock_set(t, 5, P_E0, 99) && t->lock[lock_find(t, 5, P_E0, 0)].val == 6;   /* (RAPTOR: Paleotone's ANALOG, 7 waves) */
     lock_del(t, 2, P_COUNT);
     check(ok4 && lock_find(t, 2, P_E0, 0) < 0 && lock_find(t, 2, P_DIST, 0) < 0 && lock_find(t, 5, P_E0, 0) >= 0,
-          "2.4: a lock's value is clamped (WAVE 99 -> 4); lock_del clears a step's locks");
+          "2.4: a lock's value is clamped (WAVE 99 -> 6); lock_del clears a step's locks");
     steps_clear(t);
     for (i = 0, ok4 = 1; i < NLOCK; i++) ok4 &= t->lock[i].step == LOCK_FREE;
     check(ok4 && !step_locked(t, 5), "2.4: steps_clear frees every lock and nudge");

@@ -7,10 +7,10 @@
  * (dsp.c MULQ12R): the error is the 16-bit output's own rounding.
  * Each case holds a note that decays slowly (SUS 0), renders the output as the codec (and USB) gets it and, over
  * windows of 8192 samples, fits the note (its harmonics, amplitudes moving as a quadratic) by least squares: what is
- * left is the error. Checked between -70 and -30 dBFS (808 SLIDE: -40): its rms under 1 LSB (an ideal 16-bit rounding:
+ * left is the error. Checked between -70 and -30 dBFS (SQR BASS: -45): its rms under 1 LSB (an ideal 16-bit rounding:
  * 0.29; it was 5 to 6.5), and the THD+N of the window nearest -60 dBFS under -28 dB (it was -12 to -19). Cases: a
  * clean sine (no drive, no FX) at MASTER 4096 and at 2048 (the power-on level), the same through USB AUDIO = FULL
- * (MASTER ignored), and 808 SLIDE (sine, DRV, DIST 30) at 4096.
+ * (MASTER ignored), and SQR BASS (square, DRV, DIST 5; RAPTOR: SLOOP's 808 SLIDE before) at 4096.
  * Exit status: the number of failed checks. */
 #define main hostsim_main
 #include "hostsim.c"
@@ -77,7 +77,7 @@ static double fit_left(const double *y, double w, int H, double *sig)
     return sqrt(e2 / WIN);
 }
 
-/* sine: the analog engine's SIN, no drive, no FX; else 808 SLIDE as it comes (its DIST), dry (no sends). usb: capture
+/* sine: the analog engine's SIN, no drive, no FX; else SQR BASS as it comes (its DIST), dry (no sends). usb: capture
  * USB AUDIO = FULL's stream instead of the codec's */
 static void run(const char *name, int sine, int32_t master, int usb, int H, int top)
 {
@@ -92,7 +92,9 @@ static void run(const char *name, int sine, int32_t master, int usb, int H, int 
         memset(&t->v[i], 0, sizeof t->v[i]);
     t->nmono = 0, t->mono_note = 0;
     song.master_q12 = (uint32_t)master;
-    host_preset(t, 0, 3);                               /* ANALOG 808 SLIDE */
+    host_preset(t, 0, 2);                               /* ANALOG SQR BASS (RAPTOR: Paleotone's; SLOOP's 808 SLIDE) */
+    t->p[P_VOICE] = V_LEGATO;                           /* (one voice, v[0], whatever the voice allocator did before) */
+    t->p[P_SUS] = 0, t->p[P_DEC] = 118;                 /* (it fades, as 808 SLIDE did: SQR BASS holds) */
     if (sine) {
         t->p[P_E0] = 3, t->p[P_E1] = 0, t->p[P_E2] = 0, t->p[P_E3] = 0, t->p[P_E4] = 127, t->p[P_E5] = 0;
         t->p[P_E6] = 0, t->p[P_DIST] = 0, t->p[P_ED_PIT] = 0;
@@ -138,7 +140,7 @@ int main(void)
     run("sine, MASTER 4096", 1, 4096, 0, 1, -30);
     run("sine, MASTER 2048 (power-on)", 1, 2048, 0, 1, -30);
     run("sine, USB AUDIO = FULL", 1, 2048, 1, 1, -30);
-    run("808 SLIDE (DRV, DIST 30), MASTER 4096", 0, 4096, 0, 15, -40);   /* (from -40: its drive's own grit, -58 dB under
+    run("SQR BASS (DRV, DIST 5), MASTER 4096", 0, 4096, 0, 15, -45);   /* (from -40: its drive's own grit, -58 dB under
                                                          * the note, follows the note: eng_analog.c, not the fade) */
     printf("fade: %d failed\n", fails);
     return fails;

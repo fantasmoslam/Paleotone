@@ -112,6 +112,10 @@ enum {                          /* global parameters */
                                  * while SYNC is INT (seq.c clkout_block; a setting of the FM-1, kept in DR MAP's byte) */
     G_FXFADE,                   /* SLOOP 2.7.2, the FX layer (FX held), SELECT: how fast a punch-in FX fades in and out, 0 (instant, as
                                  * before) .. 15 (punch.c; a setting of the FM-1, kept in BEND's byte) */
+    G_RTYPE,                    /* RAPTOR: the reverb's model, Paleotone's (fx.c): 0 ROOM, 1 SPRING, 2 HALL. In a project:
+                                 * the slot of G_SYNC (a setting of the FM-1), 0x100 | the model (project.c) */
+    G_TAPE, G_CRSH,             /* RAPTOR: Paleotone's TAPE / CRSH on the mix (tape.c); in a project G_MIDI's slot */
+    G_AMB, G_CRKL,              /* .. and its ambience, level and crackle (ambience.c); in a project G_ROUTE's slot */
     G_COUNT
 };
 

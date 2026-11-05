@@ -506,3 +506,15 @@ No flash write in the command: the device keeps it with its settings once quiet.
   Felucca's own storage; never the app or the update area. Since SLOOP 2.4 every one of them, and
   `BK_PUT` of a preset bank, answers rc 3 while the song plays (as the panel refuses to save then): a
   flash erase silences the audio for about 50 ms.
+
+## RAPTOR (the dino groovebox): Paleotone's sounds
+
+- Engine numbers: 13 SFX, 14 ROAR, 15 DRUM (Paleotone's), 16 SLICE (was 13; not built by default). DIGITAL (1) is
+  still there for old projects but the engine knob skips it.
+- Every engine's factory presets are Paleotone's: a stored engine + preset index from an earlier RAPTOR or SLOOP
+  build loads a different sound.
+- Drum track KIT 0..4 are Paleotone's DRUM KIT, TRIBAL KIT, WAR DRUMS, BONE RATTLE, RITUAL (SLOOP's ACOUSTIC .. DUST,
+  the GM sample set, are gone).
+- New globals after G_FXFADE: G_RTYPE (0 ROOM, 1 SPRING, 2 HALL), G_TAPE, G_CRSH, G_AMB, G_CRKL. A project stores
+  them in the slots of globals it never loads: g[G_SYNC] = 0x100 | RTYPE, g[G_MIDI] = 0x4000 | TAPE | CRSH << 7,
+  g[G_ROUTE] = 0x4000 | AMB | CRKL << 7. Without the marker bit: HALL and 0s (Paleotone's defaults).

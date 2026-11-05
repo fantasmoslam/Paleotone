@@ -52,9 +52,9 @@ static int find(const char *name, uint32_t *e, uint32_t *pi)
 
 int main(void)
 {
-    /* the usual held sounds; the power-on ones first (ui.c TRK_DEF: 808 BOOM, RHODES, LOFI FLUTE) */
-    static const char *const USUAL[] = {"808 BOOM", "RHODES", "LOFI FLUTE", "SUPERSAW", "SINE PAD", "ATMOS PAD", "CLAV",
-                                        "CZ PAD", "SOUL ORGAN", "ENSEMBLE", "CHOIR AAH", "VOX PAD", "TINE EP", "DRAWBARS"};
+    /* the usual held sounds (RAPTOR: Paleotone's); the power-on ones first (ui.c TRK_DEF: PHYS's, JUNGLE PAD, JUNGLE NIGHT) */
+    static const char *const USUAL[] = {"LOG MARIMBA", "JUNGLE PAD", "JUNGLE NIGHT", "SAW LEAD", "SOFT PAD", "STRINGS", "TINE EP",
+                                        "PWM STR", "FULL ORGAN", "EPIC STRINGS", "CHOIR AAH", "PANGAEA PAD", "PIANO", "GOSPEL"};
     uint32_t e, pi, i, k, n = 0, lim_soft[2] = {0, 0}, lim_cl[2] = {0, 0}, ok, clip = 0;
     char b[128];
     res_t r;
@@ -109,12 +109,12 @@ int main(void)
     check(lim_soft[0] * 4u <= lim_cl[0] && lim_soft[1] * 3u <= lim_cl[1], b);
 
     /* the knob at the top: a hot 6-voice chord is still caught, a single peak too; never past full scale */
-    if (find("BRASS SECT", &e, &pi)) {
+    if (find("FULL ORGAN", &e, &pi)) {
         r = chord(e, pi, 6, 1023, 0);
-        snprintf(b, sizeof b, "SOFT, knob at the top, BRASS SECT x6: caught (%.1f dB), largest sample %d", 20.0 * log10(r.g / 32768.0), (int)r.out);
+        snprintf(b, sizeof b, "SOFT, knob at the top, FULL ORGAN x6: caught (%.1f dB), largest sample %d", 20.0 * log10(r.g / 32768.0), (int)r.out);
         check(r.g < 32768 && r.out <= 32767, b);
     } else {
-        check(0, "BRASS SECT");
+        check(0, "FULL ORGAN");
     }
     {
         int32_t l[CTL], rr[CTL], pk = 0;

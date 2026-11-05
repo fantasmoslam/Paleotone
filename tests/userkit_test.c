@@ -172,13 +172,13 @@ int main(void)
         for (i = 0; i < NDRUM; i++) syn += drums.v[i].active && drums.synth[i];
         check(syn == 1u, "808 (a synthesised kit) as before");
     }
-    TDRUM->p[P_E0] = 0;                                  /* ACOUSTIC: the GM sample set */
+    TDRUM->p[P_E0] = 0;                                  /* RAPTOR: kit 0 is Paleotone's DRUM KIT (its lanes) */
     quiet();
     drum_on(38, 110);
     {
-        uint32_t i, gm = 0;
-        for (i = 0; i < NDRUM; i++) gm += drums.v[i].active && !drums.synth[i] && drums.v[i].s[4] < DZ_USR;
-        check(gm == 1u && run_peak(40) > 2000, "ACOUSTIC (the GM sample set) as before");
+        uint32_t i, act = 0;
+        for (i = 0; i < NDRUM; i++) act += drums.v[i].active;
+        check(act == 0u && drums_sounding() && run_peak(40) > 2000, "kit 0: Paleotone's DRUM KIT (a lane, no sample voice)");
     }
     {   /* 2.4.1: the click (GLO > GLOBAL > CLICK = ON) is its own voice: heard with a user kit (it has no wood
          * block: in 2.4 it was silent), with the drum track muted, at the level of GLO > DRUMS > LVL */
