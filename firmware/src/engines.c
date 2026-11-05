@@ -37,12 +37,14 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 #include "eng_phys.c"           /* PHYS: physical models, from Felucca 1.0 (DaisySP, Rings: MIT); SLOOP 2.5 */
 #include "eng_noise.c"          /* NOISE: from Felucca 1.0; SLOOP 2.5 */
 #include "eng_saurus.c"         /* SAURUS: the creature voice, from PALEOTONE (after eng_formant.c: its resonators) */
+#include "eng_sfx.c"            /* SFX: the world's sounds (after eng_noise.c: its source and filter) */
 
 typedef union {
     gr_part_t grain;
     drw_part_t drawbar;                  /* eng_drawbar.c: the part's wheels, percussion and rotary (sloop-lab) */
     fm6_part_t fm6;                      /* eng_fm6.c: six notes and the operator buses */
     uint32_t phys[PHYS_ARENA / 4u];      /* eng_phys.c: two SYMP slots or three small ones */
+    struct sfx_part sfx;                 /* eng_sfx.c: each voice's envelope, sweep, LFO and thump */
 } eng_arena_t;
 static eng_arena_t eng_arena[NPART] __attribute__((section(".pool")));
 static uint8_t eng_arena_own[NPART];            /* the engine + 1 whose state is in it, 0 = none */
@@ -95,12 +97,13 @@ static const engine_t *const ENGINES[NENGINES] = {&ENG_ANALOG, &ENG_DIGITAL, &EN
                                                     &ENG_FM6,    /* 9 (ENGI_FM6): always; SLICE after it (core.h) */
                                                     &ENG_PHYS, &ENG_NOISE,
                                                     &ENG_SAURUS, /* 12 (ENGI_SAURUS) */
+                                                    &ENG_SFX,    /* 13 (ENGI_SFX) */
 #if FELUCCA_SLICE
                                                     &ENG_SLICE,
 #endif
 };
 _Static_assert(ENGI_FM6 == 9u, "ENGINES[ENGI_FM6] is FM6");
-_Static_assert(ENGI_GRAIN == 8u && ENGI_PHYS == 10u && ENGI_NOISE == 11u && ENGI_SAURUS == 12u && ENGI_SLICE == 13u, "ENGINES[] order");
+_Static_assert(ENGI_GRAIN == 8u && ENGI_PHYS == 10u && ENGI_NOISE == 11u && ENGI_SAURUS == 12u && ENGI_SFX == 13u && ENGI_SLICE == 14u, "ENGINES[] order");
 
 /* every factory sound as loud as the others: a level trim per preset, 1/2 dB, measured on a phrase
  * that fits the sound (tools/level_presets.py writes preset_trim.h); a track keeps it in P_ED_FX */

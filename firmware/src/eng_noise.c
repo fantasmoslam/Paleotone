@@ -108,11 +108,11 @@ static void noise_note_on(track_t *t, voice_t *v)
     v->ph[2] = 0;
 }
 
-static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+/* pe: the eight EDIT values P_E0..P_E7 (the track's own, or eng_sfx.c's recipe) */
+static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
-    const int16_t *p = t->p;
-    uint32_t mode = (uint32_t)p[P_E0] & 3u, sel = ((uint32_t)p[P_E5] >> 4) & 7u, i;
-    int32_t res = p[P_E3], drft = p[P_E6], crsh = mode < NZ_LFSR ? p[P_E7] : 0;
+    uint32_t mode = (uint32_t)pe[0] & 3u, sel = ((uint32_t)pe[5] >> 4) & 7u, i;
+    int32_t res = pe[3], drft = pe[6], crsh = mode < NZ_LFSR ? pe[7] : 0;
     int32_t ic1 = v->s[0], ic2 = v->s[1], rng = v->s[2], b0 = v->s[4], b1 = v->s[5], b2 = v->s[6], br = v->s[7];
     uint32_t ph = v->ph[0], reg = v->ph[1];         /* state in locals: out[] may alias v->s[] */
     int32_t drift = (int32_t)v->ph[2], d16 = 0, gain = 32767, gq, colr, cut, k, a1, a2, a3, g, bpg, mix, cf, thr = 0;
@@ -132,10 +132,10 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         gain = 32767 - ((((32767 - (drift >> 4)) >> 1) * drft) >> 8);   /* down to -6 dB as it falls */
     }
     /* COLR (+ SHP), 0..127 << 8: white -> pink -> brown */
-    colr = clamp((p[P_E1] << 8) + m->shape - (64 << 8), 0, 127 << 8);
+    colr = clamp((pe[1] << 8) + m->shape - (64 << 8), 0, 127 << 8);
     cf = colr <= (64 << 8) ? colr << 1 : ((colr - (64 << 8)) * 520) >> 8;   /* the crossfade, Q15 */
     /* FREQ (+ FLT), key-tracked by TRK around C4, the drift: SVF cutoff units (256 an index, 0.86 st) */
-    cut = (p[P_E2] << 8) + m->cutoff + (((m->pitch16 - 60 * 16) * p[P_E4] * 151) >> 10) + ((d16 * 4785) >> 8);
+    cut = (pe[2] << 8) + m->cutoff + (((m->pitch16 - 60 * 16) * pe[4] * 151) >> 10) + ((d16 * 4785) >> 8);
     cut = clamp(cut, 0, 127 << 8);
     g = SVF_G[cut >> 8];
     if (cut < (127 << 8))
@@ -157,14 +157,14 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         if (gq > 65535)
             gq = 65535;
     }
-    if (mode <= NZ_DUST && p[P_E5]) {                 /* impulses: 1 .. 2000 a second */
-        uint32_t e = (uint32_t)p[P_E5] * 22u, r = 1u << (e >> 8);   /* 2^(DENS * 11 / 127), Q8 fraction */
+    if (mode <= NZ_DUST && pe[5]) {                 /* impulses: 1 .. 2000 a second */
+        uint32_t e = (uint32_t)pe[5] * 22u, r = 1u << (e >> 8);   /* 2^(DENS * 11 / 127), Q8 fraction */
         r += (r * (e & 255u)) >> 8;
         thr = (int32_t)((r * 97391u) >> 16);          /* per 2^16 of a sample: rate * 65536 / FS, Q16 */
     }
     if (mode == NZ_LFSR) {
         uint32_t mask = taps;                         /* the register's own bits (MODE / LEN changes) */
-        inc64 = noise_inc64(m->pitch16 + p[P_E7] * 16 + d16);
+        inc64 = noise_inc64(m->pitch16 + pe[7] * 16 + d16);
         mask |= mask >> 1;
         mask |= mask >> 2;
         mask |= mask >> 4;
@@ -174,7 +174,7 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
             reg = (uint32_t)rng | 1u;
         reg &= mask;
     } else if (mode == NZ_META) {
-        inc = p[P_E7] || d16 ? noise_inc(m->pitch16 + p[P_E7] * 16 + d16) : m->inc;
+        inc = pe[7] || d16 ? noise_inc(m->pitch16 + pe[7] * 16 + d16) : m->inc;
     }
     for (i = 0; i < n; i++) {
         int32_t w, x, v1, v2, v3, y;
@@ -252,6 +252,11 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     v->ph[0] = ph;
     v->ph[1] = reg;
     v->ph[2] = (uint32_t)drift;
+}
+
+static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+{
+    noise_core(&t->p[P_E0], v, out, n, m);
 }
 
 /* {MODE, COLR, FREQ, RES, TRK, DENS, DRFT, CRSH / CLK} */
