@@ -59,17 +59,10 @@ UI_SMALL static void sloop_splash(void)
     const char *v = FELUCCA_VERSION;
     if (v[0] == 'S' && v[1] == 'L' && v[5] == ' ')
         v += 6;                                         /* "SLOOP 1.0" -> "1.0" under the wordmark */
-#if BOARD_SMK37
-    if (v[0] == 'P' && v[1] == 'R' && v[2] == 'O' && v[3] == ' ')
-        v += 4;                                         /* "SLOOP PRO 2.8" -> "2.8": PRO is the badge */
-    cv_begin(56, 40, C_BLACK);                          /* the PRO badge, right of the sail: the drum track's orange */
-    cv_rect(0, 0, 56, 2, TE_COL_DEF[3]), cv_rect(0, 38, 56, 2, TE_COL_DEF[3]);
-    cv_rect(0, 0, 2, 40, TE_COL_DEF[3]), cv_rect(54, 0, 2, 40, TE_COL_DEF[3]);
-    cv_text(4, 4, &FONT_L, "PRO", TE_COL_DEF[3]);
-    cv_blit(180, 64);
-#endif
+    if (v[0] == 'R' && v[1] == 'A' && v[6] == ' ')
+        v += 7;                                         /* "RAPTOR 2.8.4" -> "2.8.4": the wordmark is in the logo */
     cv_begin(240, 36, C_BLACK);
-    cv_text(120 - text_w(&FONT_S, v) / 2, 0, &FONT_S, v, RGB(196, 196, 204));
-    cv_text(120 - text_w(&FONT_S, "based on felucca") / 2, 18, &FONT_S, "based on felucca", RGB(96, 96, 104));
+    cv_text(120 - text_w(&FONT_S, v) / 2, 0, &FONT_S, v, RGB(236, 224, 196));
+    cv_text(120 - text_w(&FONT_S, "sloop pro + felucca") / 2, 18, &FONT_S, "sloop pro + felucca", RGB(150, 110, 70));
     cv_blit(0, 202);
 }

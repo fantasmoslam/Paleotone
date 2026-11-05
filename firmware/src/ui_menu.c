@@ -264,8 +264,17 @@ UI_SMALL static void draw_menu(void)
         cv_oy = pass ? -124 : 0;
         if (ui.menu == 2) {
             cv_text(4, 4, &FONT_L, BRAND_NAME, C_WHITE);
+#ifdef BRAND_CLAWS
+            {   /* RAPTOR: three claw slashes in the drum track's colour */
+                uint32_t c, k;
+                for (c = 0; c < 3u; c++)
+                    for (k = 0; k < 8u; k++)
+                        cv_rect(BRAND_SAIL_X + c * 9u + k, 6u + k * 3u, 4, 3, TE_COL[3]);
+            }
+#else
             cv_rect(BRAND_SAIL_X, 10, 8, 4, TE_COL[0]), cv_rect(BRAND_SAIL_X, 16, 12, 4, TE_COL[1]);   /* the sail */
             cv_rect(BRAND_SAIL_X, 22, 16, 4, TE_COL[2]), cv_rect(BRAND_SAIL_X, 28, 20, 4, TE_COL[3]);
+#endif
             cv_text(4, 36, &FONT_S, BRAND_BASED, C_AMB);
             cv_text(4, 54, &FONT_S, FELUCCA_VERSION, C_HI);
             cv_text(236 - text_w(&FONT_S, __DATE__), 54, &FONT_S, __DATE__, C_GRAY);   /* build date */

@@ -20,22 +20,23 @@
 #include "fm1_cpu1.h"      /* the second core (X0X): started in main.c, used by the render later */
 #include "felucca_tables.h"
 #if BOARD_SMK37                 /* SLOOP Pro: SLOOP on the M-Vave SMK-37 (Pro, Elite, MKE-P37, Starrykey 37 Play) */
-#define BRAND_NAME "SLOOP PRO"
-#define BRAND_SAIL_X 160         /* (FONT_L: 16 px a letter, "SLOOP PRO" ends at 148) */
-#define BRAND_RESCUE "SLOOP PRO USB RESCUE"
-#define BRAND_URL "GITHUB.COM/ISOD89/SLOOP-PRO"
+#define BRAND_NAME "RAPTOR"      /* RAPTOR (working name): the dino groovebox, on SLOOP Pro 2.8.4 */
+#define BRAND_SAIL_X 112         /* (FONT_L: 16 px a letter, "RAPTOR" ends at 100) */
+#define BRAND_RESCUE "RAPTOR USB RESCUE"
+#define BRAND_URL "GITHUB.COM/FANTASMOSLAM"
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "SLOOP PRO 2.8.4"   /* ui.c's, with the product's name (the editor reads the digits) */
+#define FELUCCA_VERSION "RAPTOR 2.8.4"   /* ui.c's, with the product's name (the editor reads the digits: SLOOP Pro's) */
 #endif
 #else
-#define BRAND_NAME "SLOOP"
-#define BRAND_SAIL_X 96
-#define BRAND_RESCUE "SLOOP USB RESCUE"
+#define BRAND_NAME "RAPTOR"      /* (the FM-1 build of RAPTOR: the same name) */
+#define BRAND_SAIL_X 112
+#define BRAND_RESCUE "RAPTOR USB RESCUE"
 #endif
-#define BRAND_BASED "BASED ON FELUCCA"
+#define BRAND_BASED "ON SLOOP PRO + FELUCCA"   /* RAPTOR */
+#define BRAND_CLAWS 1            /* RAPTOR: the ABOUT page's claw slashes (ui_menu.c) for the sail */
 #define BRAND_CRASH "FELUCCA CRASH"
 #define VIS_STYLES 12u
-#define VIS_LAST_NAMES "SLOOP"
+#define VIS_LAST_NAMES "RAPTOR"
 #define VIS_N_STR "/12"
 
 #include "libc.c"
