@@ -59,6 +59,7 @@ typedef struct {
     int32_t lfo_v;       /* its value this tick, -32768..32767 */
     uint32_t thph;       /* the thump's phase */
     int32_t thenv;       /* its fall, Q24 (1 << 24 at the note-on, 0: at TH1 and silent) */
+    int32_t dcx, dcy;    /* the DC blocker (brown noise and the thump's start carry some) */
     uint8_t stage;       /* 0 attack, 1 decay, 2 sustain, 3 release, 4 done */
     uint8_t snd, rnd;    /* this note's sound and its random number (WILD) */
 } sfx_voice_t;
@@ -95,6 +96,7 @@ static void sfx_note_on(track_t *t, voice_t *v)
     s->lfo_v = 0;
     s->thph = 0;
     s->thenv = SFX_R[s->snd].th0 ? 1 << 24 : 0;
+    s->dcx = s->dcy = 0;
 }
 
 /* the level, once per control tick: the envelope, the LFO's loudness, the velocity */
@@ -202,8 +204,12 @@ static void sfx_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const v
                 mb.amp1 = amp_at(&mm, o + c < n ? o + c : n);
             }
             noise_core(e, v, buf, c, &mb);
-            for (k = 0; k < c; k++)
-                out[o + k] += clamp(buf[k], -(1 << 26), 1 << 26) * SFX_GAIN;
+            for (k = 0; k < c; k++) {                 /* a DC blocker (1 - 5/1024: ~35 Hz; below, the master's blocker rang on), then the gain */
+                int32_t x = clamp(buf[k], -(1 << 24), 1 << 24), y = x - s->dcx + s->dcy - (s->dcy >> 8) - (s->dcy >> 10);
+                s->dcx = x;
+                s->dcy = y;
+                out[o + k] += y * SFX_GAIN;
+            }
         }
     }
     if (s->thenv > 0 && p[P_E6]) {                    /* the thump */

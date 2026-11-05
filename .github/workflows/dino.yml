@@ -35,7 +35,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out
-          BOARD=smk37 MODEL=elite bash build.sh 2>&1 | tee out/build-elite.log | tail -15
+          FELUCCA_DATA_FAMILY=DINOGRV BOARD=smk37 MODEL=elite bash build.sh 2>&1 | tee out/build-elite.log | tail -15
           cp build/*elite*.fwsc out/
           sha256sum out/*.fwsc | tee out/sha256.txt
 

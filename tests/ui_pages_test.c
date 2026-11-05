@@ -1472,6 +1472,10 @@ int main(int argc, char **argv)
         static const uint8_t BASS[2] = {38, 34};
         song.playing = 0; song.sel = 0;
         for (j = 0; j < NTRK; j++) { steps_clear(&trk[j]); trk[j].p[P_SLEN] = 16; }
+        /* the dino groovebox: tracks 2 and 3 as SLOOP's defaults (DIGITAL RHODES, SAMPLE LOFI FLUTE), the groove this
+         * was written for: the SFX kit's rumbles leave the master's DC blocker a low tail past the MASTER at 0 check */
+        set_engine_of(&trk[1], 1); apply_preset_to(&trk[1], 0); trk[1].engine = trk[1].eng_req;
+        set_engine_of(&trk[2], 4); apply_preset_to(&trk[2], 5); trk[2].engine = trk[2].eng_req;
         for (j = 0; j < 16u; j++) {                 /* a groove to look at */
             step_t *sp;
             if (!(j & 1u)) { sp = &trk[0].step[j]; sp->n = 1; sp->note[0] = (uint8_t)(BASS[j / 8u] + ((j & 2u) ? 12 : 0)); sp->time = ST_NOTE; sp->vel = 100; }
