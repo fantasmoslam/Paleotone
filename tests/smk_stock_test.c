@@ -109,7 +109,8 @@ int main(void)
     st_erase(0x9D000u);
     check("erases outside USRFLASH (the store) leave the marker alone", tag_erases == 0 && tagged());
     check("the guard: no page write into the marker sector, no erase past it",
-          st_prog(FL_STOCKTAG_OFF, "x", 1) == -8 && st_erase(0xEB000u) == -8 && st_erase(0xC1000u) == -8);
+          st_prog(FL_STOCKTAG_OFF, "x", 1) == -8 && st_erase(0xF1000u) == -8 && st_erase(0xC1000u) == -8 &&
+          st_erase(0xEB000u) == 0 && tagged());   /* (RAPTOR: 0xEB000.. is FL_EXT, the project extensions: the marker stays) */
     printf("%s\n", bad ? "SMK STOCK TEST FAILED" : "smk stock test passed");
     return bad != 0;
 }

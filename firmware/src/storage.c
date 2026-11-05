@@ -29,9 +29,17 @@ enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_AUTOSAVE
 #define OBJ_WCAL OBJ_COUNT                     /* SMK-37: the wheels' calibration (project.c), 0xB1000 / 0xB2000 */
 #define OBJ_DAW (OBJ_COUNT + 1)                /* SMK-37: DAW mode, its settings and USER map (project.c), 0xB3000 / 0xB4000 */
 #define OBJ_SMKSET (OBJ_COUNT + 2)             /* SMK-37: the HOME menu's SMK-37 settings (project.c), 0xB5000 / 0xB6000 */
-#define ST_NOBJ (OBJ_COUNT + 3)
+/* RAPTOR: the extensions of the six-track projects (project.c proj_st_save): one for each project slot, then the
+ * autosave's. Ten sectors: the four spare at the end of FL_DATA (0xB7000..0xBAFFF), then six of the free flash after
+ * the stock marker (0xEB000..0xF0FFF, FL_EXT) */
+#define OBJ_PROJX0 (OBJ_COUNT + 3)
+#define OBJ_AUTOX (OBJ_PROJX0 + 4)
+#define ST_NOBJ (OBJ_COUNT + 8)
+#define ST_HAS_EXT 1
+static uint32_t st_ext_obj(uint32_t obj) { return obj == OBJ_AUTOSAVE ? OBJ_AUTOX : OBJ_PROJX0 + ((obj - OBJ_PROJECT0) & 3u); }
 #else
 #define ST_NOBJ OBJ_COUNT
+#define ST_HAS_EXT 0                           /* (the FM-1: no free flash for the extensions; project.c) */
 #endif
 
 typedef struct {
@@ -71,12 +79,18 @@ static uint32_t st_crc32(const void *p, uint32_t n)   /* zlib CRC-32, 4 bits per
 #define ST_SMK_SECTORS (2u * OBJ_COUNT)
 #define ST_OWNER_OFF (ST_SMK_BASE + ST_SMK_SECTORS * ST_SECTOR)
 _Static_assert(ST_SMK_BASE + ST_SMK_SECTORS * ST_SECTOR <= 0xBB000u, "SMK store: past FL_DATA");
-_Static_assert(ST_OWNER_OFF + 8u * ST_SECTOR <= 0xBB000u, "SMK store: the owner tag, OBJ_WCAL, OBJ_DAW, OBJ_SMKSET past FL_DATA");
+_Static_assert(ST_OWNER_OFF + 12u * ST_SECTOR <= 0xBB000u,
+               "SMK store: the owner tag, OBJ_WCAL, OBJ_DAW, OBJ_SMKSET, four sectors of RAPTOR's extensions past FL_DATA");
+_Static_assert(FL_EXT_LO + 6u * ST_SECTOR <= FL_EXT_HI, "SMK store: RAPTOR's other six extension sectors past FL_EXT");
 UI_SMALL static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
 {
     static const uint8_t ORDER[OBJ_COUNT] = {
         [OBJ_PROJECT0] = 0, [OBJ_PROJECT0 + 1] = 1, [OBJ_PROJECT0 + 2] = 2, [OBJ_PROJECT0 + 3] = 3,
         [OBJ_UPRESET0] = 4, [OBJ_UPRESET0 + 1] = 5, [OBJ_AUTOSAVE] = 6, [OBJ_FM6BANK] = 7, [OBJ_SETTINGS] = 8};
+    if (obj >= OBJ_PROJX0) {                   /* RAPTOR: the project extensions (10 sectors) */
+        uint32_t k = (obj - OBJ_PROJX0) * 2u + (copy & 1u);
+        return k < 4u ? ST_OWNER_OFF + (8u + k) * ST_SECTOR : FL_EXT_LO + (k - 4u) * ST_SECTOR;
+    }
     if (obj == OBJ_WCAL || obj == OBJ_DAW || obj == OBJ_SMKSET)
         return ST_OWNER_OFF + (2u + 2u * (obj - OBJ_WCAL) + (copy & 1u)) * ST_SECTOR;
     return ST_SMK_BASE + (ORDER[obj % OBJ_COUNT] * 2u + (copy & 1u)) * ST_SECTOR;
@@ -120,6 +134,10 @@ UI_SMALL static void st_owner_check(void)
         st_erase(st_sector(OBJ_DAW, 1));
         st_erase(st_sector(OBJ_SMKSET, 0));
         st_erase(st_sector(OBJ_SMKSET, 1));
+        for (s = OBJ_PROJX0; s < ST_NOBJ; s++) {
+            st_erase(st_sector(s, 0));
+            st_erase(st_sector(s, 1));
+        }
         st_owner_cleared = 1;
     }
     st_erase(ST_OWNER_OFF);

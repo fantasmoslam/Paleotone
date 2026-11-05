@@ -220,7 +220,7 @@ static void vis_update(void)
     }
     /* the tracks' peaks since the last look (as the TRACKS meters take them) and the notes that started */
     fm1_irq_off();
-    for (i = 0; i < NPART; i++) {
+    for (i = 0; i < 3u; i++) {                      /* (RAPTOR: the visualiser shows SLOOP's four: tracks 1..3, the drums) */
         pk[i] = trk[i].peak;
         trk[i].peak = 0;
     }
@@ -234,7 +234,7 @@ static void vis_update(void)
     }
     fm1_irq_on();
     for (i = 0; i < 4u; i++) {
-        int32_t v = trk_level(i) && !trk[i].p[P_MUTE] ? vis_lvl(pk[i]) : 0;   /* (as the TRACKS meters) */
+        int32_t v = trk_level(TRK4(i)) && !trk[TRK4(i)].p[P_MUTE] ? vis_lvl(pk[i]) : 0;   /* (as the TRACKS meters) */
         vs.lvl[i] = (int16_t)v;
         if ((hit >> i) & 1u) {
             vs.flash[i] = 8;

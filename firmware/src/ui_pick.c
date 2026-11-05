@@ -222,7 +222,7 @@ static void pick_draw(void)
         if (!half) {
             char tn[3] = {'T', (char)('1' + song.sel % NTRK), 0};
             cv_text(4, 2, &FONT_L, nm, C_WHITE);
-            cv_text(240 - 4 - text_w(&FONT_S, tn), 4, &FONT_S, tn, TE_COL[song.sel & 3u]);
+            cv_text(240 - 4 - text_w(&FONT_S, tn), 4, &FONT_S, tn, TE_COL[TSLOT(song.sel)]);
         }
         for (w = half * 8u; np && w < half * 8u + 8u && w < pg.len; w++) {
             int32_t x = (int32_t)(w & 7u) * 30, sel = pg.first + w == cur;

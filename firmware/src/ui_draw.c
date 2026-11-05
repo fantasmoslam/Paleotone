@@ -82,7 +82,7 @@ UI_SMALL static void draw_head(void)
         cv_icon(156, 2, ICON_TAPE, C_GRAY);
         b[0] = (char)('1' + song.sel);
         b[1] = 0;
-        cv_rect(168, 2, 12, 16, TE_COL[song.sel & 3u]);
+        cv_rect(168, 2, 12, 16, TE_COL[TSLOT(song.sel)]);
         cv_text(170, 1, &FONT_S, b, C_BLACK);
     } else {
         b[0] = 'T';
@@ -317,7 +317,7 @@ UI_SMALL static void graph_roll(const track_t *t, uint16_t c)
                 continue;
             y = bot - ((int32_t)st->note[j] - lo + 1) * rh + 1;
             f = note_force(st, j);
-            cv_rect(xa, y, xb - xa, rh - 1, f ? c : TE_DIM[song.sel & 3u]);
+            cv_rect(xa, y, xb - xa, rh - 1, f ? c : TE_DIM[TSLOT(song.sel)]);
             if (f == 1u && rh > 4)                      /* SOFT: hollow */
                 cv_rect(xa + 1, y + 1, xb - xa - 2, rh - 3, C_BLACK);
             if (f == 4u)                                /* ACC: a white cap */
@@ -348,7 +348,7 @@ UI_SMALL static void graph_roll(const track_t *t, uint16_t c)
         const char *val[6] = {cs->flags & SF_SLIDE ? "ON" : "OFF", nu, FILL_N[step_fill(t, ui.cursor) % 3u], "", "", ""};
         fmt_int(nu, t->micro[ui.cursor]);
         if (t->micro[ui.cursor] > 0) { nu[0] = '+'; fmt_int(nu + 1, t->micro[ui.cursor]); }
-        sheet_bar(H_GRAPH - 16, SHEET_N, val, ui.sheet - 1u, TE_DIM[song.sel & 3u]);
+        sheet_bar(H_GRAPH - 16, SHEET_N, val, ui.sheet - 1u, TE_DIM[TSLOT(song.sel)]);
     }
 }
 UI_SMALL static void graph_scale(const track_t *t, uint16_t c)
@@ -520,7 +520,7 @@ UI_SMALL static void graph_slots(void)
     }
 }
 
-/* TRACKS page: four channel strips (mixer style), one under each column: number +
+/* TRACKS page: six channel strips (RAPTOR; SLOOP: four) (mixer style), one under each column: number +
  * REC / ARM / MUTE, the sound's short name, then a level fader with the output meter
  * (note activity), the pattern over its LEN (time running down; bar width = notes in
  * the step) and the play head. The selected track is drawn bright. Every part is
@@ -546,6 +546,7 @@ UI_SMALL static int32_t meter_px(int32_t a)                   /* |sample| (Q15) 
     return clamp((v - 48) * (TS_H - 2) / 80, 0, TS_H - 2);
 }
 
+#define TS_CW (240u / NTRK)                         /* RAPTOR: the TRACKS page's column (six of 40 px; SLOOP's four: 60) */
 UI_SMALL static uint32_t trk_level(uint32_t c)                /* LEVEL 0..127 (the drum track: GLO > DRUMS LEVEL) */
 {
     return (uint32_t)(c == TRK_DRUM ? song.g[G_DRLVL] : trk[c].p[P_LEVEL]) & 127u;
@@ -575,7 +576,7 @@ UI_SMALL static void draw_tracks(void)
     }
     for (c = 0; c < NTRK; c++) {
         track_t *t = &trk[c];
-        uint32_t x0 = c * 60u + 4u, sel = c == song.sel, lvl = trk_level(c), mute = !lvl || t->p[P_MUTE];
+        uint32_t x0 = c * TS_CW + 2u, sel = c == song.sel, lvl = trk_level(c), mute = !lvl || t->p[P_MUTE];
         uint32_t arm = (song.rec >> c) & 1u, st = arm ? (song.playing ? 1u : 2u) : mute ? 3u : 0u, sig;
         uint32_t len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u, row = 0xFFFFu;
         int32_t pk, m;
@@ -593,26 +594,25 @@ UI_SMALL static void draw_tracks(void)
             ts.head[c] = sig;
             b[0] = (char)('1' + c);
             b[1] = 0;
-            cv_begin(54, 16, C_BLACK);
+            cv_begin(TS_CW - 2u, 16, C_BLACK);
             cv_text(0, 0, &FONT_S, b, sel ? C_WHITE : C_GRAY);
             if (sel)
                 cv_rect(0, 15, 8, 1, C_WHITE);
-            if (st == 1u || st == 2u) {
+            if (st == 1u || st == 2u) {                 /* (RAPTOR: six columns of 40 px: a REC / ARM square, MUTE an M) */
                 cv_rect(14, 5, 6, 6, st == 1u ? C_WHITE : C_AMB);
-                cv_text(24, 0, &FONT_S, st == 1u ? "REC" : "ARM", st == 1u ? C_WHITE : C_AMB);
             } else if (st) {
-                cv_text(14, 0, &FONT_S, "MUTE", C_DIM);
+                cv_text(14, 0, &FONT_S, "M", C_DIM);
             }
             cv_blit(x0, TS_HEAD_Y);
         }
         /* the sound: preset name (user preset, DRUM), cut to the column */
         trk_short_name(c, b);
-        while (b[0] && text_w(&FONT_S, b) > 54)
+        while (b[0] && text_w(&FONT_S, b) > (int32_t)TS_CW - 4)
             b[str_len(b) - 1u] = 0;
         sig = str_hash(2u + sel, b);
         if (ui.force || sig != ts.name[c]) {
             ts.name[c] = sig;
-            cv_begin(54, 16, C_BLACK);
+            cv_begin(TS_CW - 2u, 16, C_BLACK);
             cv_text(0, 0, &FONT_S, b, sel ? C_HI : C_DIM);
             cv_blit(x0, TS_NAME_Y);
         }
@@ -643,8 +643,8 @@ UI_SMALL static void draw_tracks(void)
         if (ui.force || sig != ts.ov[c]) {
             uint32_t i;
             ts.ov[c] = sig;
-            cv_begin(34, TS_H, C_BLACK);
-            cv_rect(17, 0, 1, TS_H, C_LINE);
+            cv_begin(22, TS_H, C_BLACK);
+            cv_rect(11, 0, 1, TS_H, C_LINE);
             for (i = 0; i < len; i++) {
                 const step_t *s = &t->step[i];
                 int32_t r0 = (int32_t)(i * TS_H / len), r1 = (int32_t)((i + 1u) * TS_H / len), h = r1 - r0;
@@ -653,13 +653,13 @@ UI_SMALL static void draw_tracks(void)
                 if (h < 1)
                     h = 1;
                 if (step_on(s)) {
-                    int32_t w = 2 + 6 * (int32_t)s->n;
-                    cv_rect(17 - w / 2, r0, w, h, (s->flags & SF_ACCENT) && sel ? C_WHITE : sel ? C_HI : C_GRAY);
+                    int32_t w = 2 + 4 * (int32_t)s->n;
+                    cv_rect(11 - w / 2, r0, w, h, (s->flags & SF_ACCENT) && sel ? C_WHITE : sel ? C_HI : C_GRAY);
                 } else if (s->time == ST_TIE) {
-                    cv_rect(16, r0, 3, r1 - r0, C_DIM);
+                    cv_rect(10, r0, 3, r1 - r0, C_DIM);
                 }
             }
-            cv_blit(x0 + 14u, TS_Y);
+            cv_blit(x0 + 12u, TS_Y);
         }
         /* play head: a small arrow right of the pattern (white while recording) */
         if (song.playing)
@@ -674,7 +674,7 @@ UI_SMALL static void draw_tracks(void)
                     int32_t w = 5 - 2 * (i < 0 ? -i : i);
                     cv_rect(5 - w, (int32_t)row + i, w, 1, st == 1u ? C_WHITE : C_AMB);
                 }
-            cv_blit(x0 + 49u, TS_Y);
+            cv_blit(x0 + 33u, TS_Y);
         }
     }
 }
@@ -739,7 +739,7 @@ UI_SMALL static void draw_graph(void)
 {
     const page_t *pg = cur_page();
     const track_t *t = TSEL;
-    uint16_t c = TE_COL[song.sel & 3u];               /* LIVE: the curves in the track's colour */
+    uint16_t c = TE_COL[TSLOT(song.sel)];               /* LIVE: the curves in the track's colour */
     uint32_t sig, top, drum_note = !ui.home && is_drum(t) && !page_for_drum(pg);
     if (!ui.home && pg->graph == GR_TRK) {
         draw_tracks();
@@ -887,7 +887,7 @@ UI_SMALL static void draw_foot(void)
             if (si >= (uint32_t)t->p[P_SLEN])
                 continue;
             if (step_on(st))
-                cv_rect(sx, 2, 2, 9, TE_COL[song.sel & 3u]);
+                cv_rect(sx, 2, 2, 9, TE_COL[TSLOT(song.sel)]);
             else
                 cv_rect(sx, 10, 1, 1, C_DIM);
             if ((song.playing && si == t->seq_idx) || (song.seq_mode && si == ui.cursor))
@@ -935,7 +935,7 @@ UI_SMALL static void draw_columns(void)
         const track_t *t = TSEL;
         uint32_t lvl = trk_level(song.sel);
         fmt_int(val, (int32_t)song.sel + 1);
-        draw_column(0, "TRACK", val, "/4", VAL(0u), (int32_t)song.sel * 1000 / (NTRK - 1), ICON_AUTO);
+        draw_column(0, "TRACK", val, "/6", VAL(0u), (int32_t)song.sel * 1000 / (NTRK - 1), ICON_AUTO);
         if (!lvl || t->p[P_MUTE]) {                    /* (MUTE: a turn of KNOB 2 unmutes, tracks_edit) */
             str_cpy(val, "MUTE", 12);
             unit = "";

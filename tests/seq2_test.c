@@ -1006,7 +1006,7 @@ static void t_midifix(void)
     check(trk[0].bend == 0 && trk[1].bend == 0, "2.6: the wheel let go after another track was selected: the first one back too");
     mclk_push(0x0Eu | (0xE0u | 0u) << 8 | 127u << 16 | 127u << 24);
     run_block();
-    panic_req = 15, run_block();
+    panic_req = (1u << NTRK) - 1u, run_block();
     check(trk[0].bend == 0, "2.6: a project / NEW (every track released): the bends back to the middle");
     mf_prep();                                        /* OTHER = OFF */
     song.sel = 0, song.g[G_CHOTH] = 1;
@@ -1023,25 +1023,25 @@ static void t_midifix(void)
     check(trk[0].arp_phys == 0u, "2.6: a note played again under the pedal: no key left counted by the arp");
     trk[0].p[P_AMODE] = 0, trk[0].p[P_AHOLD] = 0, trk[0].nheld = 0;
     mf_prep();                                        /* Program Change (after Felucca 1.5.1): the track the channel plays */
-    pc_req[0] = pc_req[1] = pc_req[2] = pc_req[3] = 0;
+    pc_req[0] = pc_req[1] = pc_req[2] = pc_req[TRK_DRUM] = 0;
     mclk_push(0x0Cu | (0xC0u | 1u) << 8 | 5u << 16), mclk_push(0x0Cu | (0xC0u | 9u) << 8 | 2u << 16);
     run_block();
     {
-        int ok = pc_req[1] == 6u && pc_req[3] == 3u && !pc_req[0] && !pc_req[2];
-        pc_req[1] = pc_req[3] = 0;
+        int ok = pc_req[1] == 6u && pc_req[TRK_DRUM] == 3u && !pc_req[0] && !pc_req[2];
+        pc_req[1] = pc_req[TRK_DRUM] = 0;
         song.g[G_CHOTH] = 1, run_block();
         mclk_push(0x0Cu | (0xC0u | 6u) << 8 | 7u << 16);   /* ch 7: nobody's, OTHER = OFF */
         song.g[G_ROUTE] = 1;                              /* (and IN = CLOCK: none) */
         mclk_push(0x0Cu | (0xC0u | 0u) << 8 | 7u << 16);
         run_block();
-        ok &= !pc_req[0] && !pc_req[1] && !pc_req[2] && !pc_req[3];
+        ok &= !pc_req[0] && !pc_req[1] && !pc_req[2] && !pc_req[TRK_DRUM];
         song.g[G_ROUTE] = 0, song.g[G_CHOTH] = 0;
         check(ok, "2.6: MIDI Program Change: queued for the track its channel plays (ch 2: track 2, ch 10: drums); "
                   "OTHER = OFF / IN = CLOCK: none");
     }
     mf_prep();                                        /* (2.7.2) Bank Select (CC 0) before a Program Change: pc_bank */
-    pc_req[0] = pc_req[1] = pc_req[2] = pc_req[3] = 0;
-    pc_bank[0] = pc_bank[1] = pc_bank[2] = pc_bank[3] = 0;
+    pc_req[0] = pc_req[1] = pc_req[2] = pc_req[TRK_DRUM] = 0;
+    pc_bank[0] = pc_bank[1] = pc_bank[2] = pc_bank[TRK_DRUM] = 0;
     {
         int ok;
         mf_cc(1, 0, 1);                               /* ch 2 (track 2): Bank Select = 1 */

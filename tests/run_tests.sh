@@ -275,7 +275,7 @@ run "SAMPLE, GRAIN: the pitch follows the keys to the top of the keyboard (up to
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/grain_release_test" tests/grain_release_test.c -lm
 run "GRAIN: a note played in the release of the one before is not starved of grains" "$OUT/grain_release_test"
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/phys_tune_test" tests/phys_tune_test.c -lm
-run "PHYS: every pitched preset in tune (+-5 cents; a curved bridge +-20), notes 28..100" "$OUT/phys_tune_test"
+run "PHYS: every pitched preset in tune (+-5 cents; a curved bridge +-24), notes 28..100" "$OUT/phys_tune_test"
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/unison_level_test" tests/unison_level_test.c -lm
 run "UNISON: every engine spreads its voices' phases (no stack of voices in phase over POLY)" "$OUT/unison_level_test"
 run "the editor protocol and the other inputs (USB / TRS MIDI, damaged flash) fuzzed under ASan + UBSan, and its reproducers" sh tests/editor_fuzz.sh "${EDFZ_N:-2000}" 1

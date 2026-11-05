@@ -39,6 +39,8 @@ static int fb_left(void)                           /* drawn last frame, not now:
     return l;
 }
 
+/* RAPTOR: the four faders are SLOOP's tracks 1..3 and the drums (TE_COL slot i); SFX and CALLS are not on them yet */
+static uint32_t fb_trk(uint32_t i) { return i < 3u ? i : TRK_DRUM; }
 /* what fader i sets in bank b (main.c smk_faders); bank E with the drum track selected: nothing (0) */
 static const param_desc_t *fb_param(uint32_t b, uint32_t i, int16_t **vp)
 {
@@ -49,11 +51,11 @@ static const param_desc_t *fb_param(uint32_t b, uint32_t i, int16_t **vp)
         *vp = &TSEL->p[P_ATK + (i & 3u)];
         return &TP[P_ATK + (i & 3u)];
     }
-    if (i == TRK_DRUM && b != 1u) {
+    if (fb_trk(i) == TRK_DRUM && b != 1u) {
         *vp = &song.g[GID[b & 3u]];
         return &GP[GID[b & 3u]];
     }
-    *vp = &trk[i].p[TID[b & 3u]];
+    *vp = &trk[fb_trk(i)].p[TID[b & 3u]];
     return &TP[TID[b & 3u]];
 }
 
@@ -82,21 +84,21 @@ static void fb_move(uint32_t b, uint32_t i, uint32_t v)
         }
         break;
     case 1:
-        trk[i].p[P_TFLT] = (int16_t)((int32_t)v - 64);
+        trk[fb_trk(i)].p[P_TFLT] = (int16_t)((int32_t)v - 64);
         break;
     case 2:
-        pv = i == TRK_DRUM ? &song.g[G_DRREV] : &trk[i].p[P_REV];
+        pv = fb_trk(i) == TRK_DRUM ? &song.g[G_DRREV] : &trk[fb_trk(i)].p[P_REV];
         *pv = (int16_t)v;
         break;
     case 3:
-        pv = i == TRK_DRUM ? &song.g[G_DRDLY] : &trk[i].p[P_DLY];
+        pv = fb_trk(i) == TRK_DRUM ? &song.g[G_DRDLY] : &trk[fb_trk(i)].p[P_DLY];
         *pv = (int16_t)v;
         break;
     default:                                          /* A: the drums' LVL (linear, 0..127), the synths' LEVEL by GM's law */
-        if (i == TRK_DRUM)
+        if (fb_trk(i) == TRK_DRUM)
             song.g[G_DRLVL] = (int16_t)v;
         else
-            trk[i].p[P_LEVEL] = fb_level(v);
+            trk[fb_trk(i)].p[P_LEVEL] = fb_level(v);
         break;
     }
 }
@@ -144,19 +146,19 @@ static void fb_draw(void)
                 }
                 if (b == 4u)
                     str_cpy(lab, FB_ENV[i], sizeof lab);   /* (E: the selected track's, in its colour) */
-                else if (i == TRK_DRUM)
+                else if (fb_trk(i) == TRK_DRUM)
                     str_cpy(lab, "DRUMS", sizeof lab);
                 else
                     lab[6] = (char)('1' + i);
                 param_format(d, *vp, val, &unit);
                 str_cpy(v2, val, sizeof v2);
                 str_cpy(v2 + str_len(v2), unit, sizeof v2 - str_len(v2));
-                cv_text(4, y, &FONT_S, f, TE_COL[b == 4u ? song.sel % NTRK : i]);
-                cv_text(32, y, &FONT_S, lab, TE_COL[b == 4u ? song.sel % NTRK : i]);
+                cv_text(4, y, &FONT_S, f, TE_COL[b == 4u ? TSLOT(song.sel) : i]);
+                cv_text(32, y, &FONT_S, lab, TE_COL[b == 4u ? TSLOT(song.sel) : i]);
                 cv_text(236 - text_w(&FONT_S, v2), y, &FONT_S, v2, C_WHITE);
                 w = RATIO(d, *vp) * 204 / 1000;
                 cv_rect(32, y + 17, 204, 3, TE_G1);
-                cv_rect(32, y + 17, w < 1 ? 1 : w, 3, TE_COL[b == 4u ? song.sel % NTRK : i]);
+                cv_rect(32, y + 17, w < 1 ? 1 : w, 3, TE_COL[b == 4u ? TSLOT(song.sel) : i]);
             }
             {
                 char h[24] = "< >  K2  FADER BANK";

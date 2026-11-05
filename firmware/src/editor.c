@@ -1000,7 +1000,7 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
             ed_b(trk[i].p[P_MUTE] != 0);
             ed_b((song.rec >> i) & 1u);
         }
-        ed_b(song.solo & 15u);                            /* v5: the tracks soloed */
+        ed_b(song.solo & 63u);                            /* v5: the tracks soloed */
         break;
     case ED_TRACK_MIX: {                                   /* track [, level v14, mute] -> track, level, mute */
         track_t *t;

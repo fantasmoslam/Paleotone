@@ -75,9 +75,12 @@ static volatile uint8_t arp_keep_req;    /* (2.7) bit per track: a sound loaded 
 
 static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
 
+/* RAPTOR: part i's channel setting (0 OFF, 1..16): GLO > MIDI > CH1..3 for SLOOP's three, channels 4 and 5 for SFX
+ * and CALLS (no setting yet) */
+static int32_t part_ch(uint32_t i) { return i < 3u ? song.g[G_CH1 + i] : (int32_t)i + 1; }
 static uint32_t trk_midi_ch(uint32_t i)    /* MIDI channel 0..15 of track i (keys -> MIDI out); 2.6: GLO > MIDI */
 {                                          /* (2.6: OFF is OFF, in and out: 0xFF, nothing sent) */
-    int32_t c = i < NPART ? song.g[G_CH1 + i] : song.g[G_DRCH];
+    int32_t c = i < NPART ? part_ch(i) : song.g[G_DRCH];
     return c >= 1 && c <= 16 ? (uint32_t)c - 1u : 0xFFu;
 }
 /* a note on (vel > 0) / off to MIDI OUT on channel ch (trk_midi_ch: 0xFF, the track's MIDI OFF: nothing) */
@@ -145,6 +148,8 @@ static uint32_t scale_mask(const track_t *t)
 
 /* ---------------------------------------------------------- layers --- */
 enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_COUNT };
+#define MIX_FILL (2 * NTRK)          /* the MIX layer's white keys: mute 1..NTRK, solo 1..NTRK, then FILL and FILL BAR */
+_Static_assert(MIX_FILL + 2 <= 15, "the MIX layer: tap stays on the 16th white key");
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
 static uint32_t dyn_bit[2];              /* OCT- / OCT+: ghost / hard on the drum track */
 /* a layer locked open (its button held + HOME tapped: ui_input.c), LY_PLAY = none: the keys and knobs
@@ -3227,7 +3232,7 @@ static track_t *midi_own(uint32_t ch)
     if (song.g[G_DRCH] && ch + 1u == (uint32_t)song.g[G_DRCH])
         return TDRUM;
     for (i = 0; i < NPART; i++)
-        if (ch + 1u == (uint32_t)song.g[G_CH1 + i])
+        if (ch + 1u == (uint32_t)part_ch(i))
             return &trk[i];
     return 0;
 }
@@ -3369,7 +3374,7 @@ static int __attribute__((noinline)) midi_learned(uint32_t cc, uint32_t value)
         e = ml_tab[i];
         if ((e >> 9) && (e & 127u) == cc) {
             if ((id = ml_id(e >> 9)) < P_COUNT)
-                midi_cc_set(&trk[(e >> 7) & 3u], id, value);
+                midi_cc_set(&trk[ML_TRK_DEC(e)], id, value);
             hit = 1;
         }
     }

@@ -49,11 +49,13 @@ int main(void)
           !LDR_RANGE_OK(0x3000u, 0x2000u) && FL_PROTECTED(0xBF000u, 0x2000u) && FL_PROTECTED(0x3F00u, 0x200u));
     check("wrapping ranges refused (off + n past 4 GiB)",
           !FL_GUARD(0xBB000u, 0xFFFFF000u) && !LDR_RANGE_OK(0x9D000u, 0xFFFFFF00u) && FL_PROTECTED(0xBB000u, 0xFFFFF000u));
-    check("app windows: FL_DATA 0x9D000-0xBAFFF, FL_OTA 0xBB000-0xBFFFF, FL_SMP 0xC2000-0xE9FFF, the stock marker sector",
+    check("app windows: FL_DATA 0x9D000-0xBAFFF, FL_OTA 0xBB000-0xBFFFF, FL_SMP 0xC2000-0xE9FFF, the stock marker sector, "
+          "RAPTOR's FL_EXT 0xEB000-0xF0FFF",
           FL_GUARD(0x9D000u, 0x1000u) && FL_GUARD(0xBA000u, 0x1000u) && FL_GUARD(0xBF000u, 0x1000u) &&
           FL_GUARD(0xC2000u, 0x1000u) && FL_GUARD(0xE9000u, 0x1000u) && FL_GUARD(0xEA000u, 0x1000u) &&
-          !FL_GUARD(0xEB000u, 0x1000u) && !FL_GUARD(0x9C000u, 0x1000u) &&
-          allowed == (0xC0000u - 0x9D000u + 0xEA000u - 0xC2000u) / 0x1000u + 1u);
+          FL_GUARD(0xEB000u, 0x1000u) && FL_GUARD(0xF0000u, 0x1000u) && !FL_GUARD(0xF1000u, 0x1000u) &&
+          !FL_GUARD(0x9C000u, 0x1000u) &&
+          allowed == (0xC0000u - 0x9D000u + 0xEA000u - 0xC2000u + 0xF1000u - 0xEB000u) / 0x1000u + 1u);
     check("the stock marker sector 0xEA000: the whole sector only (its erase), never a page or a range into it",
           FL_STOCKTAG_OK(0xEA000u, 0x1000u) && !FL_GUARD(0xEA000u, 256u) && !FL_GUARD(0xEAF00u, 256u) &&
           !FL_GUARD(0xEAFF8u, 8u) && !FL_GUARD(0xE9000u, 0x2000u) && !FL_GUARD(0xEA000u, 0x2000u) &&
@@ -63,7 +65,8 @@ int main(void)
           !LDR_RANGE_OK(0xC0000u, 0x1000u) && FL_REC_HI == 0xC0000u);
     for (o = 0; o < ST_NOBJ; o++)
         for (c = 0; c < 2u; c++)
-            in_store &= FL_STORE_OK(st_sector(o, c), 0x1000u) && st_sector(o, c) < FL_DATA_HI;
+            in_store &= FL_STORE_OK(st_sector(o, c), 0x1000u) &&
+                        (st_sector(o, c) < FL_DATA_HI || (o >= OBJ_PROJX0 && st_sector(o, c) >= FL_EXT_LO));   /* (RAPTOR) */
     {   /* every object's two copies distinct */
         uint32_t o2, c2, distinct = 1;
         for (o = 0; o < ST_NOBJ; o++)
@@ -72,7 +75,7 @@ int main(void)
                     for (c2 = 0; c2 < 2u; c2++)
                         if ((o != o2 || c != c2) && st_sector(o, c) == st_sector(o2, c2))
                             distinct = 0;
-        check("storage.c: every object (A/B, the wheels' too) in FL_DATA, no two share a sector", in_store && distinct);
+        check("storage.c: every object (A/B, the wheels' too) in FL_DATA (RAPTOR's extensions: or FL_EXT), no two share a sector", in_store && distinct);
     }
     check("storage.c: settings 0xAD000/0xAE000, projects from 0x9D000",
           st_sector(OBJ_SETTINGS, 0) == 0xAD000u && st_sector(OBJ_SETTINGS, 1) == 0xAE000u && st_sector(OBJ_PROJECT0, 0) == 0x9D000u);

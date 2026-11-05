@@ -133,7 +133,7 @@ int main(void)
         pt_set(&q.t[0], P_TRANS, 0);
         q.t[0].step[0].time = ST_NOTE; q.t[0].step[0].n = 1; q.t[0].step[0].note[0] = 48;
         q.sum = proj_sum(&q);
-        st_save(OBJ_AUTOSAVE, &q, sizeof q);
+        proj_st_save(OBJ_AUTOSAVE, &q, sizeof q);
         boot_as_main();
         printf("boot_sound: over Clipper's project: track 1 %s %s, TRN %d\n", ENGINES[trk[0].eng_req]->name,
                ENGINES[trk[0].eng_req]->presets[trk[0].preset].name, trk[0].p[P_TRANS]);

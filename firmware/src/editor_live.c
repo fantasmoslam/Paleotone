@@ -22,6 +22,19 @@
  * entries, its bar, its bars), the sections stored (bit per section), then per track: its step, its length, its meter (8 log2 |peak|, 0 = silent);
  * then (2.7, ops 6..12) the master (0: the knob, else the page's level + 1), the THROWs (bits), the 16 drum sounds' TUNE + 8 | DECAY + 4 << 4 */
 #define ED_LIVE 77u
+/* RAPTOR: the editor's LIVE page knows SLOOP's four tracks (1..3, the drums: TRK4); SFX and CALLS are not on it yet.
+ * Its masks bit per SLOOP track; its MIX keys SLOOP's white keys (mute 0..3, solo 4..7, fill 8, fill bar 9, tap 15) */
+static uint32_t live_map(uint32_t mask)
+{
+    uint32_t i, m = 0;
+    for (i = 0; i < 4u; i++)
+        m |= ((mask >> TRK4(i)) & 1u) << i;
+    return m;
+}
+static uint32_t live_mix_key(uint32_t w)
+{
+    return w < 4u ? TRK4(w) : w < 8u ? NTRK + TRK4(w - 4u) : w < 10u ? MIX_FILL + w - 8u : w;
+}
 UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
 {
     uint32_t i, m = 0, s = 0, play;
@@ -40,7 +53,7 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
             break;
         case 2:
             if (na >= 4u && a[1] >= LY_SCALE && a[1] <= LY_SONG && a[2] < 16u)
-                layer_key(a[1], key_of_white(a[2]), a[3] & 1u);
+                layer_key(a[1], key_of_white(a[1] == LY_MIX ? live_mix_key(a[2]) : a[2]), a[3] & 1u);
             break;
         case 3:
             if (na >= 3u && a[1] < PUNCH_NFX) {
@@ -147,9 +160,8 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
             break;
         }
     }
-    for (i = 0; i < NTRK; i++) {
-        m |= (trk[i].p[P_MUTE] != 0) << i;
-    }
+    for (i = 0; i < 4u; i++)                             /* (RAPTOR: the page's four, SLOOP's: live_map) */
+        m |= (trk[TRK4(i)].p[P_MUTE] != 0) << i;
     ed_b(a[0]);
     ed_b((song.playing != 0) | (transport_req != 0) << 1 | (arrangement_enabled != 0) << 2 |
          (arrangement_clock.running != 0) << 3 | (fill_now != 0) << 4 | (fill_arm != 0) << 5 | (srec != 0) << 6);
@@ -160,9 +172,9 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
     ed_b(chain_n);
     ed_b(chain_i);
     ed_b(m);
-    ed_b(song.solo & 15u);
-    ed_b(song.rec & 15u);
-    ed_b(song.sel);
+    ed_b(live_map(song.solo));
+    ed_b(live_map(song.rec));
+    ed_b(TSLOT(song.sel));                                 /* (SLOOP's numbers; SFX 4, CALLS 5) */
     ed_b((uint32_t)(punch.req + 1));
     ed_b(clamp((int32_t)((song.cpu_q8 * 100u) >> 8), 0, 127));
     ed_b(arrangement_clock.index);
@@ -170,10 +182,11 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
     ed_b(arrangement_clock.bar);
     ed_b(arrangement.entry[arrangement_clock.index % ARR_STEPS].bars);
     ed_b(arrangement_ready() & 15u);
-    for (i = 0; i < NTRK; i++) {
-        int32_t pk = i == TRK_DRUM ? drums.peak : trk[i].peak, lg = 0;
-        ed_b(trk[i].seq_idx);
-        ed_b(trk_len(&trk[i]));
+    for (i = 0; i < 4u; i++) {
+        uint32_t k = TRK4(i);
+        int32_t pk = k == TRK_DRUM ? drums.peak : trk[k].peak, lg = 0;
+        ed_b(trk[k].seq_idx);
+        ed_b(trk_len(&trk[k]));
         if (pk >= 64) {
             while ((pk >> lg) > 1)
                 lg++;

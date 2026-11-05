@@ -578,7 +578,8 @@ UI_SMALL static void go_home(void)
  * writes the sequencer: every pattern is the one the player records or enters. */
 
 /* the parts' sounds at power-on (engine, preset): bass, pad, lead */
-static const uint8_t TRK_DEF[NPART][2] = {{0, 0}, {ENGI_SFX, 0}, {ENGI_SAURUS, 0}};   /* the dino groovebox: ANALOG 808 BOOM, SFX DINO WORLD, SAURUS BRACHIO */
+static const uint8_t TRK_DEF[NPART][2] = {{0, 0}, {1, 0}, {4, 5}, {ENGI_SFX, 0}, {ENGI_SAURUS, 0}};   /* RAPTOR: ANALOG 808 BOOM,
+                                                       * SLOOP's DIGITAL and SAMPLE, SFX DINO WORLD, SAURUS BRACHIO (CALLS) */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
 UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }
@@ -1073,14 +1074,14 @@ UI_SMALL static uint32_t ml_count(void)
 UI_SMALL static uint32_t ml_learn(uint32_t cc, uint32_t k, uint32_t id)
 {
     uint32_t i, e;
-    if (!ml_free_cc(cc) || k >= NTRK || id >= P_COUNT)
+    if (!ml_free_cc(cc) || k >= NTRK || !ML_TRK_OK(k) || id >= P_COUNT)
         return 2;
     for (i = 0; i < ML_N; i++)
-        if ((e = ml_tab[i]) >> 9 && ((e & 127u) == cc || ((e >> 9) == ml_code(id) && ((e >> 7) & 3u) == k)))
+        if ((e = ml_tab[i]) >> 9 && ((e & 127u) == cc || ((e >> 9) == ml_code(id) && ML_TRK_DEC(e) == k)))
             ml_put(i, 0);
     for (i = 0; i < ML_N; i++)
         if (!(ml_tab[i] >> 9)) {
-            ml_put(i, cc | k << 7 | ml_code(id) << 9);
+            ml_put(i, cc | ML_TRK_ENC(k) << 7 | ml_code(id) << 9);
             return 1;
         }
     return 0;

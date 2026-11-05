@@ -24,7 +24,8 @@
 #ifndef UI_SMALL                 /* (2.7) compiled for size: not the audio path (gfx.c UI_SMALL); the host tests: nothing */
 #define UI_SMALL
 #endif
-#define PROJ_MAGIC 0x46554E36u                 /* "FUN6": format 5 + the 2.6 parameters, nudge and condition in a byte */
+#define PROJ_MAGIC 0x46554E37u                 /* "FUN7" (RAPTOR): format 6 with six tracks (two parts in flash: proj_st_save) */
+#define PROJ_MAGIC_V6 0x46554E36u              /* "FUN6": format 5 + the 2.6 parameters, nudge and condition in a byte */
 #define PROJ_MAGIC_V5 0x46554E35u              /* "FUN5": format 4 + per-step nudge, parameter locks, fill conditions (SLOOP 2.4) */
 #define PROJ_MAGIC_V4 0x46554E34u              /* "FUN4": four tracks, P_COUNT parameters each, 10-byte steps; read only */
 #define PROJ_MAGIC_V3 0x46554E33u              /* "FUN3": SLOOP 1.x; read only */
@@ -64,6 +65,20 @@ typedef struct {
     proj_trk_t t[NTRK];
     uint32_t sum;
 } project_t;
+typedef struct {                               /* format 6 (SLOOP 2.6 .. 2.8, four tracks), read only */
+    uint32_t magic, size;
+    int16_t g[PROJ_NG];
+    uint8_t sel, drdly, rsv[2];
+    proj_trk_t t[NTRK_OLD];
+    uint32_t sum;
+} project_v6_t;
+/* RAPTOR: a project of six tracks is ~5.7 KB, more than one flash object (ST_PAYLOAD_MAX). It is stored in two: the
+ * main object holds the header, the globals and tracks 1..PROJ_MAIN_NT; the extension object the other tracks and the
+ * sum over all. Each object has its own CRC (storage.c), so an extension that does not belong to its main object (a
+ * torn save between the two) fails the sum: the main part loads, the tracks after it start fresh (proj_import) */
+#define PROJ_MAIN_NT 4u
+#define PROJ_MAIN_LEN ((uint32_t)__builtin_offsetof(project_t, t[PROJ_MAIN_NT]))
+#define PROJ_EXT_LEN ((uint32_t)sizeof(project_t) - PROJ_MAIN_LEN)
 static int16_t pt_get(const proj_trk_t *t, uint32_t id)   /* p[id] of a stored track */
 {
     return id < PROJ_NC6 ? t->p[id] : id < P_E0 ? (int16_t)t->x[id - PROJ_NC6] : t->e[(id - P_E0) & 7u];
@@ -98,7 +113,7 @@ typedef struct {                               /* format 5, read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, drdly, rsv[2];
-    proj_trk_v5_t t[NTRK];
+    proj_trk_v5_t t[NTRK_OLD];
     uint32_t sum;
 } project_v5_t;
 typedef struct {                               /* a track of format 4 (SLOOP 2.0 .. 2.3), read only */
@@ -113,7 +128,7 @@ typedef struct {                               /* format 4, read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, rsv[3];
-    proj_trk_v4_t t[NTRK];
+    proj_trk_v4_t t[NTRK_OLD];
     uint32_t sum;
 } project_v4_t;
 typedef struct { uint8_t note[4], n, time, flags, vel; } step8_t;   /* the steps of formats 1..3 */
@@ -126,7 +141,7 @@ typedef struct {                               /* format 3 (SLOOP 1.x), read onl
     uint32_t magic, size;
     int16_t g[PROJ_NG_V3];
     uint8_t sel, rsv[3];
-    proj_trk_v3_t t[NTRK];
+    proj_trk_v3_t t[NTRK_OLD];
     uint32_t sum;
 } project_v3_t;
 typedef struct {                               /* a track of formats 1 and 2, read only */
@@ -138,7 +153,7 @@ typedef struct {                               /* format 2 (until 0.9), read onl
     uint32_t magic, size;
     int16_t g[PROJ_NG_V2];
     uint8_t sel, rsv[3];
-    proj_trk_v2_t t[NTRK];
+    proj_trk_v2_t t[NTRK_OLD];
     uint32_t sum;
 } project_v2_t;
 typedef struct {                               /* format 1 (until 0.5 beta), read only */
@@ -149,8 +164,11 @@ typedef struct {                               /* format 1 (until 0.5 beta), rea
 } project_v1_t;
 _Static_assert(sizeof(project_v2_t) == 2552u && sizeof(project_v1_t) == 688u && sizeof(project_v3_t) == 2584u &&
                sizeof(project_v4_t) == 3112u && sizeof(project_v5_t) == 3840u, "formats 1 / 2 / 3 / 4 / 5 as they were stored");
-_Static_assert(sizeof(project_t) <= 3840u, "format 6 fits one flash object (storage.c ST_PAYLOAD_MAX)");
-project_t proj_slot[4] __attribute__((section(".noinit")));
+_Static_assert(sizeof(project_v6_t) == 3816u, "format 6 as it was stored");
+_Static_assert(PROJ_MAIN_LEN <= 3840u && PROJ_EXT_LEN <= 3840u && PROJ_MAIN_LEN != sizeof(project_v6_t),
+               "format 7: each part fits one flash object (storage.c ST_PAYLOAD_MAX)");
+project_t proj_slot[4] __attribute__((section(".pool")));   /* (RAPTOR: 23 KB, more than .noinit holds: zeroed at boot,
+                                                              * filled from flash) */
 
 UI_SMALL static uint32_t proj_hash(const void *p, uint32_t n)   /* FNV-1a over n bytes */
 {
@@ -243,6 +261,29 @@ UI_SMALL static void proj_trk_v2_to_v3(proj_trk_v3_t *d, const proj_trk_v2_t *s,
     memcpy(d->step, s->step, sizeof d->step);
 }
 
+/* RAPTOR: SLOOP's tracks 1..3 stay, its drum track (4) becomes TRK_DRUM */
+#define OLD_TRK(i) ((i) == TRK_DRUM_OLD ? TRK_DRUM : (i))
+/* track i as at power-on: its default engine, preset 0xFF (project_apply: the default sound, no steps) */
+UI_SMALL static void proj_trk_fresh(project_t *q, uint32_t i)
+{
+    uint32_t k;
+    for (k = 0; k < P_COUNT; k++)
+        pt_set(&q->t[i], k, k >= P_E0 ? ENGINES[trk_def_engine(i)]->edit[k - P_E0].def : TP[k].def);
+    q->t[i].engine = (uint8_t)trk_def_engine(i);
+    q->t[i].preset = 0xFF;
+    memset(q->t[i].step, 0, sizeof q->t[i].step);
+    if (i != TRK_DRUM)
+        for (k = 0; k < NSTEP; k++)
+            q->t[i].step[k].time = ST_REST;
+    proj_trk_plain(&q->t[i]);
+}
+UI_SMALL static void proj_new_tracks(project_t *q)   /* the parts SLOOP's four tracks did not have */
+{
+    uint32_t i;
+    for (i = TRK_DRUM_OLD; i < NPART; i++)
+        proj_trk_fresh(q, i);
+}
+
 /* a format 4 project (n bytes in *v4) -> slot q as format 6: the same, no nudge, no lock, no condition, no FILTER */
 UI_SMALL static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
 {
@@ -254,18 +295,20 @@ UI_SMALL static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
     memcpy(q->g, v4->g, sizeof q->g);
-    q->sel = v4->sel;
-    for (i = 0; i < NTRK; i++) {
+    q->sel = (uint8_t)OLD_TRK(v4->sel);
+    for (i = 0; i < NTRK_OLD; i++) {
         uint32_t k;
-        proj_trk_plain(&q->t[i]);
+        proj_trk_t *d = &q->t[OLD_TRK(i)];
+        proj_trk_plain(d);
         for (k = 0; k < PROJ_NC6; k++)                 /* by id up to P_CHORD, the parameters added since: */
-            q->t[i].p[k] = k < PROJ_NP_V4 - 8u ? v4->t[i].p[k] : TP[k].def;   /* their defaults; P_E0.. moved */
+            d->p[k] = k < PROJ_NP_V4 - 8u ? v4->t[i].p[k] : TP[k].def;   /* their defaults; P_E0.. moved */
         for (k = 0; k < 8u; k++)
-            q->t[i].e[k] = v4->t[i].p[PROJ_NP_V4 - 8u + k];
-        q->t[i].engine = v4->t[i].engine;
-        q->t[i].preset = v4->t[i].preset;
-        memcpy(q->t[i].step, v4->t[i].step, sizeof q->t[i].step);
+            d->e[k] = v4->t[i].p[PROJ_NP_V4 - 8u + k];
+        d->engine = v4->t[i].engine;
+        d->preset = v4->t[i].preset;
+        memcpy(d->step, v4->t[i].step, sizeof d->step);
     }
+    proj_new_tracks(q);
     q->sum = proj_sum(q);
     return 1;
 }
@@ -282,11 +325,12 @@ UI_SMALL static int proj_from_v5(project_t *q, const project_v5_t *v5, int n)
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
     memcpy(q->g, v5->g, sizeof q->g);
-    q->sel = v5->sel;
+    q->sel = (uint8_t)OLD_TRK(v5->sel);
     q->drdly = v5->drdly;
-    for (i = 0; i < NTRK; i++) {
+    proj_new_tracks(q);
+    for (i = 0; i < NTRK_OLD; i++) {
         const proj_trk_v5_t *s = &v5->t[i];
-        proj_trk_t *d = &q->t[i];
+        proj_trk_t *d = &q->t[OLD_TRK(i)];
         proj_trk_plain(d);
         for (k = 0; k < PROJ_NC6; k++)
             d->p[k] = s->p[k];
@@ -315,9 +359,10 @@ UI_SMALL static void proj_from_v3_ok(project_t *q, const project_v3_t *v3)
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
     proj_g_from_old(q->g, v3->g);
-    q->sel = v3->sel;
-    for (i = 0; i < NTRK; i++)
-        proj_trk_from_v3(&q->t[i], &v3->t[i], i == TRK_DRUM);
+    q->sel = (uint8_t)OLD_TRK(v3->sel);
+    for (i = 0; i < NTRK_OLD; i++)
+        proj_trk_from_v3(&q->t[OLD_TRK(i)], &v3->t[i], i == TRK_DRUM_OLD);
+    proj_new_tracks(q);
     q->sum = proj_sum(q);
 }
 UI_SMALL static int proj_from_v3(project_t *q, const project_v3_t *v3, int n)
@@ -341,8 +386,8 @@ UI_SMALL static int proj_from_v2(project_t *q, const project_v2_t *v2, int n)
     memset(v3, 0, sizeof *v3);
     memcpy(v3->g, v2->g, sizeof v3->g);
     v3->sel = v2->sel;
-    for (i = 0; i < NTRK; i++)
-        proj_trk_v2_to_v3(&v3->t[i], &v2->t[i], i == TRK_DRUM);
+    for (i = 0; i < NTRK_OLD; i++)
+        proj_trk_v2_to_v3(&v3->t[i], &v2->t[i], i == TRK_DRUM_OLD);
     proj_from_v3_ok(q, v3);
     return 1;
 }
@@ -360,30 +405,53 @@ UI_SMALL static int proj_from_v1(project_t *q, const project_v1_t *v1, int n)
     memcpy(v3->g, v1->g, sizeof v3->g);
     proj_trk_v2_to_v3(&v3->t[0], &v1->t, 0);
     proj_from_v3_ok(q, v3);
-    for (i = 1; i < NTRK; i++) {               /* the other tracks: their defaults, no steps */
-        uint32_t k;
-        for (k = 0; k < P_COUNT; k++)
-            pt_set(&q->t[i], k, k >= P_E0 ? ENGINES[trk_def_engine(i)]->edit[k - P_E0].def : TP[k].def);
-        q->t[i].engine = (uint8_t)trk_def_engine(i);
-        q->t[i].preset = 0xFF;                 /* 0xFF: its default preset (project_load) */
-        memset(q->t[i].step, 0, sizeof q->t[i].step);
-        if (i != TRK_DRUM)
-            for (k = 0; k < NSTEP; k++)
-                q->t[i].step[k].time = ST_REST;
-        proj_trk_plain(&q->t[i]);
-    }
+    for (i = 1; i < NTRK; i++)                 /* the other tracks: their defaults, no steps */
+        proj_trk_fresh(q, i);                  /* (0xFF: its default preset, project_load) */
     q->sum = proj_sum(q);
     return 1;
 }
 
 /* n bytes of a stored project (any format) -> slot q as format 5; 0 = not a project */
+/* a format 6 project (four tracks) -> slot q: SLOOP's tracks where they go, the new ones fresh */
+UI_SMALL static int proj_from_v6(project_t *q, const project_v6_t *v6, int n)
+{
+    uint32_t i;
+    if (n != (int)sizeof *v6 || v6->magic != PROJ_MAGIC_V6 || v6->size != sizeof *v6 ||
+        v6->sum != proj_hash(v6, sizeof *v6 - 4u))
+        return 0;
+    memset(q, 0, sizeof *q);
+    q->magic = PROJ_MAGIC;
+    q->size = sizeof *q;
+    memcpy(q->g, v6->g, sizeof q->g);
+    q->sel = (uint8_t)OLD_TRK(v6->sel);
+    q->drdly = v6->drdly;
+    q->rsv[0] = v6->rsv[0];
+    q->rsv[1] = v6->rsv[1];
+    proj_new_tracks(q);
+    for (i = 0; i < NTRK_OLD; i++)
+        q->t[OLD_TRK(i)] = v6->t[i];
+    q->sum = proj_sum(q);
+    return 1;
+}
+
+/* n bytes of a stored project (any format) -> slot q as format 7; 0 = not a project. A format 7 main part without
+ * its extension (or with one from another save: the sum fails) keeps its first PROJ_MAIN_NT tracks, the rest fresh */
 UI_SMALL static int proj_import(project_t *q, const void *b, int n)
 {
-    if (n == (int)sizeof *q && proj_ok((const project_t *)b)) {
+    const project_t *s = (const project_t *)b;
+    if (n == (int)sizeof *q && proj_ok(s)) {
         memcpy(q, b, sizeof *q);
         return 1;
     }
-    return proj_from_v5(q, (const project_v5_t *)b, n) || proj_from_v4(q, (const project_v4_t *)b, n) ||
+    if ((n == (int)sizeof *q || n == (int)PROJ_MAIN_LEN) && s->magic == PROJ_MAGIC && s->size == sizeof *q) {
+        uint32_t i;
+        memmove(q, b, PROJ_MAIN_LEN);
+        for (i = PROJ_MAIN_NT; i < NTRK; i++)
+            proj_trk_fresh(q, i);
+        q->sum = proj_sum(q);
+        return 1;
+    }
+    return proj_from_v6(q, (const project_v6_t *)b, n) || proj_from_v5(q, (const project_v5_t *)b, n) || proj_from_v4(q, (const project_v4_t *)b, n) ||
            proj_from_v3(q, (const project_v3_t *)b, n) ||
            proj_from_v2(q, (const project_v2_t *)b, n) || proj_from_v1(q, (const project_v1_t *)b, n);
 }
@@ -561,18 +629,40 @@ static uint8_t sec_dirty, song_dirty;           /* live sections / the song: in 
 #if FELUCCA_FLASH
 /* slot from flash into RAM (format 5, or an old one converted) */
 static union {
-    project_t v6;
+    project_t v7;
+    project_v6_t v6;
     project_v5_t v5;
     project_v4_t v4;
     project_v3_t v3;
     project_v2_t v2;
     project_v1_t v1;
 } proj_tmp;
-UI_SMALL static void *up_stage(void) { return &proj_tmp; }   /* upreset.c: a user preset bank staged for a write (sloop-lab) */
+UI_SMALL static void *up_stage(void) { return &proj_tmp; }
+/* RAPTOR: a project object (OBJ_PROJECT0 + k, OBJ_AUTOSAVE) in its two parts (PROJ_MAIN_LEN). The extension first, the
+ * main part last: the main part commits the save. len 0: both empty. Boards with no flash for the extension (the FM-1,
+ * ST_HAS_EXT 0) keep the main part only: the tracks after it start fresh on load */
+UI_SMALL static int proj_st_save(uint32_t obj, const project_t *p, uint32_t len)
+{
+    int rc = 0;
+#if ST_HAS_EXT
+    rc = st_save(st_ext_obj(obj), (const uint8_t *)p + PROJ_MAIN_LEN, len ? PROJ_EXT_LEN : 0u);
+#endif
+    return rc | st_save(obj, p, len ? PROJ_MAIN_LEN : 0u);
+}
+UI_SMALL static int proj_st_load(uint32_t obj)        /* -> proj_tmp; its length, or -1 */
+{
+    int n = st_load(obj, &proj_tmp, sizeof proj_tmp);
+#if ST_HAS_EXT
+    if (n == (int)PROJ_MAIN_LEN && proj_tmp.v7.magic == PROJ_MAGIC &&
+        st_load(st_ext_obj(obj), (uint8_t *)&proj_tmp + PROJ_MAIN_LEN, PROJ_EXT_LEN) == (int)PROJ_EXT_LEN)
+        n = (int)sizeof proj_tmp.v7;
+#endif
+    return n;
+}   /* upreset.c: a user preset bank staged for a write (sloop-lab) */
 UI_SMALL static void proj_fetch(uint32_t slot)
 {
     project_t *q = &proj_slot[slot & 3u];
-    int n = st_load(OBJ_PROJECT0 + (slot & 3u), &proj_tmp, sizeof proj_tmp);
+    int n = proj_st_load(OBJ_PROJECT0 + (slot & 3u));
     if (!proj_import(q, &proj_tmp, n))
         q->magic = 0;
 }
@@ -596,14 +686,14 @@ UI_SMALL static void project_save(uint32_t slot)
         /* SLOOP Pro (after ChanceTheMaker's sloop-smk): a save the flash did not take leaves the section as the flash
          * has it, so what the slot shows is what a restart finds; the editor is told (editor.c ED_PROJECT, status 2) */
         proj_save_err = 0;
-        if (st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p)) {
+        if (proj_st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p)) {
             proj_save_err = 1;
             proj_fetch(slot);
             ui_message("NOT SAVED: FLASH ERROR");
         } else
             ui_say("SAVED SECTION ", SEC_NAME[slot & 3u]);
 #else
-        if (st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p))
+        if (proj_st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p))
             ui_message("SAVE ERROR");
         else
             ui_say("SAVED SECTION ", SEC_NAME[slot & 3u]);
@@ -629,7 +719,7 @@ UI_SMALL static void project_erase(uint32_t slot)
         return;
     }
 #if FELUCCA_FLASH
-    if (flash_ok && st_save(OBJ_PROJECT0 + slot, &proj_slot[slot], 0)) {
+    if (flash_ok && proj_st_save(OBJ_PROJECT0 + slot, &proj_slot[slot], 0)) {
         ui_message("ERASE ERROR");
         return;
     }
@@ -735,7 +825,7 @@ UI_SMALL static void autosave_tick(void)                /* main loop */
     h = autosave_buf.sum;
     if (h == autosave_hash || !audio_quiet())
         return;
-    if (st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
+    if (proj_st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
         autosave_hash = h;
     autosave_ms = fm1_ms;
 #endif
@@ -750,7 +840,7 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
     int n;
     if (!flash_ok)
         return;
-    n = st_load(OBJ_AUTOSAVE, &proj_tmp, sizeof proj_tmp);
+    n = proj_st_load(OBJ_AUTOSAVE);
     if (!proj_import(q, &proj_tmp, n))
         return;
     autosave_hash = q->sum;
@@ -762,6 +852,12 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
     drch_seed = 0;
     proj_apply(q, 1);
     song.sel = (uint8_t)(q->sel < NTRK ? q->sel : 0u);
+    for (n = 0; n < NPART; n++)                    /* a fresh part (a format 1 project; tracks 4, 5 when the
+                                                    * extension was not stored): its default sound, as project_apply */
+        if (q->t[n].preset == 0xFFu) {
+            apply_preset_to(&trk[n], TRK_DEF[n][1]);
+            steps_clear(&trk[n]);
+        }
     proj_foreign_parts(q);                         /* (2.8.4) Clipper's working project: its own sounds, default */
     for (n = 0; n < NPART; n++)
         trk[n].engine = trk[n].eng_req;        /* (nothing sounds yet: no fade) */
@@ -980,8 +1076,8 @@ UI_SMALL static void persist_boot(void)                    /* before settings_in
             if (!proj_ok(&proj_slot[i])) {
                 proj_fetch(i);
             } else {
-                int n = st_load(OBJ_PROJECT0 + i, &proj_tmp, sizeof proj_tmp);
-                if (n != (int)sizeof proj_slot[i] || memcmp(&proj_tmp.v6, &proj_slot[i], sizeof proj_slot[i]))
+                int n = proj_st_load(OBJ_PROJECT0 + i);
+                if (n != (int)sizeof proj_slot[i] || memcmp(&proj_tmp.v7, &proj_slot[i], sizeof proj_slot[i]))
                     sec_dirty |= (uint8_t)(1u << i);
             }
     }
@@ -1165,7 +1261,7 @@ UI_SMALL static void settings_save(void)
 }
 
 #if FELUCCA_FLASH
-_Static_assert(sizeof(project_t) <= ST_PAYLOAD_MAX, "project does not fit one flash sector");
+_Static_assert(PROJ_MAIN_LEN <= ST_PAYLOAD_MAX && PROJ_EXT_LEN <= ST_PAYLOAD_MAX, "a project part does not fit one flash sector");
 
 /* ---- backup restore (editor.c BK_PUT): each object checked as a load checks it, then written through the
  * same A/B commit as a save. rc: 0 ok, 2 not a valid object, 3 stop the song first, 4 flash */
@@ -1228,7 +1324,7 @@ UI_SMALL static uint32_t project_restore(uint32_t slot, const void *raw, uint32_
     if (song.playing || transport_req)
         return 3;
     if (slot < 4u && !n) {
-        if (!flash_ok || st_save(OBJ_PROJECT0 + slot, raw, 0))
+        if (!flash_ok || proj_st_save(OBJ_PROJECT0 + slot, (const project_t *)raw, 0))
             return 4;
         memset(&proj_slot[slot], 0, sizeof proj_slot[slot]);
         sec_dirty &= (uint8_t)~(1u << slot);
@@ -1240,7 +1336,7 @@ UI_SMALL static uint32_t project_restore(uint32_t slot, const void *raw, uint32_
         project_apply(&autosave_buf);
         return 0;
     }
-    if (!flash_ok || st_save(OBJ_PROJECT0 + slot, &autosave_buf, sizeof autosave_buf))
+    if (!flash_ok || proj_st_save(OBJ_PROJECT0 + slot, &autosave_buf, sizeof autosave_buf))
         return 4;
     memcpy(&proj_slot[slot], &autosave_buf, sizeof proj_slot[slot]);
     sec_dirty &= (uint8_t)~(1u << slot);
@@ -1285,7 +1381,7 @@ UI_SMALL static void sections_write(void)                        /* the dirty se
 #if FELUCCA_FLASH
     if (flash_ok)
         for (i = 0; i < 4u; i++)
-            if (((sec_dirty >> i) & 1u) && st_save(OBJ_PROJECT0 + i, &proj_slot[i], sizeof proj_slot[i]) == 0)
+            if (((sec_dirty >> i) & 1u) && proj_st_save(OBJ_PROJECT0 + i, &proj_slot[i], sizeof proj_slot[i]) == 0)
                 sec_dirty &= (uint8_t)~(1u << i);       /* (a failed write stays dirty: tried again later) */
     if (!flash_ok)
 #endif
@@ -1304,7 +1400,7 @@ UI_SMALL static void persist_flush_now(void)
 #if FELUCCA_FLASH
     if (flash_ok && !arrangement_clock.running) {     /* (a song playing: the tracks hold a section) */
         proj_capture(&autosave_buf);
-        if (autosave_buf.sum != autosave_hash && st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
+        if (autosave_buf.sum != autosave_hash && proj_st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
             autosave_hash = autosave_buf.sum;
     }
 #endif

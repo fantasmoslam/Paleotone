@@ -79,12 +79,20 @@ _Static_assert(sizeof(theme_t) == 40u, "theme layout (the editor's Theme page wr
 static theme_t theme;                            /* the theme there is (theme_valid: project.c theme_check passed) */
 static uint8_t theme_valid, theme_on;
 /* the tracks' colours: full, two thirds, one third (the built-in ones as they always were) */
-static const uint16_t TE_COL_DEF[4] = {RGB(120, 190, 60), RGB(40, 170, 190), RGB(240, 176, 40), RGB(255, 84, 24)};
-static const uint16_t TE_MID_DEF[4] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 26), RGB(170, 56, 16)};
-static const uint16_t TE_DIM_DEF[4] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8)};
-static uint16_t TE_COL[4] = {RGB(120, 190, 60), RGB(40, 170, 190), RGB(240, 176, 40), RGB(255, 84, 24)};
-static uint16_t TE_MID[4] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 26), RGB(170, 56, 16)};
-static uint16_t TE_DIM[4] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8)};
+/* the tracks' colours, by colour slot: SLOOP's four (0..2 the synth tracks, 3 the drums: a theme sets them), then RAPTOR's
+ * SFX (4, storm violet) and CALLS (5, rose). TSLOT(k): track k's slot (core.h) */
+static const uint16_t TE_COL_DEF[6] = {RGB(120, 190, 60), RGB(40, 170, 190), RGB(240, 176, 40), RGB(255, 84, 24),
+                                       RGB(160, 110, 240), RGB(240, 120, 190)};
+static const uint16_t TE_MID_DEF[6] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 26), RGB(170, 56, 16),
+                                       RGB(106, 72, 160), RGB(160, 80, 126)};
+static const uint16_t TE_DIM_DEF[6] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8),
+                                       RGB(52, 36, 80), RGB(80, 40, 62)};
+static uint16_t TE_COL[6] = {RGB(120, 190, 60), RGB(40, 170, 190), RGB(240, 176, 40), RGB(255, 84, 24),
+                             RGB(160, 110, 240), RGB(240, 120, 190)};
+static uint16_t TE_MID[6] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 26), RGB(170, 56, 16),
+                             RGB(106, 72, 160), RGB(160, 80, 126)};
+static uint16_t TE_DIM[6] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8),
+                             RGB(52, 36, 80), RGB(80, 40, 62)};
 static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
 {
     uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;

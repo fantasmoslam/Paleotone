@@ -8,9 +8,11 @@
 #include <stdint.h>
 #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
 #define NPOLY 8
-#define NPART 3                  /* synth parts: tracks 1..3 */
-#define NTRK 4                   /* + the drum track */
-#define TRK_DRUM 3
+#define NPART 5                  /* synth parts: tracks 1..5 (RAPTOR: SLOOP's three, then SFX and CALLS) */
+#define NTRK 6                   /* + the drum track */
+#define TRK_DRUM 5
+#define NTRK_OLD 4               /* SLOOP's four tracks: the stored formats before RAPTOR's FUN7 (project.c) */
+#define TRK_DRUM_OLD 3
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #define NSTEP 64
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
@@ -396,6 +398,15 @@ static volatile uint16_t ed_master_k = 0xFFFFu;
 static int32_t thr_rev, thr_dly;
 static inline int32_t send_thr(int32_t s, int32_t g) { return g ? s + (((127 * 258 - s) * g) >> 15) : s; }   /* s 0..32766 */
 #define TSEL (&trk[song.sel])    /* the selected track */
+/* RAPTOR: a MIDI LEARN entry keeps its track in two bits (ui.c ml_learn): SLOOP's tracks 1..3 and the drums (3);
+ * the new parts (SFX, CALLS) are not learned */
+/* RAPTOR: SLOOP's four tracks (its knobs, faders and pads hold four): tracks 1..3 and the drums */
+/* RAPTOR: track k's colour slot (gfx.c TE_COL): SLOOP's four (synth tracks 1..3, 3 the drums), then SFX 4, CALLS 5 */
+#define TSLOT(k) ((uint32_t)(k) == TRK_DRUM ? 3u : (uint32_t)(k) < 3u ? (uint32_t)(k) : (uint32_t)(k) + 1u)
+#define TRK4(i) ((uint32_t)(i) < 3u ? (uint32_t)(i) : (uint32_t)TRK_DRUM)
+#define ML_TRK_OK(k) ((k) < 3u || (k) == TRK_DRUM)
+#define ML_TRK_ENC(k) ((k) == TRK_DRUM ? 3u : (k))
+#define ML_TRK_DEC(e) ((((e) >> 7) & 3u) == 3u ? TRK_DRUM : ((e) >> 7) & 3u)
 #define TDRUM (&trk[TRK_DRUM])
 static int is_drum(const track_t *t) { return t == TDRUM; }
 /* silent: MUTE, or another track is soloed */

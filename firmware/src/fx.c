@@ -2,7 +2,8 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Effects: per-track DIST insert, then sends into three shared buses (chorus, tempo delay, reverb).
  * Stereo dry mix; the chorus and the reverb come back in stereo, the delay in the middle. */
-#define DLY_LEN 65536u           /* 1.49 s: 1/4 down to 41 BPM, 1/8 dotted down to 31, 1/4 dotted down to 61 (clamped below) */
+#define DLY_LEN 32768u           /* RAPTOR: 0.74 s (SLOOP's 1.49 s: the RAM went to tracks 5 and 6): 1/4 down to 81 BPM,
+                                  * 1/8 dotted down to 61, 1/4 dotted down to 121 (clamped below) */
 #define CHO_LEN 2048u
 static int16_t dly_buf[DLY_LEN] __attribute__((section(".pool")));
 static int16_t cho_buf[CHO_LEN] __attribute__((section(".pool")));
@@ -921,11 +922,12 @@ static void cpu1_units_job(uint32_t arg)                /* core 1's job: the uni
     cpu1_job_ticks += cpu1_ticks() - t0;
 }
 
-/* the units core 1 renders this block: the last part and the drums (cpu1_units when set: the menu, the tests),
+/* the units core 1 renders this block: the last two parts (SFX, CALLS) and the drums (cpu1_units when set: the menu, the tests),
  * less the parts that must stay here (above) */
 static uint32_t units_split(void)
 {
-    uint32_t mask = cpu1_units < 0 ? (1u << (NPART - 1u)) | U_DRUMS : (uint32_t)cpu1_units & U_ALL, k, nform = 0;
+    uint32_t mask = cpu1_units < 0 ? (3u << (NPART - 2u)) | U_DRUMS : (uint32_t)cpu1_units & U_ALL, k, nform = 0;   /* (RAPTOR:
+                                                         * SFX, CALLS and the drums; SLOOP: its last part and the drums) */
     if (!mask)
         return 0;
     for (k = 0; k < NPART; k++)

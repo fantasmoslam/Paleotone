@@ -127,7 +127,10 @@ int main(int argc, char **argv)
     assert(punch.cur == -1);
     for (k = 0; k < NPART; k++)
         for (i = 0; i < NVOICE; i++)
-            assert(!trk[k].v[i].active);                     /* no hanging synth note */
+            assert(!trk[k].v[i].active || (!trk[k].v[i].gate && trk[k].v[i].stage == 3u && trk[k].p[P_REL] >= 100));
+                                                             /* no hanging synth note (RAPTOR: six tracks draw the
+                                                              * fuzz otherwise; a REL of 1.4 s and more may still be in
+                                                              * its release after 5 s: let go, ending) */
     for (i = 0; i < NDRUM; i++)
         assert(!drums.v[i].active);                          /* every drum hit ended */
     for (k = 0; k < NPART; k++)

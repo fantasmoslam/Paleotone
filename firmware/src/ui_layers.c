@@ -337,7 +337,7 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
             ui.step_held &= (uint16_t)~(1u << w);
             if (layer == LY_STEP)
                 step_up((uint32_t)w);
-            if (layer == LY_MIX && w == 8)
+            if (layer == LY_MIX && w == MIX_FILL)
                 fill_held = 0;                              /* GLO + key 9 let go: the fill ends */
         }
         return;
@@ -430,13 +430,13 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
     case LY_MIX:
         if (k == 1u) {                                      /* (2.6) the black key F#3: MIDI LEARN on / off */
             ml_toggle();
-        } else if (w >= 0 && w < 4) {
+        } else if (w >= 0 && w < (int)NTRK) {               /* RAPTOR: mute 1..6, solo 1..6, fill, fill bar */
             trk[w].p[P_MUTE] = (int16_t)!trk[w].p[P_MUTE];
-        } else if (w >= 4 && w < 8) {
-            song.solo ^= (uint8_t)(1u << (w - 4));
-        } else if (w == 8) {
+        } else if (w >= (int)NTRK && w < 2 * (int)NTRK) {
+            song.solo ^= (uint8_t)(1u << (w - (int)NTRK));
+        } else if (w == MIX_FILL) {
             fill_held = 1;                                  /* FILL while held */
-        } else if (w == 9) {
+        } else if (w == MIX_FILL + 1) {
             fill_arm = (uint8_t)!fill_arm;                  /* FILL NEXT BAR (again: cancelled) */
             ui_message(fill_arm ? "FILL: NEXT BAR" : "FILL BAR OFF");
         } else if (w == 15) {
@@ -562,7 +562,7 @@ UI_SMALL static void layer_knobs(uint32_t layer)
             }
             break;
         case LY_MIX: {
-            int16_t *lv = k == TRK_DRUM ? &song.g[G_DRLVL] : &trk[k].p[P_LEVEL];
+            int16_t *lv = TRK4(k) == TRK_DRUM ? &song.g[G_DRLVL] : &trk[TRK4(k)].p[P_LEVEL];
             *lv = (int16_t)clamp(*lv + accel(EN_K1 + k, s, 127), 0, 127);
             break;
         }
@@ -704,7 +704,7 @@ UI_SMALL static void layer_screen_draw(void)
     int32_t ratio[4] = {-1, -1, -1, -1};
     uint32_t i, layer = ui.layer, sel = song.sel;
     track_t *t = TSEL;
-    uint16_t col = TE_COL[sel & 3u];
+    uint16_t col = TE_COL[TSLOT(sel)];
     if (!layer_shown) {
         lcd_fill(0, 0, 240, 240, C_BLACK);
         ui.force = 1;
@@ -836,7 +836,7 @@ UI_SMALL static void layer_screen_draw(void)
             }
             if (!tl[i].lab[0])
                 fmt_int(tl[i].lab, (int32_t)idx + 1);
-            tl[i].bg = on ? (lv == LV_GHOST ? TE_DIM[sel & 3u] : lv == LV_SOFT ? TE_MID[sel & 3u] : lv == LV_HARD ? C_WHITE : col)
+            tl[i].bg = on ? (lv == LV_GHOST ? TE_DIM[TSLOT(sel)] : lv == LV_SOFT ? TE_MID[TSLOT(sel)] : lv == LV_HARD ? C_WHITE : col)
                           : TE_G1;
             tl[i].fg = on ? C_BLACK : TE_G3;
             tl[i].marks = (uint8_t)(on ? rt : 0u);
@@ -956,36 +956,36 @@ UI_SMALL static void layer_screen_draw(void)
         ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
         break;
     }
-    case LY_MIX: {                                      /* mute 1..4, solo 1..4, fill / fill bar, tap */
+    case LY_MIX: {                                      /* mute 1..6, solo 1..6, fill / fill bar, tap */
         col = C_WHITE;
         str_cpy(sub, "mute  solo  fill  tap", sizeof sub);
-        for (i = 0; i < 4u; i++) {
+        for (i = 0; i < NTRK; i++) {
             int m = trk[i].p[P_MUTE] != 0, so = (song.solo >> i) & 1u;
             str_cpy(tl[i].lab, "mute 1", 8);
             tl[i].lab[5] = (char)('1' + i);
-            tl[i].bg = m ? TE_G2 : TE_COL[i];
+            tl[i].bg = m ? TE_G2 : TE_COL[TSLOT(i)];
             tl[i].fg = m ? TE_G3 : C_BLACK;
-            str_cpy(tl[4 + i].lab, "solo 1", 8);
-            tl[4 + i].lab[5] = (char)('1' + i);
-            tl[4 + i].bg = so ? C_WHITE : TE_G1;
-            tl[4 + i].fg = so ? C_BLACK : TE_G3;
-            tl[4 + i].top = TE_DIM[i];
+            str_cpy(tl[NTRK + i].lab, "solo 1", 8);
+            tl[NTRK + i].lab[5] = (char)('1' + i);
+            tl[NTRK + i].bg = so ? C_WHITE : TE_G1;
+            tl[NTRK + i].fg = so ? C_BLACK : TE_G3;
+            tl[NTRK + i].top = TE_DIM[TSLOT(i)];
         }
-        str_cpy(tl[8].lab, "fill", 8);                  /* key 9: held = a fill; key 10: the next bar is one */
-        tl[8].bg = fill_now ? C_WHITE : TE_G1;
-        tl[8].fg = fill_now ? C_BLACK : TE_G4;
-        str_cpy(tl[9].lab, "bar", 8);
-        tl[9].bg = fill_bar_on ? C_WHITE : TE_G1;
-        tl[9].fg = fill_bar_on ? C_BLACK : TE_G4;
-        tl[9].top = fill_arm ? C_WHITE : 0;
+        str_cpy(tl[MIX_FILL].lab, "fill", 8);           /* held = a fill; the next key: the next bar is one */
+        tl[MIX_FILL].bg = fill_now ? C_WHITE : TE_G1;
+        tl[MIX_FILL].fg = fill_now ? C_BLACK : TE_G4;
+        str_cpy(tl[MIX_FILL + 1].lab, "bar", 8);
+        tl[MIX_FILL + 1].bg = fill_bar_on ? C_WHITE : TE_G1;
+        tl[MIX_FILL + 1].fg = fill_bar_on ? C_BLACK : TE_G4;
+        tl[MIX_FILL + 1].top = fill_arm ? C_WHITE : 0;
         fmt_int(tl[15].lab, song.g[G_BPM]);
         tl[15].bg = song.playing && clk_pos < BEAT_U / 4u ? C_WHITE : TE_G2;
         tl[15].fg = tl[15].bg == C_WHITE ? C_BLACK : C_WHITE;
         str_cpy(tl[14].lab, "tap>", 8);
         tl[14].bg = C_BLACK;
-        for (i = 0; i < 4u; i++) {
-            uint32_t lv = trk_level(i);
-            static const char *const L[4] = {"1", "2", "3", "4"};
+        for (i = 0; i < 4u; i++) {                      /* (the knobs: tracks 1..3 and the drums) */
+            uint32_t lv = trk_level(TRK4(i));
+            static const char *const L[4] = {"1", "2", "3", "dr"};
             lab[i] = L[i];
             fmt_int(v[i], (int32_t)lv * 100 / 127);
             ratio[i] = (int32_t)lv * 1000 / 127;

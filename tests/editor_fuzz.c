@@ -301,7 +301,7 @@ static void cmd_rand(int bit8)
 static void play_slots(void);
 static void fz_seq_step(void)
 {
-    uint8_t a[700], raw[4096];
+    uint8_t a[700], raw[8192];
     uint32_t n, len, r = rn(100);
     if (r < 15) { cmd_rand(0); return; }
     if (r < 30) { ui_rand(); return; }
@@ -477,7 +477,7 @@ static void slot_random(uint32_t k)
 }
 static void flash_random(void)
 {
-    static uint8_t raw[4096];
+    static uint8_t raw[8192];
     uint32_t i, len;
     memset(nor, 0xFF, sizeof nor);
     flash_ok = 1;
@@ -718,13 +718,18 @@ static const char *proj_field(uint32_t off)
     }
     return b;
 }
+/* RAPTOR: the FM-1 build has no flash for a project's extension (storage.c ST_HAS_EXT 0): through the flash, its
+ * tracks after PROJ_MAIN_NT come back fresh; only the main part is compared then */
+static int rt_main_only;
 static int rt_cmp(const char *what)
 {
-    uint32_t i, nd = 0;
+    uint32_t i, nd = 0, n = rt_main_only && !ST_HAS_EXT ? PROJ_MAIN_LEN : (uint32_t)sizeof rt_a - 4u;
     const uint8_t *x = (const uint8_t *)&rt_a, *y = (const uint8_t *)&rt_b;
     static const uint8_t SETTING[] = {G_SLOT, G_LOAD, G_SYNC, G_MIDI, G_ROUTE};   /* (in a project, not loaded: the FM-1's) */
     for (i = 0; i < sizeof SETTING; i++) rt_b.g[SETTING[i]] = rt_a.g[SETTING[i]];
-    for (i = 0; i < sizeof rt_a - 4; i++)
+    if (n == PROJ_MAIN_LEN)
+        rt_b.g[G_SAVE] = rt_a.g[G_SAVE];             /* (the drums' TUNE / DECAY check: the drum track is in the extension) */
+    for (i = 0; i < n; i++)
         if (x[i] != y[i]) {
             if (nd < 6) fprintf(stderr, "%s: %s: %02X -> %02X\n", what, proj_field(i), x[i], y[i]);
             nd++;
@@ -835,13 +840,15 @@ static void round_trip(void)
         if (song.playing || transport_req) return;
         project_load(sl);
         proj_capture(&rt_b);
+        rt_main_only = lost;
         if (!rt_cmp("section save -> other use -> load (before the audio)")) { fprintf(stderr, "slot %u, %s\n", sl, lost ? "from flash" : "from RAM"); fail("a section saved and loaded is not the same"); }
         audio_blocks(2);
         proj_capture(&rt_b);
         if (!rt_cmp("section save -> other use -> load")) { fprintf(stderr, "slot %u, %s\n", sl, lost ? "from flash" : "from RAM"); fail("a section saved and loaded is not the same"); }
     }
     /* (c) the autosave, other use, the power-on resume */
-    (void)st_save(OBJ_AUTOSAVE, &rt_a, sizeof rt_a);
+    rt_main_only = 0;
+    (void)proj_st_save(OBJ_AUTOSAVE, &rt_a, sizeof rt_a);
     scramble_light();
     {   /* (at power-on nothing sounds: autosave_resume switches the engines at once) */
         uint32_t k, v;
@@ -851,7 +858,9 @@ static void round_trip(void)
     autosave_resume();
     audio_blocks(2);
     proj_capture(&rt_b);
+    rt_main_only = 1;
     if (!rt_cmp("autosave -> other use -> resume")) fail("the autosave resumed is not the project saved");
+    rt_main_only = 0;
 }
 
 /* ---- MODE 2: USB-MIDI in */

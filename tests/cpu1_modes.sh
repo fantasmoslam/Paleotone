@@ -5,7 +5,7 @@
 # (tests/cpu1_host.c). The golden renders (tests/regress.c) and tests/mix_split_test.c must give the same hashes
 # with CORES=1 (the job inline, deferred to the wait), CORES=2 (a thread), CORES=2 CHAOS=7 (a slow, erratic
 # thread), CORES=2 CPU1_TIMEOUT_AT=K (a lost job: the fallback, then one core), CPU1_UNITS=0 (no split) and
-# CPU1_UNITS=15 (every unit that may go, goes); and mix_split_test must be clean under ThreadSanitizer.
+# CPU1_UNITS=63 (every unit that may go, goes); and mix_split_test must be clean under ThreadSanitizer.
 # Of regress only the golden renders, health, voices and crashes count here: its CPU budget is the default
 # run's business (tests/run_tests.sh), and a thread's hand-off is not in the baseline.
 # From the repo root, after tests/run_tests.sh built build/host/regress (it calls this script), or alone:
@@ -41,7 +41,7 @@ golden "CORES=2 (a thread)" CORES=2
 golden "CORES=2 CHAOS=7 (a slow, erratic thread)" CORES=2 CHAOS=7
 golden "CORES=2 CPU1_TIMEOUT_AT=300 (a lost job: the fallback, then one core)" CORES=2 CPU1_TIMEOUT_AT=300
 golden "CPU1_UNITS=0 (no split)" CORES=1 CPU1_UNITS=0
-golden "CORES=2 CPU1_UNITS=15 (every unit that may go, goes)" CORES=2 CPU1_UNITS=15
+golden "CORES=2 CPU1_UNITS=63 (every unit that may go, goes)" CORES=2 CPU1_UNITS=63
 split "CORES=1" CORES=1
 split "CORES=2" CORES=2
 split "CORES=2 CHAOS=7" CORES=2 CHAOS=7
