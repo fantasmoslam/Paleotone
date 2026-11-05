@@ -10,7 +10,6 @@
 # RAPTOR (by hand from CI, no local toolchain): Paleotone's engines (SAMPLE, GRAIN: its own render loops),
 # drum kits and reverb models; fm6_* still unbudgeted.
 analog_render 615
-digital_render 333
 phase_render 79
 lofi_render 128
 sample_render 593
@@ -21,6 +20,5 @@ drawbar_render 271
 drawbar_block 103
 grain_render 2390
 grain_block 143
-slicer_track 828
 drums_mix 4364
 fm1_alnk0_irq 268

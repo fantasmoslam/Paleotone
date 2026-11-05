@@ -759,7 +759,7 @@ UI_SMALL static void proj_foreign_parts(const project_t *p)
 {
     uint32_t k;
     for (k = 0; k < NPART; k++)
-        if (p->t[k].preset != 0xFFu && p->t[k].engine >= NENGINES) {
+        if (p->t[k].preset != 0xFFu && (p->t[k].engine >= NENGINES || (!FELUCCA_DIGITAL && p->t[k].engine == 1u))) {
             set_engine_of(&trk[k], TRK_DEF[k][0]);
             apply_preset_to(&trk[k], TRK_DEF[k][1]);
         }

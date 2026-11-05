@@ -25,7 +25,9 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 }
 
 #include "eng_analog.c"
+#if FELUCCA_DIGITAL
 #include "eng_digital.c"
+#endif
 #include "eng_phase.c"
 #include "eng_lofi.c"
 #include "eng_sample.c"
@@ -94,6 +96,9 @@ static int phys_render_draws(const track_t *t, int32_t model)   /* model: the MO
 #include "eng_slice.c"
 #endif
 
+#if !FELUCCA_DIGITAL
+#define ENG_DIGITAL ENG_ANALOG                 /* (engine 1's slot: never offered, never loaded: core.h FELUCCA_DIGITAL) */
+#endif
 static const engine_t *const ENGINES[NENGINES] = {&ENG_ANALOG, &ENG_DIGITAL, &ENG_PHASE, &ENG_LOFI, &ENG_SAMPLE,
                                                     &ENG_FORMANT, &ENG_TRIO, &ENG_DRAWBAR,   /* 7: ENGI_DRAWBAR (eng_drawbar.c) */
                                                     &ENG_GRAIN,

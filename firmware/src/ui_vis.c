@@ -11,6 +11,12 @@
 #define VIS_N VIS_STYLES          /* (12) */
 static const char *const VIS_NAME[VIS_N] = {"OSCILLOSCOPE", "SPECTRUM", "SPECTROGRAM", "LISSAJOUS", "VU METERS",
                                             "CIRCLE", "TAPE", "LCD", "BOUNCE", "ORBIT", "WIRES", VIS_LAST_NAMES};
+#if !FELUCCA_VIS                  /* RAPTOR: the visualiser is out (core.h FELUCCA_VIS): HOME on HOME does nothing */
+static int vis_shown(void) { return 0; }
+static void vis_open(void) {}
+static void vis_draw(void) {}
+static void vis_select(int32_t s) { (void)s; }
+#else
 /* vis_on, vis_shown_last, vis_name_t: ui_draw.c; vis_style: panel.c (kept with the settings) */
 #define VIS_FFT 512u
 #define VIS_SG_W 48u                                /* spectrogram: 48 columns of 5 px, 72 rows of 3 px */
@@ -652,3 +658,4 @@ static void vis_select(int32_t s)
     ui.force = 1;
     settings_later = 1;                                 /* (kept with the settings, once stopped) */
 }
+#endif   /* FELUCCA_VIS */

@@ -226,6 +226,23 @@ int main(int argc, char **argv)
         TDRUM->p[P_TFLT] = f0; song.sel = (uint8_t)sel; ui.lock_par = lp; go_home(); frame();
     }
     open_family(FAM_EDIT); ui.force = 1; frame(); ppm("page-edit");
+    {   /* RAPTOR: the SAURUS track's EDIT pages show its voice (CALL ... WILD) */
+        uint32_t sel = song.sel, k, ok = 1, pi;
+        int16_t *vp;
+        static const char *const NM[8] = {"CALL", "SIZE", "SWOOP", "LEN", "GROWL", "BRTH", "MOUTH", "WILD"};
+        for (k = 0; k < NPART && trk[k].eng_req % NENGINES != ENGI_SAURUS; k++) ;
+        check(k < NPART, "RAPTOR: a track plays SAURUS at power-on");
+        song.sel = (uint8_t)(k < NPART ? k : 0);
+        open_family(FAM_EDIT); ui.force = 1; frame(); ppm("page-edit-saurus");
+        for (pi = 0; pi < NPAGES && strcmp(PAGES[pi].title, "EDIT 1"); pi++) ;
+        for (k = 0; k < 8u && pi + 1u < NPAGES; k++) {
+            const page_t *pg = &PAGES[pi + k / 4u];
+            const param_desc_t *d = page_desc(pg, k & 3u, &vp);
+            ok &= pg->scope == SC_ENGINE && d && !strcmp(d->label, NM[k]);
+        }
+        check(ok, "RAPTOR: SAURUS's EDIT 1 / EDIT 2: CALL SIZE SWOOP LEN, GROWL BRTH MOUTH WILD");
+        song.sel = (uint8_t)sel; go_home(); frame();
+    }
     open_family(FAM_FX); ui.force = 1; frame(); ppm("page-fx");
     open_family(FAM_SEQ); ui.force = 1; frame(); ppm("page-step");
     open_family(FAM_GLO); ui.force = 1; frame(); ppm("page-global");
@@ -1471,6 +1488,7 @@ int main(int argc, char **argv)
         check(t->step[2].n == 1u && t->step[2].note[0] % 12u == 0u, "STEP page, no chord mode: one note");
         steps_clear(t); song.sel = 0; go_home(); frames(4);
     }
+#if FELUCCA_VIS
     {   /* the visualiser (2.4): HOME on HOME opens it, SELECT its 12 styles, HOME / a page closes it; a layer
          * shows its screen over it; the style is kept with the settings */
         uint32_t st, j, x, lit, k;
@@ -1543,6 +1561,7 @@ int main(int argc, char **argv)
         for (j = 0; j < NTRK; j++) steps_clear(&trk[j]);
         vis_style = 0; song.sel = 0; go_home(); frames(20);
     }
+#endif
 
     {   /* 2.6, after Felucca 1.4 / 1.5 (Leo Kuroshita): STEP LEN, SEQ VEL, the drum mutes (EDIT + a black key), MIDI
          * LEARN (GLO + F#3, a knob, a CC; LEARN CLEAR in the menu), the INSERT pages (the drum track too), ANALOG's FILTER */
@@ -1727,6 +1746,9 @@ int main(int argc, char **argv)
         ui.force = 1; frame(); ppm("page-filter");
         {   /* on EDIT > FILTER, ALGORITHM to a track that is not ANALOG: not left on a page it does not have */
             int16_t bpm0 = song.g[G_BPM];
+            if (trk[1].eng_req % NENGINES == 0u) {      /* (RAPTOR: track 2 may be ANALOG now: PHASE for this check) */
+                set_engine_of(&trk[1], 2); trk[1].engine = trk[1].eng_req;
+            }
             encs[panel.enc[EN_ALGO]] = 1; frames(2);
             check(song.sel == 1u && trk[1].eng_req != 0u && PAGES[ui.page].fam == FAM_EDIT &&
                   strcmp(PAGES[ui.page].title, "FILTER") && page_shown(cur_page()),

@@ -340,10 +340,12 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
         if (e == &ENG_ANALOG) {
             v->s[0] = s0;
             v->s[1] = s1;
+#if FELUCCA_DIGITAL
         } else if (e == &ENG_DIGITAL) {
             v->s[5] = s5;
             v->s[6] = s6;
             v->s[7] = s7;                               /* op 4 phase; the modulator envelope restarts */
+#endif
         } else if (e == &ENG_LOFI) {
             v->s[0] = s0;
             v->s[4] = s4;
@@ -374,8 +376,10 @@ static void unison_spread(track_t *t, voice_t *v, uint32_t r)
      * phase (ANALOG's osc 2, TRIO's 2 and 3, DIGITAL's and FM6's operators, the subs, SAMPLE's start...) */
     if (e == &ENG_ANALOG)
         analog_spread(t, v, r);
+#if FELUCCA_DIGITAL
     else if (e == &ENG_DIGITAL)
         digital_spread(t, v, r);
+#endif
     else if (e == &ENG_PHASE)
         phase_spread(t, v, r);
     else if (e == &ENG_LOFI)

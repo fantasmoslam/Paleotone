@@ -18,6 +18,23 @@
  * sequencer's step 0), in the transport clock's units (fx.c BEAT_U: exact at any tempo, no drift
  * from the steps), the track's + the global SWING as the sequencer has them (seq.c trk_grid); sample
  * exact. With the SLICER OFF and no ramp left, the signal is not touched. */
+#ifndef FELUCCA_SLICER
+#define FELUCCA_SLICER 0                /* RAPTOR: the SLICER is out (its 48 KB recorder went to Paleotone's effects); 1
+                                         * builds it back. Its parameters stay in the tracks and the projects (unused) */
+#endif
+#if !FELUCCA_SLICER
+#define SL_RAMP_LOG2 7
+#define SL_RAMP (1 << SL_RAMP_LOG2)     /* (fx.c's INSERT glides at the SLICER's ramp) */
+#define SL_SLOPE (32768 / SL_RAMP)
+enum { SL_OFF, SL_GATE, SL_STUT };
+typedef struct { uint8_t idx; } sl_t;
+static sl_t sl[NTRK];
+static uint32_t sl_pattern(const track_t *t) { (void)t; return 0; }
+static void slicer_start(uint32_t pos) { (void)pos; }
+static void slicer_track(const track_t *t, int32_t *b, uint32_t n) { (void)t; (void)b; (void)n; }
+static int slicer_busy(const track_t *t) { (void)t; return 0; }
+static void slicer_drums(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n) { drums_render(ml, mr, rev, dly, n); }
+#else
 #define SL_NPAT 16
 #define SL_LEN 4096u                    /* recording, 22.05 kHz samples a track: 186 ms, 8 KB */
 #define SL_RAMP_LOG2 7
@@ -204,3 +221,4 @@ static void slicer_drums(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, u
         }
     }
 }
+#endif   /* FELUCCA_SLICER */

@@ -1932,7 +1932,7 @@ static void t_midicc(void)
     song.g[G_ROUTE] = 0;
     a = &trk[0]; b = &trk[1];
     a->eng_req = a->engine = 0;                         /* ANALOG: has RES */
-    b->eng_req = b->engine = 1;                         /* DIGITAL: none */
+    b->eng_req = b->engine = 7;                         /* WHEEL: none (RAPTOR: DIGITAL is out) */
     for (i = 0; i < 8u; i++)
         if (str_eq(ENGINES[0]->edit[i].label, "RES"))
             res = i;

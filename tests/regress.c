@@ -815,8 +815,8 @@ int main(int argc, char **argv)
     uint32_t jobs_at_once = getenv("JOBS") ? (uint32_t)atoi(getenv("JOBS")) : 8u;
     static const char *const MN[4] = {"POLY", "MONO", "LEGATO", "UNISON"};
     static const char *const SN[6] = {"dry", "chorus", "delay", "reverb", "all", "dist"};
-    static const uint8_t MODE_E[3][2] = {{0, 0}, {1, 1}, {5, 0}};   /* engine, preset */
-    static const uint8_t SEND_E[2][2] = {{0, 7}, {1, 0}};   /* ANALOG TRAP PLUCK, DIGITAL RHODES */
+    static const uint8_t MODE_E[3][2] = {{0, 0}, {2, 1}, {5, 0}};   /* engine, preset (RAPTOR: PHASE for DIGITAL, out) */
+    static const uint8_t SEND_E[2][2] = {{0, 7}, {2, 0}};   /* ANALOG, PHASE (RAPTOR: DIGITAL is out) */
     static uint8_t cpu_parts[MAXJ][NPART + 1][3];
     static kv_t gold[MAXJ], cpu[MAXJ];
     uint32_t ng, nc, e, pi, i, g0, g1, c0, c1, k0, ncpu = 0;
@@ -832,7 +832,7 @@ int main(int argc, char **argv)
     /* 1 + 2: the golden renders */
     g0 = nj;
     for (e = 0; e < NENGINES; e++)
-        for (pi = 0; pi < ENGINES[e]->npresets; pi++) {
+        for (pi = 0; pi < ENGINES[e]->npresets && (FELUCCA_DIGITAL || e != 1u); pi++) {   /* (RAPTOR: engine 1 out) */
             job_t *j;
             slug(s, ENGINES[e]->presets[pi].name, sizeof s);
             snprintf(name, sizeof name, "preset/%s/%02u_%s", ENGINES[e]->name, pi, s);
@@ -860,13 +860,15 @@ int main(int argc, char **argv)
             j->arg = (uint8_t)k0;
         }
     add(J_SONG, "song/4track_mix");
-    {   /* the SLICER */
+#if FELUCCA_SLICER
+    {   /* the SLICER (RAPTOR: out, core.h) */
         job_t *j = add(J_SLICER, "slicer/gate/ANALOG_DARK_STR");
         j->e = 0, j->pi = 10, j->arg = 0;
         j = add(J_SLICER, "slicer/stut/DIGITAL_RHODES");
         j->e = 1, j->pi = 0, j->arg = 1;
         add(J_SONG, "slicer/song_gate_stut")->arg = 1;
     }
+#endif
     g1 = nj;
     {   /* determinism: the first preset render once more */
         job_t *j = add(J_PRESET, "repeat");
@@ -888,7 +890,7 @@ int main(int argc, char **argv)
     /* 3: CPU, one child at a time (the ns are for information; the instruction counts do not care) */
     c0 = nj;
     for (e = 0; e < NENGINES; e++)
-        for (pi = 0; pi < ENGINES[e]->npresets; pi++) {
+        for (pi = 0; pi < ENGINES[e]->npresets && (FELUCCA_DIGITAL || e != 1u); pi++) {
             job_t *j;
             slug(s, ENGINES[e]->presets[pi].name, sizeof s);
             snprintf(name, sizeof name, "cpu/%s/%02u_%s", ENGINES[e]->name, pi, s);

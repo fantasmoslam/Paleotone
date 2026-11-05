@@ -16,6 +16,18 @@
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #define NSTEP 64
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
+#ifndef FELUCCA_SLICER
+#define FELUCCA_SLICER 0         /* RAPTOR: the per-track SLICER insert is out (slicer.c: its 48 KB recorder went to
+                                  * Paleotone's effects); 1 builds it back */
+#endif
+#ifndef FELUCCA_DIGITAL
+#define FELUCCA_DIGITAL 0        /* RAPTOR: SLOOP's DIGITAL (FM) engine is out: engine 1 keeps its number (projects, presets,
+                                  * the editor protocol) and is never offered; a part on it loads as the track's default sound
+                                  * (project.c proj_foreign_parts). 1 builds it back */
+#endif
+#ifndef FELUCCA_VIS
+#define FELUCCA_VIS 0            /* RAPTOR: the full-screen visualiser is out (ui_vis.c, ~6 KB of RAM); 1 builds it back */
+#endif
 #ifndef FELUCCA_SLICE
 #define FELUCCA_SLICE 0          /* the SLICE engine (eng_slice.c): kept in the tree, not built by default */
 #endif

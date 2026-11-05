@@ -657,10 +657,13 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
     t->p[P_ED_FX] = preset_trim(t->eng_req % NENGINES, pi);  /* level-matched (tools/level_presets.py) */
     t->p[P_VOICE] = e->presets[pi].mono ? V_LEGATO : V_POLY;   /* mono presets keep the legato feel */
     {   /* the rest of the patch: sends, arpeggiator (never a pattern: LIVE) */
-        static const uint8_t FX_DEF[4] = {0, 24, 28, 36};
+        static const uint8_t FX_DEF[4] = {0, 24, 28, 18};   /* (RAPTOR: REV 18, Paleotone's 36) */
         const preset_t *pr = &e->presets[pi];
         for (i = 0; i < 4u; i++) {
             t->p[P_DIST + i] = (int16_t)(pr->fx[i] ? pr->fx[i] - 1 : FX_DEF[i]);
+            if (i == 3u && pr->fx[i])
+                t->p[P_REV] = (int16_t)(t->p[P_REV] / 2);   /* RAPTOR (the owner): half of Paleotone's reverb send,
+                                                             * every sound less washed in HALL */
             if (!keep_arp)
                 t->p[P_AMODE + i] = (int16_t)(pr->arp[i] ? pr->arp[i] - 1 : TP[P_AMODE + i].def);
         }
