@@ -4,6 +4,12 @@ SLOOP Pro is SLOOP on the M-VAVE SMK-37. It exists because many people shared th
 time in the open. This page names everyone whose work is in it, what they did, and where to find it. Every part is
 GPL-3.0-only unless the table at the end says otherwise ([LICENSING.md](LICENSING.md)).
 
+## The dino groovebox
+
+A fork of SLOOP Pro 2.8.4 (isod89/sloop-pro, 701844b) by fantasmoslam (Dylan). The SAURUS creature-voice engine
+(`firmware/src/eng_saurus.c`) and its calls come from PALEOTONE (formerly DINOBOX, github.com/fantasmoslam/Paleotone),
+itself a fork of GHOULBOX by Jason Persinger on Felucca by Leo Kuroshita, Hügelton Instruments.
+
 ## SLOOP Pro
 
 - **isod89 (Sodwave)**, [isod89/sloop-pro](https://github.com/isod89/sloop-pro): SLOOP Pro, the port of SLOOP 2.8.4
