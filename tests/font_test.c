@@ -23,7 +23,7 @@ static uint32_t hash_cv(uint32_t h)
 {
     uint32_t i;
     for (i = 0; i < cv_w * cv_h; i++)
-        h = (h ^ cv_px[i]) * 16777619u;
+        h = (h ^ cv_lut[cv_px[i]]) * 16777619u;   /* (RAPTOR: the canvas holds colour indices) */
     return h;
 }
 static uint32_t render_all(const felucca_font_t *f, uint32_t ch_hi)
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
             for (y = 0; y < 16u; y++)
                 for (x = 0; x < 12u; x++) {
                     int on = x >= FONT_PAD && x < FONT_PAD + 8u && ((bdf[k][y] >> (7u - (x - FONT_PAD))) & 1u);
-                    wrong += (cv_px[y * 12u + x] != 0) != on;
+                    wrong += (cv_lut[cv_px[y * 12u + x]] != 0) != on;
                 }
             n++;
         }

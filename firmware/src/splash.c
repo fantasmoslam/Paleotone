@@ -27,7 +27,7 @@ UI_SMALL static void sloop_logo_draw(uint32_t y0)
             cv_px[y * 240u + off + x] = cv_px[(y / k) * 240u + x / k];
     for (y = 0; y < h * k; y++)                         /* (the small one's left-over columns) */
         for (x = 0; x < off; x++)
-            cv_px[y * 240u + x] = swap16(C_BLACK);
+            cv_px[y * 240u + x] = (uint8_t)cv_ci(C_BLACK);
     cv_blit(0, y0 + 60u);
 }
 #else
@@ -43,7 +43,7 @@ UI_SMALL static void sloop_logo_draw(uint32_t y0)
             uint32_t run = (SLOOP_SPLASH_RLE[i] >> 4) + 1u, c = SLOOP_SPLASH_RLE[i] & 15u, p;
             if (c && pos + run > lo)
                 for (p = pos < lo ? lo : pos; p < pos + run && p < hi; p++)
-                    cv_px[p - lo] = swap16(SLOOP_SPLASH_PAL[c]);
+                    cv_px[p - lo] = (uint8_t)cv_ci(SLOOP_SPLASH_PAL[c]);
             pos += run;
         }
         cv_blit((240u - SLOOP_SPLASH_W) / 2u, y0 + r0);

@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Small-canvas renderer (no full framebuffer). Draw text/lines into
- * an off-screen strip, then blit it in one DMA transfer. Pixels are stored
- * byte-swapped (the panel takes RGB565 big-endian). */
+ * an off-screen strip, then blit it. RAPTOR: a pixel is a byte, an index into the canvas's own colour table
+ * (cv_lut, up to 256 colours a canvas, filled as colours are drawn); cv_blit turns the rows into the panel's
+ * byte-swapped RGB565 (big-endian) in two small line buffers, one going out by DMA while the next is filled.
+ * Half the RAM of a 16-bit strip (29 KB given to the delay line); the same pixels on the screen. */
 /* UI_SMALL: the screens' and the buttons' functions (panel.c, ui*.c, icons.c; never in the audio
  * path) are compiled for size (clang minsize, as -Oz). 2.7: the drums' SOUND page and the favourites
  * made the image overflow the flash (XIP); this gives it back with nothing taken out. */
@@ -28,8 +30,17 @@ typedef struct {               /* proportional, see tools/gen_font.py */
 #include "felucca_font.h"
 
 #define CV_MAX (240u * 124u)      /* the graph strip is 240 x 124 */
-static uint16_t cv_px[CV_MAX] __attribute__((section(".pool")));
+static uint8_t cv_px[CV_MAX] __attribute__((section(".pool")));   /* colour indices (cv_lut) */
 static uint32_t cv_w, cv_h;
+#define CV_NC 256u                /* colours a canvas */
+#define CV_HN 512u                /* their hash table */
+#define CV_LB 960u                /* pixels a line buffer (4 rows of 240) */
+static uint16_t cv_lut[CV_NC];    /* index -> RGB565, byte-swapped for the panel */
+static uint16_t cv_hk[CV_HN];     /* colour -> index + 1 (0: free) */
+static uint32_t cv_nc;            /* colours in cv_lut */
+static uint32_t cv_last = 0x10000u, cv_last_i;   /* (the last colour asked for: lines, icons) */
+static uint16_t cv_lb[2][CV_LB];  /* the panel's rows, one going out while the other is filled */
+static uint32_t cv_lbi;
 static int32_t cv_oy;            /* y offset for graph drawing */
 
 #define RGB(r, g, b) ((uint16_t)((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)))
@@ -189,39 +200,95 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
 
 static inline uint16_t swap16(uint32_t c) { return (uint16_t)(((c >> 8) & 0xFFu) | ((c & 0xFFu) << 8)); }
 
+/* the index of colour c (RGB565) in this canvas's table, added if new; a canvas with more than CV_NC colours
+ * (none on any screen: the five steps, white, the tracks' colours and the text's 15 blend steps of each) gets the
+ * nearest one */
+static uint32_t cv_ci(uint32_t c)
+{
+    uint32_t h, n, sc = swap16(c), best = 0, bd = 0xFFFFFFFFu, i;
+    c &= 0xFFFFu;
+    if (c == cv_last)
+        return cv_last_i;
+    h = ((c * 40503u) >> 7) & (CV_HN - 1u);
+    for (n = 0; n < 16u; n++, h = (h + 1u) & (CV_HN - 1u)) {
+        uint32_t e = cv_hk[h];
+        if (!e)
+            break;
+        if (cv_lut[e - 1u] == sc) {
+            cv_last = c;
+            return cv_last_i = e - 1u;
+        }
+    }
+    if (n < 16u && cv_nc < CV_NC) {
+        cv_lut[cv_nc] = (uint16_t)sc;
+        cv_hk[h] = (uint16_t)++cv_nc;
+        cv_last = c;
+        return cv_last_i = cv_nc - 1u;
+    }
+    for (i = 0; i < cv_nc; i++) {                       /* (full: the nearest, by the sum of squares of R, G, B) */
+        uint32_t o = swap16(cv_lut[i]);
+        int32_t dr = (int32_t)(o >> 11) - (int32_t)(c >> 11), dg = (int32_t)((o >> 5) & 63u) - (int32_t)((c >> 5) & 63u),
+                db = (int32_t)(o & 31u) - (int32_t)(c & 31u);
+        uint32_t d = (uint32_t)(4 * dr * dr + dg * dg + 4 * db * db);
+        if (d < bd) {
+            bd = d;
+            best = i;
+        }
+    }
+    return best;
+}
+
 static void cv_begin(uint32_t w, uint32_t h, uint16_t bg)
 {
-    uint32_t i, n;
+    uint32_t n;
+    if (w > CV_LB)
+        w = CV_LB;
     if (w * h > CV_MAX)
         h = CV_MAX / w;
-    lcd_sync();                     /* the last blit may still read cv_px */
     cv_w = w;
     cv_h = h;
     n = w * h;
-    for (i = 0; i < n; i++)
-        cv_px[i] = swap16(bg);
+    memset(cv_hk, 0, sizeof cv_hk);                     /* a new table: the background is index 0 */
+    cv_nc = 0;
+    cv_last = 0x10000u;
+    memset(cv_px, (int)cv_ci(bg), n);
 }
 
-static void cv_blit(uint32_t x, uint32_t y) { lcd_blit(x, y, cv_w, cv_h, cv_px); }
-
-/* canvas rows r0 .. cv_h-1 only, to screen row y + r0 */
+/* canvas rows r0 .. cv_h-1, to screen row y + r0: converted to RGB565 a few rows at a time */
 static void cv_blit_from(uint32_t x, uint32_t y, uint32_t r0)
 {
-    if (r0 < cv_h)
-        lcd_blit(x, y + r0, cv_w, cv_h - r0, cv_px + r0 * cv_w);
+    uint32_t w = cv_w, rows = w ? CV_LB / w : 0, r, i, n;
+    for (r = r0; rows && r < cv_h; r += n) {
+        uint16_t *d = cv_lb[cv_lbi];                    /* (its last transfer ended: lcd_blit waited for it
+                                                         * before starting the other buffer's) */
+        const uint8_t *s = cv_px + r * w;
+        n = cv_h - r < rows ? cv_h - r : rows;
+        for (i = 0; i < n * w; i++)
+            d[i] = cv_lut[s[i]];
+        lcd_blit(x, y + r, w, n, d);
+        cv_lbi ^= 1u;
+    }
 }
 
+static void cv_blit(uint32_t x, uint32_t y) { cv_blit_from(x, y, 0); }
+
+static inline void cv_pseti(int32_t x, int32_t y, uint32_t ci)   /* a colour index (cv_ci) */
+{
+    y += cv_oy;
+    if ((uint32_t)x < cv_w && (uint32_t)y < cv_h)
+        cv_px[(uint32_t)y * cv_w + (uint32_t)x] = (uint8_t)ci;
+}
 static inline void cv_pset(int32_t x, int32_t y, uint16_t c)
 {
     y += cv_oy;
     if ((uint32_t)x < cv_w && (uint32_t)y < cv_h)
-        cv_px[(uint32_t)y * cv_w + (uint32_t)x] = swap16(c);
+        cv_px[(uint32_t)y * cv_w + (uint32_t)x] = (uint8_t)cv_ci(c);
 }
 
 static void cv_rect(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
 {
     int32_t x1 = x + w, y1 = y + h + cv_oy, i;
-    uint16_t sc = swap16(c);
+    uint8_t sc = (uint8_t)cv_ci(c);
     y += cv_oy;                             /* clipped once, then filled row by row */
     if (x < 0)
         x = 0;
@@ -272,10 +339,12 @@ static uint32_t glyph(const felucca_font_t *f, uint32_t ch)
 /* text, alpha-blended onto the background with colour c; returns the end x */
 static int32_t cv_text(int32_t x, int32_t y, const felucca_font_t *f, const char *s, uint16_t c)
 {
-    uint16_t ramp[16];
+    uint16_t ramp[16];                                 /* the blend steps' colour indices (0xFFFF: not yet) */
     uint32_t a;
     for (a = 0; a < 16u; a++)
-        ramp[a] = rgb565_over(c, a, 15u);              /* (on black: c * a / 15, as before) */
+        ramp[a] = 0xFFFFu;                             /* (only the steps a glyph uses take a colour) */
+#define CV_RAMP(v) (ramp[v] != 0xFFFFu ? ramp[v] : (ramp[v] = (uint16_t)cv_ci(rgb565_over(c, (v), 15u))))   /* (on black:
+                                                                                     * c * v / 15, as before) */
     for (; *s; s++) {
         uint32_t gi = glyph(f, (uint8_t)*s), gx, gy, w, bpr;
         const uint8_t *gd;
@@ -287,7 +356,7 @@ static int32_t cv_text(int32_t x, int32_t y, const felucca_font_t *f, const char
                 for (gx = 0; gx < w; gx++) {
                     uint32_t i = (gy >> f->sh) * sw + (gx >> f->sh);
                     if ((gd[i >> 3] >> (7u - (i & 7u))) & 1u)
-                        cv_pset(x - f->pad + (int32_t)gx, y + (int32_t)gy, ramp[15]);
+                        cv_pseti(x - f->pad + (int32_t)gx, y + (int32_t)gy, CV_RAMP(15u));
                 }
             x += f->adv[gi];
             continue;
@@ -298,10 +367,11 @@ static int32_t cv_text(int32_t x, int32_t y, const felucca_font_t *f, const char
                 uint32_t sx = gx >> f->sh, v = gd[(gy >> f->sh) * bpr + sx / 2u];
                 v = (sx & 1u) ? (v & 15u) : (v >> 4);
                 if (v)
-                    cv_pset(x - f->pad + (int32_t)gx, y + (int32_t)gy, ramp[v]);
+                    cv_pseti(x - f->pad + (int32_t)gx, y + (int32_t)gy, CV_RAMP(v));
             }
         x += f->adv[gi];
     }
+#undef CV_RAMP
     return x;
 }
 

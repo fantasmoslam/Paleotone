@@ -231,6 +231,7 @@ def build_app():
                                ("common/bin/objdump", "-d", elf),
                                ("common/bin/objdump", "-d", "-j", ".ram_text", elf))
     (OUT / "felucca.dis").write_text(dis)
+    (OUT / "felucca.syms").write_text(syms)    # (RAPTOR: the RAM map, by object: the CI lists the big ones)
 
     def symv(name):
         return int(re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M).group(1), 16)

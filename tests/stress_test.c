@@ -72,9 +72,9 @@ static void t_font(void)
     for (c = 32; c < 128u; c++) {                     /* every character, lower case folding to capitals */
         s[0] = (char)c; s[1] = 0;
         cv_begin(40, 40, C_BLACK); cv_text(6, 3, &FONT_L2X, s, C_HI);
-        memcpy(a, cv_px, sizeof(uint16_t) * 40u * 40u);
+        for (i = 0; i < 40u * 40u; i++) a[i] = cv_lut[cv_px[i]];   /* (RAPTOR: colour indices) */
         cv_begin(40, 40, C_BLACK); cv_text(6, 3, &FONT_L, s, C_HI);
-        for (i = 0; i < 40u * 40u; i++) { n++; bad += a[i] != cv_px[i]; }
+        for (i = 0; i < 40u * 40u; i++) { n++; bad += a[i] != cv_lut[cv_px[i]]; }
         scheck(text_w(&FONT_L, s) == text_w(&FONT_L2X, s) && text_w(&FONT_L, s) == 2 * text_w(&FONT_S, c < 'a' || c > 'z' ? s : "A"),
                "font: L advance = 2 x S");
     }
