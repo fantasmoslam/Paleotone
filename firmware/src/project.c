@@ -168,8 +168,8 @@ _Static_assert(sizeof(project_v2_t) == 2552u && sizeof(project_v1_t) == 688u && 
 _Static_assert(sizeof(project_v6_t) == 3816u, "format 6 as it was stored");
 _Static_assert(PROJ_MAIN_LEN <= 3840u && PROJ_EXT_LEN <= 3840u && PROJ_MAIN_LEN != sizeof(project_v6_t),
                "format 7: each part fits one flash object (storage.c ST_PAYLOAD_MAX)");
-project_t proj_slot[4] __attribute__((section(".pool")));   /* (RAPTOR: 23 KB, more than .noinit holds: zeroed at boot,
-                                                              * filled from flash) */
+project_t proj_slot[4];                         /* (RAPTOR: 23 KB, more than .noinit holds: in .bss, zeroed at boot,
+                                                 * filled from flash) */
 
 UI_SMALL static uint32_t proj_hash(const void *p, uint32_t n)   /* FNV-1a over n bytes */
 {
@@ -650,7 +650,7 @@ static union {
     project_v3_t v3;
     project_v2_t v2;
     project_v1_t v1;
-} proj_tmp;
+} proj_tmp __attribute__((section(".noinit.big")));   /* (RAPTOR: always filled before it is read: app.ld) */
 UI_SMALL static void *up_stage(void) { return &proj_tmp; }
 /* RAPTOR: a project object (OBJ_PROJECT0 + k, OBJ_AUTOSAVE) in its two parts (PROJ_MAIN_LEN). The extension first, the
  * main part last: the main part commits the save. len 0: both empty. Boards with no flash for the extension (the FM-1,

@@ -34,8 +34,10 @@ SECTIONS
     _data_load = LOADADDR(.data);
     .bss (NOLOAD) : { _bss_start = .; *(.bss*) *(.sbss*) *(COMMON) . = ALIGN(4); _bss_end = .; } > RAM
     .pool (NOLOAD) : { _pool_start = .; *(.pool*) . = ALIGN(4); _pool_end = .; } > POOL
-    /* (SLOOP 2.8.3) .noinit.c1bar (fm1_cpu1.h, one core until power-off) after the others: none of them moves */
-    .noinit (NOLOAD) : { *(.noinit) *(.noinit.*) } > NOINIT
+    /* (SLOOP 2.8.3) .noinit.c1bar (fm1_cpu1.h, one core until power-off) after the others: none of them moves.
+     * RAPTOR: then .noinit.big, buffers always written before they are read (garbage after a power-off is no harm):
+     * the project load buffer and song mode's kept loop (project.c proj_tmp, arranger_scene.c song_keep) */
+    .noinit (NOLOAD) : { *(.noinit) *(.noinit.c1bar) . = ALIGN(8); *(.noinit.big) } > NOINIT
     _guard0 = 0x01C74000; _ustack_lo = 0x01C74100; _ustack_top = 0x01C7A000;
     _guard1 = 0x01C7A000; _sstack_lo = 0x01C7A100; _sstack_top = 0x01C7C000;
     /DISCARD/ : { *(.comment) *(.note*) }

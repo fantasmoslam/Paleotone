@@ -45,12 +45,15 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out
-          FELUCCA_DATA_FAMILY=DINOGRV BOARD=smk37 MODEL=elite bash build.sh 2>&1 | tee out/build-elite.log | tail -15
-          cp build/*elite*.fwsc out/
+          rc=0
+          FELUCCA_DATA_FAMILY=DINOGRV BOARD=smk37 MODEL=elite bash build.sh 2>&1 | tee out/build-elite.log | tail -15 || rc=$?
           # the RAM map: every object of 256 bytes or more in .pool, .bss, .lowram, .noinit, biggest first
           python3 -c 'import re,sys
           rows=[(int(m.group(2),16),m.group(1),m.group(3)) for m in re.finditer(r"\s(\.(?:pool|bss|lowram|noinit)\S*)\s+([0-9a-f]+)\s+(\S+)$",open("build/felucca.syms").read(),re.M)]
           [print("%7d %-12s %s"%r) for r in sorted(rows,reverse=True) if r[0]>=256]' > out/ram-elite.txt || true
+          head -40 out/ram-elite.txt
+          [ "$rc" = 0 ] || exit "$rc"
+          cp build/*elite*.fwsc out/
           sha256sum out/*.fwsc | tee out/sha256.txt
 
       - name: FM-1 build (and the host tests run against it)

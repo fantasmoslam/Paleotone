@@ -17,7 +17,7 @@
 #define TP_C (140 << 8)                                 /* its centre delay, Q8 samples (~3.2 ms) */
 #define TP_WOW_INC 1558426u                             /* phase steps per block (FS / CTL a second): 0.5 Hz */
 #define TP_FLUT_INC 21818000u                           /* 7 Hz */
-static int32_t tp_buf[2][TP_LEN] __attribute__((section(".pool")));
+static int32_t tp_buf[2][TP_LEN] __attribute__((section(".lowram")));   /* (RAPTOR: the pool holds the 1.49 s delay) */
 static struct {
     uint32_t w, ph_wow, ph_flut, hold_n;
     int32_t d_prev, drift, drift_to, rng, hiss_lp[2], lp1[2], lp2[2], hold[2];

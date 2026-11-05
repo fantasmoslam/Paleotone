@@ -47,7 +47,8 @@ static void arrangement_apply(uint32_t scene)
 
 /* ---- song mode keeps the loop you made: PLAY in song mode puts it aside (each section then plays
  * over the tracks), STOP (or the song's end) brings it back */
-static project_t song_keep __attribute__((section(".pool")));
+static project_t song_keep __attribute__((section(".noinit.big")));   /* (RAPTOR: read only once song_kept says it was
+                                                                         * written: app.ld) */
 static uint8_t song_kept;
 static void song_backup(void)                  /* (audio ISR: seq_start) */
 {

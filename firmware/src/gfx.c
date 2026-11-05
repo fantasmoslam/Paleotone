@@ -35,10 +35,10 @@ static uint32_t cv_w, cv_h;
 #define CV_NC 256u                /* colours a canvas */
 #define CV_HN 512u                /* their hash table */
 #define CV_LB 960u                /* pixels a line buffer (4 rows of 240) */
-static uint16_t cv_lut[CV_NC];    /* index -> RGB565, byte-swapped for the panel */
-static uint16_t cv_hk[CV_HN];     /* colour -> index + 1 (0: free) */
+static uint16_t cv_lut[CV_NC] __attribute__((section(".lowram")));   /* index -> RGB565, byte-swapped for the panel */
+static uint16_t cv_hk[CV_HN] __attribute__((section(".lowram")));    /* colour -> index + 1 (0: free) */
 static uint32_t cv_nc;            /* colours in cv_lut */
-static uint32_t cv_last = 0x10000u, cv_last_i;   /* (the last colour asked for: lines, icons) */
+static uint32_t cv_last = 1u << 16, cv_last_i;   /* (the last colour asked for: lines, icons; none: past 16 bits) */
 static uint16_t cv_lb[2][CV_LB];  /* the panel's rows, one going out while the other is filled */
 static uint32_t cv_lbi;
 static int32_t cv_oy;            /* y offset for graph drawing */
@@ -250,7 +250,7 @@ static void cv_begin(uint32_t w, uint32_t h, uint16_t bg)
     n = w * h;
     memset(cv_hk, 0, sizeof cv_hk);                     /* a new table: the background is index 0 */
     cv_nc = 0;
-    cv_last = 0x10000u;
+    cv_last = 1u << 16;
     memset(cv_px, (int)cv_ci(bg), n);
 }
 
