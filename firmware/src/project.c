@@ -445,7 +445,8 @@ UI_SMALL static int proj_import(project_t *q, const void *b, int n)
     }
     if ((n == (int)sizeof *q || n == (int)PROJ_MAIN_LEN) && s->magic == PROJ_MAGIC && s->size == sizeof *q) {
         uint32_t i;
-        memmove(q, b, PROJ_MAIN_LEN);
+        if ((const void *)q != b)                       /* (no memmove in the firmware: the same buffer or none) */
+            memcpy(q, b, PROJ_MAIN_LEN);
         for (i = PROJ_MAIN_NT; i < NTRK; i++)
             proj_trk_fresh(q, i);
         q->sum = proj_sum(q);
