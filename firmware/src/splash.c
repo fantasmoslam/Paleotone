@@ -55,6 +55,11 @@ UI_SMALL static void sloop_logo_draw(uint32_t y0)
 UI_SMALL static void sloop_splash(void)
 {
     lcd_fill(0, 0, 240, 240, C_BLACK);
+#if !FELUCCA_LOGO_TEXT && defined(RAPTOR_SPLASH_FULL)
+    sloop_logo_draw(0);                                 /* RAPTOR: the owner's art is the whole screen (its own version and
+                                                         * credits: tools/gen_raptor_splash.py) */
+    return;
+#endif
     sloop_logo_draw(10);
     const char *v = FELUCCA_VERSION;
     if (v[0] == 'S' && v[1] == 'L' && v[5] == ' ')

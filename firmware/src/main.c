@@ -267,7 +267,7 @@ UI_SMALL static void felucca_init(void)
 UI_SMALL static void fm1_main(void)
 {
     int32_t knob = 512 * 16;
-    uint32_t healthy_since;
+    uint32_t healthy_since, splash_t0;
     persist_boot();
 #if FELUCCA_OTA
     if (flash_ok)
@@ -275,7 +275,8 @@ UI_SMALL static void fm1_main(void)
 #endif
     settings_init();
     lcd_init();
-    sloop_splash();                                     /* the SLOOP logo (splash.c) */
+    sloop_splash();                                     /* the RAPTOR logo (splash.c) */
+    splash_t0 = fm1_ticks();
     if (felucca_dbg.magic != DBG_MAGIC) {
         memset(&felucca_dbg, 0, sizeof felucca_dbg);
         felucca_dbg.magic = DBG_MAGIC;
@@ -325,7 +326,13 @@ UI_SMALL static void fm1_main(void)
         panel_setup();                        /* OCT- + OCT+ held at power-on */
         settings_save();
     }
-    fm1_delay_ms(900);                                  /* (the logo stays a moment) */
+    {   /* RAPTOR: the logo stays 3 s (the owner) from when it was drawn; the watchdog fed meanwhile */
+        uint32_t i;
+        for (i = 0; i < 300u && (uint32_t)(fm1_ticks() - splash_t0) < 3000u * 1000u * FM1_TICKS_PER_US; i++) {
+            fm1_wdt_feed();
+            fm1_delay_ms(10);
+        }
+    }
     lcd_fill(0, 0, 240, 240, C_BLACK);
 
     healthy_since = fm1_ms;
