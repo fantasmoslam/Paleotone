@@ -87,9 +87,7 @@ run "live UI: pages, layers (punch, steps, erase, roll, key, mix), holds, drums,
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/pick_test" tests/pick_test.c -lm
 run "SMK-37 Pro pad sound picker: pages by kind, pads load, < >, drum kits" "$OUT/pick_test" "$OUT"
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/fbank_test" tests/fbank_test.c -lm
-run "SMK-37 Pro FADER BANK screen: banks wrap (SLOOP Pro: E ENV), what each fader sets, closes by itself" "$OUT/fbank_test" "$OUT"
-$CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/fader_level_test" tests/fader_level_test.c -lm
-run "SMK-37 Pro FADER BANK A (#7): faders 1..3 the tracks' LEVEL by GM's law, silent at the bottom, no mute in the travel" "$OUT/fader_level_test" "$OUT"
+run "SMK-37 Pro FADER BANK screen: banks wrap (RAPTOR: A ENV, no LEVEL), what each fader sets, closes by itself" "$OUT/fbank_test" "$OUT"
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/k4led_test" tests/k4led_test.c -lm
 run "SMK-37 Pro: KNOB BANK lit on a PRESETS detent; which modes are a grid" "$OUT/k4led_test" "$OUT"
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/knob_walk_test" tests/knob_walk_test.c -lm

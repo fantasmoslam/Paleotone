@@ -5,10 +5,10 @@
 /* The LED picture is built off-line and copied one byte per column: clearing
  * and relighting would let the 10 kHz scan catch the dark gap and flicker. */
 #if BOARD_SMK37
-/* FADER BANK: 0 level, 1 filter, 2 reverb, 3 delay, 4 env (main.c smk_faders). RAPTOR: E ENV at power-on (faders 1..4
- * the selected track's ATTACK DECAY SUSTAIN RELEASE, as on a synth); the track levels are bank A (FADER BANK) */
-static uint8_t smk_fbank = 4, smk_fbank_new;
-#define FB_N 5u                                    /* the banks, A..E (ui_fbank.c) */
+/* FADER BANK: 0 env (the power-on bank: faders 1..4 the selected track's ATTACK DECAY SUSTAIN RELEASE, as printed),
+ * 1 filter, 2 reverb, 3 delay (main.c smk_faders). RAPTOR: no level bank */
+static uint8_t smk_fbank, smk_fbank_new;
+#define FB_N 4u                                    /* the banks, A..D (ui_fbank.c) */
 static uint8_t pad_steps;                          /* the pads on the PLAY layer: 0 DRUM KIT (the default), 1 NOTES (the
                                                     * selected track's sound on the 16 white keys F3..G5), 2 STEPS;
                                                     * KNOB BANK + FADER BANK, in that order (smk_input.h, seq.c
