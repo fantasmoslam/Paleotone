@@ -15,6 +15,8 @@ static uint8_t pad_steps;                          /* the pads on the PLAY layer
                                                     * pad_drum); not kept */
 #define PADS_NOTES 1u
 #define PADS_STEPS 2u
+#define PADS_CALLS 3u                              /* RAPTOR: each pad a call slot (seq.c call_pad) */
+#define PADS_N 4u
 /* SMK-37 Pro: one flag per id. Ids 0..18 are the button LEDs (smk_input.h), the note keys (no LEDs of
  * their own) take LED_KEY0 + k; ui_leds shows white keys F3..G5 on the 16 RGB pads. */
 #define LED_BUF 64u
@@ -310,13 +312,15 @@ UI_SMALL static void ui_leds(void)
     smk_pad_grid = (uint8_t)padgrid_on();          /* (steps and tiles: reading order) */
     smk_pad_drums = (uint8_t)(!pad_steps && ui.layer == LY_PLAY && !smk_pad_grid);   /* the pads: DRUM KIT, NOTES (neither: */
     smk_pad_steps = (uint8_t)(pad_steps == PADS_STEPS && ui.layer == LY_PLAY && !smk_pad_grid);   /* the white keys) or STEPS */
+    smk_pad_calls = (uint8_t)(pad_steps == PADS_CALLS && ui.layer == LY_PLAY && !smk_pad_grid);   /* or CALLS */
     if (!is_drum(TSEL) && TSEL->p[P_AMODE])        /* ARP lit while the selected track's arpeggiator runs */
         fm1_led[panel.btn[B_ARP]] = 1;
     if (ms_pending(&bled_hold_until))   /* (console bled: only that LED) */
         for (c = 0; c < SMK_NLED; c++)
             fm1_led[c] = c == bled_id;
     if (!ms_pending(&padled_hold_until)) {   /* the pads. Off is off: no glow layers */
-        static const uint8_t PAL[NTRK][3] = {{40, 124, 255}, {30, 204, 112}, {255, 198, 24}, {255, 98, 26}};   /* the screen's track colours (TE_COL) */
+        static const uint8_t PAL[NTRK][3] = {{40, 124, 255}, {30, 204, 112}, {255, 198, 24}, {255, 98, 26},
+                                             {160, 110, 240}, {240, 120, 190}};   /* the track colours (RAPTOR: six) */
         const uint8_t *col = PAL[song.sel % NTRK];
         if (pick_shown())
             pick_leds();
@@ -397,6 +401,12 @@ UI_SMALL static void ui_leds(void)
                 else
                     sh = (p + 120u - (uint32_t)t->p[P_ROOT]) % 12u == 0u ? 2u : 4u;
                 padled_set(SMK_PAD_OF_WHITE(c), (uint8_t)(col[0] >> sh), (uint8_t)(col[1] >> sh), (uint8_t)(col[2] >> sh));
+            }
+        } else if (smk_pad_calls) {                /* CALLS: each pad its slot's track colour, bright while held */
+            for (c = 0; c < 16u; c++) {
+                const uint8_t *tc = PAL[call_trk[c] % NTRK];
+                uint32_t sh = (call_held >> c) & 1u ? 0u : 2u;
+                padled_set(c, (uint8_t)(tc[0] >> sh), (uint8_t)(tc[1] >> sh), (uint8_t)(tc[2] >> sh));
             }
         } else if (smk_pad_drums) {                /* DRUM KIT: the kit in the drum track's colour, a pad a sound: lit
                                                     * while it sounds or is held, the others dim (never dark) */
@@ -693,6 +703,42 @@ UI_SMALL static void project_new(void)
 
 static uint8_t kb_down, kb_used;                          /* RAPTOR: KNOB BANK held; a knob assigned meanwhile */
 /* RAPTOR: KNOB BANK held, knob `slot` turned on a page: its parameter becomes that macro of the selected track */
+#if BOARD_SMK37
+/* CALLS (PADS_CALLS): a pad held, PRESETS turns its note, ALGORITHM its track (the drum track left out); the screen says
+ * "PAD n  T5  C4", or the sound's name on an SFX track in KEYS. The next hit plays it (what sounds ends on its release) */
+UI_SMALL static void call_edit(void)
+{
+    uint32_t h = call_held, p, ti;
+    int32_t dn, dt;
+    char m[28] = "PAD ";
+    const track_t *t;
+    if (!smk_pad_calls || !h)
+        return;
+    dn = panel_enc(EN_PRESET);
+    dt = panel_enc(EN_ALGO);
+    if (!dn && !dt)
+        return;
+    for (p = 0; !((h >> p) & 1u); p++)
+        ;
+    ti = call_trk[p] % NPART;
+    if (dt)
+        ti = (ti + NPART + (dt > 0 ? 1u : NPART - 1u)) % NPART;
+    call_trk[p] = (uint8_t)ti;
+    call_note[p] = (uint8_t)clamp((int32_t)call_note[p] + dn, 0, 127);
+    t = &trk[ti];
+    fmt_int(m + 4, (int32_t)p + 1);
+    str_cpy(m + str_len(m), "  T", 4);
+    fmt_int(m + str_len(m), (int32_t)ti + 1);
+    str_cpy(m + str_len(m), "  ", 3);
+    if (t->eng_req % NENGINES == ENGI_SFX && !t->p[P_E0])
+        str_cpy(m + str_len(m), N_SFX_SOUND[1u + (call_note[p] + 128u - 36u) % SFX_NSND], 12);
+    else
+        note_name(m + str_len(m), call_note[p]);
+    ui_message(m);
+    ui.force = 1;
+}
+#endif
+
 UI_SMALL static void mac_assign(uint32_t slot)
 {
     const page_t *pg = &PAGES[ui.page];
@@ -1372,12 +1418,13 @@ UI_SMALL static void ui_input(void)
             kb_used = 1;                                        /* (RAPTOR: no MACROS toggle on its release) */
             if (fm1_ms - pd_t >= 180u) {
                 pd_t = fm1_ms;
-                pad_steps = (uint8_t)((pad_steps + 1u) % 3u);
+                pad_steps = (uint8_t)((pad_steps + 1u) % PADS_N);
                 pick_close();
                 if (fb_shown())
                     smk_fbank = pd_fbank;                       /* (the bank as before the FADER BANK press) */
                 fb_close();
-                ui_message(pad_steps == PADS_STEPS ? "PADS: STEPS" : pad_steps == PADS_NOTES ? "PADS: NOTES" : "PADS: DRUM KIT");
+                ui_message(pad_steps == PADS_CALLS ? "PADS: CALLS" : pad_steps == PADS_STEPS ? "PADS: STEPS"
+                           : pad_steps == PADS_NOTES ? "PADS: NOTES" : "PADS: DRUM KIT");
                 ui.force = 1;
             }
         } else if (pressed & fbk) {
@@ -1389,6 +1436,7 @@ UI_SMALL static void ui_input(void)
         fb_set(smk_fbank + (fb_shown() ? 1u : 0u));
     }
     fb_expire();                                                /* (it closes by itself) */
+    call_edit();                                                /* CALLS: a pad held, PRESETS / ALGORITHM set it */
     if (fb_shown()) {                                           /* SELECT (K2, or K6) turns the bank there */
         int32_t t = panel_enc(EN_SELECT);
         if (t)

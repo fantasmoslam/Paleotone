@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* SMK-37 Pro pads (firmware/hal/smk_input.h): the step grid in reading order (top-left = step 1),
  * notes low at the bottom (bottom-left = the lowest); on the PLAY layer DRUM KIT (a pad a drum lane, as on the drum
- * track) or STEPS (a pad a step), through the outer-key queue (no note key), its release too. Built -O2 (the IRQ lock's asm is left out). */
+ * track), STEPS (a pad a step) or CALLS (a pad a slot), through the outer-key queue (no note key), its release too. Built -O2 (the IRQ lock's asm is left out). */
 #define BOARD_SMK37 1
 #include "smk_input.h"
 #include <stdio.h>
@@ -85,6 +85,22 @@ int main(void)
         check(smk_pick_hits == 1u << 3 && smk_extkey_take() < 0, "the sound picker up: the pad picks");
         smk__padq(3, 0);
         smk_pad_pick = 0;
+        smk_pad_drums = 0;
+        smk_pad_calls = 1;                      /* RAPTOR CALLS: a pad its slot, press and release */
+        for (ok = 1, p = 0; p < SMK_NPAD; p++) {
+            smk__padq(p, 90);
+            ok &= smk_extkey_take() == (int32_t)((SMK_EXT_CALL + p) << 8 | 90u) && fm1_in.pnotes == 0u;
+            smk__padq(p, 0);
+            ok &= smk_extkey_take() == (int32_t)((SMK_EXT_CALL + p) << 8);
+        }
+        check(ok, "CALLS: each pad its slot, press, release; no note");
+        check(SMK_EXT_CALL >= SMK_EXT_DAW + SMK_NPAD && (SMK_EXT_CALL + 15u) < 0x80u, "CALLS: codes apart from DAW's, a byte");
+        smk__padq(2, 100);
+        smk_extkey_take();
+        smk_pad_calls = 0;
+        smk_pad_drums = 1;
+        smk__padq(2, 0);
+        check(smk_extkey_take() == (int32_t)((SMK_EXT_CALL + 2u) << 8), "CALLS -> DRUM KIT while a pad is held: its slot's release");
         smk_pad_drums = 0;
     }
     printf("padgrid: %s\n", fails ? "FAIL" : "ok");

@@ -2594,12 +2594,50 @@ static void daw_keys_block(void)                  /* the 27 note keys (the outer
     daw_kprev = cur;
 }
 
+/* RAPTOR CALLS (pads mode 4, ui_input.c): each pad a slot, a track and a note, played live as the keys play it (input_on:
+ * recorded when the track is armed, MIDI out on its channel). The top row (pads 0..7) the CALLS track at eight pitches,
+ * the bottom row (pads 8..15) the SFX track's first eight KEYS sounds (C2..G2: eng_sfx.c, note 36 the first). A pad
+ * held, PRESETS its note, ALGORITHM its track (ui_input.c call_edit). What a press played, its release ends */
+static uint8_t call_trk[SMK_NPAD] = {4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3};
+static uint8_t call_note[SMK_NPAD] = {48, 51, 53, 55, 58, 60, 63, 65, 36, 37, 38, 39, 40, 41, 42, 43};
+static uint8_t call_on_t[SMK_NPAD], call_on_n[SMK_NPAD];   /* sounding: its track + 1, its note */
+static volatile uint16_t call_held;               /* pads held (the UI's call_edit) */
+static void call_pad(uint32_t p, uint32_t v)
+{
+    uint32_t ti, n;
+    p &= SMK_NPAD - 1u;
+    if (!v) {
+        call_held &= (uint16_t)~(1u << p);
+        if (!call_on_t[p])
+            return;
+        ti = call_on_t[p] - 1u;
+        call_on_t[p] = 0;
+        input_off(&trk[ti], call_on_n[p]);
+        midi_out_event(0x08u | (0x80u | trk_midi_ch(ti)) << 8 | (uint32_t)call_on_n[p] << 16);
+        return;
+    }
+    call_held |= (uint16_t)(1u << p);
+    if (layer_now() != LY_PLAY || call_on_t[p])
+        return;
+    ti = call_trk[p] % NTRK;
+    n = call_note[p] & 127u;
+    call_on_t[p] = (uint8_t)(ti + 1u);
+    call_on_n[p] = (uint8_t)n;
+    input_on(&trk[ti], n, v);
+    midi_out_event(0x09u | (0x90u | trk_midi_ch(ti)) << 8 | n << 16 | v << 24);
+}
+
 static void ext_keys_block(void)
 {
     int32_t e;
     while ((e = smk_extkey_take()) >= 0) {
         uint32_t k = (uint32_t)e >> 8, v = vel_apply(vel_mode, (uint32_t)e & 0xFFu), sel = song.sel % NTRK, mc;
         track_t *t = &trk[sel];
+        if (k >= SMK_EXT_CALL) {                          /* CALLS: a pad, its slot */
+            if (k - SMK_EXT_CALL < SMK_NPAD)
+                call_pad(k - SMK_EXT_CALL, v);
+            continue;
+        }
         if (k >= SMK_EXT_DAW) {                           /* DAW mode: a pad */
             if (k - SMK_EXT_DAW < SMK_NPAD)
                 daw_pad(k - SMK_EXT_DAW, v);

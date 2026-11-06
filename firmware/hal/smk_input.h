@@ -119,6 +119,9 @@ static volatile uint8_t smk_pad_drums, smk_pad_steps;
  * hardware pad (seq.c daw_pad); its release too, whatever the mode is by then */
 static volatile uint8_t smk_pad_daw;
 #define SMK_EXT_DAW 0x60u
+/* RAPTOR CALLS (the UI sets smk_pad_calls): a pad goes to the outer-key queue as SMK_EXT_CALL + the pad (seq.c call_pad) */
+#define SMK_EXT_CALL 0x70u
+static volatile uint8_t smk_pad_calls;
 #define SMK_WHITE_OF_PAD(p) ((p) < 8u ? (p) + 8u : (p) - 8u)
 #define SMK_PAD_OF_KEY(w) (smk_pad_grid ? (w) : SMK_PAD_OF_WHITE(w))   /* white key -> pad, as the pads are now */
 
@@ -518,8 +521,9 @@ static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or rele
             smk_pick_hits |= (uint16_t)(1u << pad);
             return;
         }
-        if ((smk_pad_drums || smk_pad_steps) && !smk_pad_piano && !smk_pad_grid) {   /* DRUM KIT / STEPS: no note key */
-            n = smk_pad_steps ? SMK_EXT_STEP + pad : SMK_EXT_PAD + SMK_WHITE_OF_PAD(pad);
+        if ((smk_pad_drums || smk_pad_steps || smk_pad_calls) && !smk_pad_piano && !smk_pad_grid) {   /* DRUM KIT / STEPS /
+                                                       * CALLS: no note key */
+            n = smk_pad_calls ? SMK_EXT_CALL + pad : smk_pad_steps ? SMK_EXT_STEP + pad : SMK_EXT_PAD + SMK_WHITE_OF_PAD(pad);
             smk_pad_note[pad] = (uint8_t)n;
             smk__extq(n, vel);
             return;
