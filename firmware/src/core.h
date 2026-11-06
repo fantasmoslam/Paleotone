@@ -154,6 +154,8 @@ typedef struct {
     uint32_t age;
     uint8_t ring;                /* RAPTOR (Paleotone's GHOULBOX 2.3, ROAR's RING): the melody string's level while the
                                   * drones ring on, 255 full (eng_gurdy.c) */
+    uint8_t kit;                 /* PALEOTONE: SAURUS's CALL = KEYS, this note's creature + 1 (0: the track's own call;
+                                  * eng_saurus.c). In the padding: voice_t keeps its size */
 } voice_t;
 
 typedef struct {                 /* per-voice control-rate modulation, computed in voice.c */

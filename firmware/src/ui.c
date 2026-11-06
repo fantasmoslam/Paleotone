@@ -613,8 +613,9 @@ UI_SMALL static void go_home(void)
  * writes the sequencer: every pattern is the one the player records or enters. */
 
 /* the parts' sounds at power-on (engine, preset): bass, pad, lead */
-static const uint8_t TRK_DEF[NPART][2] = {{ENGI_PHYS, 9}, {0, 12}, {4, 3}, {ENGI_SFX, 0}, {ENGI_SAURUS, 0}};
-/* RAPTOR: Paleotone's JUNGLE scene (PHYS, ANALOG, SAMPLE JUNGLE NIGHT), SFX DINO WORLD, SAURUS's first call */
+static const uint8_t TRK_DEF[NPART][2] = {{ENGI_PHYS, 9}, {0, 12}, {4, 3}, {ENGI_SFX, 0}, {ENGI_SAURUS, 20}};
+/* RAPTOR: Paleotone's JUNGLE scene (PHYS, ANALOG, SAMPLE JUNGLE NIGHT), SFX DINO WORLD; PALEOTONE: CALLS the CALL KIT
+ * (SAURUS_PRESETS[20]: every creature on the keys) */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
 UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }
@@ -753,6 +754,8 @@ enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_DRUM, BK_FX };
 static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX"};
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
 #include "ui_bank.h"   /* RAPTOR: Paleotone's sounds (tools/paleotone_sounds.py) */
+    /* PALEOTONE: SAURUS's KEYS kit, every creature on the keys of one track (eng_saurus.c) */
+    {BK_FX, ENGI_SAURUS, "CALL KIT"},
     /* SFX (the dino groovebox) */
     {BK_FX, ENGI_SFX, "DINO WORLD"}, {BK_FX, ENGI_SFX, "THUNDER"}, {BK_FX, ENGI_SFX, "RUMBLE"}, {BK_FX, ENGI_SFX, "WIND HOWL"}, {BK_FX, ENGI_SFX, "RAIN"}, {BK_FX, ENGI_SFX, "VOLCANO"}, {BK_FX, ENGI_SFX, "LAVA"}, {BK_FX, ENGI_SFX, "QUAKE"}, {BK_FX, ENGI_SFX, "FOOTSTEP"}, {BK_FX, ENGI_SFX, "WINGS"}, {BK_FX, ENGI_SFX, "INSECTS"}, {BK_FX, ENGI_SFX, "FAR ROAR"}, {BK_FX, ENGI_SFX, "RIVER"}, {BK_FX, ENGI_SFX, "FIRE"}, {BK_FX, ENGI_SFX, "ROCKFALL"}, {BK_FX, ENGI_SFX, "TAR PIT"}, {BK_FX, ENGI_SFX, "SQUAWK"},
 #if FELUCCA_SLICE

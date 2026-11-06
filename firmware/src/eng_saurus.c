@@ -24,8 +24,9 @@
  * call's progress (Q24, bits 0..24) and the note's random number (bits 25..31). */
 
 enum { SC_HOLD, SC_BELLOW, SC_ROAR, SC_BARK, SC_HOOT, SC_TRILL, SC_CHIRP, SC_MOAN, SC_HISS, SC_SNORT, SC_COUNT };
-static const char *const N_SAUR_CALL[SC_COUNT] = {"HOLD", "BELLOW", "ROAR", "BARK", "HOOT", "TRILL", "CHIRP", "MOAN",
-                                                  "HISS", "SNORT"};   /* (stored values: append only) */
+#define SC_KEYS SC_COUNT          /* PALEOTONE: CALL = KEYS, a creature a key (the KEYS kit, below) */
+static const char *const N_SAUR_CALL[SC_COUNT + 2] = {"HOLD", "BELLOW", "ROAR", "BARK", "HOOT", "TRILL", "CHIRP", "MOAN",
+                                                      "HISS", "SNORT", "KEYS", 0};   /* (stored values: append only) */
 #define SCF_UNVOICED 1u
 #define SCF_TRILL 2u
 /* pitch (in 16ths of SWOOP's depth), mouth (16 = MOUTH), loudness (16 = full), at 0, 1/4 .. 1 of LEN; flags; the
@@ -50,7 +51,16 @@ static const uint8_t SAUR_B[3][3] = {{60, 80, 150}, {70, 80, 150}, {90, 100, 160
 #define SAUR_GROWL_UP 10u                                 /* its envelope (4095 full) a tick: in ~0.3 s .. */
 #define SAUR_GROWL_DN 6u                                  /* .. out ~0.5 s */
 
-static uint32_t saur_shape(const track_t *t) { return (uint32_t)clamp(t->p[P_E0], 0, SC_COUNT - 1); }
+/* PALEOTONE: the KEYS kit. With CALL on KEYS, each key plays one of the creatures (SAURUS_PRESETS[0..SAUR_NKIT - 1]),
+ * C2 the first, a semitone each, then again (as SFX's KEYS): any mix of calls on one track, several at once. A key's
+ * creature sounds with its own CALL, SIZE, SWOOP, LEN, GROWL, BRTH, MOUTH and WILD, at its own pitch (the note its
+ * Paleotone pattern played it at: saur_kit_note); the track's SIZE .. WILD move every creature's from there (64: as it
+ * is), the track's envelope, filter and sends shape them all. The voice keeps its creature (v->kit) from its note-on. */
+#define SAUR_NKIT 20u
+#define SAUR_KIT_BASE 36u                                  /* C2 (as SFX's KEYS) */
+static uint32_t saur_kit_note(uint32_t k);
+static void saur_params(const track_t *t, const voice_t *v, int16_t *p);   /* (after the presets) */
+static uint32_t saur_shape_p(const int16_t *p) { return (uint32_t)clamp(p[0], 0, SC_COUNT - 1); }
 
 /* a call curve at progress q (Q24): five points (signed s or unsigned u), linear between, the last held; Q8 */
 static int32_t saur_pt(const int8_t *s, const uint8_t *u, uint32_t q)
@@ -62,7 +72,7 @@ static int32_t saur_pt(const int8_t *s, const uint8_t *u, uint32_t q)
 
 static void saurus_note_on(track_t *t, voice_t *v)
 {
-    (void)t;
+    v->kit = (uint8_t)(t->p[P_E0] == SC_KEYS ? 1u + (v->note + 128u - SAUR_KIT_BASE) % SAUR_NKIT : 0u);
     v->s[7] = (int32_t)((noise32(&formant_nz) >> 25) << 25);   /* the call starts; this note's random number */
     if (!v->env && !v->env_out) {                       /* from rest (not a retrigger: its states go on, no click) */
         uint32_t i;
@@ -77,18 +87,21 @@ static void saurus_note_on(track_t *t, voice_t *v)
 /* the voice's loudness: the ADSR x the call's loudness (x TRILL's flutter), once per control tick */
 static int32_t saurus_amp(track_t *t, voice_t *v, int32_t adsr)
 {
-    uint32_t sh = saur_shape(t), q = (uint32_t)v->s[7] & FMT_TALK_MASK;
+    int16_t pv[8];
+    uint32_t sh, q = (uint32_t)v->s[7] & FMT_TALK_MASK;
+    saur_params(t, v, pv);
+    sh = saur_shape_p(pv);
     int32_t a = (int32_t)(((int64_t)adsr * saur_pt(0, SAUR_CALL[sh].a, q)) >> 12);   /* (16 << 8: x1) */
     if (SAUR_CALL[sh].f & SCF_TRILL) {                  /* depth 70 %; WILD's random number sets this note's rate */
         v->ph[2] += (SAUR_TRILL_INC + ((uint32_t)v->s[7] >> 25) * 6000u) * CTL;
         a = (a * (32767 - ((((sine_i(v->ph[2]) + 32768) >> 1) * 22938) >> 15))) >> 15;
-    } else if (t->p[P_E4] > 64) {                       /* DINOBOX: GROWL above 64, the throat's flutter (a deep rolled
+    } else if (pv[4] > 64) {                            /* DINOBOX: GROWL above 64, the throat's flutter (a deep rolled
                                                          * R): ~26 Hz, uneven; in over ~0.3 s while the call is loud and
                                                          * the key held, out over ~0.5 s as it drops (the bellow rings on
                                                          * without it). ph[2]: the flutter's envelope (bits 20..31), its
                                                          * phase (0..19) */
         uint32_t st = v->ph[2], ge = st >> 20, fp = st & 0xFFFFFu;
-        int32_t gd = clamp((t->p[P_E4] - 64) * 520, 0, 32767), depth, chop;
+        int32_t gd = clamp((pv[4] - 64) * 520, 0, 32767), depth, chop;
         if (v->gate && saur_pt(0, SAUR_CALL[sh].a, q) >= (8 << 8))
             ge = ge + SAUR_GROWL_UP < 4095u ? ge + SAUR_GROWL_UP : 4095u;
         else
@@ -103,10 +116,26 @@ static int32_t saurus_amp(track_t *t, voice_t *v, int32_t adsr)
     return a;
 }
 
-static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m_in)
 {
-    const int16_t *p = t->p;
-    uint32_t sh = saur_shape(t), fl = SAUR_CALL[sh].f, q = (uint32_t)v->s[7] & FMT_TALK_MASK;
+    int16_t pr[P_E0 + 8], *pv = pr + P_E0;
+    const int16_t *p = pr;                              /* (p[P_E0..P_E7]: this voice's eight; nothing else read) */
+    vmod_t mk;
+    const vmod_t *m = m_in;
+    int32_t pcur = v->pitch_cur;
+    uint32_t sh, fl, q = (uint32_t)v->s[7] & FMT_TALK_MASK;
+    saur_params(t, v, pv);
+    sh = saur_shape_p(pv);
+    fl = SAUR_CALL[sh].f;
+    if (v->kit) {                                       /* KEYS: the creature at its own pitch (as the key is, a step from it:
+                                                         * the bend, the LFO and the glide still move it) */
+        int32_t d = (int32_t)saur_kit_note(v->kit - 1u) * 16 - (int32_t)v->note * 16;
+        uint64_t x = ((uint64_t)m_in->inc * fmt_ratio(d)) >> 16;
+        mk = *m_in;
+        mk.inc = x > 0x7FFFFFFFu ? 0x7FFFFFFFu : (uint32_t)x;
+        m = &mk;
+        pcur += d;
+    }
     uint32_t rnd = (uint32_t)v->s[7] >> 25, i, j, ph = v->ph[0], gs = v->ph[1], inc, incj;
     int32_t wild = p[P_E7], growl = p[P_E4], pitch16, open, ratio, bws, f0, fq[3], bq[3];
     int32_t og, ogk, tilt, gv, gn, dr, sub, jit, jp;
@@ -129,7 +158,7 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     /* the mouth: MOUTH x the shape's opening, ENV / LFO -> FLT, a harder note opens it a little */
     open = clamp(((p[P_E6] * saur_pt(0, SAUR_CALL[sh].m, q)) >> 11) + (m->cutoff >> 7) + ((v->vel - 64) >> 1), 0, 256);
     /* SIZE: +1 octave (0) .. -2 octaves (127), key tracking 1/4; HISS's noise a twelfth up (a fricative) */
-    ratio = (int32_t)fmt_ratio(192 - ((p[P_E1] * 4645) >> 10) + ((v->pitch_cur - 60 * 16) >> 2) + (sh == SC_HISS ? 304 : 0));
+    ratio = (int32_t)fmt_ratio(192 - ((p[P_E1] * 4645) >> 10) + ((pcur - 60 * 16) >> 2) + (sh == SC_HISS ? 304 : 0));
     bws = (int32_t)fmt_ratio((growl - 32) * 2);         /* GROWL widens the bands */
     f0 = (int32_t)(((uint64_t)inc * 705600u) >> 32);    /* F0 in Hz * 16 */
     {
@@ -161,7 +190,7 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     sub = (growl * growl * 19) >> 4;                    /* the weak period's dip: up to 0.58 (Q15) */
     jit = (growl + wild) * 40;                          /* a period's random gain: up to 0.31 */
     jp = growl * 40 + wild * 120;                       /* a period's random length: up to +-3.8 % */
-    og = (int32_t)(((int64_t)(750 * SAUR_CALL[sh].g) * fmt_ratio((60 * 16 - v->pitch_cur) / 4)) >> 16);   /* low notes: +1.5 dB
+    og = (int32_t)(((int64_t)(750 * SAUR_CALL[sh].g) * fmt_ratio((60 * 16 - pcur) / 4)) >> 16);   /* low notes: +1.5 dB
                                                                                          * an octave */
     ogk = (og >> 2) * (2 + (growl >> 5));               /* presence */
     dr = 64 + growl * 3;                                /* GROWL's drive: x1 .. x7 */
@@ -238,13 +267,43 @@ static const preset_t SAURUS_PRESETS[] = {
     {"HADRO HORN", {4, 100, 15, 110, 15, 20, 70, 20}, {40, 90, 127, 110}, 0, 0, FX(0, 20, 30, 120), PAT(17)},
     {"COMPY PACK", {6, 20, 60, 70, 30, 50, 100, 110}, {0, 64, 100, 30}, 0, 0, FX(0, 20, 30, 85), PAT(13)},
     /* DINOBOX's end */
+    /* PALEOTONE: the KEYS kit, all twenty creatures above on the keys from C2 (CALL KEYS; the controls at 64 leave each
+     * creature as it is). POLY: calls overlap */
+    {"CALL KIT", {SC_KEYS, 64, 64, 64, 64, 64, 64, 64}, {0, 90, 127, 80}, 0, 0, FX(0, 10, 15, 100), PAT(0)},
 };
+_Static_assert(NELEM(SAURUS_PRESETS) > SAUR_NKIT, "the KEYS kit's creatures: SAURUS_PRESETS[0..SAUR_NKIT - 1]");
+/* a creature's own note (KEYS): where its Paleotone pattern played it (PAT: 17 PEDAL D2, 4 LEAD C5, 5 PAD C4, 8 SUB
+ * C2, 13 ARP C3) */
+static uint32_t saur_kit_note(uint32_t k)
+{
+    switch (SAURUS_PRESETS[k % SAUR_NKIT].pat) {
+    case 4: return 72u;
+    case 5: return 60u;
+    case 8: return 36u;
+    case 13: return 48u;
+    default: return 38u;
+    }
+}
+/* the eight controls this voice plays with: the track's, or its creature's (KEYS) moved by the track's */
+static void saur_params(const track_t *t, const voice_t *v, int16_t *p)
+{
+    uint32_t i;
+    if (!v->kit) {
+        for (i = 0; i < 8u; i++)
+            p[i] = t->p[P_E0 + i];
+        return;
+    }
+    p[0] = SAURUS_PRESETS[(v->kit - 1u) % SAUR_NKIT].e[0];
+    for (i = 1; i < 8u; i++)
+        p[i] = (int16_t)clamp(SAURUS_PRESETS[(v->kit - 1u) % SAUR_NKIT].e[i] + t->p[P_E0 + i] - 64, 0, 127);
+}
+
 
 static const engine_t ENG_SAURUS = {
     .name = "SAURUS",
     .page_title = {"CALL", "THROAT"},
     .edit = {
-        {"CALL", F_ENUM, 0, SC_COUNT - 1, SC_BELLOW, N_SAUR_CALL, 0},
+        {"CALL", F_ENUM, 0, SC_KEYS, SC_BELLOW, N_SAUR_CALL, 0},   /* (PALEOTONE: KEYS, the kit) */
         {"SIZE", F_INT, 0, 127, 80, 0, 0},
         {"SWOOP", F_INT, 0, 127, 40, 0, 0},
         {"LEN", F_TIME, 0, 127, 100, 0, 0},
