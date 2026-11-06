@@ -899,8 +899,12 @@ UI_SMALL static void draw_foot(void)
         cv_icon(x, 21, engine_icon(ename), C_GRAY);
         x += 14;
     }
-    fit(en, ename, &FONT_S, 90 - (x - 4));
-    x = cv_text(x, 20, &FONT_S, en, C_HI);
+    if (!FELUCCA_ICONS || !pn[0]) {                  /* RAPTOR: the icon says the engine; its name only without one */
+        fit(en, ename, &FONT_S, 90 - (x - 4));
+        x = cv_text(x, 20, &FONT_S, en, C_HI);
+    } else {
+        x -= 10;                                      /* (the sound's name right after the icon) */
+    }
     {
         char pf[16];
         int32_t room = 236 - text_w(&FONT_S, ti) - 10 - (x + 10);

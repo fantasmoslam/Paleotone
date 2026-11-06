@@ -63,6 +63,6 @@ UI_SMALL static void sloop_splash(void)
         v += 7;                                         /* "RAPTOR 2.8.4" -> "2.8.4": the wordmark is in the logo */
     cv_begin(240, 36, C_BLACK);
     cv_text(120 - text_w(&FONT_S, v) / 2, 0, &FONT_S, v, RGB(236, 224, 196));
-    cv_text(120 - text_w(&FONT_S, "sloop pro + felucca") / 2, 18, &FONT_S, "sloop pro + felucca", RGB(150, 110, 70));
+    cv_text(120 - text_w(&FONT_S, "paleotone + sloop + felucca") / 2, 18, &FONT_S, "paleotone + sloop + felucca", RGB(150, 110, 70));
     cv_blit(0, 202);
 }

@@ -32,7 +32,7 @@
 #define BRAND_SAIL_X 112
 #define BRAND_RESCUE "RAPTOR USB RESCUE"
 #endif
-#define BRAND_BASED "ON SLOOP PRO + FELUCCA"   /* RAPTOR */
+#define BRAND_BASED "PALEOTONE + SLOOP + FELUCCA"   /* RAPTOR: the sound, the sequencer, the base */
 #define BRAND_CLAWS 1            /* RAPTOR: the ABOUT page's claw slashes (ui_menu.c) for the sail */
 #define BRAND_CRASH "FELUCCA CRASH"
 #define VIS_STYLES 12u
