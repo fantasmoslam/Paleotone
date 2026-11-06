@@ -55,7 +55,10 @@ _Static_assert(SMP_USER_BASE + SMP_USER_SLOTS * SMP_USER_SIZE <= 0xEA000u, "SMK:
 #define SMP_USER_SIZE 0x14000u
 #define SMP_USER_BASE 0xA0000u                      /* USR1..USR3: 0xA0000..0xDBFFF */
 #define SMP_USER4_BASE 0xE7000u                     /* USR4 (2.4): the free flash after the FM6 bank, 0xE7000..0xFAFFF */
-#define SMP_USER_HAS(k) 1
+#ifndef SMP_USER_HAS                                /* (a host test may keep USR4: the USR3+4 kit's logic, as on the SMK-37) */
+#define SMP_USER_HAS(k) ((k) < 3u)                  /* PALEOTONE: USR1..USR3; USR4's flash keeps the six-track projects'
+                                                     * SFX and CALLS (storage.c, FL_EXT) */
+#endif
 #define SMP_USER_OFF(k) ((k) < 3u ? SMP_USER_BASE + (k) * SMP_USER_SIZE : SMP_USER4_BASE)
 #endif
 #define SMP_USER_DATA 512u
@@ -100,10 +103,8 @@ static void smp_user_scan(uint32_t k)
     smp_user_gen++;
     usr_nz[k] = 0;                                  /* (from here no new voice takes the slot) */
     slc_user_scan(k, 0);
-#if BOARD_SMK37
     if (!SMP_USER_HAS(k))
-        return;                                     /* no flash behind this slot */
-#endif
+        return;                                     /* no flash behind this slot (PALEOTONE: USR4 on the FM-1) */
     if (h->magic != SMP_USER_MAGIC || h->version != 1 || !h->nz || h->nz > 16u ||
         h->data_len > SMP_USER_SIZE - SMP_USER_DATA)
         return;

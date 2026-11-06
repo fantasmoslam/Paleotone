@@ -60,6 +60,21 @@ UI_SMALL static void sloop_splash(void)
                                                          * credits: tools/gen_raptor_splash.py) */
     return;
 #endif
+#if !FELUCCA_LOGO_TEXT && defined(PALEOTONE_SPLASH_FULL)
+    sloop_logo_draw(0);                                 /* PALEOTONE: the boot art is the whole screen (skull, title,
+                                                         * PREHISTORIC SYNTH: tools/gen_paleotone_splash.py); the version
+                                                         * and where it comes from under it */
+    {
+        const char *pv = FELUCCA_VERSION;
+        if (pv[0] == 'P' && pv[1] == 'A' && pv[9] == ' ')
+            pv += 10;                                   /* "PALEOTONE 2.8.4" -> "2.8.4" */
+        cv_begin(240, 36, C_BLACK);
+        cv_text(120 - text_w(&FONT_S, pv) / 2, 0, &FONT_S, pv, C_AMB);
+        cv_text(120 - text_w(&FONT_S, "on sloop + felucca") / 2, 18, &FONT_S, "on sloop + felucca", C_GRAY);
+        cv_blit(0, 198);
+    }
+    return;
+#endif
     sloop_logo_draw(10);
     const char *v = FELUCCA_VERSION;
     if (v[0] == 'S' && v[1] == 'L' && v[5] == ' ')

@@ -105,8 +105,13 @@ _Static_assert(FL_DATA_HI <= FL_OTA_LO && FL_APP_HI <= FL_DATA_LO, "SMK: windows
 #define FL_OTA_HI       0x000E5000u
 #define FL_FM6_LO       0x000E5000u                /* the FM6 patch bank (fm6_bank.c), A / B sectors; SLOOP 2.4 */
 #define FL_FM6_HI       0x000E7000u
-#define FL_USR4_LO      0x000E7000u                /* the user sample slot USR4 (eng_sample.c), 80 KiB; SLOOP 2.4 */
+#define FL_USR4_LO      0x000E7000u                /* SLOOP 2.4: the user sample slot USR4 (eng_sample.c), 80 KiB */
 #define FL_USR4_HI      0x000FB000u                /* (0xFB000..0xFBFFF stays free) */
+/* PALEOTONE: USR4's flash holds the six-track projects' extensions (storage.c OBJ_PROJX0: 4 projects + the autosave,
+ * A / B, 10 sectors); 0xF1000..0xFAFFF stays free (the store may write it, as SLOOP's USR4 did) */
+#define FL_EXT_LO       0x000E7000u
+#define FL_EXT_HI       0x000F1000u
+_Static_assert(FL_EXT_LO >= FL_USR4_LO && FL_EXT_HI <= FL_USR4_HI, "FM-1: FL_EXT inside the old USR4");
 /* Felucca's own store (projects, user samples; settings; the FM6 bank) */
 #define FL_STORE_OK(off, n) (FL_IN(off, n, FL_DATA_LO, FL_DATA_HI) || FL_IN(off, n, FL_GLOB_LO, FL_GLOB_HI) || \
                              FL_IN(off, n, FL_FM6_LO, FL_FM6_HI) || FL_IN(off, n, FL_USR4_LO, FL_USR4_HI))

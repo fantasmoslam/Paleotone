@@ -38,8 +38,17 @@ enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_AUTOSAVE
 #define ST_HAS_EXT 1
 static uint32_t st_ext_obj(uint32_t obj) { return obj == OBJ_AUTOSAVE ? OBJ_AUTOX : OBJ_PROJX0 + ((obj - OBJ_PROJECT0) & 3u); }
 #else
-#define ST_NOBJ OBJ_COUNT
-#define ST_HAS_EXT 0                           /* (the FM-1: no free flash for the extensions; project.c) */
+/* PALEOTONE (FM-1): the extensions of the six-track projects too (SFX and CALLS kept with each project): one for each
+ * project slot, then the autosave's, A / B: ten sectors at 0xE7000..0xF0FFF (FL_EXT, fm1_flash_map.h), where SLOOP's
+ * USR4 sample slot was (eng_sample.c: USR1..USR3 on the FM-1 Paleotone) */
+#define OBJ_PROJX0 OBJ_COUNT
+#define OBJ_AUTOX (OBJ_PROJX0 + 4)
+#ifndef FL_EXT_LO
+#define FL_EXT_LO 0x000E7000u                  /* (fm1_flash_map.h's; for the host tests that map the flash themselves) */
+#endif
+#define ST_NOBJ (OBJ_COUNT + 5)
+#define ST_HAS_EXT 1
+static uint32_t st_ext_obj(uint32_t obj) { return obj == OBJ_AUTOSAVE ? OBJ_AUTOX : OBJ_PROJX0 + ((obj - OBJ_PROJECT0) & 3u); }
 #endif
 
 typedef struct {
@@ -206,6 +215,8 @@ static void st_stock_boot(void)                 /* the marker over data that is 
 static void st_owner_check(void) {}
 UI_SMALL static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
 {
+    if (obj >= OBJ_PROJX0)                     /* PALEOTONE: the project extensions (FL_EXT, 10 sectors) */
+        return FL_EXT_LO + ((obj - OBJ_PROJX0) * 2u + (copy & 1u)) * ST_SECTOR;
     if (obj == OBJ_SETTINGS)
         return 0xFC000u + copy * ST_SECTOR;
     if (obj == OBJ_AUTOSAVE)

@@ -271,6 +271,8 @@ UI_SMALL static void draw_menu(void)
                     for (k = 0; k < 8u; k++)
                         cv_rect(BRAND_SAIL_X + c * 9u + k, 6u + k * 3u, 4, 3, TE_COL[3]);
             }
+#elif defined(BRAND_PROMPT)
+            cv_rect(BRAND_SAIL_X, 26, 12, 6, C_WHITE);  /* PALEOTONE: the terminal's prompt, in the accent */
 #else
             cv_rect(BRAND_SAIL_X, 10, 8, 4, TE_COL[0]), cv_rect(BRAND_SAIL_X, 16, 12, 4, TE_COL[1]);   /* the sail */
             cv_rect(BRAND_SAIL_X, 22, 16, 4, TE_COL[2]), cv_rect(BRAND_SAIL_X, 28, 20, 4, TE_COL[3]);

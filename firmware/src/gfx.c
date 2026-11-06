@@ -52,15 +52,22 @@ static uint16_t pal_hi = 0xFFFFu;        /* the accent: white unless a theme say
  * Palettes are picked in the HOME-hold menu (COLOR). */
 typedef struct {
     const char *name;
-    uint16_t c[5];
+    uint16_t c[5];             /* the five steps, faintest .. strongest (RGB565) */
+    uint16_t bg, hi;           /* PALEOTONE: the background and the accent (SLOOP's built-ins: black and white) */
+    uint16_t trk[6];           /* PALEOTONE: the tracks' colours by colour slot (TSLOT: synths 0..2, drums 3, SFX 4, CALLS 5) */
 } palette_t;
-static const palette_t PALETTES[] = {       /* RAPTOR: bone, jungle, lava, ice, tar (the number stays: 0..4) */
-    {"BONE", {RGB(58, 46, 34), RGB(104, 86, 64), RGB(156, 136, 108), RGB(204, 188, 156), RGB(240, 230, 204)}},
-    {"JUNGLE", {RGB(20, 44, 18), RGB(40, 82, 30), RGB(78, 128, 46), RGB(130, 180, 70), RGB(196, 228, 120)}},
-    {"LAVA", {RGB(60, 16, 4), RGB(112, 32, 6), RGB(176, 60, 10), RGB(236, 104, 20), RGB(255, 170, 70)}},
-    {"ICE AGE", {RGB(18, 36, 50), RGB(36, 70, 92), RGB(70, 118, 146), RGB(128, 178, 204), RGB(210, 236, 248)}},
-    {"TAR", {RGB(38, 36, 34), RGB(76, 72, 68), RGB(124, 118, 110), RGB(180, 172, 160), RGB(222, 216, 204)}},
+/* PALEOTONE: the FM-1 Paleotone's own colour schemes (tools/gen_ui_palettes.py on main: BG, TEXT, THEME, ACCENT and the
+ * track colours of each). The five steps are LINE (18 % of the way from BG to TEXT), DIM (42 %), MID (70 %), TEXT and
+ * THEME; the accent is ACCENT. TERMINAL (a 1993 park-operations console: phosphor green on black, amber for what
+ * needs attention) is a fresh device's; JUNGLE and VOLCANO beside it; GHOULBOX's CRYPT; HI-CON for bright light. */
+static const palette_t PALETTES[] = {
+    {"TERMINAL", {0x21A4, 0x536A, 0x8D92, 0xC7D9, 0x474E}, 0x0040, 0xFD84, {0xFD84, 0x569E, 0xFBD9, 0xACBF, 0xFCA7, 0x6D5F}},
+    {"JUNGLE", {0x31C5, 0x6B6B, 0xAD32, 0xEF39, 0xAEAA}, 0x08A1, 0xFBC6, {0xFBC6, 0xFBD9, 0x6D5F, 0x6736, 0x569E, 0xACBF}},
+    {"VOLCANO", {0x39A5, 0x734B, 0xB533, 0xF75A, 0xFB27}, 0x1061, 0xFEAA, {0xFEAA, 0xFBD9, 0x6D5F, 0x6736, 0x569E, 0xACBF}},
+    {"CRYPT", {0x3165, 0x6B0A, 0xACF1, 0xEEF8, 0xECC5}, 0x0841, 0xEA68, {0xEA68, 0x569E, 0xACBF, 0xBF4A, 0xFBD9, 0x6D5F}},
+    {"HI-CON", {0x2965, 0x6B4D, 0xB576, 0xFFDF, 0xFF40}, 0x0000, 0x073F, {0x073F, 0xFBD9, 0xACBF, 0x6D5F, 0xBF4A, 0xFCA7}},
 };
+#define PAL_TERMINAL 0u          /* PALEOTONE: a fresh device's palette */
 #define NPALETTES (sizeof(PALETTES) / sizeof(PALETTES[0]))
 static uint16_t pal[5];
 #define C_LINE pal[0]                /* 1 rules, separators */
@@ -89,21 +96,12 @@ typedef struct {
 _Static_assert(sizeof(theme_t) == 40u, "theme layout (the editor's Theme page writes these bytes)");
 static theme_t theme;                            /* the theme there is (theme_valid: project.c theme_check passed) */
 static uint8_t theme_valid, theme_on;
-/* the tracks' colours: full, two thirds, one third (the built-in ones as they always were) */
-/* the tracks' colours, by colour slot: SLOOP's four (0..2 the synth tracks, 3 the drums: a theme sets them), then RAPTOR's
- * SFX (4, storm violet) and CALLS (5, rose). TSLOT(k): track k's slot (core.h) */
-static const uint16_t TE_COL_DEF[6] = {RGB(120, 190, 60), RGB(40, 170, 190), RGB(240, 176, 40), RGB(255, 84, 24),
-                                       RGB(160, 110, 240), RGB(240, 120, 190)};
-static const uint16_t TE_MID_DEF[6] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 26), RGB(170, 56, 16),
-                                       RGB(106, 72, 160), RGB(160, 80, 126)};
-static const uint16_t TE_DIM_DEF[6] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8),
-                                       RGB(52, 36, 80), RGB(80, 40, 62)};
-static uint16_t TE_COL[6] = {RGB(120, 190, 60), RGB(40, 170, 190), RGB(240, 176, 40), RGB(255, 84, 24),
-                             RGB(160, 110, 240), RGB(240, 120, 190)};
-static uint16_t TE_MID[6] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 26), RGB(170, 56, 16),
-                             RGB(106, 72, 160), RGB(160, 80, 126)};
-static uint16_t TE_DIM[6] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8),
-                             RGB(52, 36, 80), RGB(80, 40, 62)};
+/* the tracks' colours, by colour slot: SLOOP's four (0..2 the synth tracks, 3 the drums: a theme sets them), then
+ * RAPTOR's SFX (4) and CALLS (5). TSLOT(k): track k's slot (core.h). PALEOTONE: each palette has its own (palette_set);
+ * full, two thirds, one third. The defaults: TERMINAL's. */
+#define TE_COL_DEF (PALETTES[PAL_TERMINAL].trk)
+static uint16_t TE_COL[6] = {0xFD84, 0x569E, 0xFBD9, 0xACBF, 0xFCA7, 0x6D5F};
+static uint16_t TE_MID[6], TE_DIM[6];
 static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
 {
     uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
@@ -185,16 +183,17 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
 {
     uint32_t k;
     int cu = theme_shown();
+    const palette_t *pp = &PALETTES[i % NPALETTES];
     for (k = 0; k < 5u; k++)
-        pal[k] = cu ? theme.c[k] : PALETTES[i % NPALETTES].c[k];
-    pal_bg = cu ? theme.bg : 0u;
-    pal_hi = cu ? theme.hi : 0xFFFFu;
+        pal[k] = cu ? theme.c[k] : pp->c[k];
+    pal_bg = cu ? theme.bg : pp->bg;
+    pal_hi = cu ? theme.hi : pp->hi;
     for (k = 0; k < 4u; k++)
         te_g[k] = te_gray(TE_G_DEF[k]);
-    for (k = 0; k < 4u; k++) {
-        TE_COL[k] = cu ? theme.trk[k] : TE_COL_DEF[k];
-        TE_MID[k] = cu ? rgb565_scale(theme.trk[k], 2u, 3u) : TE_MID_DEF[k];
-        TE_DIM[k] = cu ? rgb565_scale(theme.trk[k], 1u, 3u) : TE_DIM_DEF[k];
+    for (k = 0; k < 6u; k++) {                    /* (a theme has four: SFX and CALLS keep the palette's) */
+        TE_COL[k] = cu && k < 4u ? theme.trk[k] : pp->trk[k];
+        TE_MID[k] = rgb565_scale(TE_COL[k], 2u, 3u);
+        TE_DIM[k] = rgb565_scale(TE_COL[k], 1u, 3u);
     }
 }
 

@@ -116,7 +116,8 @@ def generate():
             [tools / "gen_samples.py", GEN / "felucca_samples.h"],
             [tools / "gen_drumkits.py", GEN / "felucca_drumkits.h"],
             [tools / "gen_fm6_patches.py", GEN / "felucca_fm6.h"],
-            [tools / "gen_raptor_splash.py", GEN / "sloop_logo.h"]]   # RAPTOR: the owner's splash art (SLOOP's names)
+            [tools / ("gen_raptor_splash.py" if BOARD == "smk37" else "gen_paleotone_splash.py"), GEN / "sloop_logo.h"]]
+    # RAPTOR (SMK-37): the owner's RAPTOR art; PALEOTONE (FM-1): Paleotone's boot art (SLOOP's names)
     procs = [subprocess.Popen([sys.executable, *map(str, c)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True) for c in cmds]
     failed = []

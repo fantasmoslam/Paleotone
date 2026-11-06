@@ -947,9 +947,9 @@ int main(int argc, char **argv)
             lights_from_word(lights_word());
             ok &= theme_on == 1u;
             encs[panel.enc[EN_K1]] = 1; frame();      /* SUNSET -> GREEN */
-            ok &= !theme_on && settings.palette == 0u && pal[4] == PALETTES[0].c[4] && TE_COL[0] == TE_COL_DEF[0] && C_BLACK == 0u &&
-                  C_WHITE == 0xFFFFu &&
-                  TE_DIM[2] == TE_DIM_DEF[2];
+            ok &= !theme_on && settings.palette == 0u && pal[4] == PALETTES[0].c[4] && TE_COL[0] == PALETTES[0].trk[0] && C_BLACK == PALETTES[0].bg &&
+                  C_WHITE == PALETTES[0].hi &&       /* PALEOTONE: each palette its own background, accent, tracks */
+                  TE_DIM[2] == rgb565_scale(PALETTES[0].trk[2], 1u, 3u);
             encs[panel.enc[EN_K1]] = -1; frame();     /* back: SUNSET */
             ok &= theme_on && pal[2] == th.c[2];
             theme_valid = 0;                          /* (gone: the editor removed it) */

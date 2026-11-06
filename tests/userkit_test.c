@@ -9,6 +9,8 @@
 #include <stdint.h>
 static uint32_t host_slots[4u * 0x14000u / 4u];          /* USR1..4 (a RAM image: the flash has USR4 elsewhere) */
 #define SMP_USER_XIP(k) ((const uint8_t *)host_slots + (k) * SMP_USER_SIZE)
+#define SMP_USER_HAS(k) 1                        /* (PALEOTONE: the FM-1 has no USR4 now, its flash keeps the projects'
+                                                 * SFX and CALLS; the USR3+4 kit's logic is still tested, as on the SMK-37) */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main

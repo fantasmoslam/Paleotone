@@ -3,7 +3,7 @@
 /* Felucca user interface. Four columns map to KNOB 1..4. Rendering is lazy:
  * every element remembers what it last drew and is redrawn only on change. */
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "RAPTOR 2.8.4"  /* RAPTOR on the FM-1 (SLOOP 2.8.4, based on Felucca) */
+#define FELUCCA_VERSION "PALEOTONE 2.8.4"  /* PALEOTONE on the FM-1 (RAPTOR, SLOOP 2.8.4, Felucca; the editor reads the digits) */
 #endif
 static void project_save(uint32_t slot);
 static void arrangement_save(void);

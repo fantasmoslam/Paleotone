@@ -28,6 +28,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n)
         nor[off + i] &= s[i];
     return 0;
 }
+#include "../firmware/hal/fm1_flash_map.h"   /* (FL_EXT: PALEOTONE's six-track extensions; FL_STORE_OK) */
 #include "../firmware/src/storage.c"
 
 static int check(const char *what, int ok)
@@ -121,18 +122,19 @@ int main(void)
     {   /* every copy of every object in the Felucca regions, off the sample slots (0xA0000..0xDBFFF) and
          * the update staging (0xE0000..0xE4FFF; the FM6 bank's two sectors follow it), and no two sectors shared */
         uint32_t o, c, o2, c2, inside = 1, apart = 1;
-        for (o = 0; o < OBJ_COUNT; o++)
+        for (o = 0; o < ST_NOBJ; o++)
             for (c = 0; c < 2u; c++) {
                 uint32_t a = st_sector(o, c);
                 int data = a >= 0x97000u && a + 4096u <= 0xA0000u, ups = a >= 0xDC000u && a + 4096u <= 0xE0000u;
                 int glob = a >= 0xFC000u && a + 4096u <= 0xFF000u, fm6 = a >= 0xE5000u && a + 4096u <= 0xE7000u;
-                inside &= (data || ups || glob || fm6) && !(a & 0xFFFu);
-                for (o2 = 0; o2 < OBJ_COUNT; o2++)
+                int ext = o >= OBJ_PROJX0 && a >= 0xE7000u && a + 4096u <= 0xF1000u;   /* PALEOTONE: USR4's old flash */
+                inside &= (data || ups || glob || fm6 || ext) && !(a & 0xFFFu) && FL_STORE_OK(a, 4096u);
+                for (o2 = 0; o2 < ST_NOBJ; o2++)
                     for (c2 = 0; c2 < 2u; c2++)
                         if ((o2 != o || c2 != c) && st_sector(o2, c2) == a)
                             apart = 0;
             }
-        bad += check("data stays in the Felucca regions (autosave too)", inside);
+        bad += check("data stays in the Felucca regions (autosave and the six-track extensions too)", inside);
         bad += check("every object copy has its own sector", apart);
     }
     {   /* SLOOP 2.5: the settings in two parts (persist_t, then the SYN kits): one record, A/B as any other */

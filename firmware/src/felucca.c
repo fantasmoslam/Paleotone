@@ -27,16 +27,20 @@
 #ifndef FELUCCA_VERSION
 #define FELUCCA_VERSION "RAPTOR 2.8.4"   /* ui.c's, with the product's name (the editor reads the digits: SLOOP Pro's) */
 #endif
-#else
-#define BRAND_NAME "RAPTOR"      /* (the FM-1 build of RAPTOR: the same name) */
-#define BRAND_SAIL_X 112
-#define BRAND_RESCUE "RAPTOR USB RESCUE"
-#endif
 #define BRAND_BASED "PALEOTONE + SLOOP + FELUCCA"   /* RAPTOR: the sound, the sequencer, the base */
 #define BRAND_CLAWS 1            /* RAPTOR: the ABOUT page's claw slashes (ui_menu.c) for the sail */
+#define VIS_LAST_NAMES "RAPTOR"
+#else                            /* PALEOTONE: the FM-1 Paleotone, on RAPTOR's SLOOP base */
+#define BRAND_NAME "PALEOTONE"
+#define BRAND_SAIL_X 148         /* (FONT_L: 16 px a letter, "PALEOTONE" ends at 144) */
+#define BRAND_RESCUE "PALEOTONE USB RESCUE"
+#define BRAND_URL "GITHUB.COM/FANTASMOSLAM"
+#define BRAND_BASED "ON SLOOP + FELUCCA"
+#define BRAND_PROMPT 1           /* PALEOTONE: the ABOUT page's terminal prompt (ui_menu.c) for the sail */
+#define VIS_LAST_NAMES "PALEO"
+#endif
 #define BRAND_CRASH "FELUCCA CRASH"
 #define VIS_STYLES 12u
-#define VIS_LAST_NAMES "RAPTOR"
 #define VIS_N_STR "/12"
 
 #include "libc.c"
