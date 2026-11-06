@@ -978,7 +978,7 @@ int main(int argc, char **argv)
             (void)page_pos(&n);                       /* GLO: its nine pages */
             go_home(); frame();
             ui.menu = (uint8_t)menu0, ui.menu_sel = (uint8_t)sel0, ui.force = 1; frame();
-            ok &= k1 == 1u && n1 == 2u && k2 == 2u && n2 == 2u && k3 == 3u && n3 == 3u && n == 9u;
+            ok &= k1 == 1u && n1 == 2u && k2 == 2u && n2 == 2u && k3 == 3u && n3 == 3u && n == (RAPTOR_SLOOP_PAGES ? 9u : 5u);   /* (RAPTOR: MASTER, MIDI 3, TEXTURE 1-2 cut) */
             if (!ok)
                 printf("ui:   counter: STEP %u/%u PATTERN %u/%u SONG %u/%u GLO /%u\n", k1, n1, k2, n2, k3, n3, n);
             check(ok, "page counter (2.7): as SELECT walks them: STEP 1/2, PATTERN 2/2 (SONG, its own screen, not counted)");
@@ -1275,7 +1275,7 @@ int main(int argc, char **argv)
         }
         TSEL->p[P_TFLT] = 0;
         SEL(9);
-        check(!strcmp(PT(), "REV/CHO"), "SELECT on FX: on to the last page, REV/CHO");
+        check(!strcmp(PT(), RAPTOR_SLOOP_PAGES ? "REV/CHO" : "TAPE"), "SELECT on FX: on to the last page (RAPTOR: TAPE, REV/CHO cut)");
         tap(B_EDIT); SEL(-9);
         check(!strcmp(PT(), "EDIT 1"), "SELECT on EDIT: back to the first page");
         SEL(9);
@@ -1798,13 +1798,15 @@ int main(int argc, char **argv)
             K(EN_K2, 9);                                  /* CH2: 2 -> 11 */
             check(hit && !strcmp(PAGES[ui.page].title, "MIDI") && song.g[G_CH2] == 11, "GLO > MIDI: the page, KNOB 2 sets track 2's channel (11)");
             ui.force = 1; frame(); ppm("page-midi");
-            {   /* 2.7: MIDI 3 (FX CH, DR MAP, REMOTE, CLK OUT): drawn (page-midi3), CLK OUT on KNOB 4 */
+            {   /* 2.7: MIDI 3 (FX CH, DR MAP, REMOTE, CLK OUT): drawn (page-midi3), CLK OUT on KNOB 4 (RAPTOR: MIDI 3 is
+                 * cut, CLOCK is MIDI 2's KNOB 4) */
                 uint32_t q;
-                for (q = 0; q < 4u && strcmp(PAGES[ui.page].title, "MIDI 3"); q++) { encs[panel.enc[EN_SELECT]] = 1; frame(); }
+                const char *m3 = RAPTOR_SLOOP_PAGES ? "MIDI 3" : "MIDI 2";
+                for (q = 0; q < 4u && strcmp(PAGES[ui.page].title, m3); q++) { encs[panel.enc[EN_SELECT]] = 1; frame(); }
                 frames(16);
                 K(EN_K4, 1);
                 ui.force = 1; frame(); ppm("page-midi3");
-                check(!strcmp(PAGES[ui.page].title, "MIDI 3") && song.g[G_CLKOUT] == 1, "2.7: GLO > MIDI 3 > KNOB 4: CLK OUT ON");
+                check(!strcmp(PAGES[ui.page].title, m3) && song.g[G_CLKOUT] == 1, "2.7: GLO > MIDI 3 (RAPTOR: MIDI 2) > KNOB 4: CLK OUT ON");
                 K(EN_K4, -1);
                 check(song.g[G_CLKOUT] == 0, "2.7: CLK OUT back OFF");
                 for (q = 0; q < 4u && strcmp(PAGES[ui.page].title, "MIDI"); q++) { encs[panel.enc[EN_SELECT]] = -1; frame(); }
@@ -1816,7 +1818,8 @@ int main(int argc, char **argv)
                 char vv[12];
                 param_format(&GP[G_DRCH], 0, vv, &u);
                 check(m->id[0] == G_CH1 && m->id[1] == G_CH2 && m->id[2] == G_CH3 && m->id[3] == G_DRCH && !strcmp(m2->title, "MIDI 2") &&
-                      m2->id[0] == G_ROUTE && m2->id[1] == G_CHOTH && m2->id[2] == G_MIDI && m2->id[3] == G_BEND &&
+                      m2->id[0] == G_ROUTE && m2->id[1] == G_CHOTH && (RAPTOR_SLOOP_PAGES ? m2->id[2] == G_MIDI && m2->id[3] == G_BEND :
+                      m2->id[2] == G_BEND && m2->id[3] == G_CLKOUT) &&
                       !strcmp(GP[G_DRCH].label, "CH4") && !strcmp(vv, "OFF"),
                       "GLO > MIDI: CH1 CH2 CH3 CH4 (the drums); MIDI 2: IN OTHER OUT BEND; CH4 0 reads OFF");
                 song.g[G_CH2] = 2, frame();
@@ -1837,6 +1840,7 @@ int main(int argc, char **argv)
             song.g[G_CH2] = 2;
             go_home(); frames(16);
         }
+#if RAPTOR_SLOOP_PAGES
         {   /* GLO > TEXTURE, TEXTURE 2 (2.6) */
             uint32_t h1 = 0, h2 = 0;
             WALK(FAM_GLO, "TEXTURE", h1);
@@ -1850,6 +1854,15 @@ int main(int argc, char **argv)
             song.g[G_TXSRC] = 0;
             go_home(); frames(16);
         }
+#else
+        {   /* RAPTOR: TEXTURE, TEXTURE 2, MASTER, MIDI 3, REV/CHO are cut */
+            uint32_t q, gone = 1;
+            for (q = 0; q < NPAGES; q++)
+                gone &= strcmp(PAGES[q].title, "TEXTURE") && strcmp(PAGES[q].title, "TEXTURE 2") && strcmp(PAGES[q].title, "MASTER") &&
+                        strcmp(PAGES[q].title, "MIDI 3") && strcmp(PAGES[q].title, "REV/CHO");
+            check(gone, "RAPTOR: TEXTURE, TEXTURE 2, MASTER, MIDI 3, REV/CHO cut");
+        }
+#endif
         #undef K
         #undef WALK
     }

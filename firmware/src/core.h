@@ -16,6 +16,10 @@
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #define NSTEP 64
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
+#ifndef RAPTOR_SLOOP_PAGES
+#define RAPTOR_SLOOP_PAGES 0     /* RAPTOR (the UI pass): SLOOP's TEXTURE, TEXTURE 2, MASTER, MIDI 3 and REV/CHO pages are
+                                  * out; what they set stays at its default (project.c proj_foreign_parts) */
+#endif
 #ifndef FELUCCA_SLICER
 #define FELUCCA_SLICER 0         /* RAPTOR: the per-track SLICER insert is out (slicer.c: its 48 KB recorder went to
                                   * Paleotone's effects); 1 builds it back */

@@ -758,6 +758,12 @@ UI_SMALL static void project_erase(uint32_t slot)
 UI_SMALL static void proj_foreign_parts(const project_t *p)
 {
     uint32_t k;
+    if (!RAPTOR_SLOOP_PAGES) {                          /* RAPTOR: the cut pages' settings, at their defaults (a project
+                                                         * from before the cut: nothing left on that no page reaches) */
+        static const uint8_t CUT[] = {G_TXSRC, G_DUST, G_DUCK, G_FILT, G_FXCH, G_DRMAP, G_RMCH, G_CRATE, G_CDEPTH};
+        for (k = 0; k < sizeof CUT; k++)
+            song.g[CUT[k]] = GP[CUT[k]].def;
+    }
     for (k = 0; k < NPART; k++)
         if (p->t[k].preset != 0xFFu && (p->t[k].engine >= NENGINES || (!FELUCCA_DIGITAL && p->t[k].engine == 1u))) {
             set_engine_of(&trk[k], TRK_DEF[k][0]);
