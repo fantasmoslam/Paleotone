@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-"""The RAPTOR logo: an angular raptor head in bone, its eye and three claw slashes in lava, over a slanted,
-cut-stroke wordmark. Writes the boot splash in the format splash.c reads (the names of SLOOP's: SLOOP_SPLASH_*):
+"""The RAPTOR logo: a snarling raptor head in profile (traced from the owner's photo), bone with a lava eye, three
+claw slashes in lava behind its neck, over a slanted, cut-stroke wordmark. Writes the boot splash in the format splash.c reads (the names of SLOOP's: SLOOP_SPLASH_*):
 
   tools/gen_raptor_logo.py OUT.h            firmware boot splash (RLE, 16-colour palette, RGB565)
   tools/gen_raptor_logo.py --png OUT.png    a preview (2x)
@@ -18,14 +18,23 @@ MOSS = (120, 168, 64)
 SPLASH_W, SPLASH_H = 240, 188
 SS = 4                                            # supersampling
 
-# the head, facing right (units: the 240 x 188 splash)
-HEAD = [(86, 130), (74, 104), (72, 76), (82, 54), (100, 40), (128, 32), (160, 36), (188, 46), (212, 58), (214, 66),
-        (204, 70), (152, 74), (126, 80), (154, 86), (194, 84), (188, 94), (150, 100), (124, 104), (110, 114), (104, 132)]
-MOUTH = [(126, 80), (152, 74), (204, 70), (196, 76), (154, 86)]          # the dark gap between the jaws
-EYE = [(116, 48), (134, 44), (140, 50), (124, 54)]
-NOSTRIL = [(196, 56), (204, 58), (200, 61)]
-CRESTS = [[(96, 42), (100, 28), (112, 36)], [(116, 33), (124, 20), (134, 32)], [(138, 32), (150, 22), (156, 35)]]
-SLASHES = [((20, 22), (58, 120)), ((36, 16), (74, 114)), ((52, 10), (90, 108))]
+# the head, traced from the owner's photo of a snarling raptor (facing left, mouth open): photo pixels, mapped by PH()
+def PH(pts):
+    return [((x - 150) * 0.31 + 8, (y - 172) * 0.31 + 1) for x, y in pts]
+
+HEAD = PH([(152, 452), (158, 410), (196, 386), (244, 352), (300, 300), (352, 254), (404, 222), (446, 200), (502, 182),
+           (566, 172), (630, 186), (700, 210), (736, 228), (756, 300), (744, 400), (706, 496), (640, 488), (560, 476),
+           (498, 476), (440, 506), (370, 540), (300, 570), (232, 596), (198, 594), (186, 570), (196, 546), (176, 500),
+           (160, 484)])
+UPPER = [(166, 482), (232, 470), (302, 450), (380, 420), (450, 396), (502, 384)]    # the upper jaw's edge, front to back
+LOWER = [(204, 548), (244, 532), (302, 510), (362, 486), (432, 450), (502, 402)]    # the lower jaw's
+MOUTH = PH(UPPER + LOWER[::-1])
+EYE_C, EYE_R = PH([(404, 324)])[0], 30 * 0.31
+NOSTRIL = PH([(176, 412), (198, 406), (196, 422), (180, 426)])
+BROW = PH([(296, 300), (446, 254)])
+STRIPES = [PH(q) for q in ([(560, 180), (584, 176), (596, 300), (578, 310)], [(632, 188), (656, 196), (664, 330), (644, 336)],
+                           [(694, 208), (716, 216), (720, 360), (700, 364)], [(500, 186), (520, 182), (540, 280), (524, 286)])]
+SLASHES = [((196, 30), (226, 116)), ((210, 24), (240, 110)), ((224, 18), (254, 104))]
 
 # the wordmark: strokes on a 4 x 6 grid a letter
 LETTERS = {
@@ -46,18 +55,26 @@ def render(scale=1):
     P = lambda pts: [(x * s, y * s) for x, y in pts]
     for (a, b) in SLASHES:                                       # behind the head
         d.line(P([a, b]), fill=LAVA, width=int(7 * s))
-    for c in CRESTS:
-        d.polygon(P(c), fill=BONE)
     d.polygon(P(HEAD), fill=BONE)
-    d.polygon(P(MOUTH), fill=BLACK)
-    for x in range(156, 200, 8):                                 # the teeth: the upper jaw's, then the lower
-        d.polygon(P([(x, 73), (x + 6, 72.5), (x + 3, 80)]), fill=BONE)
-    for x in range(160, 192, 9):
-        d.polygon(P([(x, 85), (x + 6, 84.5), (x + 3, 78)]), fill=BONE)
-    d.polygon(P(EYE), fill=LAVA)
+    for q in STRIPES:                                            # the neck's dark stripes
+        d.polygon(P(q), fill=BLACK)
+    d.polygon(P(MOUTH), fill=tuple(round(v / 3) for v in LAVA))   # the mouth, dark red
+    d.line(P(PH([(502, 398), (556, 444), (612, 474)])), fill=BLACK, width=int(2 * s))   # the jaw's hinge
+    for jaw, dirn in ((UPPER, 1), (LOWER, -1)):                  # the teeth: along each jaw, pointing into the mouth
+        for (x0, y0), (x1, y1) in zip(jaw, jaw[1:]):
+            n = 3 if x1 - x0 > 60 else 2
+            for k in range(n):
+                t0, t1 = k / n, (k + 0.6) / n
+                ax, ay = x0 + (x1 - x0) * t0, y0 + (y1 - y0) * t0
+                bx, by = x0 + (x1 - x0) * t1, y0 + (y1 - y0) * t1
+                L = 20 if x0 < 420 else 12
+                tip = ((ax + bx) / 2, (ay + by) / 2 + dirn * L)
+                d.polygon(P(PH([(ax, ay), (bx, by), tip])), fill=BONE)
+    ex, ey = EYE_C
+    d.ellipse(P([(ex - EYE_R, ey - EYE_R), (ex + EYE_R, ey + EYE_R)]), fill=LAVA)
+    d.polygon(P([(ex - 1.2, ey - EYE_R + 1.5), (ex + 1.2, ey - EYE_R + 1.5), (ex + 1, ey + EYE_R - 1.5), (ex - 1, ey + EYE_R - 1.5)]), fill=BLACK)
+    d.line(P(BROW), fill=BLACK, width=int(3 * s))                # the brow over the eye
     d.polygon(P(NOSTRIL), fill=BLACK)
-    d.line(P([(86, 66), (100, 60)]), fill=MOSS, width=int(2.5 * s))            # the scales above the eye
-    d.line(P([(84, 76), (102, 70)]), fill=MOSS, width=int(2.5 * s))
     x = W_X0
     for ch in WORD:
         for stroke in LETTERS[ch]:
