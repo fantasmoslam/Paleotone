@@ -885,6 +885,8 @@ UI_SMALL static void draw_foot(void)
         str_cpy(pn, e->presets[TSEL->preset % e->npresets].name, sizeof pn);
     if (ui.home) {
         str_cpy(ti, "HOME", sizeof ti);
+    } else if (mac_on) {
+        str_cpy(ti, "MACROS", sizeof ti);               /* RAPTOR: KNOB BANK */
     } else {                                           /* page title + number in its family: "ENV DEST 2/2" */
         uint32_t n, k = page_pos(&n);
         const char *pt = pg->scope == SC_ENGINE ? e->page_title[pg->id[0] != P_E0] : 0;   /* EDIT: the engine's */

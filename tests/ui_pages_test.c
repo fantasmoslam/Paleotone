@@ -2199,6 +2199,41 @@ int main(int argc, char **argv)
         fm1_in.buttons = 0; fm1_in.notes = 0; frames(4);
         #undef R
     }
+    {   /* RAPTOR: MACROS (KNOB BANK): knobs 1..4 the selected track's macros; the engine's defaults; held KNOB BANK +
+         * a knob on a page assigns; an engine change gives the defaults back; the drum track: its FILTER */
+        uint32_t k, sau = NPART;
+        int16_t v0;
+        go_home(); frames(4);
+        for (k = 0; k < NPART; k++)
+            if (trk[k].eng_req % NENGINES == ENGI_SAURUS) sau = k;
+        song.sel = 0; set_engine_of(&trk[0], 0); apply_preset_to(&trk[0], 0); trk[0].engine = 0;
+        mac_on = 1; ui.force = 1; frame();
+        check(!strcmp(cur_page()->title, "MACROS") && cur_page()->id[0] == P_E4 && cur_page()->id[1] == P_E5 &&
+              cur_page()->id[2] == P_DIST && cur_page()->id[3] == P_REV, "MACROS: ANALOG's CUT RES DRIVE REV");
+        v0 = TSEL->p[P_E4];
+        edit_param(0, 3); frame();
+        check(TSEL->p[P_E4] != v0, "MACROS: knob 1 sets CUT");
+        ppm("page-macros");
+        if (sau < NPART) {
+            song.sel = (uint8_t)sau; frame();
+            check(cur_page()->id[0] == P_E0 && cur_page()->id[1] == P_E1 && cur_page()->id[2] == P_E4 && cur_page()->id[3] == P_E7,
+                  "MACROS: SAURUS's CALL SIZE GROWL WILD");
+        }
+        song.sel = TRK_DRUM; frame();
+        check(cur_page()->id[0] == P_TFLT && cur_page()->id[1] == 0xFFu, "MACROS: the drum track's FILTER");
+        song.sel = 0;
+        mac_on = 0;
+        for (k = 0; k < NPAGES && strcmp(PAGES[k].title, "LFO"); k++) ;
+        ui.page = (uint8_t)k; ui.home = 0; ui.force = 1; frame();
+        kb_down = 1; edit_param(1, 1); kb_down = 0;            /* KNOB BANK held, knob 2 on LFO: WAVE */
+        mac_on = 1; frame();
+        check(cur_page()->id[1] == P_LWAVE && cur_page()->id[0] == P_E4, "MACROS: KNOB BANK held + knob 2 on LFO: macro 2 = WAVE");
+        set_engine_of(&trk[0], 2u); trk[0].engine = trk[0].eng_req; frame();
+        check(cur_page()->id[1] == P_E0, "MACROS: another engine: its defaults again");
+        set_engine_of(&trk[0], 0); apply_preset_to(&trk[0], 0); trk[0].engine = 0;
+        go_home(); frames(4);
+        check(!mac_on, "MACROS: off on a page button / HOME");
+    }
     printf("ui: %s\n", fails ? "FAILED" : "pages, layers (punch, steps, erase, roll, key, mix), layer lock, song layer, REC hold, drums, REC, 20000-frame fuzz PASS");
     return fails;
 }

@@ -305,7 +305,7 @@ UI_SMALL static void ui_leds(void)
     smk_pad_piano = ui.layer == LY_SCALE;          /* SCALE held: the pads are a little piano (smk_input.h) */
     smk_pad_level = (uint8_t)padt_lvl();           /* LIGHTS > PAD THRESHOLD (ui_menu.c) */
     fm1_led[SMK_BTN_FADER_BANK] = fb_shown();      /* FADER BANK lit while its screen is up (one bank screen at a time) */
-    fm1_led[SMK_BTN_KNOB_BANK] = pick_pin || ms_pending(&pick_k4_until);   /* KNOB BANK: picker pinned, PRESETS turning */
+    fm1_led[SMK_BTN_KNOB_BANK] = mac_on || ms_pending(&pick_k4_until);   /* KNOB BANK: picker pinned, PRESETS turning */
     smk_pad_pick = (uint16_t)(pick_shown() ? 0xFFFFu : 0u);   /* (these pads: no notes) */
     smk_pad_grid = (uint8_t)padgrid_on();          /* (steps and tiles: reading order) */
     smk_pad_drums = (uint8_t)(!pad_steps && ui.layer == LY_PLAY && !smk_pad_grid);   /* the pads: DRUM KIT, NOTES (neither: */
@@ -691,13 +691,38 @@ UI_SMALL static void project_new(void)
     ui.force = 1;
 }
 
+static uint8_t kb_down, kb_used;                          /* RAPTOR: KNOB BANK held; a knob assigned meanwhile */
+/* RAPTOR: KNOB BANK held, knob `slot` turned on a page: its parameter becomes that macro of the selected track */
+UI_SMALL static void mac_assign(uint32_t slot)
+{
+    const page_t *pg = &PAGES[ui.page];
+    uint32_t id = pg->id[slot & 3u], s = song.sel % NTRK;
+    char m[24] = "MACRO 1 = ";
+    kb_used = 1;
+    (void)mac_page();                                       /* (this engine's table) */
+    if (ui.home || (pg->scope != SC_TRACK && pg->scope != SC_ENGINE) || id == 0xFFu || (is_drum(TSEL) && !page_for_drum(pg))) {
+        ui_message("MACROS: SOUND PAGES ONLY");
+        return;
+    }
+    mac_id[s][slot & 3u] = (uint8_t)(id + 1u);
+    m[6] = (char)('1' + (slot & 3u));
+    str_cpy(m + str_len(m), track_desc(TSEL, id)->label, 12);
+    ui_message(m);
+}
+
 UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
 {
     int16_t *vp;
-    const page_t *pg = cur_page();
+    const page_t *pg;
     const param_desc_t *d;
-    uint32_t id = pg->id[slot];
+    uint32_t id;
     int32_t v;
+    if (kb_down && !mac_on && slot < 4u) {                  /* RAPTOR: KNOB BANK held: assign, not edit */
+        mac_assign(slot);
+        return;
+    }
+    pg = cur_page();
+    id = pg->id[slot];
     if (is_drum(TSEL) && !page_for_drum(pg))
         return;                                           /* "DRUM TRACK": nothing to edit here */
     if (pg->scope == SC_STEP) {
@@ -1344,6 +1369,7 @@ UI_SMALL static void ui_input(void)
         uint32_t kb = 1u << SMK_BTN_KNOB_BANK, fbk = 1u << SMK_BTN_FADER_BANK;
         if ((pressed & (kb | fbk)) && (fm1_in.buttons & (kb | fbk)) == (kb | fbk)) {
             pressed &= ~(kb | fbk);
+            kb_used = 1;                                        /* (RAPTOR: no MACROS toggle on its release) */
             if (fm1_ms - pd_t >= 180u) {
                 pd_t = fm1_ms;
                 pad_steps = (uint8_t)((pad_steps + 1u) % 3u);
@@ -1373,9 +1399,21 @@ UI_SMALL static void ui_input(void)
     int32_t s;
     int layered;
 #if BOARD_SMK37
-    if (pressed & 1u << SMK_BTN_KNOB_BANK) {            /* KNOB BANK: pins the pad picker open / closes it */
+    /* RAPTOR: KNOB BANK, tapped: MACROS on / off (knobs 1..4 the selected track's macros, lit while on); held while a
+     * knob turns on a page: that knob's parameter becomes the macro (edit_param). (SLOOP Pro: it pinned the pad picker;
+     * a PRESETS turn still opens that) */
+    if (pressed & 1u << SMK_BTN_KNOB_BANK) {
+        kb_down = 1;
+        kb_used = 0;
         fb_close();                                     /* (the FADER BANK screen goes: one at a time) */
-        pick_pin_toggle();
+        pick_close();
+    }
+    if (kb_down && !(fm1_in.buttons & 1u << SMK_BTN_KNOB_BANK)) {   /* let go */
+        kb_down = 0;
+        if (!kb_used && !ui.menu && ui.layer == LY_PLAY) {
+            mac_on = !mac_on;
+            ui_message(mac_on ? "MACROS" : "PAGE");
+        }
         ui.force = 1;
     }
     {

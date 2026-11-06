@@ -95,7 +95,38 @@ static struct {
     uint8_t graph_top;           /* the graph strip's top G_OY rows hold something */
 } ui;
 
-UI_SMALL static const page_t *cur_page(void) { return &PAGES[ui.page]; }
+/* RAPTOR: MACROS (SMK-37: KNOB BANK): knobs 1..4 set the selected track's four macros, whatever page was up. Each
+ * track's are its engine's (mac_default) until KNOB BANK is held and a knob turned on a page: that knob's parameter
+ * becomes that macro (ui_input.c). An engine change gives the defaults back. In RAM: a project does not keep them. */
+static uint8_t mac_on;
+static uint8_t mac_id[NTRK][4], mac_eng[NTRK];        /* assigned: parameter id + 1 (0: the default); for this engine */
+static page_t mac_pg;
+UI_SMALL static uint32_t mac_default(const track_t *t, uint32_t k)
+{
+    static const uint8_t SYN[4] = {P_TFLT, P_E0, P_DIST, P_REV}, ANA[4] = {P_E4, P_E5, P_DIST, P_REV},
+                         SAU[4] = {P_E0, P_E1, P_E4, P_E7};   /* ANALOG: CUT RES; SAURUS: CALL SIZE GROWL WILD */
+    uint32_t e = t->eng_req % NENGINES;
+    if (is_drum(t))
+        return k ? 0xFFu : P_TFLT;                      /* the drum track: its FILTER */
+    return e == 0u ? ANA[k & 3u] : e == ENGI_SAURUS ? SAU[k & 3u] : SYN[k & 3u];
+}
+UI_SMALL static const page_t *mac_page(void)
+{
+    uint32_t k, s = song.sel % NTRK;
+    if (mac_eng[s] != (uint8_t)TSEL->eng_req) {         /* another engine: its defaults */
+        mac_eng[s] = (uint8_t)TSEL->eng_req;
+        for (k = 0; k < 4u; k++)
+            mac_id[s][k] = 0;
+    }
+    mac_pg.title = "MACROS";
+    mac_pg.fam = FAM_EDIT;
+    mac_pg.scope = SC_TRACK;
+    mac_pg.graph = GR_NONE;
+    for (k = 0; k < 4u; k++)
+        mac_pg.id[k] = (uint8_t)(mac_id[s][k] ? mac_id[s][k] - 1u : mac_default(TSEL, k));
+    return &mac_pg;
+}
+UI_SMALL static const page_t *cur_page(void) { return mac_on ? mac_page() : &PAGES[ui.page]; }
 static int32_t accel(uint32_t role, int32_t s, int32_t range);   /* ui_input.c */
 static void layer_screen_draw(void);                            /* ui_layers.c */
 static void hold_screen_draw(void);
@@ -501,6 +532,7 @@ UI_SMALL static void note_name(char *b, uint32_t n)
 
 UI_SMALL static void open_family(uint32_t fam)
 {
+    mac_on = 0;                                         /* (a page button leaves MACROS) */
     if (!ui.home && cur_page()->fam == fam) {          /* same button again: next page */
         uint32_t i = ui.page + 1u;
         while (i < NPAGES && PAGES[i].fam == fam && !page_shown(&PAGES[i]))
@@ -562,6 +594,7 @@ UI_SMALL static void page_fix(void)
 
 UI_SMALL static void go_home(void)
 {
+    mac_on = 0;
 #if FELUCCA_ARRANGER
     ui.home = 0;
     ui.page = (uint8_t)page_first(FAM_TRK);
