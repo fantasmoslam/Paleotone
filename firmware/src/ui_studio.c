@@ -96,21 +96,53 @@ UI_SMALL static void te_text_c(int32_t cx, int32_t y, const char *s, uint16_t c)
     cv_text(cx - text_w(&FONT_S, s) / 2, y, &FONT_S, s, c);
 }
 
-/* the dial strip: KNOB 1..4, label + value under each (a dial with no label: an empty column); a
- * message replaces it */
+/* RAPTOR (the owner): a knob as a pie, a full disc at the top of its range that loses a wedge from the top, both
+ * sides at once (a Pac-Man dying), down to nothing at the bottom; a dim ring shows its size. ratio 0..1000, -1 = a
+ * full disc (no range). A pixel is lit when its angle from straight up is past the wedge's half-angle:
+ * cos(angle) = -dy / d <= cos(half), in Q8 (squares: no square root) */
+UI_SMALL static void te_pie(int32_t cx, int32_t cy, int32_t r, int32_t ratio, uint16_t c, uint16_t dim)
+{
+    int32_t dx, dy, cq = 256;
+    uint8_t ci = (uint8_t)cv_ci(c), di = (uint8_t)cv_ci(dim);
+    if (ratio >= 0) {
+        uint32_t half = (uint32_t)(1000 - (ratio > 1000 ? 1000 : ratio)) * 512u / 1000u;   /* 0..512 = 0..180 deg */
+        cq = SINE[(half + 256u) & 1023u] >> 7;           /* cos(half), Q8 */
+    }
+    for (dy = -r; dy <= r; dy++)
+        for (dx = -r; dx <= r; dx++) {
+            int32_t d2 = dx * dx + dy * dy, n = -dy, on;
+            if (d2 > r * r + r)
+                continue;
+            if (ratio < 0 || ratio >= 1000)
+                on = 1;
+            else if (ratio <= 0)
+                on = 0;
+            else if (cq >= 0)
+                on = n <= 0 || n * n * 65536 <= d2 * cq * cq;
+            else
+                on = n < 0 && n * n * 65536 >= d2 * cq * cq;
+            if (on)
+                cv_pseti(cx + dx, cy + dy, ci);
+            else if (d2 >= (r - 1) * (r - 1))
+                cv_pseti(cx + dx, cy + dy, di);          /* (the rim of what is gone) */
+        }
+}
+
+/* the dial strip: KNOB 1..4, a pie each and its label under it (RAPTOR: no values, the pie says it; a dial with no
+ * label: an empty column); a message replaces it */
 UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *const val[4], const int32_t ratio[4],
                      uint32_t sig, uint32_t *cache)
 {
     uint32_t k;
+    (void)val;
     sig = studio_hash(sig, ui.msg_t ? ui.msg : "");
     for (k = 0; k < 4u; k++) {
         sig = studio_hash(sig * 7u + (uint32_t)ratio[k] + (ui.hot_t && ui.hot_col == k) * 5003u, lab[k]);
-        sig = studio_hash(sig, val[k]);
     }
     if (!ui.force && sig == *cache)
         return;
     *cache = sig;
-    cv_begin(240, ui.msg_t ? 240u - (uint32_t)y0 : 40u, C_BLACK);
+    cv_begin(240, 240u - (uint32_t)y0, C_BLACK);
     if (ui.msg_t) {                                     /* a message: a white bar */
         cv_rect(0, 10, 240, 32, C_WHITE);
         cv_text((240 - text_w(&FONT_S, ui.msg)) / 2, 18, &FONT_S, ui.msg, C_BLACK);
@@ -121,14 +153,10 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
         int32_t cx = 30 + 60 * (int32_t)k;
         if (!lab[k][0])
             continue;
-        te_dial(cx, 12, 11, ratio[k], TE_COL[k], TE_DIM[k]);
-        te_text_c(cx, 24, lab[k], TE_G3);
+        te_pie(cx, 19, 18, ratio[k], TE_COL[k], TE_G3);
+        te_text_c(cx, 39, lab[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4);   /* (white while turned) */
     }
     cv_blit(0, (uint32_t)y0);
-    cv_begin(240, 16, C_BLACK);                         /* the values: white while turned */
-    for (k = 0; k < 4u; k++)
-        te_text_c(30 + 60 * (int32_t)k, 0, val[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4);
-    cv_blit(0, (uint32_t)y0 + 40u);
 }
 
 UI_SMALL static void studio_open(uint32_t scope)

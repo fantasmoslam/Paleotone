@@ -35,13 +35,14 @@ static uint8_t sync_reload;                  /* engine / preset / project / user
 /* Terminus 8x16 (S) and 16x32 (L) */
 #define Y_HEAD 0
 #define H_HEAD 20
-#define Y_LABEL 26
-#define Y_VALUE 44
-#define Y_GAUGE 64
-#define Y_SEP_END 70
-#define Y_GRAPH 74
-#define H_GRAPH 124
-#define G_OY 24                       /* graphs draw in the lower 100 px; the focus readout sits on top */
+#define H_TOP 28                      /* RAPTOR: the pages' header, its text twice as big (the menu keeps H_HEAD) */
+#define Y_LABEL 32
+#define Y_VALUE 50
+#define Y_GAUGE 70
+#define Y_SEP_END 76
+#define Y_GRAPH 80
+#define H_GRAPH 118
+#define G_OY 18                       /* graphs draw in the lower 100 px; the focus readout sits on top */
 #define Y_FOOT 202
 #define H_FOOT 38
 

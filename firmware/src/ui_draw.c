@@ -37,6 +37,27 @@ UI_SMALL static int32_t batt_shown(void)
 }
 
 /* top bar: transport, BPM, octave | USB, battery, CPU; messages replace it */
+/* FONT_S drawn k times as big (whole pixels, no blend: Terminus is 1-bit); returns the end x */
+UI_SMALL static int32_t text_k(int32_t x, int32_t y, const char *s, uint16_t c, uint32_t k)
+{
+    const felucca_font_t *f = &FONT_S;
+    uint8_t ci = (uint8_t)cv_ci(c);
+    for (; *s; s++) {
+        uint32_t gi = glyph(f, (uint8_t)*s), w = f->bw[gi], gx, gy, a, b;
+        const uint8_t *gd = f->data + f->off[gi];
+        for (gy = 0; gy < f->h; gy++)
+            for (gx = 0; gx < w; gx++) {
+                uint32_t i = gy * w + gx;
+                if ((gd[i >> 3] >> (7u - (i & 7u))) & 1u)
+                    for (a = 0; a < k; a++)
+                        for (b = 0; b < k; b++)
+                            cv_pseti(x + ((int32_t)gx - (int32_t)f->pad) * (int32_t)k + (int32_t)b,
+                                     y + (int32_t)(gy * k + a), ci);
+            }
+        x += (int32_t)(f->adv[gi] * k);
+    }
+    return x;
+}
 UI_SMALL static void draw_head(void)
 {
     char b[16];
@@ -49,59 +70,50 @@ UI_SMALL static void draw_head(void)
     if (!ui.force && sig == ui.head_sig)
         return;
     ui.head_sig = sig;
-    cv_begin(240, H_HEAD, C_BLACK);
-    if (ui.msg_t) {
-        cv_text(4, 1, &FONT_S, ui.msg, C_HI);
+    cv_begin(240, H_TOP, C_BLACK);
+    /* RAPTOR (the owner: everything larger): the header's text twice as big, in H_TOP rows */
+    if (ui.msg_t) {                                   /* a message: 2x if it fits, else as before */
+        if (text_w(&FONT_S, ui.msg) * 2 <= 232)
+            text_k(4, -2, ui.msg, C_HI, 2u);
+        else
+            cv_text(4, 6, &FONT_S, ui.msg, C_HI);
         cv_blit(0, Y_HEAD);
         return;
     }
-    if (song.playing) {                               /* > play, square stop */
-        for (i = 0; i < 5u; i++)
-            cv_rect(4 + (int32_t)i * 2, 4 + (int32_t)i, 2, 10 - 2 * (int32_t)i, C_WHITE);
+    if (song.playing) {                               /* > play, square stop: 16 px */
+        for (i = 0; i < 8u; i++)
+            cv_rect(4 + (int32_t)i * 2, 6 + (int32_t)i, 2, 16 - 2 * (int32_t)i, C_WHITE);
     } else {
-        cv_rect(4, 5, 8, 8, C_HI);
+        cv_rect(4, 7, 14, 14, C_HI);
     }
-    if (rec)                                          /* recording armed: white = this track, gray = another */
-        te_disc(21, 9, 4, rec == 2u ? TE_RED : C_GRAY);
+    if (rec)                                          /* recording armed: red = this track, gray = another */
+        te_disc(28, 14, 6, rec == 2u ? TE_RED : C_GRAY);
     fmt_int(b, song.g[G_BPM]);
-    x = 32;
-    if (FELUCCA_ICONS) {                              /* metronome, then the BPM */
-        cv_icon(x, 2, ICON_TEMPO, C_GRAY);
-        x += 14;
-    }
-    x = cv_text(x, 1, &FONT_S, b, ui.bpm_t ? C_WHITE : C_HI);   /* white while SELECT turns it */
+    x = text_k(40, -2, b, ui.bpm_t ? C_WHITE : C_HI, 2u);   /* the BPM (white while SELECT turns it) */
     if (mlu.on) {                                     /* MIDI LEARN on (2.6, GLO + F#3): in the octave's place */
-        cv_text(x + 12, 1, &FONT_S, "LEARN", C_AMB);
+        cv_text(x + 8, 6, &FONT_S, "LEARN", C_AMB);
     } else if (song.octave) {
         str_cpy(b, song.octave > 0 ? "+" : "", 4);
         fmt_int(b + str_len(b), song.octave);
-        cv_text(x + 12, 1, &FONT_S, "OCT", C_GRAY);
-        cv_text(x + 40, 1, &FONT_S, b, C_HI);
+        cv_text(x + 8, 9, &FONT_S, "OCT", C_GRAY);
+        text_k(x + 36, -2, b, C_HI, 2u);
     }
-    if (FELUCCA_ICONS) {                              /* the selected track: tape + number */
-        cv_icon(156, 2, ICON_TAPE, C_GRAY);
-        b[0] = (char)('1' + song.sel);
-        b[1] = 0;
-        cv_rect(168, 2, 12, 16, TE_COL[TSLOT(song.sel)]);
-        cv_text(170, 1, &FONT_S, b, C_BLACK);
-    } else {
-        b[0] = 'T';
-        b[1] = (char)('1' + song.sel);
-        b[2] = 0;
-        cv_text(158, 1, &FONT_S, b, C_HI);
-    }
-    {   /* battery, 3 bars; USB when a host is there */
+    b[0] = (char)('1' + song.sel);                    /* the selected track: its number in its colour */
+    b[1] = 0;
+    cv_rect(170, 2, 24, 24, TE_COL[TSLOT(song.sel)]);
+    text_k(174, -2, b, C_BLACK, 2u);
+    {   /* battery, 3 bars, 2x; USB when a host is there: a dot */
         int32_t lvl = batt_shown(), k;
-        int32_t bx = 236 - 19;                          /* right edge (the CPU figure is in the console) */
-        cv_rect(bx, 4, 17, 1, C_GRAY);
-        cv_rect(bx, 12, 17, 1, C_GRAY);
-        cv_rect(bx, 4, 1, 9, C_GRAY);
-        cv_rect(bx + 16, 4, 1, 9, C_GRAY);
-        cv_rect(bx + 17, 6, 2, 5, C_GRAY);
+        int32_t bx = 236 - 30;
+        cv_rect(bx, 7, 27, 2, C_GRAY);
+        cv_rect(bx, 19, 27, 2, C_GRAY);
+        cv_rect(bx, 7, 2, 14, C_GRAY);
+        cv_rect(bx + 25, 7, 2, 14, C_GRAY);
+        cv_rect(bx + 27, 11, 3, 6, C_GRAY);
         for (k = 0; k < lvl; k++)
-            cv_rect(bx + 2 + k * 5, 6, 3, 5, lvl == 1 && batt_level() <= 1 ? C_WHITE : C_HI);
+            cv_rect(bx + 4 + k * 7, 11, 5, 6, lvl == 1 && batt_level() <= 1 ? C_WHITE : C_HI);
         if (usb.config && !usb.suspended)
-            cv_text(bx - 28, 1, &FONT_S, "USB", C_DIM);
+            cv_rect(bx - 8, 12, 4, 4, C_DIM);
     }
     cv_blit(0, Y_HEAD);
 }
@@ -110,15 +122,15 @@ UI_SMALL static void draw_head(void)
 UI_SMALL static void draw_frame(void)
 {
     uint32_t i;
-    lcd_fill(0, H_HEAD, 240, Y_LABEL - H_HEAD, C_BLACK);
+    lcd_fill(0, H_TOP, 240, Y_LABEL - H_TOP, C_BLACK);
     lcd_fill(0, Y_SEP_END, 240, Y_GRAPH - Y_SEP_END, C_BLACK);
     lcd_fill(0, Y_GRAPH + H_GRAPH, 240, Y_FOOT - Y_GRAPH - H_GRAPH, C_BLACK);
     for (i = 0; i < 4u; i++)                            /* left inset of each column */
         lcd_fill(i * 60u, Y_LABEL, 4, Y_SEP_END - Y_LABEL, C_BLACK);
-    lcd_fill(0, H_HEAD, 240, 1, C_LINE);
+    lcd_fill(0, H_TOP, 240, 1, C_LINE);
     lcd_fill(0, Y_FOOT - 2, 240, 1, C_LINE);
     for (i = 1; i < 4u; i++)
-        lcd_fill(i * 60u - 1u, H_HEAD + 4, 1, Y_SEP_END - H_HEAD - 4, C_LINE);
+        lcd_fill(i * 60u - 1u, H_TOP + 4, 1, Y_SEP_END - H_TOP - 4, C_LINE);
 }
 
 /* one column: [icon] LABEL / value unit / gauge, redrawn only when it changed.
@@ -149,7 +161,7 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
     }
     if (c < 4u) {                                       /* (the big values: their own fit) */
         str_cpy(ui.big_l[c], l, 8);
-        fit(ui.big_v[c], val, &FONT_L, 112 - (unit[0] ? 4 : 0));
+        fit(ui.big_v[c], val, &FONT_L, 112 - (unit[0] ? 4 : 0));   /* (graph_big scales it to its cell) */
         str_cpy(ui.big_u[c], unit, 8);
         ui.big_c[c] = vc;
         ui.big_r[c] = (int16_t)ratio;
@@ -433,7 +445,9 @@ UI_SMALL static uint32_t str_hash(uint32_t h, const char *s)
 /* a page drawn with its values large (graph_big) */
 UI_SMALL static int big_page(const page_t *pg)            /* (2.6: the INSERT pages too: their middle stayed empty) */
 {
-    return (pg->graph == GR_NONE || pg->graph == GR_INS) && pg->scope != SC_SONG && pg->scope != SC_DRUM;
+    return (pg->graph == GR_NONE || pg->graph == GR_INS || pg->graph == GR_ADSR || pg->graph == GR_LFO ||
+            pg->graph == GR_FX || pg->graph == GR_SLCR || pg->graph == GR_SCALE) && pg->scope != SC_SONG && pg->scope != SC_DRUM;
+            /* RAPTOR: the curves and bars give way to the values, large (the owner: readability) */
 }
 UI_SMALL static uint32_t graph_signature(void)
 {
@@ -476,8 +490,9 @@ UI_SMALL static void graph_browse(void)
     int32_t row;
     if (!total)
         return;
-    for (row = -3; row <= 3; row++) {
-        int32_t y = 4 + (row + 3) * 17;
+    for (row = -2; row <= 2; row++) {               /* RAPTOR: five rows, the selected one twice as big */
+        static const int8_t RY[5] = {2, 20, 44, 82, 100};
+        int32_t y = RY[row + 2];
         char tag[5], nm[13];
         int sel = row == 0;
         uint32_t n = (cur + total * 4u + (uint32_t)row) % total;
@@ -489,10 +504,13 @@ UI_SMALL static void graph_browse(void)
             str_cpy(tag, preset_kind(n), sizeof tag);
             str_cpy(nm, ENGINES[e]->presets[k].name, sizeof nm);
         }
-        if (sel)
-            cv_rect(4, y + 6, 3, 3, C_WHITE);
-        cv_text(14, y, &FONT_S, tag, sel ? C_GRAY : C_DIM);
-        cv_text(54, y, &FONT_S, nm, sel ? C_WHITE : C_GRAY);
+        if (sel) {
+            cv_text(4, y + 12, &FONT_S, tag, C_GRAY);
+            text_k(44, y, nm, C_WHITE, 2u);
+            continue;
+        }
+        cv_text(14, y, &FONT_S, tag, C_DIM);
+        cv_text(54, y, &FONT_S, nm, C_GRAY);
     }
 }
 
@@ -728,36 +746,62 @@ UI_SMALL static void graph_scope(uint16_t c)
 /* RAPTOR: a page without a graph: its four values, each once, large (the owner reads them from a distance): a 2 x 2
  * grid from under the header to the footer (Y_BIG .. + H_BIG), each cell the label in the knob's colour, the value in
  * FONT_L, its unit, and a thick gauge */
-#define Y_BIG (H_HEAD + 2)
+#define Y_BIG (H_TOP + 2)
 #define H_BIG (Y_FOOT - 4 - Y_BIG)
+#define TEXT_KW(s, k) (text_w(&FONT_S, (s)) * (int32_t)(k))
+
+/* RAPTOR: a page's four values large, a 2 x 2 grid from under the header to the footer (the owner: as big as the
+ * screen takes). A cell: the label (2x, the knob's colour), the value (3x where it fits with its unit, else 2x, else
+ * 1x), the unit beside it, a 12 px gauge. One value alone: 4x in the middle */
 UI_SMALL static void graph_big(void)
 {
     uint32_t c, n = 0;
     for (c = 0; c < 4u; c++)
         n += ui.big_l[c][0] != 0;
     if (n > 1u) {
-        cv_rect(119, 4, 1, H_BIG - 8, C_LINE);
-        cv_rect(4, H_BIG / 2, 232, 1, C_LINE);
+        cv_rect(119, 2, 2, H_BIG - 4, C_LINE);
+        cv_rect(2, H_BIG / 2 - 1, 236, 2, C_LINE);
     }
     for (c = 0; c < 4u; c++) {
-        int32_t x0 = c & 1u ? 126 : 6, y0 = c & 2u ? (int32_t)H_BIG / 2 + 2 : 0, x, r = ui.big_r[c];
+        const int32_t CW = 110;                         /* a cell's width for text */
+        int32_t x0 = c & 1u ? 126 : 4, y0 = c & 2u ? (int32_t)H_BIG / 2 + 2 : 0, x, r = ui.big_r[c];
+        int32_t uw = ui.big_u[c][0] ? text_w(&FONT_S, ui.big_u[c]) + 3 : 0, lk, vk, vh;
         uint16_t vc = ui.big_c[c] == C_DIM ? C_DIM : C_WHITE, kc = TE_COL[c & 3u];
+        const char *v = ui.big_v[c];
         if (!ui.big_l[c][0])
             continue;
-        if (n == 1u) {                                  /* one value: in the middle */
-            x0 = (240 - text_w(&FONT_L, ui.big_v[c]) - (ui.big_u[c][0] ? text_w(&FONT_S, ui.big_u[c]) + 4 : 0)) / 2;
-            y0 = (int32_t)H_BIG / 4;
+        if (n == 1u) {                                  /* one value: in the middle, 4x (or less) */
+            for (vk = 4; vk > 1 && TEXT_KW(v, vk) + uw > 228; vk--)
+                ;
+            lk = TEXT_KW(ui.big_l[c], 2) <= 228 ? 2 : 1;
+            x0 = (240 - TEXT_KW(ui.big_l[c], lk)) / 2;
+            text_k(x0, (int32_t)H_BIG / 2 - 16 * vk / 2 - 16 * lk - 2, ui.big_l[c], kc, (uint32_t)lk);
+            x0 = (240 - TEXT_KW(v, vk) - uw) / 2;
+            x = text_k(x0, (int32_t)H_BIG / 2 - 16 * vk / 2, v, vc, (uint32_t)vk);
+            if (uw)
+                cv_text(x + 3, (int32_t)H_BIG / 2 + 16 * vk / 2 - 16 - 2 * vk, &FONT_S, ui.big_u[c], C_GRAY);
+            if (r >= 0) {
+                cv_rect(20, (int32_t)H_BIG / 2 + 16 * vk / 2 + 4, 200, 12, TE_G1);
+                cv_rect(20, (int32_t)H_BIG / 2 + 16 * vk / 2 + 4, (r > 1000 ? 1000 : r) * 200 / 1000, 12,
+                        vc == C_DIM ? TE_G3 : kc);
+            }
+            continue;
         }
-        cv_text(x0, y0 + 6, &FONT_S, ui.big_l[c], kc);
-        x = cv_text(x0, y0 + 24, &FONT_L, ui.big_v[c], vc);
-        if (ui.big_u[c][0])
-            cv_text(x + 4, y0 + 38, &FONT_S, ui.big_u[c], C_GRAY);
-        if (r >= 0 && n > 1u) {                         /* the gauge: 6 px, the knob's colour */
-            cv_rect(x0, y0 + 66, 106, 6, TE_G1);
-            cv_rect(x0, y0 + 66, (r > 1000 ? 1000 : r) * 106 / 1000, 6, vc == C_DIM ? TE_G3 : kc);
+        lk = TEXT_KW(ui.big_l[c], 2) <= CW ? 2 : 1;
+        text_k(x0, y0 + (lk == 2 ? -3 : 4), ui.big_l[c], kc, (uint32_t)lk);   /* (the capitals' top rows: 2..) */
+        for (vk = 3; vk > 1 && TEXT_KW(v, vk) + uw > CW; vk--)
+            ;
+        vh = 16 * vk;                                   /* the value's cell: its capitals end ~3/4 down */
+        x = text_k(x0, y0 + 70 - 2 - vh * 13 / 16, v, vc, (uint32_t)vk);
+        if (uw && x + uw <= x0 + CW + 4)
+            cv_text(x + 3, y0 + 70 - 2 - 13, &FONT_S, ui.big_u[c], C_GRAY);
+        if (r >= 0) {                                   /* the gauge: 12 px, the knob's colour */
+            cv_rect(x0, y0 + 72, CW, 12, TE_G1);
+            cv_rect(x0, y0 + 72, (r > 1000 ? 1000 : r) * CW / 1000, 12, vc == C_DIM ? TE_G3 : kc);
         }
     }
 }
+#undef TEXT_KW
 
 UI_SMALL static void draw_graph(void)
 {
@@ -912,42 +956,23 @@ UI_SMALL static void draw_foot(void)
         return;
     ui.foot_sig = sig;
     cv_begin(240, H_FOOT, C_BLACK);
-    {
-        uint32_t i;
-        for (i = 0; i < 16u; i++) {                   /* row 1: the cursor's bank as 16 thin bars */
-            uint32_t si = ui.bank * 16u + i;
-            int32_t sx = 6 + (int32_t)i * 14 + (int32_t)(i / 4u) * 4;
-            const step_t *st = &t->step[si];
-            if (si >= (uint32_t)t->p[P_SLEN])
-                continue;
-            if (step_on(st))
-                cv_rect(sx, 2, 2, 9, TE_COL[TSLOT(song.sel)]);
-            else
-                cv_rect(sx, 10, 1, 1, C_DIM);
-            if ((song.playing && si == t->seq_idx) || (song.seq_mode && si == ui.cursor))
-                cv_rect(sx - 1, 13, 3, 3, C_WHITE);
-        }
-    }
+    /* RAPTOR (the owner: everything larger): row 1 the engine (icon, name) and the page, small; row 2 the sound's
+     * name twice as big, as wide as the screen. (SLOOP's 16 step bars went: the SEQ pages show the steps) */
     x = 4;
-    if (FELUCCA_ICONS) {                              /* row 2: engine icon + name, preset, page */
-        cv_icon(x, 21, engine_icon(ename), C_GRAY);
+    if (FELUCCA_ICONS) {
+        cv_icon(x, 1, engine_icon(ename), C_GRAY);
         x += 14;
     }
-    if (!FELUCCA_ICONS || !pn[0]) {                  /* RAPTOR: the icon says the engine; its name only without one */
-        fit(en, ename, &FONT_S, 90 - (x - 4));
-        x = cv_text(x, 20, &FONT_S, en, C_HI);
-    } else {
-        x -= 10;                                      /* (the sound's name right after the icon) */
-    }
+    fit(en, ename, &FONT_S, 230 - text_w(&FONT_S, ti) - x);
+    cv_text(x, 0, &FONT_S, en, C_GRAY);
+    cv_text(236 - text_w(&FONT_S, ti), 0, &FONT_S, ti, C_HI);
     {
         char pf[16];
-        int32_t room = 236 - text_w(&FONT_S, ti) - 10 - (x + 10);
-        str_cpy(pf, pn, sizeof pf);
-        while (pf[0] && text_w(&FONT_S, pf) > room)
+        str_cpy(pf, pn[0] ? pn : ename, sizeof pf);
+        while (pf[0] && text_w(&FONT_S, pf) * 2 > 232)
             pf[str_len(pf) - 1u] = 0;
-        cv_text(x + 10, 20, &FONT_S, pf, C_AMB);
+        text_k(4, 9, pf, C_AMB, 2u);
     }
-    cv_text(236 - text_w(&FONT_S, ti), 20, &FONT_S, ti, C_GRAY);
     cv_blit(0, Y_FOOT);
 }
 UI_SMALL static void draw_columns(void)

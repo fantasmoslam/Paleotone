@@ -32,7 +32,7 @@ UI_SMALL static void song_screen_draw(void)
     if (!ui.force && !ui.msg_t && sig == previous) return;
     previous = ui.msg_t ? ~sig : sig;               /* redraw after a message expires */
     /* Draw one small band at a time: never exceed the 124-row canvas. */
-    cv_begin(240, 40, C_BLACK);
+    cv_begin(240, 42, C_BLACK);                    /* (to the first row: nothing of the page before left) */
     cv_text(4, 4, &FONT_L, "SONG", C_WHITE);
     cv_text(76, 20, &FONT_S, arrangement_enabled ? "song mode" : "loop mode", arrangement_enabled ? SC[3] : TE_G3);
     fmt_int(b, song.g[G_BPM]);
