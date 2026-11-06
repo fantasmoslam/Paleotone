@@ -124,6 +124,7 @@ UI_SMALL static void draw_frame(void)
 /* one column: [icon] LABEL / value unit / gauge, redrawn only when it changed.
  * ratio: 0..1000 for the gauge, -1 = no gauge. icon: ICON_* (icons.c), ICON_AUTO = by label */
 #define LABEL_X (FELUCCA_ICONS ? ICON_CELL + ICON_GAP : 0)
+UI_SMALL static int big_page(const page_t *pg);           /* (below) */
 UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val, const char *unit, uint16_t vc,
                         int32_t ratio, uint32_t icon)
 {
@@ -151,11 +152,17 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         fit(ui.big_v[c], val, &FONT_L, 112 - (unit[0] ? 4 : 0));
         str_cpy(ui.big_u[c], unit, 8);
         ui.big_c[c] = vc;
+        ui.big_r[c] = (int16_t)ratio;
     }
     if (c == ui.hot_col) {
         str_cpy(ui.focus_l, l, 8);
         str_cpy(ui.focus_v, v, 8);
         str_cpy(ui.focus_u, u, 8);
+    }
+    if (!ui.home && big_page(cur_page())) {             /* RAPTOR: a page without a graph shows its values once, large
+                                                         * (graph_big, over this strip too): nothing drawn here */
+        ui.col[c][0] = 0;                               /* (the next page's strip is drawn again) */
+        return;
     }
     if (!ui.force && str_eq(key, ui.col[c]))
         return;
@@ -164,8 +171,15 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
     if (FELUCCA_ICONS && icon != ICON_NONE && l[0])
         cv_icon(0, 1, icon, TE_COL[c & 3u]);            /* icon rows 1..10 = the label's cap height */
     cv_text(l[0] ? LABEL_X : 0, 0, &FONT_S, l, C_GRAY);
-    x = cv_text(0, Y_VALUE - Y_LABEL, &FONT_S, v, vc);
-    cv_text(x + 3, Y_VALUE - Y_LABEL, &FONT_S, u, C_DIM);
+    if (text_w(&FONT_L, v) <= 54) {                     /* RAPTOR: the value large when it fits the column (the unit
+                                                         * small beside it, if there is room) */
+        x = cv_text(0, 12, &FONT_L, v, vc);
+        if (x + 2 + text_w(&FONT_S, u) <= 55)
+            cv_text(x + 2, 20, &FONT_S, u, C_DIM);
+    } else {
+        x = cv_text(0, Y_VALUE - Y_LABEL, &FONT_S, v, vc);
+        cv_text(x + 3, Y_VALUE - Y_LABEL, &FONT_S, u, C_DIM);
+    }
     if (ratio >= 0) {                                   /* gauge: track, fill, 1 px end line */
         int32_t gy = Y_GAUGE - Y_LABEL;
         fx = ratio * gw / 1000;
@@ -711,27 +725,37 @@ UI_SMALL static void graph_scope(uint16_t c)
 /* SLOOP 2.4: a page without a graph (EDIT, VOICE, the DEST pages, GLOBAL, MASTER, SYSTEM...): its values
  * large in the empty space, 2 x 2 as the knobs (KNOB 1 2 / KNOB 3 4), the one turned in white; one value
  * alone (FILTER) across the width. The columns (draw_columns, drawn first) fill ui.big_* */
+/* RAPTOR: a page without a graph: its four values, each once, large (the owner reads them from a distance): a 2 x 2
+ * grid from under the header to the footer (Y_BIG .. + H_BIG), each cell the label in the knob's colour, the value in
+ * FONT_L, its unit, and a thick gauge */
+#define Y_BIG (H_HEAD + 2)
+#define H_BIG (Y_FOOT - 4 - Y_BIG)
 UI_SMALL static void graph_big(void)
 {
     uint32_t c, n = 0;
     for (c = 0; c < 4u; c++)
         n += ui.big_l[c][0] != 0;
     if (n > 1u) {
-        cv_rect(119, 6, 1, 112, C_LINE);
-        cv_rect(6, 62, 228, 1, C_LINE);
+        cv_rect(119, 4, 1, H_BIG - 8, C_LINE);
+        cv_rect(4, H_BIG / 2, 232, 1, C_LINE);
     }
     for (c = 0; c < 4u; c++) {
-        int32_t x0 = c & 1u ? 126 : 6, y0 = c & 2u ? 64 : 2, x;
+        int32_t x0 = c & 1u ? 126 : 6, y0 = c & 2u ? (int32_t)H_BIG / 2 + 2 : 0, x, r = ui.big_r[c];
+        uint16_t vc = ui.big_c[c] == C_DIM ? C_DIM : C_WHITE, kc = TE_COL[c & 3u];
         if (!ui.big_l[c][0])
             continue;
         if (n == 1u) {                                  /* one value: in the middle */
             x0 = (240 - text_w(&FONT_L, ui.big_v[c]) - (ui.big_u[c][0] ? text_w(&FONT_S, ui.big_u[c]) + 4 : 0)) / 2;
-            y0 = 30;
+            y0 = (int32_t)H_BIG / 4;
         }
-        cv_text(x0, y0 + 2, &FONT_S, ui.big_l[c], TE_COL[c & 3u]);
-        x = cv_text(x0, y0 + 20, &FONT_L, ui.big_v[c], ui.big_c[c] == C_DIM ? C_DIM : ui.big_c[c] == C_WHITE ? C_WHITE : C_HI);
+        cv_text(x0, y0 + 6, &FONT_S, ui.big_l[c], kc);
+        x = cv_text(x0, y0 + 24, &FONT_L, ui.big_v[c], vc);
         if (ui.big_u[c][0])
-            cv_text(x + 4, y0 + 34, &FONT_S, ui.big_u[c], C_GRAY);
+            cv_text(x + 4, y0 + 38, &FONT_S, ui.big_u[c], C_GRAY);
+        if (r >= 0 && n > 1u) {                         /* the gauge: 6 px, the knob's colour */
+            cv_rect(x0, y0 + 66, 106, 6, TE_G1);
+            cv_rect(x0, y0 + 66, (r > 1000 ? 1000 : r) * 106 / 1000, 6, vc == C_DIM ? TE_G3 : kc);
+        }
     }
 }
 
@@ -750,6 +774,18 @@ UI_SMALL static void draw_graph(void)
     if (!ui.force && sig == ui.graph_sig)
         return;
     ui.graph_sig = sig;
+    if (!ui.home && !drum_note && big_page(pg)) {     /* RAPTOR: the values once, large, from under the header */
+        uint32_t half;
+        for (half = 0; half < 2u; half++) {           /* (in two bands: the canvas holds 120 rows) */
+            cv_begin(240, H_BIG / 2, C_BLACK);
+            cv_oy = -(int32_t)(half * (H_BIG / 2));
+            graph_big();
+            cv_oy = 0;
+            cv_blit(0, Y_BIG + half * (H_BIG / 2));
+        }
+        ui.graph_top = 1;
+        return;
+    }
     cv_begin(240, H_GRAPH, C_BLACK);
     cv_oy = G_OY;
     if (ui.home) {
@@ -795,10 +831,6 @@ UI_SMALL static void draw_graph(void)
             graph_user();
             break;
         default:
-            if (big_page(pg)) {
-                cv_oy = 0;
-                graph_big();
-            }
             break;
         }
     }

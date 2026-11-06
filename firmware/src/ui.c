@@ -90,6 +90,7 @@ static struct {
     char focus_l[8], focus_v[8], focus_u[8];   /* the touched column, shown large */
     char big_l[4][8], big_v[4][10], big_u[4][8];   /* the four columns, for the big values (2.4: pages without a graph) */
     uint16_t big_c[4];
+    int16_t big_r[4];            /* RAPTOR: their gauges (0..1000, -1 none) */
     uint32_t graph_sig, head_sig, foot_sig, frame;
     uint8_t graph_top;           /* the graph strip's top G_OY rows hold something */
 } ui;
