@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quixotic7.remotefm1.Mode
@@ -56,6 +58,7 @@ fun InstrumentHostScreen(a: AppUi, askNotifications: () -> Unit) {
         // Hardware integration is a separate, unqualified milestone. This shell
         // makes no assumption that the user has an upstream bridge installed.
         m.useSource(Source.TABLET)
+        if (m.usbAudio) m.useUsbAudio(false)
         if (m.mode != Mode.CORE) m.useMode(Mode.CORE)
     }
     LaunchedEffect(a.feed) {
@@ -73,7 +76,7 @@ fun InstrumentHostScreen(a: AppUi, askNotifications: () -> Unit) {
                     Text("Instrument Host", color = Ink, fontSize = 25.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(m.coreName, color = Amber, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text((m.current?.name ?: m.selected), color = Amber, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(m.audioState.line.ifEmpty { "Audio muted" }, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 180.dp))
                 }
                 Action(if (m.soundOn) "Mute" else "Enable audio", accent = m.soundOn) {
@@ -102,7 +105,7 @@ fun InstrumentHostScreen(a: AppUi, askNotifications: () -> Unit) {
                 }
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("TOUCH PLAY / ${m.coreName}", color = Muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
+                Text("TOUCH PLAY / ${(m.current?.name ?: m.selected)}", color = Muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
                 Text("HOST 0.1.2 · FM-1 + SMK-37 project", color = Muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
             }
         }
@@ -127,9 +130,10 @@ private fun Action(text: String, accent: Boolean = false, enabled: Boolean = tru
 private fun Performance(a: AppUi) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            val displaySide = maxHeight.coerceIn(200.dp, 330.dp)
             if (maxWidth >= 840.dp) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    Column(Modifier.width(maxHeight.coerceIn(200.dp, 330.dp)).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.width(displaySide).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         OriginalDisplay(a.feed, Modifier.weight(1f).fillMaxWidth())
                         Text("Original instrument display", color = Muted, fontSize = 12.sp)
                     }
@@ -148,9 +152,11 @@ private fun Performance(a: AppUi) {
 
 @Composable
 private fun OriginalDisplay(feed: PanelFeed, modifier: Modifier) {
-    feed.frames
-    Box(modifier.background(Color.Black, Shape).padding(8.dp), contentAlignment = Alignment.Center) {
-        Image(feed.image, "Original instrument display", Modifier.fillMaxSize(), filterQuality = FilterQuality.None)
+    Canvas(modifier.background(Color.Black, Shape).padding(8.dp).semantics { contentDescription = "Original instrument display" }) {
+        feed.frames // observe in the draw phase: the same bitmap object changes in place
+        val side = minOf(size.width, size.height).toInt().coerceAtLeast(1)
+        drawImage(feed.image, dstOffset = IntOffset((size.width.toInt() - side) / 2, (size.height.toInt() - side) / 2),
+            dstSize = IntSize(side, side), filterQuality = FilterQuality.None)
     }
 }
 
@@ -275,7 +281,7 @@ private fun Library(a: AppUi, play: () -> Unit) {
             }
         }
         Eyebrow("SESSION SNAPSHOTS")
-        Action("Save snapshot of ${m.coreName}") { m.saveState("Snapshot ${java.text.SimpleDateFormat("MMM d HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}", a.feed.knobs.master) }
+        Action("Save snapshot of ${(m.current?.name ?: m.selected)}") { m.saveState("Snapshot ${java.text.SimpleDateFormat("MMM d HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}", a.feed.knobs.master) }
         if (m.message.isNotEmpty()) Text(m.message, color = Mint, fontSize = 14.sp)
         val snapshots = remember(m.selected, m.message, m.dataGen) { m.stateLib.list(m.current?.firmwareID ?: m.selected) }
         snapshots.take(12).forEach { saved -> Action("Load ${saved.name}") { a.feed.releaseAll(); m.loadState(saved); play() } }
