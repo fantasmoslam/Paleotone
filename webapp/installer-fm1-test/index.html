@@ -86,7 +86,7 @@
   <section class="plaque">
   <button class="lang" id="lang"></button>
   <p class="note" data-t="backupFirst"></p>
-  <p class="note"><b>TEST BUILD:</b> the FM-1 Paleotone on the six-track SLOOP sequencer (branch claude/project-thread-n5rqg8, build e5770c7). Not the release; earlier Paleotone projects are not read.</p>
+  <p class="note"><b>TEST BUILD:</b> the FM-1 Paleotone on the six-track SLOOP sequencer (branch claude/project-thread-n5rqg8, build c94a267: CALL KIT, all twenty creatures on the CALLS track). Not the release; earlier Paleotone projects are not read.</p>
   <p data-t="intro"></p>
   <p data-t="warn"></p>
   <p class="small" data-t="direct"></p>
@@ -888,7 +888,7 @@ const TEXT = {
 let lang = (navigator.language || "en").toLowerCase().startsWith("ja") ? "ja" : "en";
 const t = (k) => TEXT[lang][k];
 let lastKey = null, lastArg = "";
-const meta = {"version": "FM-1 test e5770c7", "product": "FM-1_900", "pkg": "paleotone-fm1-e5770c7.fwsc"};
+const meta = {"version": "FM-1 test c94a267", "product": "FM-1_900", "pkg": "paleotone-fm1-c94a267.fwsc"};
 const VER = String(meta.version).replace(/^gb/, "");   // GHOULBOX: the release's number (make_site.py's "gbX.Y")
 function applyLang() {
   document.documentElement.lang = lang;
