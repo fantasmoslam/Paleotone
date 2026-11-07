@@ -701,24 +701,29 @@ UI_SMALL static void project_new(void)
     ui.force = 1;
 }
 
-/* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO, and the first power-on with no project). D minor, 100
- * BPM. The music, four bars of 1/16 (Dm Bb F C): LOG MARIMBA (1), JUNGLE PAD (2), SWAMP BASS on ANALOG (3), the drums
- * (6); the world, eight bars of 1/8 over it: the SFX kit (4: river, insects, thunder and rain, footsteps, wings, a far
- * roar) and the CALL KIT (5: a brachio, raptors, a pterosaur, chicks, a tyrant, a hadro). One loop: song mode, the
- * sections, the mixer are free to try on it */
+/* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO, and the first power-on with no project). D minor, 72
+ * BPM, eight bars of 1/8 (Dm Bb Gm A | Dm Bb C A): a harp melody (1) over a slow pad (2) and a sub bass (3), a quiet
+ * low beat of four bars of 1/16 (6). The creatures answer the melody: a far brachio call ends its first phrase
+ * (bar 4), footsteps come closer (4) and a tyrant's roar ends the second (bar 8, the CALL KIT on 5). One loop: song
+ * mode, the sections, the mixer are free to try on it */
 #define DM_N(s, l, n) {(uint8_t)(s), (uint8_t)(l), (uint8_t)(n)}
 typedef struct { uint8_t s, l, n; } demo_ev_t;          /* a note: its step, its length (steps), its note */
-static const demo_ev_t DEMO_SFX[] = {                   /* SFX KEYS: C2 thunder .. D#3 squawk (eng_sfx.c) */
-    DM_N(0, 32, 47), DM_N(8, 14, 45), DM_N(20, 1, 43), DM_N(22, 1, 43), DM_N(24, 1, 43),
-    DM_N(32, 6, 36), DM_N(32, 32, 39), DM_N(42, 3, 44), DM_N(52, 6, 46), DM_N(58, 6, 45)};
-static const demo_ev_t DEMO_CALL[] = {                  /* CALL KIT: C2 + the creature (eng_saurus.c) */
-    DM_N(4, 8, 36), DM_N(18, 1, 38), DM_N(19, 3, 39), DM_N(28, 3, 41), DM_N(36, 2, 47),
-    DM_N(48, 8, 37), DM_N(60, 3, 54)};
-static const uint8_t DEMO_CH[4][3] = {{62, 65, 69}, {58, 62, 65}, {60, 65, 69}, {60, 64, 67}};   /* Dm Bb F C */
-static const uint8_t DEMO_ROOT[4] = {38, 34, 41, 36}, DEMO_FIFTH[4] = {45, 41, 48, 43};
-static const uint8_t DEMO_MEL_S[7] = {0, 3, 6, 8, 10, 12, 14}, DEMO_MEL_K[7] = {0, 1, 2, 1, 0, 2, 4};
-static const uint8_t DEMO_BASS[6][3] = {{0, 3, 0}, {3, 1, 0}, {6, 2, 1}, {8, 3, 0}, {11, 1, 0}, {14, 2, 2}};   /* step,
-                                                                         * length, 0 root / 1 octave up / 2 fifth */
+static const demo_ev_t DEMO_MEL[] = {                   /* VALLEY HARP, 1/8 */
+    DM_N(0, 3, 69), DM_N(3, 1, 65), DM_N(4, 4, 74),                     /* Dm */
+    DM_N(8, 2, 72), DM_N(10, 2, 74), DM_N(12, 4, 77),                   /* Bb */
+    DM_N(16, 3, 74), DM_N(19, 1, 72), DM_N(20, 4, 70),                  /* Gm */
+    DM_N(24, 4, 69),                                                    /* A: the phrase ends, the far call answers */
+    DM_N(32, 3, 69), DM_N(35, 1, 74), DM_N(36, 4, 77),                  /* Dm */
+    DM_N(40, 2, 77), DM_N(42, 2, 74), DM_N(44, 4, 70),                  /* Bb */
+    DM_N(48, 2, 72), DM_N(50, 2, 76), DM_N(52, 4, 79),                  /* C */
+    DM_N(56, 2, 81)};                                                   /* A: and the roar */
+static const demo_ev_t DEMO_SFX[] = {                   /* SFX KEYS (eng_sfx.c): far thunder, then the footsteps */
+    DM_N(0, 6, 36), DM_N(49, 1, 43), DM_N(52, 1, 43), DM_N(55, 1, 43)};
+static const demo_ev_t DEMO_CALL[] = {                  /* CALL KIT: C2 brachio call, C#2 tyrant roar */
+    DM_N(28, 4, 36), DM_N(58, 6, 37)};
+static const uint8_t DEMO_CH[8][3] = {{62, 65, 69}, {58, 62, 65}, {55, 58, 62}, {57, 61, 64},
+                                      {62, 65, 69}, {58, 62, 65}, {55, 60, 64}, {57, 61, 64}};
+static const uint8_t DEMO_ROOT[8] = {38, 34, 31, 33, 38, 34, 36, 33};
 UI_SMALL static void demo_note(track_t *t, uint32_t s, uint32_t l, uint32_t note)
 {
     step_t *st = &t->step[s % NSTEP];
@@ -728,7 +733,7 @@ UI_SMALL static void demo_note(track_t *t, uint32_t s, uint32_t l, uint32_t note
         st->time = ST_NOTE;
     }
     st->note[st->n++] = (uint8_t)note;
-    st->vel = 100;
+    st->vel = 96;
     for (k = 1; k < l && s + k < NSTEP; k++)
         if (t->step[s + k].time == ST_REST)
             t->step[s + k].time = ST_TIE;
@@ -748,8 +753,9 @@ UI_SMALL static void demo_hit(uint32_t s, uint32_t lane, uint32_t lv)
 /* the demo into the working project; boot: at power-on (nothing sounds: the engines switch at once) */
 UI_SMALL static void demo_fill(int boot)
 {
-    static const uint8_t SND[NPART] = {9, 12, 17, 0, 20};   /* LOG MARIMBA, JUNGLE PAD, SWAMP BASS, DINO WORLD, CALL KIT */
-    uint32_t b, i, k;
+    static const uint8_t SND[NPART] = {11, 12, 7, 0, 20};   /* VALLEY HARP, JUNGLE PAD, SUB BASS, DINO WORLD, CALL KIT */
+    static const uint8_t LVL[NPART] = {127, 76, 84, 84, 112};   /* the melody and the roar up front */
+    uint32_t b, i;
     set_engine_of(&trk[2], 0);                          /* track 3: ANALOG for the bass (as project_new: IRQ off in it) */
     for (i = 0; i < NPART; i++) {
         fm1_irq_off();
@@ -760,40 +766,34 @@ UI_SMALL static void demo_fill(int boot)
     }
     fm1_irq_off();
     for (i = 0; i < NTRK; i++) {
-        static const uint8_t LVL[NPART] = {127, 80, 104, 92, 88};   /* the melody up front, the pad under it */
         if (i < NPART)
             trk[i].p[P_LEVEL] = LVL[i];
         steps_clear(&trk[i]);
         trk[i].p[P_SLEN] = 64;
-        trk[i].p[P_SDIV] = i == 3u || i == 4u ? 1 : 2;  /* the world in 1/8: eight bars */
+        trk[i].p[P_SDIV] = i == TRK_DRUM ? 2 : 1;       /* eight bars of 1/8; the beat four bars of 1/16 */
     }
-    for (b = 0; b < 4u; b++) {
-        uint32_t o = b * 16u;
-        for (k = 0; k < 3u; k++)
-            demo_note(&trk[1], o, 15, DEMO_CH[b][k]);
-        for (k = 0; k < 7u; k++)
-            demo_note(&trk[0], o + DEMO_MEL_S[k], 1, DEMO_MEL_K[k] < 3u ? DEMO_CH[b][DEMO_MEL_K[k]] + 12u : DEMO_CH[b][0] + 24u);
-        for (k = 0; k < 6u; k++)
-            demo_note(&trk[2], o + DEMO_BASS[k][0], DEMO_BASS[k][1],
-                      DEMO_BASS[k][2] == 2u ? DEMO_FIFTH[b] : DEMO_ROOT[b] + (DEMO_BASS[k][2] ? 12u : 0u));
-        demo_hit(o, 0, LV_NORM);                        /* kick */
-        demo_hit(o + 10u, 0, LV_NORM);
-        demo_hit(o + 8u, 2, LV_NORM);                   /* snare, the clap with it in bars 2 and 4 */
-        if (b & 1u)
-            demo_hit(o + 8u, 3, LV_SOFT);
-        for (k = 0; k < 16u; k += 2u)
-            demo_hit(o + k, k == 14u ? 5u : 4u, k & 2u ? LV_SOFT : LV_NORM);   /* hats, the open one at the end */
-        for (k = 1; k < 16u; k += 2u)
-            demo_hit(o + k, 13, LV_GHOST);              /* shaker */
-        demo_hit(o + 3u, 14, LV_SOFT);                  /* conga */
-        demo_hit(o + 11u, 14, LV_NORM);
+    for (b = 0; b < 8u; b++) {
+        uint32_t o = b * 8u;
+        for (i = 0; i < 3u; i++)
+            demo_note(&trk[1], o, 7, DEMO_CH[b][i]);
+        demo_note(&trk[2], o, 5, DEMO_ROOT[b]);
+        demo_note(&trk[2], o + 6u, 2, DEMO_ROOT[b] + 12u);
     }
-    demo_hit(56, 9, LV_NORM), demo_hit(58, 10, LV_NORM), demo_hit(60, 9, LV_HARD), demo_hit(62, 10, LV_HARD);   /* the fill */
-    demo_hit(0, 11, LV_SOFT);                           /* a crash on the one */
+    demo_events(&trk[0], DEMO_MEL, NELEM(DEMO_MEL));
     demo_events(&trk[3], DEMO_SFX, NELEM(DEMO_SFX));
     demo_events(&trk[4], DEMO_CALL, NELEM(DEMO_CALL));
-    song.g[G_BPM] = 100;
-    song.g[G_SWING] = 12;
+    for (b = 0; b < 4u; b++) {                          /* a low, slow beat: kick, a soft rim, a conga */
+        uint32_t o = b * 16u;
+        demo_hit(o, 0, LV_NORM);
+        demo_hit(o + 10u, 0, LV_SOFT);
+        demo_hit(o + 8u, 7, LV_SOFT);
+        demo_hit(o + 6u, 14, LV_GHOST);
+        demo_hit(o + 14u, 14, LV_GHOST);
+    }
+    demo_hit(60, 9, LV_SOFT), demo_hit(62, 9, LV_NORM);  /* low toms into the next phrase */
+    song.g[G_BPM] = 72;
+    song.g[G_SWING] = 0;
+    song.g[G_DRLVL] = 84;
     song.sel = 0;
     fm1_irq_on();
     sync_reload = 1;
