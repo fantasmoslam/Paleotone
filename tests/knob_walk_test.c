@@ -172,7 +172,7 @@ int main(int argc, char **argv)
                     if (pg < NPAGES && !rec && r >= EN_K1 && PAGES[pg].scope == SC_GLOBAL &&
                         (PAGES[pg].id[r - EN_K1] == G_LOAD || PAGES[pg].id[r - EN_K1] == G_SAVE ||
                          PAGES[pg].id[r - EN_K1] == G_CLRSEQ || PAGES[pg].id[r - EN_K1] == G_INITSND ||
-                         PAGES[pg].id[r - EN_K1] == G_NEWPRJ))
+                         PAGES[pg].id[r - EN_K1] == G_NEWPRJ || PAGES[pg].id[r - EN_K1] == G_DEMO))
                         continue;                 /* (a GO: a detent arms, a second one acts on the whole pattern / project) */
                     turn(kn, 1, where);
                     turn(kn, -1, where);
