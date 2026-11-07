@@ -84,8 +84,12 @@ UI_SMALL static void draw_head(void)
     cv_begin(240, H_TOP, C_BLACK);
     /* RAPTOR (the owner: everything larger): the header's text twice as big, in H_TOP rows */
     if (ui.msg_t) {                                   /* a message: 2x if it fits, else as before */
-        if (text_w(&FONT_S, ui.msg) * 2 <= 232)
+        if (text_w(&FONT_L, ui.msg) <= 232)          /* (FONT_L: the 2x font, Clayborn on the FM-1) */
             text_k(4, -2, ui.msg, C_HI, 2u);
+#ifdef PALEO_CLAYBORN
+        else if (text_w(&FONT_M, ui.msg) <= 232)
+            cv_text(4, 1, &FONT_M, ui.msg, C_HI);
+#endif
         else
             cv_text(4, 6, &FONT_S, ui.msg, C_HI);
         cv_blit(0, Y_HEAD);

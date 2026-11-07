@@ -1850,8 +1850,19 @@ UI_SMALL static void ui_input(void)
         uint32_t total, cur = preset_pos(&total);
         if (is_drum(TSEL))
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
-        else if (total)
-            preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
+        else if (total) {
+            uint32_t n = (uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total), k, e;
+            char kb[8], nm[13];
+            preset_go(n);
+            e = preset_at(n, &k);                       /* PALEOTONE: the header says the sound and its kind */
+            str_cpy(kb, preset_kind(n), 5);
+            str_cpy(kb + str_len(kb), " ", 2);
+            if (e == NENGINES)
+                up_name(k, nm);
+            else
+                str_cpy(nm, ENGINES[e]->presets[k].name, sizeof nm);
+            ui_say(kb, nm);
+        }
 #if BOARD_SMK37
         pick_open_tmp();                                /* the pad picker, a few seconds, at this sound's page */
 #endif
