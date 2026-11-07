@@ -102,6 +102,15 @@ static uint8_t theme_valid, theme_on;
 #define TE_COL_DEF (PALETTES[PAL_TERMINAL].trk)
 static uint16_t TE_COL[6] = {0xFD84, 0x569E, 0xFBD9, 0xACBF, 0xFCA7, 0x6D5F};
 static uint16_t TE_MID[6], TE_DIM[6];
+/* PALEOTONE: the four knobs' colours (labels, gauges, pies) and their one third: the palette's THEME, one colour for the
+ * four, as Paleotone's phosphor screens (the track colours stay the tracks'). The SMK-37 (RAPTOR): SLOOP's, a track
+ * colour a knob */
+static uint16_t KN_COL[4], KN_DIM[4];
+#if defined(BOARD_SMK37) && BOARD_SMK37
+#define C_BIGV C_WHITE               /* the big values of a page: the accent (RAPTOR) */
+#else
+#define C_BIGV C_AMB                 /* PALEOTONE: the palette's TEXT (TERMINAL: pale phosphor), the accent for the touched */
+#endif
 static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
 {
     uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
@@ -194,6 +203,20 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
         TE_COL[k] = cu && k < 4u ? theme.trk[k] : pp->trk[k];
         TE_MID[k] = rgb565_scale(TE_COL[k], 2u, 3u);
         TE_DIM[k] = rgb565_scale(TE_COL[k], 1u, 3u);
+    }
+#if !(defined(BOARD_SMK37) && BOARD_SMK37)
+    te_g[0] = rgb565_scale(pal[0], 4u, 5u);           /* PALEOTONE: the greys in the palette's own tint (TERMINAL: */
+    te_g[1] = rgb565_scale(pal[1], 2u, 3u);           /* green-grey), not SLOOP's neutral ones */
+    te_g[2] = rgb565_scale(pal[2], 5u, 6u);
+    te_g[3] = rgb565_scale(pal[3], 9u, 10u);
+#endif
+    for (k = 0; k < 4u; k++) {
+#if defined(BOARD_SMK37) && BOARD_SMK37
+        KN_COL[k] = TE_COL[k];
+#else
+        KN_COL[k] = pal[4];
+#endif
+        KN_DIM[k] = rgb565_scale(KN_COL[k], 1u, 3u);
     }
 }
 

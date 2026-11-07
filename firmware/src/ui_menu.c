@@ -345,8 +345,8 @@ UI_SMALL static void draw_menu(void)
 #else
                 char k[4] = {'K', (char)('1' + r), 0, 0};
 #endif
-                cv_rect(4, y + 2, 4, MI_DY - 8, cur ? C_WHITE : TE_COL[r & 3u]);   /* the knob's colour */
-                xv = cv_text(14, y, &FONT_S, k, TE_COL[r & 3u]);
+                cv_rect(4, y + 2, 4, MI_DY - 8, cur ? C_WHITE : KN_COL[r & 3u]);   /* the knob's colour */
+                xv = cv_text(14, y, &FONT_S, k, KN_COL[r & 3u]);
                 cv_text(xv + 6, y, &FONT_S, MI_NAME[i], cur ? C_WHITE : C_GRAY);
                 if (v[0] && text_w(&FONT_L, v) <= 222) {
                     xv = cv_text(14, y + 16, &FONT_L, v, cur && vc == C_HI ? C_WHITE : vc);
