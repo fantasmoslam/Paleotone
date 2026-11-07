@@ -719,7 +719,7 @@ static const demo_ev_t DEMO_SFX[] = {                   /* SFX KEYS: C2 thunder 
     DM_N(32, 6, 36), DM_N(32, 32, 39), DM_N(42, 3, 44), DM_N(52, 6, 46), DM_N(58, 6, 45)};
 static const demo_ev_t DEMO_CALL[] = {                  /* CALL KIT: C2 + the creature (eng_saurus.c) */
     DM_N(4, 8, 36), DM_N(18, 1, 38), DM_N(19, 3, 39), DM_N(28, 3, 41), DM_N(36, 2, 47),
-    DM_N(48, 8, 37), DM_N(60, 3, 53)};
+    DM_N(48, 8, 37), DM_N(60, 3, 54)};
 static const uint8_t DEMO_CH[4][3] = {{62, 65, 69}, {58, 62, 65}, {60, 65, 69}, {60, 64, 67}};   /* Dm Bb F C */
 static const uint8_t DEMO_ROOT[4] = {38, 34, 41, 36}, DEMO_FIFTH[4] = {45, 41, 48, 43};
 static const uint8_t DEMO_MEL_S[7] = {0, 3, 6, 8, 10, 12, 14}, DEMO_MEL_K[7] = {0, 1, 2, 1, 0, 2, 4};
