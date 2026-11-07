@@ -5,11 +5,12 @@
  * (as PRESETS does) and plays a short preview; < > step the pages. KNOB BANK pins it open; a PRESETS
  * turn opens it for PICK_MS. Pad hits never reach the notes while it is up (smk_input.h smk_pad_pick). */
 #define PICK_MS 1500u
-enum { PK_USER = 8, PK_KITS = 9 };
-static const char *const PICK_KIND[10] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX", "USER", "KITS"};
-static const uint8_t PICK_RGB[10][3] = {           /* a colour a kind (pads and screen) */
+enum { PK_USER = 10, PK_KITS = 11 };              /* (PALEOTONE: after SAUR and ROAR, ui.c BK_*) */
+static const char *const PICK_KIND[12] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX", "SAUR", "ROAR",
+                                          "USER", "KITS"};
+static const uint8_t PICK_RGB[12][3] = {           /* a colour a kind (pads and screen) */
     {255, 40, 40},  {255, 140, 0},  {255, 220, 0}, {40, 220, 80},  {0, 200, 255},
-    {60, 80, 255},  {170, 60, 255}, {255, 60, 170}, {220, 210, 170}, {255, 98, 26}};
+    {60, 80, 255},  {170, 60, 255}, {255, 60, 170}, {120, 230, 90}, {200, 120, 60}, {220, 210, 170}, {255, 98, 26}};
 static uint8_t pick_pin, pick_tmp, pick_sel = 0xFF;
 static uint16_t pick_page;
 static uint32_t pick_t, pick_frame;                /* last touch (ms); the frame drawn last */
@@ -165,7 +166,7 @@ static void pick_select(uint32_t w)                /* white key / cell w (0..15)
 
 static uint16_t pick_col(uint32_t kind, uint32_t sh)   /* the kind's colour, >> sh */
 {
-    const uint8_t *c = PICK_RGB[kind % 10u];
+    const uint8_t *c = PICK_RGB[kind % 12u];
     return RGB(c[0] >> sh, c[1] >> sh, c[2] >> sh);
 }
 #if BOARD_SMK37
@@ -176,7 +177,7 @@ static void pick_leds(void)                         /* the current sound white, 
     const uint8_t *c;
     if (!pick_info(&pg))
         pg.len = 0;
-    c = PICK_RGB[pg.kind % 10u];
+    c = PICK_RGB[pg.kind % 12u];
     for (w = 0; w < 16u; w++) {
         uint32_t p = w;                            /* reading order: pads 0..7 the top row */
         if (w >= pg.len)
@@ -207,7 +208,7 @@ static void pick_draw(void)
         return;
     shown = sig;
     pick_name(cur, nm);
-    str_cpy(foot, PICK_KIND[pg.kind % 10u], sizeof foot);
+    str_cpy(foot, PICK_KIND[pg.kind % 12u], sizeof foot);
     if (pg.nsub > 1u) {
         uint32_t n = str_len(foot);
         foot[n++] = ' ';
