@@ -701,29 +701,38 @@ UI_SMALL static void project_new(void)
     ui.force = 1;
 }
 
-/* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO, and the first power-on with no project). D minor, 72
- * BPM, eight bars of 1/8 (Dm Bb Gm A | Dm Bb C A): a harp melody (1) over a slow pad (2) and a sub bass (3), a quiet
- * low beat of four bars of 1/16 (6). The creatures answer the melody: a far brachio call ends its first phrase
- * (bar 4), footsteps come closer (4) and a tyrant's roar ends the second (bar 8, the CALL KIT on 5). One loop: song
+/* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO, and the first power-on with no project). D minor with
+ * the Phrygian E flat, 72 BPM, eight bars of 1/8 (Dm Eb Dm C | Dm Eb Bb A): a low horn lead (1) in the octave under
+ * middle C over a dark pad (2) and a sub bass (3), a quiet low beat of four bars of 1/16 (6). The creatures call all
+ * through it on the CALL KIT (5): a deep rumble, a far herd, a hoot, a brachio, raptors in the gap after the first
+ * phrase, a pterosaur, a growl, a hadro horn; footsteps come closer (4) and a tyrant's roar ends it. One loop: song
  * mode, the sections, the mixer are free to try on it */
 #define DM_N(s, l, n) {(uint8_t)(s), (uint8_t)(l), (uint8_t)(n)}
 typedef struct { uint8_t s, l, n; } demo_ev_t;          /* a note: its step, its length (steps), its note */
-static const demo_ev_t DEMO_MEL[] = {                   /* VALLEY HARP, 1/8 */
-    DM_N(0, 3, 69), DM_N(3, 1, 65), DM_N(4, 4, 74),                     /* Dm */
-    DM_N(8, 2, 72), DM_N(10, 2, 74), DM_N(12, 4, 77),                   /* Bb */
-    DM_N(16, 3, 74), DM_N(19, 1, 72), DM_N(20, 4, 70),                  /* Gm */
-    DM_N(24, 4, 69),                                                    /* A: the phrase ends, the far call answers */
-    DM_N(32, 3, 69), DM_N(35, 1, 74), DM_N(36, 4, 77),                  /* Dm */
-    DM_N(40, 2, 77), DM_N(42, 2, 74), DM_N(44, 4, 70),                  /* Bb */
-    DM_N(48, 2, 72), DM_N(50, 2, 76), DM_N(52, 4, 79),                  /* C */
-    DM_N(56, 2, 81)};                                                   /* A: and the roar */
+static const demo_ev_t DEMO_MEL[] = {                   /* CANYON HORN, 1/8, D3 .. Eb4 */
+    DM_N(0, 4, 62), DM_N(4, 2, 57), DM_N(6, 2, 60),                     /* Dm */
+    DM_N(8, 4, 63), DM_N(12, 2, 62), DM_N(14, 2, 58),                   /* Eb */
+    DM_N(16, 6, 57), DM_N(22, 2, 53),                                   /* Dm */
+    DM_N(24, 2, 55), DM_N(26, 2, 52),                                   /* C: the raptors answer */
+    DM_N(32, 3, 62), DM_N(35, 1, 65), DM_N(36, 2, 63), DM_N(38, 2, 62), /* Dm */
+    DM_N(40, 4, 58), DM_N(44, 4, 55),                                   /* Eb */
+    DM_N(48, 4, 53), DM_N(52, 2, 50), DM_N(54, 2, 53),                  /* Bb */
+    DM_N(56, 2, 57)};                                                   /* A: and the roar */
 static const demo_ev_t DEMO_SFX[] = {                   /* SFX KEYS (eng_sfx.c): far thunder, then the footsteps */
     DM_N(0, 6, 36), DM_N(49, 1, 43), DM_N(52, 1, 43), DM_N(55, 1, 43)};
-static const demo_ev_t DEMO_CALL[] = {                  /* CALL KIT: C2 brachio call, C#2 tyrant roar */
-    DM_N(28, 4, 36), DM_N(58, 6, 37)};
-static const uint8_t DEMO_CH[8][3] = {{62, 65, 69}, {58, 62, 65}, {55, 58, 62}, {57, 61, 64},
-                                      {62, 65, 69}, {58, 62, 65}, {55, 60, 64}, {57, 61, 64}};
-static const uint8_t DEMO_ROOT[8] = {38, 34, 31, 33, 38, 34, 36, 33};
+static const demo_ev_t DEMO_CALL[] = {                  /* CALL KIT: C2 + the creature (eng_saurus.c) */
+    DM_N(0, 3, 45),                                     /* DEEP RUMBLE */
+    DM_N(6, 6, 50),                                     /* DISTANT HERD */
+    DM_N(12, 3, 40),                                    /* CREST HOOT */
+    DM_N(20, 6, 36),                                    /* BRACHIO CALL */
+    DM_N(28, 1, 38), DM_N(29, 2, 39), DM_N(31, 1, 38),  /* RAPTOR BARK, CHAT, BARK */
+    DM_N(36, 2, 41),                                    /* PTERO SHRIEK */
+    DM_N(42, 5, 51),                                    /* LOW GROWL */
+    DM_N(46, 4, 54),                                    /* HADRO HORN */
+    DM_N(58, 6, 37)};                                   /* TYRANT ROAR */
+static const uint8_t DEMO_CH[8][3] = {{50, 53, 57}, {51, 55, 58}, {50, 53, 57}, {48, 52, 55},
+                                      {50, 53, 57}, {51, 55, 58}, {46, 50, 53}, {45, 49, 52}};
+static const uint8_t DEMO_ROOT[8] = {38, 39, 38, 36, 38, 39, 34, 33};
 UI_SMALL static void demo_note(track_t *t, uint32_t s, uint32_t l, uint32_t note)
 {
     step_t *st = &t->step[s % NSTEP];
@@ -753,10 +762,11 @@ UI_SMALL static void demo_hit(uint32_t s, uint32_t lane, uint32_t lv)
 /* the demo into the working project; boot: at power-on (nothing sounds: the engines switch at once) */
 UI_SMALL static void demo_fill(int boot)
 {
-    static const uint8_t SND[NPART] = {11, 12, 7, 0, 20};   /* VALLEY HARP, JUNGLE PAD, SUB BASS, DINO WORLD, CALL KIT */
-    static const uint8_t LVL[NPART] = {127, 76, 84, 84, 112};   /* the melody and the roar up front */
+    static const uint8_t SND[NPART] = {14, 20, 7, 0, 20};   /* CANYON HORN, ICE AGE PAD, SUB BASS, DINO WORLD, CALL KIT */
+    static const uint8_t LVL[NPART] = {92, 108, 84, 84, 96};   /* the melody and the roar up front */
     uint32_t b, i;
-    set_engine_of(&trk[2], 0);                          /* track 3: ANALOG for the bass (as project_new: IRQ off in it) */
+    set_engine_of(&trk[0], 0);                          /* tracks 1 and 3 on ANALOG: the horn, the bass (as */
+    set_engine_of(&trk[2], 0);                          /* project_new: IRQ off in it) */
     for (i = 0; i < NPART; i++) {
         fm1_irq_off();
         apply_preset_to(&trk[i], SND[i]);
