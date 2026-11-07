@@ -16,7 +16,7 @@ int main(int argc,char **argv){
  o=fopen(argv[2],"wb");if(!o){free(s.p);return 6;}fwrite("RIFF",1,4,o);w32(o,frames*2+36);fwrite("WAVEfmt ",1,8,o);w32(o,16);w16(o,1);w16(o,1);w32(o,44100);w32(o,88200);w16(o,2);w16(o,16);fwrite("data",1,4,o);w32(o,frames*2);
  for(i=0;i<frames;i++){
   if(i>=4410&&i<4410+8u*22050u&&(i-4410)%22050u==0){uint32_t step=(i-4410)/22050u;id=ork_trigger(&e,words[step],(uint8_t)(step<4?38:41),ORK_POWER,115);}
-  if(i>=4410&&(i-4410)%22050u==16000u)ork_release(&e,id);
+  if(i>=4410&&i<4410+8u*22050u&&(i-4410)%22050u==16000u)ork_release(&e,id);
   if(i==44100u*5u)id=ork_trigger(&e,0,38,ORK_MINOR,115);
   if(i==44100u*7u)ork_release(&e,id);
   if(i==44100u*8u)ork_panic(&e);

@@ -3,7 +3,9 @@
  * engine_t API. Prepare validates the bank before audio starts. Three existing
  * user sample slots hold the bank; no storage is written by this adapter.
  */
+#define ORK_EMBEDDED 1
 #include "ork/ork.c"
+#undef ORK_EMBEDDED
 typedef struct {ork_voice voice[NVOICE];} ork_part_state;
 ENG_MEM_FITS("ORK",sizeof(ork_part_state));
 static ork_bank ork_device_bank;
