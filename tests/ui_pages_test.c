@@ -2235,16 +2235,18 @@ int main(int argc, char **argv)
         check(!mac_on, "MACROS: off on a page button / HOME");
     }
     {   /* PALEOTONE: the demo song (TOOLS > DEMO): every track sounds, soloed, and the mix does not clip
-         * (outdir/demo-song.wav: the mix, 28 s: the eight bars at 72 BPM) */
-        static const char *const TN[NTRK] = {"MARIMBA", "PAD", "BASS", "SFX", "CALLS", "DRUMS"};
+         * (outdir/demo-1..6.wav: section D's tracks soloed; demo-A..D.wav: each section's mix, 28 s: the eight bars at
+         * 72 BPM), and TOOLS > DEMO stores the four sections and the song A B C B C D */
+        static const char *const TN[NTRK + 4] = {"LEAD", "PAD", "BASS", "SFX", "CALLS", "DRUMS",
+                                                 "MIX A", "MIX B", "MIX C", "MIX D"};
         uint32_t tk, f, j, clips = 0;
         char path[512];
         FILE *w;
         transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
-        for (tk = 0; tk <= NTRK; tk++) {
+        for (tk = 0; tk < NTRK + 4u; tk++) {
             double e2 = 0;
             project_new();
-            demo_fill(1);
+            demo_fill(1, tk < NTRK ? 3u : tk - NTRK);
             song.solo = (uint8_t)(tk < NTRK ? 1u << tk : 0u);
             transport_req = 1;
             w = 0;
@@ -2252,7 +2254,7 @@ int main(int argc, char **argv)
                 if (tk < NTRK)
                     snprintf(path, sizeof path, "%s/demo-%u.wav", outdir, tk + 1u);
                 else
-                    snprintf(path, sizeof path, "%s/demo-song.wav", outdir);
+                    snprintf(path, sizeof path, "%s/demo-%c.wav", outdir, (char)('A' + tk - NTRK));
                 if ((w = fopen(path, "wb")))
                     wav_hdr(w, 28u * FS);
             }
@@ -2261,7 +2263,7 @@ int main(int argc, char **argv)
                 mix_block(o, CTL);
                 for (j = 0; j < CTL; j++) {
                     e2 += (double)o[2 * j] * o[2 * j];
-                    clips += tk == NTRK && (o[2 * j] >= 32700 || o[2 * j] <= -32700);
+                    clips += tk >= NTRK && (o[2 * j] >= 32700 || o[2 * j] <= -32700);
                     if (w)
                         wav_put(w, o[2 * j], o[2 * j + 1]);
                 }
@@ -2270,10 +2272,18 @@ int main(int argc, char **argv)
                 fclose(w);
             transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
             e2 = sqrt(e2 / (28.0 * FS));
-            printf("ui: DEMO: %-8s RMS %6.0f\n", tk < NTRK ? TN[tk] : "MIX", e2);
-            check(e2 > 150.0, tk < NTRK ? TN[tk] : "DEMO: the mix sounds");
+            printf("ui: DEMO: %-8s RMS %6.0f\n", TN[tk], e2);
+            check(e2 > 150.0, TN[tk]);
         }
         check(clips < 200u, "DEMO: the mix (almost) never clips");
+        {
+            uint32_t s0 = saves;
+            demo_song();
+            check(saves == s0 + 4u && arrangement.count == 6u && arrangement.entry[2].scene == 2u &&
+                  arrangement.entry[5].scene == 3u && arrangement.entry[5].bars == 8u && arrangement_enabled,
+                  "DEMO: TOOLS > DEMO stores A..D and the song A B C B C D, song mode on");
+            arrangement_enabled = 0;
+        }
         song.solo = 0;
     }
     printf("ui: %s\n", fails ? "FAILED" : "pages, layers (punch, steps, erase, roll, key, mix), layer lock, song layer, REC hold, drums, REC, 20000-frame fuzz PASS");
