@@ -750,12 +750,12 @@ UI_SMALL static void select_engine(uint32_t e)
 /* the factory presets as one list by kind (basses, keys, organs, pads, leads, plucks and bells, stabs,
  * the rest), then the used user presets: the PRESETS knob and the PRESETS page browse it. By name: an
  * engine's preset table may change order; tests/ui_pages_test.c checks every preset is here once */
-enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_DRUM, BK_FX };
-static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX"};
+/* PALEOTONE: SAUR (every SAURUS creature, the CALL KIT) and ROAR (every ROAR sound) their own kinds, listed after
+ * the drums, before the effects (numbered after FX: the kinds before keep their numbers) */
+enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_DRUM, BK_FX, BK_SAUR, BK_ROAR };
+static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX", "SAUR", "ROAR"};
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
 #include "ui_bank.h"   /* RAPTOR: Paleotone's sounds (tools/paleotone_sounds.py) */
-    /* PALEOTONE: SAURUS's KEYS kit, every creature on the keys of one track (eng_saurus.c) */
-    {BK_FX, ENGI_SAURUS, "CALL KIT"},
     /* SFX (the dino groovebox) */
     {BK_FX, ENGI_SFX, "DINO WORLD"}, {BK_FX, ENGI_SFX, "THUNDER"}, {BK_FX, ENGI_SFX, "RUMBLE"}, {BK_FX, ENGI_SFX, "WIND HOWL"}, {BK_FX, ENGI_SFX, "RAIN"}, {BK_FX, ENGI_SFX, "VOLCANO"}, {BK_FX, ENGI_SFX, "LAVA"}, {BK_FX, ENGI_SFX, "QUAKE"}, {BK_FX, ENGI_SFX, "FOOTSTEP"}, {BK_FX, ENGI_SFX, "WINGS"}, {BK_FX, ENGI_SFX, "INSECTS"}, {BK_FX, ENGI_SFX, "FAR ROAR"}, {BK_FX, ENGI_SFX, "RIVER"}, {BK_FX, ENGI_SFX, "FIRE"}, {BK_FX, ENGI_SFX, "ROCKFALL"}, {BK_FX, ENGI_SFX, "TAR PIT"}, {BK_FX, ENGI_SFX, "SQUAWK"},
 #if FELUCCA_SLICE
