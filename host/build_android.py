@@ -62,10 +62,12 @@ def main():
                  'applicationId = "org.paleotone.host.prototype"')
     replace_once(remote / "app/src/main/res/values/strings.xml", '>RemoteFM1</string>',
                  '>Instrument Host Prototype</string>')
-    notices = remote / "app/src/main/assets/host-licenses/paleotone"
-    notices.mkdir(parents=True, exist_ok=True)
-    for source in [ROOT / "LICENSE", ROOT / "LICENSING.md", *sorted((ROOT / "LICENSES").glob("*.txt"))]:
-        shutil.copy2(source, notices / source.name)
+    notice_root = remote / "app/src/main/assets/host-licenses"
+    for instrument, source_root in [("paleotone", ROOT), ("felucca", remote / "vendor/FM1VST/cores/Felucca")]:
+        notices = notice_root / instrument
+        notices.mkdir(parents=True, exist_ok=True)
+        for source in [source_root / "LICENSE", source_root / "LICENSING.md", *sorted((source_root / "LICENSES").glob("*.txt"))]:
+            shutil.copy2(source, notices / source.name)
     manifest = {
         "prototype": True, "application_id": "org.paleotone.host.prototype",
         "paleotone_source": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
@@ -74,7 +76,7 @@ def main():
         "felucca_source": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=remote / "vendor/FM1VST/cores/Felucca", text=True).strip(),
         "instruments": sorted(wanted), "device_qualified": False,
     }
-    (notices.parent / "BUILD.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (notice_root / "BUILD.json").write_text(json.dumps(manifest, indent=2) + "\n")
     run("bash", "gradlew", ":app:testDebugUnitTest", ":app:assembleDebug", "-PrfmSkipCores=true",
         "--no-daemon", f"--max-workers={args.jobs}", cwd=remote)
     original = remote / "app/build/outputs/apk/debug/app-debug.apk"

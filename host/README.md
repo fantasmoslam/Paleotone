@@ -15,7 +15,7 @@ python3 host/prepare_remote.py --out build/instrument-host/RemoteFM1Android
 cmake -S host -B build/instrument-host/desktop \
   -DFM1VST_DIR="$PWD/build/instrument-host/RemoteFM1Android/vendor/FM1VST" \
   -DREMOTE_ANDROID_DIR="$PWD/build/instrument-host/RemoteFM1Android"
-cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration -j 2
+cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration host_audio_fidelity -j 2
 ctest --test-dir build/instrument-host/desktop --output-on-failure
 ```
 
@@ -29,7 +29,7 @@ Use a dedicated comparison checkout: packaging changes its application ID/label 
 
 ## Scope and validation
 
-The desktop test loads each real module, rejects a wrong ABI, boots, plays a key, checks for audio and screen output, captures its flash image, unloads, and repeats alternating instruments with separate saved images. It does not establish physical latency, hardware feedback or Android lifecycle correctness.
+The desktop integration test loads each real module, rejects a wrong ABI, boots, plays a key, checks for audio and screen output, captures its flash image, unloads, and repeats alternating instruments with separate saved images. A second test compares the new Paleotone module against the unchanged original firmware unit, sample for sample and pixel for pixel, while operating notes, buttons and encoders. Neither test establishes physical latency, hardware feedback or Android lifecycle correctness.
 
 The generic adapter currently provides the original firmware panel and flash persistence. Paleotone's separate Android sample-import layer, redesigned Scape controls and kiosk shell are not automatically included in this firmware-core adapter. Richer tablet controls and complete FM-1/SMK capability profiles remain subsequent work. Hardware recovery is not emulated inside a sound module. No controller flashing is performed by these build scripts.
 
