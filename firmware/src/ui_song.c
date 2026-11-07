@@ -74,10 +74,7 @@ UI_SMALL static void song_screen_draw(void)
     cv_begin(240, 68, C_BLACK);
     if (ui.msg_t) {
         cv_rect(0, 4, 240, 30, C_WHITE);
-        if (text_w(&FONT_M, ui.msg) <= 236)
-            cv_text((240 - text_w(&FONT_M, ui.msg)) / 2, 6, &FONT_M, ui.msg, C_BLACK);
-        else
-            cv_text((240 - text_w(&FONT_S, ui.msg)) / 2, 11, &FONT_S, ui.msg, C_BLACK);
+        text_big_c(120, 19, ui.msg, C_BLACK, 234);
     } else {
         static const char *const L[4] = {"row", "part", "bars", "len"};
         for (i = 0; i < 4u; i++) {

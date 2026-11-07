@@ -158,8 +158,8 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
     *cache = sig;
     cv_begin(240, 240u - (uint32_t)y0, C_BLACK);
     if (ui.msg_t) {                                     /* a message: a white bar */
-        cv_rect(0, 10, 240, 32, C_WHITE);
-        cv_text((240 - text_w(&FONT_S, ui.msg)) / 2, 18, &FONT_S, ui.msg, C_BLACK);
+        cv_rect(0, 6, 240, 40, C_WHITE);
+        text_big_c(120, 26, ui.msg, C_BLACK, 234);       /* (PALEOTONE: as big as it fits) */
         cv_blit(0, (uint32_t)y0);
         return;
     }

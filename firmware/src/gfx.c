@@ -408,6 +408,26 @@ static int32_t text_w(const felucca_font_t *f, const char *s)
     return w;
 }
 
+/* PALEOTONE (visibility): a message centred on cx, its capitals' middle on row cy, in the biggest font that fits w
+ * (FONT_L, then M, then S; elsewhere S) */
+static void text_big_c(int32_t cx, int32_t cy, const char *s, uint16_t c, int32_t w)
+{
+#ifdef PALEO_CLAYBORN
+    int32_t tw = text_w(&FONT_L, s);
+    if (tw <= w) {
+        cv_text(cx - tw / 2, cy - 15, &FONT_L, s, c);
+        return;
+    }
+    tw = text_w(&FONT_M, s);
+    if (tw <= w) {
+        cv_text(cx - tw / 2, cy - 11, &FONT_M, s, c);
+        return;
+    }
+#endif
+    (void)w;
+    cv_text(cx - text_w(&FONT_S, s) / 2, cy - 7, &FONT_S, s, c);
+}
+
 /* one-shot: text in a box, cleared to black, blitted */
 static void draw_text_box(uint32_t x, uint32_t y, uint32_t w, const felucca_font_t *f, const char *s,
                           uint16_t c, int align)
