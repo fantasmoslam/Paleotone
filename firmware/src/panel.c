@@ -55,11 +55,43 @@ static uint32_t panel_btn_of(uint32_t matrix_id)        /* label of a matrix but
     return NB;
 }
 
+
+/* Remote controls are merged by role/label, never written into the scan ISR's
+ * physical button state. A lost browser releases its held buttons in 1.5 s. */
+static struct { uint32_t held, edges, last_ms; int16_t enc[NE]; } remote_panel;
+static void panel_remote_clear(void) { memset(&remote_panel, 0, sizeof remote_panel); }
+static void panel_remote_buttons(uint32_t labels)
+{
+    uint32_t b, bits = 0;
+    for (b = 0; b < NB; b++) if ((labels >> b) & 1u) bits |= 1u << panel.btn[b];
+    remote_panel.edges |= bits & ~remote_panel.held;
+    remote_panel.held = bits;
+    remote_panel.last_ms = fm1_ms;
+}
+static void panel_remote_turn(uint32_t role, int32_t steps)
+{
+    if (role < NE) remote_panel.enc[role] = (int16_t)clamp(remote_panel.enc[role] + steps, -32, 32);
+    remote_panel.last_ms = fm1_ms;
+}
+static void panel_remote_tick(void)
+{
+    if (fm1_ms - remote_panel.last_ms > 1500u) panel_remote_clear();
+}
+static uint32_t panel_buttons(void) { return fm1_in.buttons | remote_panel.held; }
+static uint32_t panel_remote_edges(void)
+{
+    uint32_t v = remote_panel.edges;
+    remote_panel.edges = 0;
+    return v & ~fm1_in.buttons;
+}
+
 /* steps of a role, + = clockwise */
 static uint8_t panel_moved;                     /* a knob turned since ui.c scr_input last looked (SCREEN OFF) */
 static int32_t panel_enc(uint32_t role)
 {
     int32_t s = fm1_enc_take(panel.enc[role]) * panel.dir[role];
+    s += remote_panel.enc[role];
+    remote_panel.enc[role] = 0;
     if (s)
         panel_moved = 1;
     return s;

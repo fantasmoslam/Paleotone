@@ -1,0 +1,371 @@
+{
+  "rendererId": 534039429,
+  "schema": 1,
+  "selectedTrack": 138,
+  "grid": 136,
+  "ui": {
+    "home": 156,
+    "page": 157,
+    "bank": 158,
+    "cursor": 159,
+    "entry_open": 160,
+    "lane": 161,
+    "plk_src": 162,
+    "plk_lane": 163,
+    "plk_trk": 164,
+    "hot_col": 165,
+    "hot_t": 166,
+    "menu": 167,
+    "menu_sel": 168,
+    "msg_t": 169,
+    "torches": 170,
+    "torch_f": 171,
+    "bpm_t": 172,
+    "act": 173,
+    "confirm": 174,
+    "confirm_trk": 175,
+    "uslot": 176,
+    "ppick": 177,
+    "song_row": 178,
+    "song_trk": 179,
+    "ev_step": 180,
+    "ev_id": 181,
+    "uboot": 182,
+    "ly": 183,
+    "layer": 184,
+    "lock": 185,
+    "menu_scroll": 186,
+    "ev_row": 188,
+    "ev_keep": 190,
+    "pg_down": 192,
+    "home_t0": 194,
+    "rec_t0": 198,
+    "save_t0": 202,
+    "ly_t0": 206,
+    "frame": 210
+  },
+  "views": [
+    {
+      "id": "home",
+      "label": "Home",
+      "home": 1,
+      "page": 0
+    },
+    {
+      "id": "mixer",
+      "label": "Mixer",
+      "home": 0,
+      "page": 41
+    },
+    {
+      "id": "sequencer",
+      "label": "Sequencer",
+      "home": 0,
+      "page": 39
+    },
+    {
+      "id": "envelope",
+      "label": "Envelope",
+      "home": 0,
+      "page": 0
+    },
+    {
+      "id": "lfo",
+      "label": "LFO",
+      "home": 0,
+      "page": 2
+    },
+    {
+      "id": "fx",
+      "label": "FX",
+      "home": 0,
+      "page": 6
+    },
+    {
+      "id": "arp",
+      "label": "Arpeggiator",
+      "home": 0,
+      "page": 37
+    },
+    {
+      "id": "scale",
+      "label": "Scale",
+      "home": 0,
+      "page": 12
+    },
+    {
+      "id": "clock",
+      "label": "Clock",
+      "home": 0,
+      "page": 42
+    },
+    {
+      "id": "scape",
+      "label": "Soundscape",
+      "home": 0,
+      "page": 45
+    }
+  ],
+  "pages": [
+    {
+      "page": 0,
+      "label": "ENV",
+      "button": 2
+    },
+    {
+      "page": 1,
+      "label": "ENV DEST",
+      "button": 2
+    },
+    {
+      "page": 2,
+      "label": "LFO",
+      "button": 3
+    },
+    {
+      "page": 3,
+      "label": "LFO 2",
+      "button": 3
+    },
+    {
+      "page": 4,
+      "label": "LFO DEST",
+      "button": 3
+    },
+    {
+      "page": 5,
+      "label": "MOD",
+      "button": 3
+    },
+    {
+      "page": 6,
+      "label": "FX",
+      "button": 0
+    },
+    {
+      "page": 7,
+      "label": "SLICER",
+      "button": 0
+    },
+    {
+      "page": 8,
+      "label": "DLY",
+      "button": 0
+    },
+    {
+      "page": 9,
+      "label": "REVERB",
+      "button": 0
+    },
+    {
+      "page": 10,
+      "label": "CHORUS",
+      "button": 0
+    },
+    {
+      "page": 11,
+      "label": "TAPE",
+      "button": 0
+    },
+    {
+      "page": 12,
+      "label": "SCL",
+      "button": 1
+    },
+    {
+      "page": 13,
+      "label": "CHORD",
+      "button": 1
+    },
+    {
+      "page": 14,
+      "label": "EDIT 1",
+      "button": 4
+    },
+    {
+      "page": 15,
+      "label": "EDIT 2",
+      "button": 4
+    },
+    {
+      "page": 16,
+      "label": "RING",
+      "button": 4
+    },
+    {
+      "page": 17,
+      "label": "LANES",
+      "button": 4
+    },
+    {
+      "page": 18,
+      "label": "LANES 2",
+      "button": 4
+    },
+    {
+      "page": 19,
+      "label": "SLICES",
+      "button": 4
+    },
+    {
+      "page": 20,
+      "label": "OPERATOR",
+      "button": 4
+    },
+    {
+      "page": 21,
+      "label": "OP ENV",
+      "button": 4
+    },
+    {
+      "page": 22,
+      "label": "OPERATOR 2",
+      "button": 4
+    },
+    {
+      "page": 23,
+      "label": "OP1 ENV",
+      "button": 4
+    },
+    {
+      "page": 24,
+      "label": "OP2 ENV",
+      "button": 4
+    },
+    {
+      "page": 25,
+      "label": "OP3 ENV",
+      "button": 4
+    },
+    {
+      "page": 26,
+      "label": "OP4 ENV",
+      "button": 4
+    },
+    {
+      "page": 27,
+      "label": "OP LEVEL",
+      "button": 4
+    },
+    {
+      "page": 28,
+      "label": "VOICE",
+      "button": 4
+    },
+    {
+      "page": 29,
+      "label": "VOICE 2",
+      "button": 4
+    },
+    {
+      "page": 30,
+      "label": "VOICE 3",
+      "button": 4
+    },
+    {
+      "page": 31,
+      "label": "SONG",
+      "button": 5
+    },
+    {
+      "page": 32,
+      "label": "PRESETS",
+      "button": 7
+    },
+    {
+      "page": 33,
+      "label": "USER",
+      "button": 7
+    },
+    {
+      "page": 34,
+      "label": "PHRASES",
+      "button": 7
+    },
+    {
+      "page": 35,
+      "label": "PROJECT",
+      "button": 7
+    },
+    {
+      "page": 36,
+      "label": "TOOLS",
+      "button": 7
+    },
+    {
+      "page": 37,
+      "label": "ARP",
+      "button": 8
+    },
+    {
+      "page": 38,
+      "label": "ARP 2",
+      "button": 8
+    },
+    {
+      "page": 39,
+      "label": "STEP",
+      "button": 9
+    },
+    {
+      "page": 40,
+      "label": "AUTOMATION",
+      "button": 9
+    },
+    {
+      "page": 41,
+      "label": "MIXER",
+      "button": 6
+    },
+    {
+      "page": 42,
+      "label": "CLOCK",
+      "button": 6
+    },
+    {
+      "page": 43,
+      "label": "KEYS",
+      "button": 6
+    },
+    {
+      "page": 44,
+      "label": "EPOCH",
+      "button": 6
+    },
+    {
+      "page": 45,
+      "label": "SCAPE",
+      "button": 6
+    },
+    {
+      "page": 46,
+      "label": "SCAPE DRONE",
+      "button": 6
+    },
+    {
+      "page": 47,
+      "label": "SCAPE CALLS",
+      "button": 6
+    },
+    {
+      "page": 48,
+      "label": "SCAPE LEVELS",
+      "button": 6
+    },
+    {
+      "page": 49,
+      "label": "SCAPE LEVELS 2",
+      "button": 6
+    },
+    {
+      "page": 50,
+      "label": "SCAPE DENSITY",
+      "button": 6
+    },
+    {
+      "page": 51,
+      "label": "SCAPE DENSITY 2",
+      "button": 6
+    }
+  ]
+}
