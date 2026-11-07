@@ -172,6 +172,12 @@ static volatile uint8_t smk_extq_w, smk_extq_r;
 
 static uint8_t fm1_led[SMK_NLED];     /* 1 = lit (button LED i = button i) */
 static volatile uint32_t smk_ledw[2]; /* per LED group: 0xFFFF0000 | low half (LED lines active low) */
+/* RAPTOR: menu LIGHTS on the buttons. The LED lines go out with every tick's word (16 a frame): a button glowing
+ * (fm1_led_bg, not lit) is on for the first smk_bg_n ticks of its frames only (LOW 2, MID 5, HIGH 10 of 16), a lit
+ * one for all 16: a dim glow with no flicker (the frame's period, 1.6 ms, is the PWM's) */
+static uint8_t fm1_led_bg[SMK_NLED];
+static volatile uint32_t smk_ledbg[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};
+static volatile uint8_t smk_bg_n;
 static volatile uint32_t smk_muxw = 0xFFFFFFC7u;  /* AND masks over the whole 32-bit word: only the low half */
 static uint8_t smk_col, smk_grp, smk_slot, smk_adc_slot = 0xFF;
 
@@ -222,6 +228,8 @@ FM1_INLINE void smk__shift(uint32_t col)        /* start the DMA of column col's
 {
     static uint32_t w;
     w = SMK_COLW(col) & smk_ledw[smk_grp] & smk_muxw;
+    if (col < smk_bg_n)
+        w &= smk_ledbg[smk_grp];                     /* (the glowing buttons, the first ticks only) */
     SMK_SPI2_CON |= 0x4000u;
     SMK_SPI2_ADR = (uint32_t)(uintptr_t)&w;
     SMK_SPI2_CNT = 4u;
@@ -457,10 +465,14 @@ static void smk__encoders(void)                    /* stock decoder: 3-state win
 
 static void smk__leds(void)                        /* the next frame shows the other group */
 {
-    uint32_t g, i, w[2] = {0xFFFFu, 0xFFFFu};
+    uint32_t g, i, w[2] = {0xFFFFu, 0xFFFFu}, b[2] = {0xFFFFFFFFu, 0xFFFFFFFFu};
     for (i = 0; i < SMK_NLED; i++)
         if (fm1_led[i])
             w[SMK_LEDC[i] >> 4] &= ~(1u << (SMK_LEDC[i] & 15u));
+        else if (fm1_led_bg[i])
+            b[SMK_LEDC[i] >> 4] &= ~(1u << (SMK_LEDC[i] & 15u));
+    smk_ledbg[0] = b[0];
+    smk_ledbg[1] = b[1];
     smk_ledw[0] = 0xFFFF0000u | w[0] | 0x38u;       /* (bits 3..5: the mux address, ANDed in) */
     smk_ledw[1] = 0xFFFF0000u | w[1] | 0x38u;
     g = smk_grp ^ 1u;

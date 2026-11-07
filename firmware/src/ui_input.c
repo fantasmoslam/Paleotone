@@ -302,8 +302,14 @@ UI_SMALL static void ui_leds(void)
         for (k = 0; k < NB; k++)
             led_put(bl, panel.btn[k], 1);
 #if BOARD_SMK37
-    for (c = 0; c < SMK_NLED; c++)                 /* the buttons: on / off (no dim layers) */
+    for (c = 0; c < SMK_NLED; c++) {               /* the buttons: on, or glowing (menu LIGHTS: smk_input.h) */
         fm1_led[c] = nl[c];
+        fm1_led_bg[c] = (uint8_t)(lights_lvl && c < 18u);   /* every button (18: SEQ PLAY's red, not a button) */
+    }
+    {
+        static const uint8_t BG_TICKS[LIGHTS_N] = {0u, 2u, 5u, 10u};   /* OFF LOW MID HIGH, of 16 */
+        smk_bg_n = BG_TICKS[lights_lvl % LIGHTS_N];
+    }
     smk_pad_piano = ui.layer == LY_SCALE;          /* SCALE held: the pads are a little piano (smk_input.h) */
     smk_pad_level = (uint8_t)padt_lvl();           /* LIGHTS > PAD THRESHOLD (ui_menu.c) */
     fm1_led[SMK_BTN_FADER_BANK] = fb_shown();      /* FADER BANK lit while its screen is up (one bank screen at a time) */
