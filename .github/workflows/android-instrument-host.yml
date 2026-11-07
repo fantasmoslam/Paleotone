@@ -41,10 +41,35 @@ jobs:
           cmake -S host -B build/instrument-host/desktop -DCMAKE_BUILD_TYPE=Release \
             -DFM1VST_DIR="$PWD/build/instrument-host/RemoteFM1Android/vendor/FM1VST" \
             -DREMOTE_ANDROID_DIR="$PWD/build/instrument-host/RemoteFM1Android"
-          cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration host_audio_fidelity host_preset_audition -j 2
+          cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration host_audio_fidelity host_preset_audition host_screen_fixture -j 2
           ctest --test-dir build/instrument-host/desktop --output-on-failure
+      - name: Render real Paleotone display fixture
+        run: |
+          build/instrument-host/desktop/host_screen_fixture build/instrument-host/display.rgb565
+          mkdir -p build/instrument-host/RemoteFM1Android/app/src/debug/assets
+          python3 - <<'PY'
+          import numpy as np
+          from PIL import Image
+          p=np.fromfile('build/instrument-host/display.rgb565',dtype='>u2').reshape(240,240)
+          rgb=np.stack([((p>>11)&31)*255//31,((p>>5)&63)*255//63,(p&31)*255//31],axis=-1).astype('uint8')
+          Image.fromarray(rgb).save('build/instrument-host/RemoteFM1Android/app/src/debug/assets/layout-paleotone.png')
+          PY
       - name: Build isolated two-instrument Android prototype
         run: python3 host/build_android.py --remote build/instrument-host/RemoteFM1Android --jobs 2
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Render and verify tablet layouts
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash host/render_layouts.sh "$PWD/build/instrument-host/RemoteFM1Android" "$PWD/build/instrument-host/layout-review"
       - name: Corresponding prototype source
         run: git archive --format=zip --output=build/instrument-host/release/Prototype-source.zip HEAD
       - uses: actions/upload-artifact@v4
@@ -53,6 +78,7 @@ jobs:
           name: Android-Instrument-Host-Prototype
           path: |
             build/instrument-host/release/*
+            build/instrument-host/layout-review/**
             build/instrument-host/desktop/Testing/Temporary/LastTest.log
             build/instrument-host/RemoteFM1Android/app/build/test-results/testDebugUnitTest/*.xml
           retention-days: 30

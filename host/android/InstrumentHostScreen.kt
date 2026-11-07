@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dylan Spaniel and Paleotone contributors
-// Project-owned interface. The reusable engine/panel API remains attributed upstream.
 package org.paleotone.host.ui
 
 import android.graphics.Paint
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,327 +22,383 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.quixotic7.remotefm1.Mode
-import com.quixotic7.remotefm1.Source
-import com.quixotic7.remotefm1.ui.AppUi
+import androidx.compose.ui.unit.*
 import com.quixotic7.remotefm1.ui.faceplate.PanelFeed
 import com.quixotic7.remotefm1.ui.faceplate.PanelKnob
 import com.quixotic7.remotefm1.ui.faceplate.PanelLabel
+import kotlin.math.*
 
-private val Ink = Color(0xFFF1EBDD)
-private val Muted = Color(0xFFA8ADA3)
-private val Ground = Color(0xFF131916)
-private val Panel = Color(0xFF202923)
-private val Line = Color(0xFF39463C)
-private val Amber = Color(0xFFE9BA73)
-private val Mint = Color(0xFF9FD3BD)
-private val Alert = Color(0xFFEAA099)
-private val Shape = RoundedCornerShape(10.dp)
-private enum class Page(val title: String) { PLAY("Play"), LIBRARY("Instruments"), CONTROLLERS("Controllers"), AUDIO("Audio"), ABOUT("About") }
+private val Background = Color(0xFF111416)
+private val Surface = Color(0xFF1D2225)
+private val Edge = Color(0xFF343B3F)
+private val Ink = Color(0xFFECE8E0)
+private val Quiet = Color(0xFF9CA5A9)
+private val Accent = Color(0xFFD7B17D)
+private val Shape = RoundedCornerShape(12.dp)
+private enum class Page { PLAY, INSTRUMENTS, MENU, SNAPSHOTS, CONTROLLERS, AUDIO, ABOUT }
 
 @Composable
-fun InstrumentHostScreen(a: AppUi, askNotifications: () -> Unit) {
-    var page by rememberSaveable { mutableStateOf(Page.PLAY.name) }
-    val m = a.model
-    LaunchedEffect(m) {
-        // Hardware integration is a separate, unqualified milestone. This shell
-        // makes no assumption that the user has an upstream bridge installed.
-        m.useSource(Source.TABLET)
-        if (m.usbAudio) m.useUsbAudio(false)
-        if (m.mode != Mode.CORE) m.useMode(Mode.CORE)
-    }
-    LaunchedEffect(a.feed) {
-        try { while (true) { withFrameNanos { a.feed.poll() } } }
-        finally { a.feed.releaseAll() }
-    }
-    BackHandler(page != Page.PLAY.name) { page = Page.PLAY.name }
-    MaterialTheme(colorScheme = darkColorScheme(primary = Amber, secondary = Mint, background = Ground,
-        surface = Panel, onPrimary = Ground, onBackground = Ink, onSurface = Ink)) {
-        Column(Modifier.fillMaxSize().background(Ground).safeDrawingPadding().padding(horizontal = 18.dp)) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Eyebrow("TABLET INSTRUMENT WORKBENCH")
-                    Text("Instrument Host", color = Ink, fontSize = 25.sp, fontWeight = FontWeight.SemiBold)
+fun HostSurface(state: HostViewState, feed: PanelFeed, actions: HostActions,
+                initialPage: String = "PLAY", initialBank: Int = 0) {
+    var page by rememberSaveable { mutableStateOf(initialPage) }
+    fun go(target: Page) { feed.releaseAll(); page = target.name }
+    BackHandler(page != Page.PLAY.name) { go(Page.PLAY) }
+    MaterialTheme(colorScheme = darkColorScheme(primary = Accent, onPrimary = Background,
+        background = Background, surface = Surface, onSurface = Ink, onBackground = Ink)) {
+        Column(Modifier.fillMaxSize().background(Background).safeDrawingPadding().padding(horizontal = 20.dp).testTag("host-root")) {
+            Row(Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (page == Page.PLAY.name) {
+                    HostText("Instrument Host", color = Quiet, fontSize = 16.sp, modifier = Modifier.weight(1f), maxLines = 1)
+                } else {
+                    QuietButton("‹ Back", tag = "back", onClick = { go(Page.PLAY) })
+                    HostText(Page.valueOf(page).name.lowercase().replaceFirstChar { it.uppercase() }, color = Ink,
+                        fontSize = 20.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1)
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text((m.current?.name ?: m.selected), color = Amber, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(m.audioState.line.ifEmpty { "Audio muted" }, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 180.dp))
-                }
-                Action(if (m.soundOn) "Mute" else "Enable audio", accent = m.soundOn) {
-                    if (m.soundOn) a.feed.releaseAll() else askNotifications()
-                    m.setSound(!m.soundOn)
+                QuietButton("${state.name} ▾", tag = "instruments", onClick = { go(Page.INSTRUMENTS) })
+                QuietButton("Menu", tag = "menu", onClick = { go(Page.MENU) })
+                Button(onClick = { actions.sound(!state.soundOn) }, shape = Shape,
+                    colors = ButtonDefaults.buttonColors(containerColor = if (state.soundOn) Surface else Accent,
+                        contentColor = if (state.soundOn) Ink else Background),
+                    modifier = Modifier.height(48.dp).testTag("audio-toggle")) {
+                    HostText(if (state.soundOn) "Mute" else "Sound on", fontSize = 14.sp)
                 }
             }
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Page.entries.forEach { p ->
-                    TextButton(onClick = { a.feed.releaseAll(); page = p.name },
-                        modifier = Modifier.heightIn(min = 48.dp), shape = Shape,
-                        colors = ButtonDefaults.textButtonColors(contentColor = if (page == p.name) Ground else Muted,
-                            containerColor = if (page == p.name) Amber else Color.Transparent)) {
-                        Text(p.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
-            Box(Modifier.fillMaxWidth().padding(top = 8.dp).height(1.dp).background(Line))
-            Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 12.dp)) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Edge))
+            Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 16.dp)) {
                 when (Page.valueOf(page)) {
-                    Page.PLAY -> key(m.selected) { Performance(a) }
-                    Page.LIBRARY -> Library(a) { page = Page.PLAY.name }
-                    Page.CONTROLLERS -> Controllers(a)
-                    Page.AUDIO -> Audio(a)
-                    Page.ABOUT -> About(a)
+                    Page.PLAY -> key(state.selected) { Performance(feed, initialBank) }
+                    Page.INSTRUMENTS -> Instruments(state) { actions.select(it); go(Page.PLAY) }
+                    Page.MENU -> Menu { go(it) }
+                    Page.SNAPSHOTS -> Snapshots(state, actions)
+                    Page.AUDIO -> Audio(state, actions)
+                    Page.CONTROLLERS -> Controllers()
+                    Page.ABOUT -> About()
                 }
-            }
-            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("TOUCH PLAY / ${(m.current?.name ?: m.selected)}", color = Muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
-                Text("HOST 0.1.2 · FM-1 + SMK-37 project", color = Muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
             }
         }
     }
 }
 
 @Composable
-private fun Eyebrow(text: String) {
-    Text(text, color = Mint, fontFamily = FontFamily.Monospace, fontSize = 10.sp, letterSpacing = 1.sp)
+private fun QuietButton(text: String, tag: String = text, onClick: () -> Unit) {
+    TextButton(onClick, modifier = Modifier.heightIn(min = 48.dp).testTag(tag), shape = Shape,
+        colors = ButtonDefaults.textButtonColors(contentColor = Ink)) { HostText(text, fontSize = 14.sp, maxLines = 1) }
 }
 
 @Composable
-private fun Action(text: String, accent: Boolean = false, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Button(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = 48.dp), shape = Shape,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = if (accent) Amber else Line, contentColor = if (accent) Ground else Ink)) {
-        Text(text, fontSize = 14.sp, maxLines = 2)
-    }
-}
-
-@Composable
-private fun Performance(a: AppUi) {
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val displaySide = maxHeight.coerceIn(200.dp, 330.dp)
-            if (maxWidth >= 840.dp) {
-                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    Column(Modifier.width(displaySide).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OriginalDisplay(a.feed, Modifier.weight(1f).fillMaxWidth())
-                        Text("Original instrument display", color = Muted, fontSize = 12.sp)
-                    }
-                    Controls(a, Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()))
+private fun Performance(feed: PanelFeed, initialBank: Int) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+            val wide = maxWidth > maxHeight && maxWidth >= 780.dp
+            if (wide) {
+                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                    Display(feed, Modifier.weight(1f).fillMaxHeight())
+                    ControlBank(feed, Modifier.width(340.dp).fillMaxHeight(), initialBank)
                 }
             } else {
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OriginalDisplay(a.feed, Modifier.height(240.dp).fillMaxWidth())
-                    Controls(a, Modifier.fillMaxWidth())
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Display(feed, Modifier.weight(1f).fillMaxWidth())
+                    ControlBank(feed, Modifier.weight(1f).fillMaxWidth(), initialBank)
                 }
             }
         }
-        Piano(a.feed, Modifier.fillMaxWidth().height(152.dp))
+        Piano(feed, Modifier.fillMaxWidth().height(136.dp))
     }
 }
 
 @Composable
-private fun OriginalDisplay(feed: PanelFeed, modifier: Modifier) {
-    Canvas(modifier.background(Color.Black, Shape).padding(8.dp).semantics { contentDescription = "Original instrument display" }) {
-        feed.frames // observe in the draw phase: the same bitmap object changes in place
-        val side = minOf(size.width, size.height).toInt().coerceAtLeast(1)
-        drawImage(feed.image, dstOffset = IntOffset((size.width.toInt() - side) / 2, (size.height.toInt() - side) / 2),
-            dstSize = IntSize(side, side), filterQuality = FilterQuality.None)
+private fun Display(feed: PanelFeed, modifier: Modifier) {
+    Canvas(modifier.testTag("instrument-display")) {
+        feed.frames
+        val side = min(size.width, size.height)
+        val x = (size.width - side) / 2
+        val y = (size.height - side) / 2
+        drawRoundRect(Color.Black, Offset(x - 8.dp.toPx(), y - 8.dp.toPx()),
+            Size(side + 16.dp.toPx(), side + 16.dp.toPx()), CornerRadius(12.dp.toPx()))
+        drawImage(feed.image, dstOffset = IntOffset(x.toInt(), y.toInt()),
+            dstSize = IntSize(side.toInt().coerceAtLeast(1), side.toInt().coerceAtLeast(1)), filterQuality = FilterQuality.None)
     }
 }
 
 @Composable
-private fun Controls(a: AppUi, modifier: Modifier) {
-    val feed = a.feed
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Eyebrow("SOUND & NAVIGATION")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(PanelKnob.PRESETS to "Preset", PanelKnob.SELECT to "Select", PanelKnob.ALGORITHM to "Algorithm").forEach { (knob, label) ->
-                Stepper(label, Modifier.weight(1f), { feed.turn(knob, -1) }, { feed.turn(knob, 1) })
+private fun ControlBank(feed: PanelFeed, modifier: Modifier, initialBank: Int) {
+    var bank by rememberSaveable { mutableIntStateOf(initialBank) }
+    Column(modifier.testTag("control-bank"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth().height(44.dp).background(Surface, Shape), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf("Sound", "Edit", "Panel").forEachIndexed { index, title ->
+                TextButton(onClick = { feed.releaseAll(); bank = index }, shape = Shape,
+                    modifier = Modifier.weight(1f).fillMaxHeight().testTag("bank-$index"),
+                    colors = ButtonDefaults.textButtonColors(contentColor = if (bank == index) Ink else Quiet,
+                        containerColor = if (bank == index) Edge else Color.Transparent)) { HostText(title, fontSize = 13.sp) }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(PanelKnob.K1, PanelKnob.K2, PanelKnob.K3, PanelKnob.K4).forEachIndexed { index, knob ->
-                Stepper("Knob ${index + 1}", Modifier.weight(1f), { feed.turn(knob, -1) }, { feed.turn(knob, 1) })
+        if (bank < 2) {
+            val knobs = if (bank == 0) listOf(PanelKnob.PRESETS, PanelKnob.SELECT, PanelKnob.ALGORITHM, PanelKnob.MASTER)
+                        else listOf(PanelKnob.K1, PanelKnob.K2, PanelKnob.K3, PanelKnob.K4)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                knobs.chunked(2).forEach { row ->
+                    Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        row.forEach { knob -> Dial(feed, knob, Modifier.weight(1f).fillMaxHeight()) }
+                    }
+                }
+            }
+        } else {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                PanelLabel.entries.chunked(3).forEach { row ->
+                    Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        row.forEach { label -> PanelButton(feed, label, Modifier.weight(1f).fillMaxHeight()) }
+                        if (row.size < 3) Spacer(Modifier.weight((3 - row.size).toFloat()))
+                    }
+                }
             }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Master", color = Muted, modifier = Modifier.width(65.dp), fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun Dial(feed: PanelFeed, knob: PanelKnob, modifier: Modifier) {
+    val title = when (knob) {
+        PanelKnob.PRESETS -> "Preset"
+        PanelKnob.SELECT -> "Select"
+        PanelKnob.ALGORITHM -> "Algorithm"
+        PanelKnob.MASTER -> "Master"
+        else -> "Knob ${knob.ordinal - PanelKnob.K1.ordinal + 1}"
+    }
+    fun turn(steps: Int) {
+        if (knob == PanelKnob.MASTER) feed.master((feed.knobs.master + steps * 8).coerceIn(0, 1023))
+        else feed.turn(knob, steps)
+    }
+    Column(modifier.semantics {
+        contentDescription = "$title, drag up or right to increase"
+        customActions = listOf(CustomAccessibilityAction("Increase") { turn(1); true }, CustomAccessibilityAction("Decrease") { turn(-1); true })
+    }.pointerInput(feed, knob) {
+        var remainder = 0f
+        detectDragGestures(onDragStart = { remainder = 0f }) { change, drag ->
+            change.consume()
+            remainder += (drag.x - drag.y) / (density * 6f)
+            val steps = remainder.toInt()
+            if (steps != 0) { remainder -= steps; turn(steps.coerceIn(-100, 100)) }
+        }
+    }.testTag("dial-${knob.name}"), horizontalAlignment = Alignment.CenterHorizontally) {
+        Canvas(Modifier.weight(1f).fillMaxWidth()) {
             feed.knobs.version
-            Slider(value = feed.knobs.master.toFloat(), onValueChange = { feed.master(it.toInt()) }, valueRange = 0f..1023f,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp), colors = SliderDefaults.colors(thumbColor = Amber, activeTrackColor = Amber))
-        }
-        Eyebrow("INSTRUMENT PANEL · HOLD BUTTONS FOR THEIR SECONDARY ACTIONS")
-        PanelLabel.entries.chunked(7).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { label -> HoldButton(feed, label, Modifier.weight(1f)) }
+            val radius = min(size.width, size.height) * 0.39f
+            val center = Offset(size.width / 2, size.height / 2)
+            val theta = if (knob == PanelKnob.MASTER) (135f + 270f * feed.knobs.master / 1023f)
+                        else 270f + feed.knobs.turns[knob.ordinal] * 7.5f
+            val radians = theta / 180 * PI.toFloat()
+            drawCircle(Surface, radius, center)
+            drawCircle(Edge, radius, center, style = Stroke(1.dp.toPx()))
+            val inner = center + Offset(cos(radians), sin(radians)) * radius * 0.70f
+            val outer = center + Offset(cos(radians), sin(radians)) * radius * 0.90f
+            drawLine(Accent, inner, outer, 3.dp.toPx(), StrokeCap.Round)
+            if (knob == PanelKnob.MASTER) {
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Quiet.toArgb(); textSize = 13.sp.toPx(); textAlign = Paint.Align.CENTER }
+                drawContext.canvas.nativeCanvas.drawText("${feed.knobs.master * 100 / 1023}%", center.x, center.y + 5.sp.toPx(), paint)
             }
         }
+        HostText(title, color = Ink, fontSize = 13.sp, modifier = Modifier.padding(bottom = 4.dp), maxLines = 1)
     }
 }
 
 @Composable
-private fun Stepper(title: String, modifier: Modifier, back: () -> Unit, next: () -> Unit) {
-    Column(modifier.background(Panel, Shape).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(title, color = Ink, fontSize = 12.sp, maxLines = 1)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Action("−", modifier = Modifier.weight(1f), onClick = back)
-            Spacer(Modifier.width(4.dp))
-            Action("+", modifier = Modifier.weight(1f), onClick = next)
-        }
-    }
-}
-
-@Composable
-private fun HoldButton(feed: PanelFeed, label: PanelLabel, modifier: Modifier) {
+private fun PanelButton(feed: PanelFeed, label: PanelLabel, modifier: Modifier) {
     feed.lights.version
     val down = feed.lights.labelDown(label.ordinal)
-    val title = feed.names.label(label)
     DisposableEffect(feed, label) { onDispose { feed.button(label, false) } }
-    Box(modifier.heightIn(min = 52.dp).background(if (down) Mint else Panel, Shape)
-        .border(1.dp, if (down) Mint else Line, Shape)
-        .semantics { contentDescription = label.spoken }
+    Box(modifier.background(if (down) Accent else Surface, Shape).border(1.dp, if (down) Accent else Edge, Shape)
+        .testTag("panel-${label.name}").semantics { contentDescription = label.spoken }
         .pointerInput(feed, label) {
-            detectTapGestures(onPress = {
-                feed.button(label, true)
-                try { tryAwaitRelease() } finally { feed.button(label, false) }
-            })
-        }.padding(horizontal = 3.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-        Text(title, color = if (down) Ground else Ink, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 2)
+            detectTapGestures(onPress = { feed.button(label, true); try { tryAwaitRelease() } finally { feed.button(label, false) } })
+        }.padding(horizontal = 5.dp), contentAlignment = Alignment.Center) {
+        HostText(feed.names.label(label), color = if (down) Background else Ink, fontSize = 12.sp, maxLines = 2)
     }
 }
 
 @Composable
 private fun Piano(feed: PanelFeed, modifier: Modifier) {
-    feed.lights.version
-    val pressed = feed.lights.touchedKeys or feed.lights.heldKeys
-    Canvas(modifier.background(Panel, Shape).semantics { contentDescription = "Playable keyboard, F3 to G5" }
-        .pointerInput(feed) {
-            val held = mutableMapOf<PointerId, Int>()
-            try {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        for (change in event.changes) {
-                            val old = held[change.id]
-                            val next = if (change.pressed) HostKeyboard.keyAt(change.position.x, change.position.y, size.width.toFloat(), size.height.toFloat()) else null
-                            if (old != next) {
-                                if (next != null) { feed.keyDown(next); held[change.id] = next } else held.remove(change.id)
-                                if (old != null) feed.keyUp(old)
-                            }
-                            if (old != null || next != null) change.consume()
+    Canvas(modifier.testTag("keyboard").semantics { contentDescription = "Playable keyboard, F3 to G5" }.pointerInput(feed) {
+        val held = mutableMapOf<PointerId, Int>()
+        try {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent()
+                    for (change in event.changes) {
+                        val old = held[change.id]
+                        val next = if (change.pressed) HostKeyboard.keyAt(change.position.x, change.position.y, size.width.toFloat(), size.height.toFloat()) else null
+                        if (old != next) {
+                            if (next != null) { feed.keyDown(next); held[change.id] = next } else held.remove(change.id)
+                            if (old != null) feed.keyUp(old)
                         }
+                        if (old != null || next != null) change.consume()
                     }
                 }
-            } finally { held.values.forEach { feed.keyUp(it) }; held.clear() }
-        }) {
-        val unit = size.width / HostKeyboard.white.size
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ground.toArgb(); textSize = 10.sp.toPx(); textAlign = Paint.Align.CENTER }
+            }
+        } finally { held.values.forEach { feed.keyUp(it) }; held.clear() }
+    }) {
+        feed.lights.version
+        val pressed = feed.lights.touchedKeys or feed.lights.heldKeys
+        val unit = size.width / 16
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Quiet.toArgb(); textSize = 10.sp.toPx(); textAlign = Paint.Align.CENTER }
         for ((index, note) in HostKeyboard.white.withIndex()) {
-            val down = pressed and (1 shl note) != 0
-            drawRoundRect(if (down) Amber else Ink, Offset(index * unit + 1, 0f), Size(unit - 2, size.height), CornerRadius(5.dp.toPx()))
-            val midi = note + 53
-            val name = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")[midi % 12]
-            drawContext.canvas.nativeCanvas.drawText("$name${midi / 12 - 1}", (index + 0.5f) * unit, size.height - 12.dp.toPx(), paint)
+            drawRoundRect(if (pressed and (1 shl note) != 0) Accent else Ink, Offset(index * unit + 1, 0f), Size(unit - 2, size.height), CornerRadius(4.dp.toPx()))
+            if ((note + 53) % 12 == 0) drawContext.canvas.nativeCanvas.drawText("C${(note + 53) / 12 - 1}", (index + 0.5f) * unit, size.height - 10.dp.toPx(), paint)
+            if (feed.lights.keys[note] >= 176) drawCircle(Accent, 2.dp.toPx(), Offset((index + 0.5f) * unit, size.height - 27.dp.toPx()))
         }
-        for (note in HostKeyboard.black) {
-            drawRoundRect(if (pressed and (1 shl note) != 0) Mint else Ground, Offset(HostKeyboard.blackLeft(note) * unit, 0f),
-                Size(0.62f * unit, size.height * 0.61f), CornerRadius(4.dp.toPx()))
+        for (note in HostKeyboard.black) drawRoundRect(if (pressed and (1 shl note) != 0) Accent else Background,
+            Offset(HostKeyboard.blackLeft(note) * unit, 0f), Size(unit * 0.62f, size.height * 0.61f), CornerRadius(3.dp.toPx()))
+    }
+}
+
+@Composable
+private fun Pager(page: Int, count: Int, change: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        TextButton({ change(page - 1) }, enabled = page > 0) { HostText("‹ Previous") }
+        HostText("${page + 1} / ${max(1, count)}", color = Quiet, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
+        TextButton({ change(page + 1) }, enabled = page + 1 < count) { HostText("Next ›") }
+    }
+}
+
+@Composable
+private fun Instruments(state: HostViewState, select: (String) -> Unit) {
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val rows = state.instruments.chunked(2)
+    val current = rows.getOrElse(page) { emptyList() }
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            val wide = maxWidth > maxHeight
+            if (wide) Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                current.forEach { InstrumentCard(it, it.id == state.selected, Modifier.weight(1f).fillMaxHeight(), select) }
+            } else Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                current.forEach { InstrumentCard(it, it.id == state.selected, Modifier.weight(1f).fillMaxWidth(), select) }
+            }
+        }
+        if (rows.size > 1) Pager(page, rows.size) { page = it }
+    }
+}
+
+@Composable
+private fun InstrumentCard(item: InstrumentItem, selected: Boolean, modifier: Modifier, select: (String) -> Unit) {
+    Column(modifier.background(Surface, Shape).border(1.dp, if (selected) Accent else Edge, Shape).padding(24.dp).testTag("instrument-${item.id}"),
+        verticalArrangement = Arrangement.SpaceBetween) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            HostText(if (selected) "Selected" else "Installed", color = Accent, fontSize = 12.sp)
+            HostText(item.name, color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Medium)
+            HostText(if (item.id == "paleotone") "Evolving landscapes & synthesis" else "Multi-engine synthesis & sequencing", color = Quiet, fontSize = 14.sp, maxLines = 2)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            HostText("${item.version} · ${item.license}", color = Quiet, fontSize = 12.sp, maxLines = 2)
+            Button({ select(item.id) }, modifier = Modifier.heightIn(min = 48.dp), shape = Shape) { HostText(if (selected) "Open instrument" else "Play") }
         }
     }
 }
 
 @Composable
-private fun Library(a: AppUi, play: () -> Unit) {
-    val m = a.model
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Eyebrow("YOUR OFFLINE COLLECTION")
-        Text("Choose an instrument", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
-        Text("Each instrument keeps its own sound engine, screen, sequencer and memory.", color = Muted, fontSize = 15.sp)
-        m.catalog.forEachIndexed { index, core ->
-            Column(Modifier.fillMaxWidth().background(Panel, Shape).border(1.dp, if (core.id == m.selected) Amber else Line, Shape).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Eyebrow("${(index + 1).toString().padStart(2, '0')} / ${if (core.id == m.selected) "SELECTED" else "INSTALLED"}")
-                Text(core.name, color = Ink, fontSize = 27.sp, fontWeight = FontWeight.Medium)
-                Text(if (core.id == "paleotone") "Dinosaur voices, evolving landscapes and synthesis." else "Multi-engine synthesis, four parts and sequencing.", color = Muted, fontSize = 14.sp)
-                Text("${core.version} · ${core.license}", color = Mint, fontSize = 12.sp)
-                Action(if (core.id == m.selected) "Return to instrument" else "Play ${core.name}", accent = true) {
-                    a.feed.releaseAll(); m.select(core.id); if (m.mode != Mode.CORE) m.useMode(Mode.CORE); play()
+private fun Menu(go: (Page) -> Unit) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        listOf(listOf(Page.SNAPSHOTS to "Saved snapshots", Page.AUDIO to "Audio output"),
+            listOf(Page.CONTROLLERS to "Controllers", Page.ABOUT to "About & credits")).forEach { row ->
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                row.forEach { (page, title) ->
+                    Box(Modifier.weight(1f).fillMaxHeight().background(Surface, Shape).clickable { go(page) }
+                        .padding(24.dp).testTag("menu-${page.name}"), contentAlignment = Alignment.CenterStart) {
+                        HostText(title, color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
         }
-        Eyebrow("SESSION SNAPSHOTS")
-        Action("Save snapshot of ${(m.current?.name ?: m.selected)}") { m.saveState("Snapshot ${java.text.SimpleDateFormat("MMM d HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}", a.feed.knobs.master) }
-        if (m.message.isNotEmpty()) Text(m.message, color = Mint, fontSize = 14.sp)
-        val snapshots = remember(m.selected, m.message, m.dataGen) { m.stateLib.list(m.current?.firmwareID ?: m.selected) }
-        snapshots.take(12).forEach { saved -> Action("Load ${saved.name}") { a.feed.releaseAll(); m.loadState(saved); play() } }
-        Text("Instrument memory also saves automatically. Named snapshots belong to the selected instrument.", color = Muted, fontSize = 13.sp)
     }
 }
 
 @Composable
-private fun Controllers(a: AppUi) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Eyebrow("PHYSICAL CONTROLS")
-        Text("Tablet now. Hardware next.", color = Ink, fontSize = 28.sp)
-        InfoCard("Touchscreen", "Available", "Play both installed instruments using the performance page.")
-        InfoCard("FM-1", "Bridge pending", "Our controller integration is still in development. Keep your existing firmware installed.")
-        InfoCard("SMK-37", "Bridge pending", "A separate capability profile will preserve the SMK’s additional controls. Hardware operation is not yet qualified.")
-        Text("Android MIDI devices detected: ${a.model.midiEntries.size}", color = Muted, fontSize = 14.sp)
-        Text("Device detection alone does not establish a working controller connection. No firmware installation is performed by this interface.", color = Muted, fontSize = 14.sp)
-    }
-}
-
-@Composable
-private fun Audio(a: AppUi) {
-    val m = a.model
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Eyebrow("OUTPUT & RECOVERY")
-        Text("Sound from your tablet", color = Ink, fontSize = 28.sp)
-        Text(m.audioState.line.ifEmpty { "Audio muted" }, color = Mint, fontSize = 14.sp)
-        Text("Selected output: ${m.outputPick}", color = Muted, fontSize = 14.sp)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Action("Automatic", m.outputPick == "auto") { m.chooseOutput("auto") }
-            Action("Tablet speaker", m.outputPick == "speaker") { m.chooseOutput("speaker") }
+private fun Snapshots(state: HostViewState, actions: HostActions) {
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val groups = state.snapshots.chunked(3)
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            HostText(state.name, color = Quiet, modifier = Modifier.weight(1f), fontSize = 16.sp)
+            Button(actions.save, shape = Shape, modifier = Modifier.heightIn(min = 48.dp)) { HostText("Save snapshot") }
         }
-        m.pickable.distinctBy { it.pickKind }.filter { it.pickKind != "speaker" }.forEach { output ->
-            Action(output.name, m.outputPick == output.pickKind) { m.chooseOutput(output.pickKind) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (state.snapshots.isEmpty()) HostText("No snapshots yet. Instrument memory saves automatically.", color = Quiet, fontSize = 15.sp)
+            groups.getOrElse(page) { emptyList() }.forEach { item ->
+                Row(Modifier.fillMaxWidth().height(64.dp).background(Surface, Shape).padding(horizontal = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    HostText(item.name, color = Ink, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    QuietButton("Load", tag = "load-${item.id}") { actions.load(item.id) }
+                }
+            }
+            if (state.message.isNotEmpty()) HostText(state.message, color = Quiet, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        Text("USB audio remains experimental and is not enabled here. Use the tablet speaker or a connected headphone output for this test.", color = Muted, fontSize = 14.sp)
-        if (m.perfNote.isNotEmpty()) Text(m.perfNote, color = Alert, fontSize = 14.sp)
-        if (m.message.isNotEmpty()) Text(m.message, color = Muted, fontSize = 14.sp)
+        if (groups.size > 1) Pager(page, groups.size) { page = it }
     }
 }
 
 @Composable
-private fun InfoCard(title: String, state: String, detail: String) {
-    Column(Modifier.fillMaxWidth().background(Panel, Shape).padding(20.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Text(title, color = Ink, fontSize = 21.sp)
-        Text(state.uppercase(), color = Mint, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-        Text(detail, color = Muted, fontSize = 14.sp)
+private fun Audio(state: HostViewState, actions: HostActions) {
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val groups = state.outputs.chunked(4)
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        HostText(state.audioLine, color = Quiet, fontSize = 16.sp, maxLines = 3)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            groups.getOrElse(page) { emptyList() }.chunked(2).forEach { row ->
+                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { item ->
+                        Box(Modifier.weight(1f).fillMaxHeight().background(Surface, Shape).border(1.dp, if (item.id == state.route) Accent else Edge, Shape)
+                            .clickable { actions.output(item.id) }.padding(20.dp).testTag("output-${item.id}"), contentAlignment = Alignment.CenterStart) {
+                            HostText(item.name, color = if (item.id == state.route) Accent else Ink, fontSize = 18.sp, maxLines = 2)
+                        }
+                    }
+                }
+            }
+        }
+        if (groups.size > 1) Pager(page, groups.size) { page = it }
     }
 }
 
 @Composable
-private fun About(a: AppUi) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Eyebrow("PROJECT & ATTRIBUTION")
-        Text("One tablet. Distinct instruments.", color = Ink, fontSize = 28.sp)
-        Text("An Android instrument host for the DIY more powerful FM-1 project. Interface by the Paleotone project; each instrument keeps its own identity.", color = Muted, fontSize = 15.sp)
-        InfoCard("Host internals", "Open-source foundation", "Reuses RemoteFM1Android, FM1VST and their contributors’ runtime, audio and persistence code. This interface is independently authored. GPL-3.0 source and notices are retained.")
-        a.model.catalog.forEach { core -> InfoCard(core.name, core.license, "${core.version}\n${core.sourceURL}") }
-        Text("This build is a development preview. Tablet playback has been checked on SM-T860; physical FM-1 and SMK-37 control remains unqualified.", color = Muted, fontSize = 14.sp)
+private fun Controllers() {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        HostText("Touchscreen active. Hardware bridges are in development.", color = Quiet, fontSize = 15.sp)
+        listOf("FM-1", "SMK-37").forEach { name ->
+            Row(Modifier.fillMaxWidth().weight(1f).background(Surface, Shape).padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                HostText(name, color = Ink, fontSize = 24.sp, modifier = Modifier.weight(1f))
+                HostText("Not connected", color = Quiet, fontSize = 14.sp)
+            }
+        }
     }
+}
+
+@Composable
+private fun About() {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        HostText("Instrument Host", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Medium)
+        HostText("DIY more powerful FM-1 · Development build 0.1.3", color = Quiet, fontSize = 14.sp)
+        HostText("Interface by the Paleotone project. Runtime, audio and storage reuse RemoteFM1Android and FM1VST, with attribution and source retained.", color = Quiet, fontSize = 15.sp)
+        HostText("Instruments: Paleotone and Felucca. GPL-3.0 notices and source references accompany the app.", color = Quiet, fontSize = 15.sp)
+    }
+}
+
+// Layout tests observe real text measurement; production has no audit callback.
+val LocalHostTextAudit = staticCompositionLocalOf<(String) -> Unit> { {} }
+@Composable
+private fun HostText(text: String, modifier: Modifier = Modifier, color: Color = Color.Unspecified,
+                     fontSize: TextUnit = 14.sp, fontWeight: FontWeight? = null,
+                     maxLines: Int = Int.MAX_VALUE, overflow: TextOverflow = TextOverflow.Clip) {
+    val audit = LocalHostTextAudit.current
+    androidx.compose.material3.Text(text, modifier = modifier, color = color, fontSize = fontSize,
+        fontWeight = fontWeight, maxLines = maxLines, overflow = overflow, onTextLayout = {
+            if (it.hasVisualOverflow && overflow != TextOverflow.Ellipsis) audit(text)
+        })
 }

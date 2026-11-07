@@ -21,9 +21,20 @@ def apply(remote):
     tests = remote / 'app/src/test/java' / package
     sources.mkdir(parents=True, exist_ok=True)
     tests.mkdir(parents=True, exist_ok=True)
-    for name in ['InstrumentHostScreen.kt', 'HostKeyboard.kt']:
+    for name in ['InstrumentHostScreen.kt', 'HostKeyboard.kt', 'HostSession.kt']:
         shutil.copy2(ROOT / 'android' / name, sources / name)
     shutil.copy2(ROOT / 'android/HostKeyboardTest.kt', tests / 'HostKeyboardTest.kt')
+    for kind, name in [('debug', 'HostLayoutActivity.kt'), ('androidTest', 'HostLayoutTest.kt')]:
+        target = remote / 'app/src' / kind / 'java' / package
+        target.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / 'android' / kind / name, target / name)
+    debug_manifest = remote / 'app/src/debug/AndroidManifest.xml'
+    text = debug_manifest.read_text()
+    marker = '<activity android:name="org.paleotone.host.ui.HostLayoutActivity" android:exported="false" />'
+    if marker not in text:
+        debug_manifest.write_text(text.replace('<application>', '<application>' + marker, 1))
+    change(remote / 'app/build.gradle.kts', 'ndk { abiFilters += "arm64-v8a" }',
+           'ndk { abiFilters += (if (project.hasProperty("hostLayoutOnly")) "x86_64" else "arm64-v8a") }')
     draw = remote / 'app/src/main/res/drawable'
     draw.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / 'android/host_icon.xml', draw / 'host_icon.xml')
