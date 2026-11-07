@@ -28,6 +28,15 @@ typedef struct {               /* proportional, see tools/gen_font.py */
                                 * bit first, each glyph from a whole byte); 0 = 2 pixels a byte, alpha 0..15 */
 } felucca_font_t;
 #include "felucca_font.h"
+/* PALEOTONE (FM-1): the large text in Clayborn (tools/gen_font.py): FONT_L is its 24 px cut, text_k's k = 3 and 4
+ * its 36 px cut and the 24 px one at 2x; the small text stays Terminus. (PALEO_TERMINUS_L: the font tests' old L) */
+#if !(defined(BOARD_SMK37) && BOARD_SMK37) && !defined(PALEO_TERMINUS_L)
+#define PALEO_CLAYBORN 1
+#define FONT_L FONT_C2
+#define PALEO_SWING_LAB "swng"              /* (a dial's label short enough for M) */
+#else
+#define PALEO_SWING_LAB "swing"
+#endif
 
 #define CV_MAX (240u * 124u)      /* the graph strip is 240 x 124 */
 static uint8_t cv_px[CV_MAX] __attribute__((section(".pool")));   /* colour indices (cv_lut) */
