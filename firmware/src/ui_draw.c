@@ -181,7 +181,7 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
     str_cpy(ui.col[c], key, sizeof ui.col[c]);
     cv_begin(55, Y_SEP_END - Y_LABEL, C_BLACK);         /* x 4..58: the rule at 59 stays */
     if (FELUCCA_ICONS && icon != ICON_NONE && l[0])
-        cv_icon(0, 1, icon, TE_COL[c & 3u]);            /* icon rows 1..10 = the label's cap height */
+        cv_icon(0, 1, icon, KN_COL[c & 3u]);            /* icon rows 1..10 = the label's cap height */
     cv_text(l[0] ? LABEL_X : 0, 0, &FONT_S, l, C_GRAY);
     if (text_w(&FONT_L, v) <= 54) {                     /* RAPTOR: the value large when it fits the column (the unit
                                                          * small beside it, if there is room) */
@@ -196,7 +196,7 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         int32_t gy = Y_GAUGE - Y_LABEL;
         fx = ratio * gw / 1000;
         cv_rect(0, gy + 1, gw, 1, C_LINE);
-        cv_rect(0, gy, fx, 3, vc == C_DIM ? C_DIM : TE_DIM[c & 3u]);
+        cv_rect(0, gy, fx, 3, vc == C_DIM ? C_DIM : KN_DIM[c & 3u]);
         cv_rect(fx, gy - 1, 1, 5, vc == C_DIM ? C_HI : vc);
     }
     cv_blit(c * 60u + 4u, Y_LABEL);
@@ -766,7 +766,7 @@ UI_SMALL static void graph_big(void)
         const int32_t CW = 110;                         /* a cell's width for text */
         int32_t x0 = c & 1u ? 126 : 4, y0 = c & 2u ? (int32_t)H_BIG / 2 + 2 : 0, x, r = ui.big_r[c];
         int32_t uw = ui.big_u[c][0] ? text_w(&FONT_S, ui.big_u[c]) + 3 : 0, lk, vk, vh;
-        uint16_t vc = ui.big_c[c] == C_DIM ? C_DIM : C_WHITE, kc = TE_COL[c & 3u];
+        uint16_t vc = ui.big_c[c] == C_DIM ? C_DIM : C_BIGV, kc = KN_COL[c & 3u];
         const char *v = ui.big_v[c];
         if (!ui.big_l[c][0])
             continue;

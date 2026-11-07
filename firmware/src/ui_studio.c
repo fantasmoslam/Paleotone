@@ -153,7 +153,7 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
         int32_t cx = 30 + 60 * (int32_t)k;
         if (!lab[k][0])
             continue;
-        te_pie(cx, 19, 18, ratio[k], TE_COL[k], TE_G3);
+        te_pie(cx, 19, 18, ratio[k], KN_COL[k], TE_G3);
         te_text_c(cx, 39, lab[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4);   /* (white while turned) */
     }
     cv_blit(0, (uint32_t)y0);

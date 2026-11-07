@@ -104,6 +104,10 @@ static uint16_t TE_MID[6] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 
                              RGB(106, 72, 160), RGB(160, 80, 126)};
 static uint16_t TE_DIM[6] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8),
                              RGB(52, 36, 80), RGB(80, 40, 62)};
+/* RAPTOR, as PALEOTONE: the four knobs' colours (labels, gauges, pies) and their one third: the palette's brightest
+ * step, one colour for the four, as Paleotone's phosphor screens (the track colours stay the tracks') */
+static uint16_t KN_COL[4], KN_DIM[4];
+#define C_BIGV C_AMB                 /* the big values of a page: the palette's text step, the accent for the touched */
 static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
 {
     uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
@@ -195,6 +199,14 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
         TE_COL[k] = cu ? theme.trk[k] : TE_COL_DEF[k];
         TE_MID[k] = cu ? rgb565_scale(theme.trk[k], 2u, 3u) : TE_MID_DEF[k];
         TE_DIM[k] = cu ? rgb565_scale(theme.trk[k], 1u, 3u) : TE_DIM_DEF[k];
+    }
+    te_g[0] = rgb565_scale(pal[0], 4u, 5u);           /* as PALEOTONE: the greys in the palette's own tint (BONE: */
+    te_g[1] = rgb565_scale(pal[1], 2u, 3u);           /* warm grey), not SLOOP's neutral ones */
+    te_g[2] = rgb565_scale(pal[2], 5u, 6u);
+    te_g[3] = rgb565_scale(pal[3], 9u, 10u);
+    for (k = 0; k < 4u; k++) {
+        KN_COL[k] = pal[4];
+        KN_DIM[k] = rgb565_scale(KN_COL[k], 1u, 3u);
     }
 }
 
