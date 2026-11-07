@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Build the two real modules and package them in an isolated Android prototype."""
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -59,9 +60,25 @@ def main():
 
     # Distinct install identity: never replace the accepted Paleotone or RemoteFM1 app.
     replace_once(remote / "app/build.gradle.kts", 'applicationId = "com.quixotic7.remotefm1"',
-                 'applicationId = "org.paleotone.host.prototype"')
+                 'applicationId = "org.paleotone.host.preview"')
+    replace_once(remote / "app/build.gradle.kts", 'versionCode = 3', 'versionCode = 4')
+    replace_once(remote / "app/build.gradle.kts", 'versionName = "0.2.1"', 'versionName = "0.1.1"')
     replace_once(remote / "app/src/main/res/values/strings.xml", '>RemoteFM1</string>',
-                 '>Instrument Host Prototype</string>')
+                 '>Instrument Host Preview</string>')
+    # Public development key, never a release identity. Stable across CI runners
+    # so subsequent preview builds can update without losing test state. The
+    # first prototype used an ephemeral runner key; the new ID preserves it.
+    key = remote / "build/prototype-debug.p12"
+    key.parent.mkdir(parents=True, exist_ok=True)
+    key.write_bytes(base64.b64decode((ROOT / "host/prototype-debug-key.b64").read_text()))
+    replace_once(remote / "app/build.gradle.kts", '    signingConfigs {', '''    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("build/prototype-debug.p12")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+            storeType = "PKCS12"
+        }''')
     notice_root = remote / "app/src/main/assets/host-licenses"
     for instrument, source_root in [("paleotone", ROOT), ("felucca", remote / "vendor/FM1VST/cores/Felucca")]:
         notices = notice_root / instrument
@@ -69,7 +86,7 @@ def main():
         for source in [source_root / "LICENSE", source_root / "LICENSING.md", *sorted((source_root / "LICENSES").glob("*.txt"))]:
             shutil.copy2(source, notices / source.name)
     manifest = {
-        "prototype": True, "application_id": "org.paleotone.host.prototype",
+        "prototype": True, "application_id": "org.paleotone.host.preview", "version": "0.1.1",
         "paleotone_source": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "remote_source": REMOTE_COMMIT,
         "fm1vst_source": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=remote / "vendor/FM1VST", text=True).strip(),
@@ -86,7 +103,7 @@ def main():
             raise SystemExit("APK is missing an actual instrument or native host library")
     output = ROOT / "build/instrument-host/release"
     output.mkdir(parents=True, exist_ok=True)
-    apk_path = output / "Instrument-Host-Prototype-0.1.0.apk"
+    apk_path = output / "Instrument-Host-Preview-0.1.1.apk"
     shutil.copy2(original, apk_path)
     run(sdk / "build-tools/36.0.0/apksigner", "verify", "--verbose", apk_path)
     manifest["apk_sha256"] = hashlib.sha256(apk_path.read_bytes()).hexdigest()

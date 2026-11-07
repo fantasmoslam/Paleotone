@@ -21,7 +21,7 @@ endif()
 file(GLOB PALEOTONE_NOTICES "${PALEOTONE_DIR}/LICENSES/*.txt")
 fm1_add_core(paleotone "${CMAKE_CURRENT_LIST_DIR}"
     SOURCE "${PALEOTONE_DIR}" UNIT core_paleotone.c DESC core_paleotone_desc.c
-    FAMILY felucca_web LICENSE GPL-3.0-only VERSION "0.1.0-host-prototype"
+    FAMILY felucca_web LICENSE GPL-3.0-only VERSION "0.1.1-host-prototype"
     INCLUDES "${FM1VST_DIR}/core-glue/felucca_web"
     DEFINES FM1CORE_FW_WEB_C="${PALEOTONE_DIR}/web/emu/felucca_web.c"
     FLAGS -fwrapv -ffp-contract=off
@@ -69,4 +69,10 @@ if(NOT ANDROID)
     target_compile_features(host_audio_fidelity PRIVATE cxx_std_17)
     target_link_libraries(host_audio_fidelity PRIVATE paleotone_reference ${CMAKE_DL_LIBS} m)
     add_test(NAME paleotone_original_audio_and_screen COMMAND host_audio_fidelity $<TARGET_FILE:paleotone_core>)
+    add_executable(host_preset_audition tests/preset_audition.c)
+    target_include_directories(host_preset_audition PRIVATE "${PALEOTONE_DIR}/build/gen" "${PALEOTONE_DIR}/firmware/src")
+    target_compile_options(host_preset_audition PRIVATE -O2 -w -fwrapv -ffp-contract=off)
+    target_link_libraries(host_preset_audition PRIVATE m)
+    add_dependencies(host_preset_audition gen_paleotone)
+    add_test(NAME paleotone_held_key_preset_audition COMMAND host_preset_audition)
 endif()

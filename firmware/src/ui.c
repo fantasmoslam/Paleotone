@@ -948,6 +948,7 @@ static void undo_swap(void)
     if (undo.what & UNDO_SOUND) {
         uint8_t e = t->eng_req, pr = t->preset, u = t->user;
         panic_req |= (uint8_t)(1u << trk_index(t));
+        audition_req |= (uint8_t)(1u << trk_index(t));
         t->eng_req = undo.eng;
         t->preset = undo.preset;
         t->user = undo.user;
@@ -1199,6 +1200,7 @@ static void fm4_load_preset(track_t *t, uint32_t k)
     uint32_t i;
     load_begin(t, UNDO_SOUND);
     panic_req |= (uint8_t)(1u << trk_index(t));
+    audition_req |= (uint8_t)(1u << trk_index(t));
     t->user = 0;
     if (t == TSEL)
         sync_reload = 1;
@@ -1231,6 +1233,7 @@ static void apply_preset_to(track_t *t, uint32_t pi)
     }
     load_begin(t, UNDO_SOUND);
     panic_req |= (uint8_t)(1u << trk_index(t));       /* MONO/POLY may change: release what sounds */
+    audition_req |= (uint8_t)(1u << trk_index(t));
     t->user = 0;
     if (t == TSEL)
         sync_reload = 1;

@@ -48,6 +48,8 @@ static volatile uint8_t kb_asleep;       /* MENU > SCREEN OFF (ui.c): the screen
 static uint8_t last_note = 60;
 static volatile uint8_t transport_req;   /* 1 start, 2 stop, 3 restart (from the UI) */
 static volatile uint8_t panic_req;       /* bit per track: release every sounding note (preset / engine change) */
+static uint8_t kb_auditioning;          /* replay is not a fresh performance to record */
+static volatile uint8_t audition_req;    /* sound loads only: replay keys still physically held after panic */
 static volatile uint8_t midi_hint;       /* MIDI IN played track n - 1, which is not the selected one (the UI says so) */
 
 static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
@@ -638,9 +640,9 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
         l->m[note >> 5] |= 1u << (note & 31u);
     }
     last_note = (uint8_t)note;
-    if (cin_left)
+    if (cin_left && !kb_auditioning)
         cin_keep(t, note, vel);
-    if (rec_on(t) && !t->p[P_AMODE])               /* (ARP on: arp_tick records its notes) */
+    if (!kb_auditioning && rec_on(t) && !t->p[P_AMODE]) /* (ARP on: arp_tick records its notes) */
         rec_note(t, note, vel);
     if (t->p[P_AMODE])
         arp_add(t, note);
@@ -800,6 +802,46 @@ static __attribute__((noinline)) void kb_lat(uint32_t k)
         fm1_in_stat.dac_max = o;
 }
 #endif
+
+/* A preset load releases the old voices, but a key still held has no new edge.
+ * Rebuild only that track's physical key ownership. Clear all its old chords
+ * first so shared chord tones do not suppress each other's new note-ons.
+ * General panic, project loads and MIDI all-notes-off never request audition. */
+static void keyboard_audition(uint32_t tracks)
+{
+    uint32_t k, j, held = fm1_in.notes & kb_prev & ~kb_layer;
+    if (!tracks || kb_boot_hold || kb_asleep)
+        return;
+    for (k = 0; k < 27u; k++) {
+        if ((tracks >> kb_trk[k]) & 1u) {
+            for (j = 0; j < kb_chn[k]; j++)
+                mo_note(trk_out_ch(kb_trk[k]), 0, kb_chord[k][j], 0);
+            kb_chn[k] = 0;
+        }
+        if (kb_trk2[k] && ((tracks >> (kb_trk2[k] - 1u)) & 1u)) {
+            for (j = 0; j < kb_chn2[k]; j++)
+                mo_note(trk_out_ch(kb_trk2[k] - 1u), 0, kb_chord2[k][j], 0);
+            kb_chn2[k] = 0;
+        }
+    }
+    kb_auditioning = 1;
+    for (k = 0; k < 27u; k++) {
+        if (!((held >> k) & 1u))
+            continue;
+        if (kb_note[k] != KB_SILENT && ((tracks >> kb_trk[k]) & 1u)) {
+            track_t *t = &trk[kb_trk[k]];
+            kb_note[k] = (uint8_t)(keys_split(k) ? keys_note(kb_trk[k], k) : kb_map(t, k));
+            if (kb_note[k] != KB_SILENT)
+                key_on(k, t);
+        }
+        if (kb_trk2[k] && ((tracks >> (kb_trk2[k] - 1u)) & 1u)) {
+            uint32_t tr = kb_trk2[k] - 1u, note = keys_note(tr, k);
+            if (note != KB_SILENT)
+                key_on_to(&trk[tr], note, kb_chord2[k], &kb_chn2[k]);
+        }
+    }
+    kb_auditioning = 0;
+}
 
 static void keyboard_block(void)
 {
@@ -1282,7 +1324,7 @@ static int32_t click_beat_now(void)
 /* everything that happens between two rendered blocks */
 static void events_block(uint32_t n)
 {
-    uint32_t i, pr, seq_n = n;
+    uint32_t i, pr, audition, seq_n = n;
     uint32_t clock_mode = (uint32_t)song.g[G_CLOCK], ext = clock_mode;   /* ext: the master's clock runs us */
     midi_out_recover();                            /* retry damaged output even with PLAY and CLOCK OUT off */
     if (!usb.config || (mo_started && mo_started_reset != usb.resets))
@@ -1326,6 +1368,8 @@ static void events_block(uint32_t n)
     }
     pr = panic_req;
     panic_req = 0;
+    audition = audition_req & pr;
+    audition_req = 0;
     if (midi_in_overflow) {                            /* a lost note-off must never leave a held note */
         mi_r = mi_w;
         memset(midi_sel_on, 0, sizeof midi_sel_on);
@@ -1339,6 +1383,7 @@ static void events_block(uint32_t n)
             mo_seq_flush(i);                        /* (DINOBOX: their MIDI OUT notes too) */
         }
         pr |= (1u << NTRK) - 1u;
+        audition = 0;                              /* overflow recovery must remain silent */
         RING_PUBLISH();
         midi_in_overflow = 0;
     }
@@ -1369,6 +1414,7 @@ static void events_block(uint32_t n)
         t->armp = t->p[P_AMODE];
         t->aholdp = t->p[P_AHOLD];
     }
+    keyboard_audition(audition);
     keyboard_block();
     while (mi_r != mi_w) {                            /* USB-MIDI (and TRS) in */
         uint32_t at = mi_r % MQ, pkt = midi_in_q[at], status = (pkt >> 8) & 0xFFu;
