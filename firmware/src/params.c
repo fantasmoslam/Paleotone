@@ -235,8 +235,15 @@ static const param_desc_t ESYNC_DESC[3] = {   /* ATK DEC REL with ENV SYNC on: t
     {"REL", F_INT, 0, 127, 60, ESYNC_NAMES, 0},
 };
 
+/* PALEOTONE: ROAR's RING (its own page, EDIT > RING): the drones ring through the rests while the song plays. Kept in
+ * P_FTYPE, ANALOG's filter TYPE, which a ROAR track has no use for: saved with the track's sound, no format change
+ * (apply_preset_to sets it from the preset; eng_gurdy.c gurdy_ring_on) */
+static const char *const N_RING[] = {"OFF", "ON"};
+static const param_desc_t RING_DESC = {"RING", F_ENUM, 0, 1, 0, N_RING, 0};
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
+    if (id == P_FTYPE && t->eng_req % NENGINES == ENGI_ROAR)
+        return &RING_DESC;
     if(is_drum(t) && id==P_E0) return &DRUM_KIT_DESC;
     if (id >= P_IA && id <= P_IC)                     /* the INSERT's values as its TYPE names them */
         return ins_desc(t->p[P_ITYPE], id - P_IA);
@@ -426,6 +433,7 @@ static const page_t PAGES[] = {
     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E4, P_E5, P_E6, P_E7}},
     {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_E7}},   /* ANALOG only (2.6, Felucca 1.5): TYPE CUT
                                                                           * RES KTR (page_shown) */
+    {"RING", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, 0xFF, 0xFF, 0xFF}},   /* PALEOTONE: ROAR only (page_shown) */
     {"VOICE", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},
     {"VOICE 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_PAN, P_MUTE}},
     {"GLOBAL", FAM_GLO, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, G_TUNE}},
@@ -475,9 +483,12 @@ static int page_for_drum(const page_t *pg)
                                                        * greyed "DRUM TRACK") */
 }
 /* a page the buttons and SELECT reach on the selected track: EDIT > FILTER (TYPE) on ANALOG only */
+static int is_ring_page(const page_t *pg) { return pg->id[0] == P_FTYPE && pg->id[1] == 0xFFu; }
 static int page_shown(const page_t *pg)
 {
-    return pg->id[0] != P_FTYPE || (!is_drum(TSEL) && TSEL->eng_req % NENGINES == 0u);
+    if (pg->id[0] != P_FTYPE)
+        return 1;
+    return !is_drum(TSEL) && TSEL->eng_req % NENGINES == (is_ring_page(pg) ? ENGI_ROAR : 0u);   /* RING: ROAR's */
 }
 
 static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **valp)
