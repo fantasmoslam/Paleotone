@@ -250,7 +250,7 @@ UI_SMALL static void felucca_init(void)
     song.master_q12 = 2048;
     autosave_resume();                        /* the project as it was left (project.c) */
     if (!autosave_hash)                       /* PALEOTONE: none (a first power-on): the demo song */
-        demo_fill(1);
+        demo_fill(1, 3);                      /* (its last section as the loop; TOOLS > DEMO: the song) */
     song.g[G_SYNC] = (int16_t)lights_sync;    /* a setting of the FM-1 (panel.c) */
     song.g[G_MIDI] = (int16_t)lights_mout;
     song.g[G_ROUTE] = (int16_t)lights_min;
