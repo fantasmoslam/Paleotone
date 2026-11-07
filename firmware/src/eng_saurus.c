@@ -61,6 +61,10 @@ static const uint8_t SAUR_B[3][3] = {{60, 80, 150}, {70, 80, 150}, {90, 100, 160
 static uint32_t saur_kit_note(uint32_t k);
 static void saur_params(const track_t *t, const voice_t *v, int16_t *p);   /* (after the presets) */
 static uint32_t saur_shape_p(const int16_t *p) { return (uint32_t)clamp(p[0], 0, SC_COUNT - 1); }
+/* PALEOTONE: LEN for a call that has a shape: no shorter than SAUR_LEN_MIN (~30 ms), or BARK, CHIRP and SNORT (which
+ * end by themselves) were over before they were heard after a HOLD sound's LEN 0 (HOLD does not use LEN) */
+#define SAUR_LEN_MIN 48
+static int32_t saur_len(int32_t len, uint32_t sh) { return sh != SC_HOLD && len < SAUR_LEN_MIN ? SAUR_LEN_MIN : len; }
 
 /* a call curve at progress q (Q24): five points (signed s or unsigned u), linear between, the last held; Q8 */
 static int32_t saur_pt(const int8_t *s, const uint8_t *u, uint32_t q)
@@ -144,7 +148,7 @@ static void saurus_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     fres_t r1, r2, r3;
 
     if (q < (1u << 24)) {                               /* the call goes on over LEN (WILD: this note's own length) */
-        q += ENV_LIN[clamp(p[P_E3] + ((((int32_t)rnd - 64) * wild) >> 8), 0, 127)];
+        q += ENV_LIN[clamp(saur_len(p[P_E3], sh) + ((((int32_t)rnd - 64) * wild) >> 8), 0, 127)];
         if (q > (1u << 24))
             q = 1u << 24;
         v->s[7] = (int32_t)(((uint32_t)v->s[7] & ~(uint32_t)FMT_TALK_MASK) | q);
@@ -255,13 +259,13 @@ static const preset_t SAURUS_PRESETS[] = {
     {"HERD MOAN", {7, 95, 45, 110, 35, 40, 80, 40}, {40, 90, 120, 100}, 0, 0, FX(0, 40, 10, 110), PAT(5)},
     {"FRILL HISS", {8, 40, 0, 96, 30, 90, 110, 30}, {6, 80, 110, 60}, 0, 0, FX(0, 0, 10, 80), PAT(17)},
     {"SAURO SNORT", {9, 120, 0, 88, 40, 110, 70, 30}, {0, 80, 127, 50}, 0, 0, FX(0, 0, 0, 90), PAT(4)},
-    {"DEEP RUMBLE", {0, 127, 0, 0, 60, 30, 40, 20}, {80, 90, 127, 110}, 0, 0, FX(10, 30, 0, 110), PAT(17)},
+    {"DEEP RUMBLE", {0, 127, 0, 100, 60, 30, 40, 20}, {80, 90, 127, 110}, 0, 0, FX(10, 30, 0, 110), PAT(17)},
     {"TITAN APE", {2, 70, 30, 98, 100, 60, 110, 30}, {6, 90, 127, 80}, 0, 1, FX(25, 0, 10, 95), PAT(17)},
     {"NEST CHIRPS", {6, 5, 50, 84, 20, 40, 110, 90}, {0, 70, 110, 40}, 0, 0, FX(0, 20, 30, 90), PAT(4)},
     {"SWAMP CROAK", {5, 75, 8, 100, 60, 30, 20, 40}, {10, 80, 120, 60}, 0, 0, FX(0, 0, 10, 90), PAT(8)},
     {"MONSTER ROAR", {2, 90, 66, 100, 127, 70, 127, 45}, {2, 90, 127, 70}, 0, 1, FX(60, 0, 20, 90), PAT(17)},
     {"DISTANT HERD", {1, 110, 36, 112, 15, 30, 70, 50}, {90, 90, 120, 120}, 0, 0, FX(0, 40, 25, 127), PAT(5)},
-    {"LOW GROWL", {0, 95, 0, 0, 127, 80, 50, 40}, {30, 90, 127, 80}, 0, 1, FX(20, 0, 0, 90), PAT(17)},
+    {"LOW GROWL", {0, 95, 0, 100, 127, 80, 50, 40}, {30, 90, 127, 80}, 0, 1, FX(20, 0, 0, 90), PAT(17)},
     {"BABY REX", {2, 55, 60, 95, 70, 50, 110, 40}, {2, 90, 127, 60}, 0, 1, FX(10, 0, 20, 90), PAT(4)},
     {"SEA MONSTER", {7, 127, 30, 118, 70, 30, 60, 30}, {60, 90, 127, 120}, 0, 0, FX(10, 30, 20, 127), PAT(17)},
     {"HADRO HORN", {4, 100, 15, 110, 15, 20, 70, 20}, {40, 90, 127, 110}, 0, 0, FX(0, 20, 30, 120), PAT(17)},
