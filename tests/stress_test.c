@@ -17,6 +17,7 @@
  * Run it under -fsanitize=address,undefined too: any read or write out of bounds stops it.
  *   stress_test [FRAMES [SEED]]   (default 40000: about 11 minutes of use) */
 #define UI_PAGES_HARNESS_ONLY 1
+#define PALEO_TERMINUS_L   /* PALEOTONE: the L checks below are of the Terminus L (the FM-1 draws Clayborn) */
 #include "ui_pages_test.c"
 #include <time.h>
 

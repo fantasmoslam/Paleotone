@@ -6,6 +6,7 @@
  * 4-bit format (anti-aliased fonts); the advance and bitmap widths (text_w: the layout of 2.5, unchanged); the data
  * size. Exit status: the number of failed checks. */
 #include <stdint.h>
+#define PALEO_TERMINUS_L         /* PALEOTONE: these checks are of the Terminus L (the FM-1 draws Clayborn, gen_font.py) */
 #define FONT_S_HASH 0x1c34aa9cu         /* Terminus Bold, capitals (2.6) */
 #define FONT_L_HASH 0x730ceccbu
 #define FONT_W_HASH 0x6840d800u         /* the widths of 2.5 (the regular font's): the same */

@@ -95,6 +95,20 @@ UI_SMALL static void te_text_c(int32_t cx, int32_t y, const char *s, uint16_t c)
 {
     cv_text(cx - text_w(&FONT_S, s) / 2, y, &FONT_S, s, c);
 }
+/* PALEOTONE (bigger text): centred on cx in Clayborn M where it is w wide or less (4 rows up: the capitals' middle
+ * where Terminus's is), else as te_text_c */
+UI_SMALL static void te_text_cw(int32_t cx, int32_t y, const char *s, uint16_t c, int32_t w)
+{
+#ifdef PALEO_CLAYBORN
+    int32_t mw = text_w(&FONT_M, s);
+    if (mw <= w) {
+        cv_text(cx - mw / 2, y - 4, &FONT_M, s, c);
+        return;
+    }
+#endif
+    (void)w;
+    te_text_c(cx, y, s, c);
+}
 
 /* RAPTOR (the owner): a knob as a pie, a full disc at the top of its range that loses a wedge from the top, both
  * sides at once (a Pac-Man dying), down to nothing at the bottom; a dim ring shows its size. ratio 0..1000, -1 = a
@@ -149,12 +163,20 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
         cv_blit(0, (uint32_t)y0);
         return;
     }
-    for (k = 0; k < 4u; k++) {
-        int32_t cx = 30 + 60 * (int32_t)k;
-        if (!lab[k][0])
-            continue;
-        te_pie(cx, 19, 18, ratio[k], KN_COL[k], TE_G3);
-        te_text_c(cx, 39, lab[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4);   /* (white while turned) */
+    {   /* PALEOTONE: the labels in M when all four fit their column (one size across the row), else Terminus */
+        int32_t mw = 58;
+#ifdef PALEO_CLAYBORN
+        for (k = 0; k < 4u; k++)
+            if (text_w(&FONT_M, lab[k]) > 58)
+                mw = 0;
+#endif
+        for (k = 0; k < 4u; k++) {
+            int32_t cx = 30 + 60 * (int32_t)k;
+            if (!lab[k][0])
+                continue;
+            te_pie(cx, 19, 18, ratio[k], KN_COL[k], TE_G3);
+            te_text_cw(cx, 39, lab[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4, mw);   /* (white while turned) */
+        }
     }
     cv_blit(0, (uint32_t)y0);
 }
@@ -333,7 +355,11 @@ UI_SMALL static void studio_tracks_draw(void)
     {   /* KNOB 1 swing (the global groove), 2 level, 3 steps, 4 pan of the selected track */
         track_t *t = TSEL;
         static char v[4][8];
+#ifdef PALEO_CLAYBORN
+        static const char *const lab[4] = {"swng", "level", "steps", "pan"};   /* (short: the row in M) */
+#else
         static const char *const lab[4] = {"swing", "level", "steps", "pan"};
+#endif
         const char *val[4] = {v[0], v[1], v[2], v[3]};
         int32_t ratio[4];
         uint32_t lvl = is_drum(t) ? song.g[G_DRLVL] : t->p[P_LEVEL];
