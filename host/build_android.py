@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import zipfile
 from pathlib import Path
+from apply_android_ui import apply as apply_android_ui
 
 ROOT = Path(__file__).resolve().parents[1]
 REMOTE_COMMIT = "3e3ea79b729da53c11196513e0ebb9a56ef42ab5"
@@ -61,10 +62,10 @@ def main():
     # Distinct install identity: never replace the accepted Paleotone or RemoteFM1 app.
     replace_once(remote / "app/build.gradle.kts", 'applicationId = "com.quixotic7.remotefm1"',
                  'applicationId = "org.paleotone.host.preview"')
-    replace_once(remote / "app/build.gradle.kts", 'versionCode = 3', 'versionCode = 4')
-    replace_once(remote / "app/build.gradle.kts", 'versionName = "0.2.1"', 'versionName = "0.1.1"')
+    replace_once(remote / "app/build.gradle.kts", 'versionCode = 3', 'versionCode = 5')
+    replace_once(remote / "app/build.gradle.kts", 'versionName = "0.2.1"', 'versionName = "0.1.2"')
     replace_once(remote / "app/src/main/res/values/strings.xml", '>RemoteFM1</string>',
-                 '>Instrument Host Preview</string>')
+                 '>Instrument Host</string>')
     # Public development key, never a release identity. Stable across CI runners
     # so subsequent preview builds can update without losing test state. The
     # first prototype used an ephemeral runner key; the new ID preserves it.
@@ -79,6 +80,7 @@ def main():
             keyPassword = "android"
             storeType = "PKCS12"
         }''')
+    apply_android_ui(remote)
     notice_root = remote / "app/src/main/assets/host-licenses"
     for instrument, source_root in [("paleotone", ROOT), ("felucca", remote / "vendor/FM1VST/cores/Felucca")]:
         notices = notice_root / instrument
@@ -86,7 +88,7 @@ def main():
         for source in [source_root / "LICENSE", source_root / "LICENSING.md", *sorted((source_root / "LICENSES").glob("*.txt"))]:
             shutil.copy2(source, notices / source.name)
     manifest = {
-        "prototype": True, "application_id": "org.paleotone.host.preview", "version": "0.1.1",
+        "prototype": True, "application_id": "org.paleotone.host.preview", "version": "0.1.2",
         "paleotone_source": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "remote_source": REMOTE_COMMIT,
         "fm1vst_source": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=remote / "vendor/FM1VST", text=True).strip(),
@@ -103,7 +105,7 @@ def main():
             raise SystemExit("APK is missing an actual instrument or native host library")
     output = ROOT / "build/instrument-host/release"
     output.mkdir(parents=True, exist_ok=True)
-    apk_path = output / "Instrument-Host-Preview-0.1.1.apk"
+    apk_path = output / "Instrument-Host-0.1.2.apk"
     shutil.copy2(original, apk_path)
     run(sdk / "build-tools/36.0.0/apksigner", "verify", "--verbose", apk_path)
     manifest["apk_sha256"] = hashlib.sha256(apk_path.read_bytes()).hexdigest()

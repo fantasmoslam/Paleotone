@@ -31,6 +31,11 @@ jobs:
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.31.6'
       - name: Prepare pinned comparison host
         run: python3 host/prepare_remote.py --out build/instrument-host/RemoteFM1Android
+      - name: Compile project-owned Android interface
+        run: |
+          python3 host/apply_android_ui.py --remote build/instrument-host/RemoteFM1Android
+          cd build/instrument-host/RemoteFM1Android
+          bash gradlew :app:compileDebugKotlin -PrfmSkipCores=true --no-daemon --max-workers=2
       - name: Build and test both real applications on desktop
         run: |
           cmake -S host -B build/instrument-host/desktop -DCMAKE_BUILD_TYPE=Release \

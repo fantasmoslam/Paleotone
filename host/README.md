@@ -2,7 +2,7 @@
 
 This implementation adds the real Paleotone firmware as a native `fm1core` instrument alongside Felucca in the pinned RemoteFM1 Android host. It reuses FM1VST's existing ABI and Felucca-family adapter rather than introducing another protocol or replacing the synthesis engines.
 
-The prototype installs as **Instrument Host Preview**, package `org.paleotone.host.preview`. It is separate from existing Paleotone and RemoteFM1 installations. It retains the upstream host interface and controller transport while the project-specific tablet and controller experience is developed.
+The prototype installs as **Instrument Host**, package `org.paleotone.host.preview`. It is separate from existing Paleotone and RemoteFM1 installations. The project-owned Compose interface replaces the upstream faceplate, navigation, instrument browser, audio pages and launcher icon. Runtime/audio/persistence internals remain attributed upstream. Our controller bridge is still in development; this build defaults to touchscreen operation and does not offer an upstream firmware installer.
 
 ## Build
 
@@ -40,3 +40,11 @@ Upstream sources remain pinned; their notices and source pointers apply. Paleoto
 On the SM-T860, the user verified both instruments, switching between them, and Paleotone settings surviving a switch and app restart in 0.1.0. A further check found that browsing Paleotone presets while holding a key released the old voice without starting the new sound. Fresh presses continued to play; this was not an app freeze. Sound loads now replay physically held keys on the affected track through the firmware's normal engine fade and ownership paths. Ordinary panic stays silent. Audition does not write extra notes into live recording. Felucca is unchanged. The regression test covers repeated browsing, chords, cross-engine fades, release timing, panic, recording and user presets. Physical confirmation of this fix is still needed.
 
 The original CI runner's debug signing key was ephemeral. This preview uses a separate package identity and a stable, intentionally public development key (`prototype-debug-key.b64`, password `android`), so it can install alongside 0.1.0 and later preview updates can retain their own test state. Never use this debug identity for production. Original prototype settings remain in the original app and are not migrated automatically.
+
+## 0.1.2: project-owned tablet interface
+
+Authored sources live under `host/android`; `apply_android_ui.py` installs them into the pinned runtime checkout. The main activity launches `InstrumentHostScreen`, not the upstream `MainScreen`. Five explicit destinations replace the faceplate/sheet interaction: Play, Instruments, Controllers, Audio and About. The original instrument framebuffer and panel semantics remain available in a new performance layout with large increment/decrement controls, momentary panel buttons and a separately authored multitouch keyboard. Touch cancellation releases notes/buttons. Library selection releases touch ownership before switching, and instrument ID scopes the playable surface. Named snapshots save/load through the existing per-instrument state store. The sound enable/mute action remains visible throughout navigation; it is labelled mute, not sequencer stop.
+
+The warm charcoal/amber/mint palette, typography, workbench layout, browser, connection cards and vector launcher mark are new. About credits the reused runtime and instrument sources. Legacy install prompts, skin controls, catalogue downloads and bridge setup pages are not reachable from this interface. FM-1 and SMK-37 cards explicitly state bridge work is pending. No controller firmware is changed. Hardware integration remains the next separate milestone.
+
+This build updates 0.1.1 using the same package and public development signing identity, retaining its app data. The SM-T860 playback/state/preset-audition checks reported by the user apply to 0.1.1; this new UI still requires device confirmation. Keyboard geometry tests cover every firmware key index at multiple tablet widths, black-key priority and leaving the touch area.
