@@ -1,0 +1,4 @@
+private-bank/
+build/
+*.obj
+__pycache__/

@@ -1,0 +1,74 @@
+name: ORK recorded-voice prototype
+on:
+  push:
+    branches: [codex/ork-rock-fm1-prototype]
+    paths: [experiments/ork-rock-fm1/**, .github/workflows/ork-rock-prototype.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    defaults:
+      run:
+        working-directory: experiments/ork-rock-fm1
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test
+      - name: Address and undefined-behavior sanitizers
+        run: |
+          cc -std=c11 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Isrc src/ork.c tests/test_core.c -o build/ork-sanitize
+          build/ork-sanitize build/fixture.bin
+  windows-renderer:
+    runs-on: windows-2022
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build host renderer from the same C core
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          & "$vs\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+          New-Item -ItemType Directory -Path build/ork-host -Force | Out-Null
+          cl /nologo /W4 /WX /O2 /std:c11 /D_CRT_SECURE_NO_WARNINGS /Iexperiments/ork-rock-fm1/src experiments/ork-rock-fm1/src/ork.c experiments/ork-rock-fm1/tools/render.c /Febuild/ork-host/ork-render.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Write-Host "ORK_EXE_SHA256=$((Get-FileHash build/ork-host/ork-render.exe -Algorithm SHA256).Hash.ToLower())"
+          Write-Host 'ORK_EXE_BEGIN'
+          Write-Host ([Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path build/ork-host/ork-render.exe))))
+          Write-Host 'ORK_EXE_END'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ork-windows-renderer
+          path: build/ork-host/ork-render.exe
+          if-no-files-found: error
+  fm1-source-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Isolated prototype integration
+        run: python3 experiments/ork-rock-fm1/tools/integrate_paleotone.py "$GITHUB_WORKSPACE"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.jieli
+          key: ork-jieli-linux-toolchain-v1
+      - name: Build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libraqm0
+          python3 -m pip install pillow fonttools
+          if [ ! -x "$HOME/.jieli/toolchain/pi32v2/bin/clang" ]; then tools/get_toolchain.sh "$HOME/.jieli"; fi
+          sh tools/get_ac79_sdk.sh "$HOME/fw-AC79_AIoT_SDK"
+      - name: Compile target image
+        run: |
+          set -o pipefail
+          ./build.sh 2>&1 | tee ork-build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ork-fm1-build-check
+          path: |
+            ork-build.log
+            build/felucca.fwsc
+          if-no-files-found: warn
