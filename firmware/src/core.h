@@ -132,6 +132,7 @@ enum {                          /* global parameters */
                                  * the slot of G_SYNC (a setting of the FM-1), 0x100 | the model (project.c) */
     G_TAPE, G_CRSH,             /* RAPTOR: Paleotone's TAPE / CRSH on the mix (tape.c); in a project G_MIDI's slot */
     G_AMB, G_CRKL,              /* .. and its ambience, level and crackle (ambience.c); in a project G_ROUTE's slot */
+    G_DEMO,                     /* PALEOTONE: TOOLS > DEMO, the demo song (GO; ui_input.c demo_fill; not in a project) */
     G_COUNT
 };
 

@@ -42,7 +42,7 @@
                                                 * so the format and its size do not change */
 _Static_assert(G_DRDLY == PROJ_NG && G_TXSRC == PROJ_NG + 5u,
                "the globals a project holds, then G_DRDLY (then 2.6's GLO > MIDI: settings of the FM-1)");
-_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_RTYPE == G_FXFADE + 1u && G_COUNT == G_CRKL + 1u,
+_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_RTYPE == G_FXFADE + 1u && G_DEMO == G_CRKL + 1u && G_COUNT == G_DEMO + 1u,
                "G_FXFADE (2.7.2) a setting of the FM-1, then RAPTOR's G_RTYPE (in G_SYNC's slot of a project)");
 #define PROJ_NC6 ((uint32_t)P_ITYPE)           /* format 6: the parameters kept in 16 bits, P_LEVEL .. P_VLEAD (as 5), */
 #define PROJ_NX6 ((uint32_t)(P_E0 - P_ITYPE))  /* the 2.6 ones in a byte (0..127), then P_E0 .. P_E7 */

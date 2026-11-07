@@ -2234,6 +2234,45 @@ int main(int argc, char **argv)
         go_home(); frames(4);
         check(!mac_on, "MACROS: off on a page button / HOME");
     }
+    {   /* PALEOTONE: the demo song (TOOLS > DEMO): every track sounds, soloed, and the mix does not clip
+         * (outdir/demo-song.wav: the mix, 20 s) */
+        static const char *const TN[NTRK] = {"MARIMBA", "PAD", "BASS", "SFX", "CALLS", "DRUMS"};
+        uint32_t tk, f, j, clips = 0;
+        char path[512];
+        FILE *w;
+        transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
+        for (tk = 0; tk <= NTRK; tk++) {
+            double e2 = 0;
+            project_new();
+            demo_fill(1);
+            song.solo = (uint8_t)(tk < NTRK ? 1u << tk : 0u);
+            transport_req = 1;
+            w = 0;
+            if (tk == NTRK) {
+                snprintf(path, sizeof path, "%s/demo-song.wav", outdir);
+                if ((w = fopen(path, "wb")))
+                    wav_hdr(w, 20u * FS);
+            }
+            for (f = 0; f < 20u * FS; f += CTL) {
+                int32_t o[2 * CTL];
+                mix_block(o, CTL);
+                for (j = 0; j < CTL; j++) {
+                    e2 += (double)o[2 * j] * o[2 * j];
+                    clips += tk == NTRK && (o[2 * j] >= 32700 || o[2 * j] <= -32700);
+                    if (w)
+                        wav_put(w, o[2 * j], o[2 * j + 1]);
+                }
+            }
+            if (w)
+                fclose(w);
+            transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
+            e2 = sqrt(e2 / (20.0 * FS));
+            printf("ui: DEMO: %-8s RMS %6.0f\n", tk < NTRK ? TN[tk] : "MIX", e2);
+            check(e2 > 150.0, tk < NTRK ? TN[tk] : "DEMO: the mix sounds");
+        }
+        check(clips < 200u, "DEMO: the mix (almost) never clips");
+        song.solo = 0;
+    }
     printf("ui: %s\n", fails ? "FAILED" : "pages, layers (punch, steps, erase, roll, key, mix), layer lock, song layer, REC hold, drums, REC, 20000-frame fuzz PASS");
     return fails;
 }
