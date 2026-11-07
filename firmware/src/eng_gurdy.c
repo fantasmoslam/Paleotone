@@ -136,10 +136,10 @@ static int crank_track(const track_t *t)
     return t->eng_req % NENGINES == ENGI_ROAR && t->p[P_E5] == (int16_t)GURDY_CRANK;
 }
 
-/* the presets that ring (bit k: GURDY_PRESETS[k]): PRIMEVAL, EARTHQUAKE, TRIBE PIPES. RAPTOR: no RING parameter (a
- * track's sound in a project holds no more), RING is the preset's, as Paleotone sets it when one loads (ui.c) */
+/* the presets that ring (bit k: GURDY_PRESETS[k]): PRIMEVAL, EARTHQUAKE, TRIBE PIPES: RING ON when one loads (ui.c
+ * apply_preset_to). PALEOTONE: RING is the track's, EDIT > RING, kept in P_FTYPE (params.c RING_DESC) */
 #define GURDY_RING 0x23u
-static int gurdy_ring_on(const track_t *t) { return t->preset < 32u && ((GURDY_RING >> t->preset) & 1u); }
+static int gurdy_ring_on(const track_t *t) { return t->p[P_FTYPE] != 0; }
 
 /* RING: the drones ring through the rests: a GURDY track with RING ON while the transport runs (voice.c voice_release),
  * not muted (a muted track plays no next note: its drones would ring on, and GLO's mute would not silence them) */

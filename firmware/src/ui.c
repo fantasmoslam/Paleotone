@@ -685,6 +685,8 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
             t->p[i] = TP[i].def;                     /* sounds the same after any edit (not the pattern, not the mix) */
     for (i = 0; i < 8u; i++)
         t->p[P_E0 + i] = (int16_t)e->presets[pi].e[i];
+    if (t->eng_req % NENGINES == ENGI_ROAR)           /* PALEOTONE: RING (P_FTYPE on ROAR) as the preset rings */
+        t->p[P_FTYPE] = (int16_t)(pi < 32u && ((GURDY_RING >> pi) & 1u));
     t->p[P_ATK] = e->presets[pi].env[0];
     t->p[P_DEC] = e->presets[pi].env[1];
     t->p[P_SUS] = e->presets[pi].env[2];
