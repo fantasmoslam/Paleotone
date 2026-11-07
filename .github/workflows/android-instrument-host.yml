@@ -1,0 +1,53 @@
+name: Android instrument host prototype
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/android-instrument-host]
+    paths: ['host/**', '.github/workflows/android-instrument-host.yml']
+permissions:
+  contents: read
+concurrency:
+  group: android-host-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.3.5
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install pinned SDK tools
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.31.6'
+      - name: Prepare pinned comparison host
+        run: python3 host/prepare_remote.py --out build/instrument-host/RemoteFM1Android
+      - name: Build and test both real applications on desktop
+        run: |
+          cmake -S host -B build/instrument-host/desktop -DCMAKE_BUILD_TYPE=Release \
+            -DFM1VST_DIR="$PWD/build/instrument-host/RemoteFM1Android/vendor/FM1VST" \
+            -DREMOTE_ANDROID_DIR="$PWD/build/instrument-host/RemoteFM1Android"
+          cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration -j 2
+          ctest --test-dir build/instrument-host/desktop --output-on-failure
+      - name: Build isolated two-instrument Android prototype
+        run: python3 host/build_android.py --remote build/instrument-host/RemoteFM1Android --jobs 2
+      - name: Corresponding prototype source
+        run: git archive --format=zip --output=build/instrument-host/release/Prototype-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-Instrument-Host-Prototype
+          path: |
+            build/instrument-host/release/*
+            build/instrument-host/desktop/Testing/Temporary/LastTest.log
+            build/instrument-host/RemoteFM1Android/app/build/test-results/testDebugUnitTest/*.xml
+          retention-days: 30
