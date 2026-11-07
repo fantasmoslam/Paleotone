@@ -12,11 +12,26 @@ SYNTH): the whole 240 x 240 screen, in the format splash.c reads (SLOOP's names,
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 ART = Path(__file__).resolve().parent.parent / "assets" / "logo" / "paleotone-splash-art.png"
 W = H = 240
 FLOOR = 60                                        # a pixel whose brightest channel is under this: black
+# the title and the line under it in Clayborn (the screens' typeface: gen_font.py), over the art's own lettering
+CLAYBORN = Path(__file__).resolve().parent.parent / "assets" / "fonts" / "Clayborn.ttf"
+TEXT = [("PALEOTONE", 42, 116, (65, 234, 115)), ("PREHISTORIC SYNTH", 18, 166, (139, 178, 148))]
+
+
+def lettering(im):
+    """clear the art's title rows (110..185) and draw TEXT centred, 1-bit (threshold 128)"""
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 110, W - 1, 185), fill=(0, 0, 0))
+    for text, size, top, col in TEXT:
+        font = ImageFont.truetype(str(CLAYBORN), size)
+        x0, y0, x1, y1 = font.getbbox(text)
+        m = Image.new("L", (W, H), 0)
+        ImageDraw.Draw(m).text(((W - (x1 - x0)) // 2 - x0, top - y0), text, font=font, fill=255)
+        im.paste(col, (0, 0), m.point(lambda v: 255 if v >= 128 else 0))
 
 
 def quantized():
@@ -26,6 +41,7 @@ def quantized():
         for x in range(W):
             if max(px[x, y]) < FLOOR:
                 px[x, y] = (0, 0, 0)
+    lettering(im)
     return im.quantize(16, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
 
 

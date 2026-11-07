@@ -597,10 +597,10 @@ UI_SMALL static void tiles_draw(const tile_t *tl, uint32_t *cache)
         return;
     *cache = sig;
     {
-    int32_t mw = 54;                                    /* PALEOTONE: the labels in M when all 16 fit (one size) */
+    int32_t mw = 56;                                    /* PALEOTONE: the labels in M when all 16 fit (one size) */
 #ifdef PALEO_CLAYBORN
     for (r = 0; r < 16u; r++)
-        if (text_w(&FONT_M, tl[r].lab) > 54)
+        if (text_w(&FONT_M, tl[r].lab) > 56)
             mw = 0;
 #endif
     for (r = 0; r < 4u; r++) {
@@ -1113,7 +1113,7 @@ UI_SMALL static void hold_screen_draw(void)
         str_cpy(b, "section A", sizeof b);
         b[8] = (char)('A' - 1 + clamp(song.g[G_SLOT], 1, 4));
     }
-    te_text_c(120, 4, b, TE_G4);
-    te_text_c(120, 30, "keep holding", TE_G3);
+    te_text_cw(120, 6, b, TE_G4, 236);
+    te_text_cw(120, 34, "keep holding", TE_G3, 236);
     cv_blit(0, 160);
 }

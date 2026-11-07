@@ -299,7 +299,7 @@ UI_SMALL static void draw_menu(void)
 #else
             cv_text(4, 132, &FONT_S, "GITHUB.COM/ISOD89/SLOOP-FM1", C_AMB);   /* (the source of this firmware) */
 #endif
-            cv_text(4, 146, &FONT_S, "FONT: TERMINUS (OFL)", C_DIM);
+            cv_text(4, 146, &FONT_S, PALEO_FONT_CREDIT, C_DIM);
             cv_text(4, 159, &FONT_S, "SAMPLES: VERSILIAN (CC0)", C_DIM);
             cv_text(4, 172, &FONT_S, "+ SONIC PI (CC0)", C_DIM);
             cv_text(4, 185, &FONT_S, "PHASE: CRISPYZEBRA (GPL)", C_DIM);

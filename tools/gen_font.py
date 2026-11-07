@@ -32,8 +32,12 @@ PAD = 2
 # 1 bit a pixel, drawn at 12k px in Terminus's 16k cell with the baseline on its row (12k): the digits keep
 # Terminus's advance (8k). C2 (k = 2) is gfx.c's FONT_L on the FM-1, C3 is text_k's k = 3, and k = 4 is C2's
 # bitmaps at 2x (no copy). A character Clayborn has no glyph for is Terminus's, enlarged.
-# M (PALEOTONE: bigger small text): 20 px in a 24 px cell, baseline at 18, where a label fits (gfx.c text_fit).
-CLAYBORN = [("C2", "Clayborn.ttf", 2), ("C3", "Clayborn.ttf", 3), ("M", "Clayborn.ttf", 0)]
+# M (PALEOTONE: bigger small text): 20 px condensed to 85 % in a 24 px cell, baseline at 18, where a label fits (gfx.c text_fit).
+# CS (PALEOTONE: one typeface): 16 px condensed to 85 % in Terminus's 16-row cell, baseline at 13, Latin-1: FONT_S
+# on the FM-1.
+# (name, px, cell, baseline, Terminus's scale for what Clayborn lacks, first, last)
+CLAYBORN = [("C2", 24, 32, 24, 2, 32, 95, 0.85), ("C3", 36, 48, 36, 3, 32, 95, 0.85), ("M", 20, 24, 18, 1, 32, 95, 0.85),
+            ("CS", 16, 16, 13, 1, 32, 255, 0.85)]
 
 
 def upscale(px_, w, h, scale):
@@ -128,15 +132,14 @@ def render(ttf, px, scale, pixel, first, last):
     return h * scale, glyphs
 
 
-def render_clay(ttf, k, first, last):
-    """a pixel-thresholded TTF in Terminus's cell at k x: cell 16k, baseline at row 12k (k = 0: M, 20 px in 24)"""
-    font = ImageFont.truetype(str(FONTS / ttf), 12 * k if k else 20)
+def render_clay(ttf, px, h, base, fk, first, last, sx=1.0):
+    """a pixel-thresholded TTF (1 bit) at px in an h-row cell, its baseline on row base; a character it has no glyph
+    for is Terminus's at fk x, moved down onto the same baseline"""
+    font = ImageFont.truetype(str(FONTS / ttf), px)
     asc, desc = font.getmetrics()
-    h, base = (16 * k, 12 * k) if k else (24, 18)
-    _, term = render_bdf(FONTS / "ter-u16b.bdf", max(k, 1), first, last)
-    if not k:                                          # Terminus 1x on M's baseline (6 rows down)
-        term = [(a, bw, [0] * (6 * bw) + g + [0] * (2 * bw)) for a, bw, g in term]
-    k1 = max(k, 1)
+    _, term = render_bdf(FONTS / "ter-u16b.bdf", fk, first, last)
+    dy = base - 12 * fk                                # Terminus's baseline: row 12 of 16, at fk x
+    term = [(a, bw, ([0] * (dy * bw) + g)[:h * bw] + [0] * max(0, h * bw - len(g) - dy * bw)) for a, bw, g in term]
     notdef = Image.new("L", (64, 64), 0)
     ImageDraw.Draw(notdef).text((8, 8), "\ue000", font=font, fill=255)
     out, fell = [], []
@@ -144,17 +147,26 @@ def render_clay(ttf, k, first, last):
         ch = chr(c)
         probe = Image.new("L", (64, 64), 0)
         ImageDraw.Draw(probe).text((8, 8), ch, font=font, fill=255)
-        if ch != " " and (probe.tobytes() == notdef.tobytes() or not probe.getbbox()):
+        if (127 <= c < 160) or (ch != " " and (probe.tobytes() == notdef.tobytes() or not probe.getbbox())):
             out.append(term[c - first])                # (cell, pad and advance as the C font's)
             fell.append(ch)
             continue
-        adv = int(round(font.getlength(ch)))
-        right = max(adv, font.getbbox(ch)[2]) if ch != " " else adv
-        bw = right + 2 * PAD * k1
-        img = Image.new("L", (bw, h), 0)
-        ImageDraw.Draw(img).text((PAD * k1, base - asc), ch, font=font, fill=255)
-        out.append((adv, bw, [15 if v >= 128 else 0 for v in img.tobytes()]))
-    print(f"font Clayborn {12 * k if k else 20}px: Terminus for {''.join(fell)!r}")
+        adv = int(round(font.getlength(ch) * sx))
+        if sx != 1.0:                                  # condensed (CS, M): drawn at 2x, box-filtered down, threshold
+            big = ImageFont.truetype(str(FONTS / ttf), 2 * px)
+            right = max(big.getlength(ch), big.getbbox(ch)[2]) if ch != " " else big.getlength(ch)
+            img = Image.new("L", (int(right) + 2, 2 * h), 0)
+            ImageDraw.Draw(img).text((0, 2 * base - big.getmetrics()[0]), ch, font=big, fill=255)
+            img = img.resize((max(1, int(round(img.width * sx / 2))), h), Image.BOX)
+        else:
+            right = max(font.getlength(ch), font.getbbox(ch)[2]) if ch != " " else font.getlength(ch)
+            img = Image.new("L", (int(right) + 1, h), 0)
+            ImageDraw.Draw(img).text((0, base - asc), ch, font=font, fill=255)
+        cell = Image.new("L", (img.width + 2 * PAD * fk, h), 0)
+        cell.paste(img, (PAD * fk, 0))
+        thr = 128
+        out.append((adv, cell.width, [15 if v >= thr else 0 for v in cell.tobytes()]))
+    print(f"font Clayborn {px}px: Terminus for {len(fell)} characters")
     return h, out
 
 
@@ -215,8 +227,8 @@ def main(out):
         if scale == 1:
             base = (name, first, h, glyphs, one)
         print(f"font {name}: {ttf} {px}px h {h}, digit adv {glyphs[ord('0') - first][0]}, {len(data)} B")
-    for name, ttf, k in CLAYBORN:
-        h, glyphs = render_clay(ttf, k, 32, 95)
+    for name, px, ch, base, k, first, last, *sx in CLAYBORN:
+        h, glyphs = render_clay("Clayborn.ttf", px, ch, base, k, first, last, *sx)
         data, offs = [], []
         for adv, bw, g in glyphs:
             offs.append(len(data))
@@ -233,15 +245,15 @@ def main(out):
         lines.append(f"static const uint16_t FONT_{name}_OFF[{len(offs)}] = {{" + ", ".join(map(str, offs)) + "};")
         lines.append(f"static const uint8_t FONT_{name}_ADV[{len(glyphs)}] = {{" + ", ".join(str(a) for a, _, _ in glyphs) + "};")
         lines.append(f"static const uint8_t FONT_{name}_BW[{len(glyphs)}] = {{" + ", ".join(str(b) for _, b, _ in glyphs) + "};")
-        lines.append(f"static const felucca_font_t FONT_{name} = {{ {h}, {PAD * max(k, 1)}, 32, 95, 0, FONT_{name}_ADV, "
+        lines.append(f"static const felucca_font_t FONT_{name} = {{ {h}, {PAD * k}, {first}, {last}, 0, FONT_{name}_ADV, "
                      f"FONT_{name}_BW, FONT_{name}_OFF, FONT_{name}_DATA, 1 }};")
-        if k == 2:                                     # k = 4: C2's bitmaps at 2x
+        if name == "C2":                               # k = 4: C2's bitmaps at 2x
             lines.append(f"static const uint8_t FONT_C4_ADV[{len(glyphs)}] = {{" + ", ".join(str(2 * a) for a, _, _ in glyphs) + "};")
             lines.append(f"static const uint8_t FONT_C4_BW[{len(glyphs)}] = {{" + ", ".join(str(2 * b) for _, b, _ in glyphs) + "};")
             lines.append(f"static const felucca_font_t FONT_C4 = {{ {2 * h}, {PAD * 4}, 32, 95, 1, FONT_C4_ADV, "
                          f"FONT_C4_BW, FONT_C2_OFF, FONT_C2_DATA, 1 }};")
         lines.append("")
-        print(f"font {name}: Clayborn {12 * k if k else 20}px h {h}, digit adv {glyphs[ord('0') - 32][0]}, {len(data)} B")
+        print(f"font {name}: Clayborn {px}px h {h}, digit adv {glyphs[ord('0') - 32][0]}, {len(data)} B")
     Path(out).write_text("\n".join(lines))
 
 
