@@ -28,13 +28,17 @@ typedef struct {               /* proportional, see tools/gen_font.py */
                                 * bit first, each glyph from a whole byte); 0 = 2 pixels a byte, alpha 0..15 */
 } felucca_font_t;
 #include "felucca_font.h"
-/* PALEOTONE (FM-1): the large text in Clayborn (tools/gen_font.py): FONT_L is its 24 px cut, text_k's k = 3 and 4
- * its 36 px cut and the 24 px one at 2x; the small text stays Terminus. (PALEO_TERMINUS_L: the font tests' old L) */
+/* PALEOTONE (FM-1): one typeface, Clayborn (tools/gen_font.py), condensed: FONT_S its 16 px cut, FONT_M 20 px,
+ * FONT_L 24 px, text_k's k = 3 and 4 its 36 px cut and the 24 px one at 2x (Terminus only for what Clayborn has no
+ * glyph for). (PALEO_TERMINUS_L: the font tests' Terminus S and L) */
 #if !(defined(BOARD_SMK37) && BOARD_SMK37) && !defined(PALEO_TERMINUS_L)
 #define PALEO_CLAYBORN 1
 #define FONT_L FONT_C2
+#define FONT_S FONT_CS                      /* PALEOTONE: one typeface: the small text in Clayborn too (16 px) */
 #define PALEO_SWING_LAB "swng"              /* (a dial's label short enough for M) */
+#define PALEO_FONT_CREDIT "FONT: CLAYBORN (OFL)"
 #else
+#define PALEO_FONT_CREDIT "FONT: TERMINUS (OFL)"
 #define PALEO_SWING_LAB "swing"
 #endif
 

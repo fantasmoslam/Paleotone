@@ -171,7 +171,7 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         key[n + 3] = 0;
     }
     if (c < 4u) {                                       /* (the big values: their own fit) */
-        str_cpy(ui.big_l[c], l, 8);
+        fit(ui.big_l[c], label, &FONT_L, 112);         /* (its own fit: the cell, not the small column) */
         fit(ui.big_v[c], val, &FONT_L, 112 - (unit[0] ? 4 : 0));   /* (graph_big scales it to its cell) */
         str_cpy(ui.big_u[c], unit, 8);
         ui.big_c[c] = vc;
@@ -191,9 +191,16 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         return;
     str_cpy(ui.col[c], key, sizeof ui.col[c]);
     cv_begin(55, Y_SEP_END - Y_LABEL, C_BLACK);         /* x 4..58: the rule at 59 stays */
+#ifdef PALEO_CLAYBORN
+    if (label[0] && text_w(&FONT_M, label) <= 55)       /* PALEOTONE: the label in M (no icon) where it fits */
+        cv_text(0, -3, &FONT_M, label, C_GRAY);
+    else
+#endif
+    {
     if (FELUCCA_ICONS && icon != ICON_NONE && l[0])
         cv_icon(0, 1, icon, KN_COL[c & 3u]);            /* icon rows 1..10 = the label's cap height */
     cv_text(l[0] ? LABEL_X : 0, 0, &FONT_S, l, C_GRAY);
+    }
     if (text_w(&FONT_L, v) <= 54) {                     /* RAPTOR: the value large when it fits the column (the unit
                                                          * small beside it, if there is room) */
         x = cv_text(0, 12, &FONT_L, v, vc);

@@ -444,12 +444,12 @@ UI_SMALL static void drum_screen_draw(void)
         cv_begin(240, 44, C_BLACK);
         cv_rect(2, 4, 34, 34, TE_DRUM);
         fmt_int(b, (int32_t)kit + 1);
-        cv_text(19 - text_w(&FONT_S, b) / 2, 13, &FONT_S, b, C_BLACK);
+        cv_text(19 - text_w(&FONT_L, b) / 2, 4, &FONT_L, b, C_BLACK);   /* (PALEOTONE: large) */
         cv_text(44, 6, &FONT_L, DRUM_KIT_NAMES[kit], C_WHITE);
-        cv_text(194, 1, &FONT_S, "grid", drum_page == 0 ? C_WHITE : TE_G3);
-        cv_text(194, 15, &FONT_S, "kit", drum_page == 1 ? C_WHITE : TE_G3);
-        cv_text(194, 29, &FONT_S, "sound", drum_page == 2 ? C_WHITE : TE_G3);
-        cv_rect(188, 5 + (int32_t)drum_page * 14, 3, 9, TE_DRUM);
+        cv_text(190, 1, &FONT_S, "grid", drum_page == 0 ? C_WHITE : TE_G3);
+        cv_text(190, 15, &FONT_S, "kit", drum_page == 1 ? C_WHITE : TE_G3);
+        cv_text(190, 29, &FONT_S, "sound", drum_page == 2 ? C_WHITE : TE_G3);
+        cv_rect(184, 5 + (int32_t)drum_page * 14, 3, 9, TE_DRUM);
         cv_blit(0, 40);
     }
     sig = drum_page + drum_lane * 7u + drum_cursor * 101u + song.playing * 71u + len * 3u + ui.sheet * 7919u +
@@ -513,7 +513,7 @@ UI_SMALL static void drum_screen_draw(void)
                 }
                 if (drum_page == 2u && (drum_tune[i] || drum_dec[i]))
                     cv_rect(x + 3, y + 3, 4, 4, TE_DRUM);
-                te_text_c(x + 28, y + 4, LANE_SHORT[i], pad_lit[i] ? C_BLACK : i == drum_lane ? C_WHITE : TE_G3);
+                te_text_cw(x + 28, y + 4, LANE_SHORT[i], pad_lit[i] ? C_BLACK : i == drum_lane ? C_WHITE : TE_G3, 56);
             }
         }
         cv_blit(0, 84);
