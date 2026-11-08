@@ -137,7 +137,7 @@ private fun ControlBank(feed: PanelFeed, modifier: Modifier, initialBank: Int) {
     Column(modifier.testTag("control-bank"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth().height(44.dp).background(Surface, Shape), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf("Sound", "Edit", "Panel").forEachIndexed { index, title ->
-                TextButton(onClick = { feed.releaseAll(); bank = index }, shape = Shape,
+                TextButton(onClick = { bank = index }, shape = Shape,
                     modifier = Modifier.weight(1f).fillMaxHeight().testTag("bank-$index"),
                     colors = ButtonDefaults.textButtonColors(contentColor = if (bank == index) Ink else Quiet,
                         containerColor = if (bank == index) Edge else Color.Transparent)) { HostText(title, fontSize = 13.sp) }

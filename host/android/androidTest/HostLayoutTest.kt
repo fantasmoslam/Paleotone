@@ -50,7 +50,11 @@ class HostLayoutTest {
         }
     }
     @Test fun keyboardAndDialGesturesReachPanel() {
-        rule.onNodeWithTag("keyboard").performTouchInput { down(center); advanceEventTime(100); up() }
+        rule.onNodeWithTag("keyboard").performTouchInput { down(center); advanceEventTime(100) }
+        rule.onNodeWithTag("bank-1").performClick()
+        assertFalse("Changing control banks must preserve held notes", rule.activity.events.any { it.first == 1 && it.third == 0 })
+        rule.onNodeWithTag("keyboard").performTouchInput { up() }
+        rule.onNodeWithTag("bank-0").performClick()
         assertTrue(rule.activity.events.any { it.first == 1 && it.third == 1 })
         assertTrue(rule.activity.events.any { it.first == 1 && it.third == 0 })
         rule.onNodeWithTag("dial-PRESETS").performTouchInput { swipe(center, center.copy(y = center.y - 50)) }
