@@ -1,0 +1,159 @@
+diff --git a/app/src/main/java/com/quixotic7/remotefm1/AppModel.kt b/app/src/main/java/com/quixotic7/remotefm1/AppModel.kt
+index 2b42255..9600740 100644
+--- a/app/src/main/java/com/quixotic7/remotefm1/AppModel.kt
++++ b/app/src/main/java/com/quixotic7/remotefm1/AppModel.kt
+@@ -101,6 +101,10 @@ class AppModel private constructor(private val ctx: Context, val options: Launch
+                              onState = { st -> main.post { audioState = st } })
+     /** (A6) the MIDI side: the faceplate's feed, the learned map, the settings, controllers, learn, the OMX-27 */
+     val midi = AppMidi(ctx, engine, link, prefs)
++    private val midiOwnership = MidiOwnership(
++        bridge = { enabled, done -> RfmMidi.setBridgeEnabled(enabled) { main.post { done() } } },
++        controllers = { reserved, done -> midi.input.reserveBridge(reserved) { main.post { done() } } },
++    )
+     /** (A5's wiped-memory card) the copy from before a version change the new version seems to have erased */
+     var wipedCopy by mutableStateOf<FlashHistory.Snapshot?>(null)
+         private set
+@@ -250,7 +254,7 @@ class AppModel private constructor(private val ctx: Context, val options: Launch
+         outputPick = prefs.getString(KEY_OUTPUT, AudioRoute.AUTO)?.takeIf { it != AudioRoute.USB } ?: AudioRoute.AUTO
+         usbAudio = prefs.getBoolean(KEY_USB_AUDIO, false)
+         enableVirtual(options.virtual)                      // (listed to other apps only when asked for)
+-        RfmMidi.start(ctx, link.let { if (options.virtual) Fm1Candidate.VIRTUAL_NAME else "" })
++        RfmMidi.start(ctx, link.let { if (options.virtual) Fm1Candidate.VIRTUAL_NAME else "" }, bridgeEnabled = false)
+         RfmMidi.addListener { main.post { if (!linkPaused) link.rescan(); refreshMidi() } }
+         Log.i(TAG, "backend $backend, cores ${cores.map { it.getString("id") }}, last Bluetooth unit ${reconnect.address}")
+         val src = when (options.source) {
+@@ -276,6 +280,7 @@ class AppModel private constructor(private val ctx: Context, val options: Launch
+         source = s
+         prefs.edit().putString(KEY_SOURCE, if (s == Source.FM1) "fm1" else "tablet").apply()
+         if (s == Source.FM1) link.start() else link.stop()
++        midiOwnership.useBridge(s == Source.FM1)
+         if (mode == Mode.CORE) engine.attach(s == Source.FM1)
+         playingChanged()
+     }
+diff --git a/app/src/main/java/com/quixotic7/remotefm1/RfmMidi.kt b/app/src/main/java/com/quixotic7/remotefm1/RfmMidi.kt
+index 7c55373..6490bf6 100644
+--- a/app/src/main/java/com/quixotic7/remotefm1/RfmMidi.kt
++++ b/app/src/main/java/com/quixotic7/remotefm1/RfmMidi.kt
+@@ -37,6 +37,7 @@ object RfmMidi {
+     private val handler = Handler(thread.looper)
+     private val exec = Executor { handler.post(it) }
+     private var started = false
++    private var bridgeEnabled = false
+ 
+     @Volatile var virtualName: String = ""
+         private set
+@@ -49,9 +50,10 @@ object RfmMidi {
+         private set
+ 
+     /** Starts watching MIDI devices ([virtualName]: also the tests' loopback device of that name). */
+-    fun start(context: Context, virtualName: String = "") {
++    fun start(context: Context, virtualName: String = "", bridgeEnabled: Boolean = true) {
+         handler.post {
+             this.virtualName = virtualName
++            this.bridgeEnabled = bridgeEnabled
+             if (started) {
+                 scanAll()
+                 return@post
+@@ -78,6 +80,25 @@ object RfmMidi {
+         }
+     }
+ 
++    /** Keep discovery active in tablet mode, but release all bridge ports before acknowledging. */
++    fun setBridgeEnabled(enabled: Boolean, done: () -> Unit) {
++        handler.post {
++            bridgeEnabled = enabled
++            if (!enabled) {
++                for ((id, entry) in synchronized(entries) { entries.toMap() }) {
++                    if (entry.nativeId > 0) nativeRemoveDevice(entry.nativeId)
++                    open.remove(id)?.let { dev ->
++                        // Keep BLE transport alive for ordinary controller MIDI and later bridge use.
++                        if (dev !in bleOpen.values) runCatching { dev.close() }
++                    }
++                    synchronized(entries) { entries[id] = Entry(entry.desc, entry.candidacy) }
++                }
++                changed()
++            } else scanAll()
++            done()
++        }
++    }
++
+     fun addListener(l: () -> Unit) = synchronized(listeners) { listeners.add(l) }
+     fun removeListener(l: () -> Unit) = synchronized(listeners) { listeners.remove(l) }
+ 
+@@ -152,7 +173,7 @@ object RfmMidi {
+         val d = describe(info)
+         val c = Fm1Candidate.check(d, virtualName)
+         Log.i(TAG, "#${d.id} ${d.displayName}: ${if (c.candidate) "candidate" else "not a candidate"} (${c.why})")
+-        if (!c.candidate) {
++        if (!c.candidate || !bridgeEnabled) {
+             put(info.id, Entry(d, c))
+             return
+         }
+@@ -167,8 +188,13 @@ object RfmMidi {
+                 return
+             }
+         }
+-        put(info.id, Entry(d, c, opening = true))
++        val pending = Entry(d, c, opening = true)
++        put(info.id, pending)
+         mm?.openDevice(info, { dev ->
++            if (!bridgeEnabled || synchronized(entries) { entries[info.id] !== pending }) {
++                runCatching { dev?.close() }
++                return@openDevice
++            }
+             if (dev == null) {
+                 put(info.id, Entry(d, c, error = "could not open it"))
+                 Log.w(TAG, "#${d.id} ${d.displayName}: openDevice failed")
+@@ -230,7 +256,7 @@ object RfmMidi {
+                     val c = Fm1Candidate.check(d, virtualName)
+                     Log.i(TAG, "#${d.id} ${d.displayName}: ${if (c.candidate) "candidate" else "not a candidate"} (${c.why})")
+                     val have = synchronized(entries) { entries[info.id]?.nativeId ?: -1 } > 0
+-                    if (c.candidate && !have) handDown(info.id, d, c, dev) else if (!have) put(info.id, Entry(d, c))
++                    if (bridgeEnabled && c.candidate && !have) handDown(info.id, d, c, dev) else if (!have) put(info.id, Entry(d, c))
+                     done(true)
+                 }, handler)
+             } catch (e: SecurityException) {
+diff --git a/app/src/main/java/com/quixotic7/remotefm1/midi/ControllerInput.kt b/app/src/main/java/com/quixotic7/remotefm1/midi/ControllerInput.kt
+index 218c807..6fb71df 100644
+--- a/app/src/main/java/com/quixotic7/remotefm1/midi/ControllerInput.kt
++++ b/app/src/main/java/com/quixotic7/remotefm1/midi/ControllerInput.kt
+@@ -70,6 +70,8 @@ class ControllerInput(ctx: Context, private val prefs: SharedPreferences, sink:
+     private class Open(val info: MidiDeviceInfo, var device: MidiDevice? = null, val ports: ArrayList<MidiOutputPort> = ArrayList(),
+                        var error: String = "", var opening: Boolean = false)
+ 
++    private var bridgeReserved = true
++
+     private val open = HashMap<Int, Open>()            // by MidiDeviceInfo.id (the handler thread)
+ 
+     init {
+@@ -104,6 +106,21 @@ class ControllerInput(ctx: Context, private val prefs: SharedPreferences, sink:
+     /** the devices listed again and the picked ones connected (a setup change, `exclude` changed) */
+     fun reconnect() { handler.post { scan() } }
+ 
++    /** Completes after reserved ports and pending opens have been released on our MIDI thread. */
++    fun reserveBridge(reserved: Boolean, done: () -> Unit) {
++        handler.post {
++            bridgeReserved = reserved
++            if (reserved) {
++                for (id in open.keys.toList()) {
++                    val o = open[id] ?: continue
++                    if (isFm1(RfmMidi.describe(o.info))) open.remove(id)?.let { close(it) }
++                }
++            }
++            scan()
++            done()
++        }
++    }
++
+     // (the handler thread)
+     private fun scan() {
+         val m = mm ?: return
+@@ -115,7 +132,7 @@ class ControllerInput(ctx: Context, private val prefs: SharedPreferences, sink:
+         for (info in infos) {
+             if (info.outputPortCount == 0) continue
+             val d = RfmMidi.describe(info)
+-            if (isFm1(d) || exclude?.invoke(d) == true) continue
++            if ((bridgeReserved && isFm1(d)) || exclude?.invoke(d) == true) continue
+             val key = keyOf(d)
+             val on = when (sel) {
+                 Selection.All -> true

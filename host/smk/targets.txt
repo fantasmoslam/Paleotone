@@ -1,0 +1,8 @@
+native/rfmcore/RemoteLink.h
+native/rfmcore/RemoteLink.cpp
+native/rfmcore/RFMEngine.cpp
+native/rfmcore/include/RFMEngine.h
+native/rfmcore/rfm_jni.cpp
+app/src/main/java/com/quixotic7/remotefm1/RfmEngine.kt
+app/src/main/java/com/quixotic7/remotefm1/ui/MainScreen.kt
+app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt

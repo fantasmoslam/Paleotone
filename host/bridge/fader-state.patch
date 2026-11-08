@@ -1,0 +1,21 @@
+--- a/include/plat.h
++++ b/include/plat.h
+@@ -272,6 +272,7 @@
+  * the moves before it */
+ enum { PLAT_SMK_FADERS_TURN4, PLAT_SMK_FADERS_TURN1, PLAT_SMK_FADERS_ABS };
+ void plat_smk_faders(int mode);
++int plat_smk_fader(int id);
+ /* The store's owner (app.h, the SMK's flash: another firmware's data must not be read as the app's, nor the app's by
+  * another): APP_SMK_FAMILY "NAME" (1..7 capitals or digits) and APP_SMK_CLEAR {lo, hi, ...} (the data windows: sector
+  * aligned pairs, inside PLAT_DATA_OK). At a start that finds another tag (or none: the stock firmware's VM) at
+--- a/device/smk_panel.c
++++ b/device/smk_panel.c
+@@ -184,6 +184,8 @@
+ }
+ static uint8_t smk_fm1_vel(uint32_t k) { return k < NKEYS && smk_pn.vel[k] ? smk_pn.vel[k] : 100u; }
+ 
++int plat_smk_fader(int id) { return id>=0 && id<4 && (smk_pn.fader_base>>id&1u) ? smk_pn.was.fader[id] : -1; }
++
+ void plat_smk_faders(int mode)
+ {
+     uint32_t i;

@@ -1,0 +1,78 @@
+wait 400
+smk fader 1 20
+smk fader 2 40
+smk fader 3 60
+smk fader 4 80
+wait 30
+rf hello usb
+expect rf_hello_caps 4015
+rf session usb 1 3000
+wait 40
+expect rf_session 1
+expect rf_mi_n 12
+expect rf_mi_b0 191
+expect rf_mi_b1 20
+expect rf_mi_b2 20
+expect rf_mi_b3 191
+expect rf_mi_b4 21
+expect rf_mi_b5 40
+expect rf_mi_b6 191
+expect rf_mi_b7 22
+expect rf_mi_b8 60
+expect rf_mi_b9 191
+expect rf_mi_b10 23
+expect rf_mi_b11 80
+smk fader 1 100
+wait 15
+expect rf_mi_n 15
+expect rf_mi_b12 191
+expect rf_mi_b13 20
+expect rf_mi_b14 100
+smk key 0 down 70
+wait 10
+expect rf_mi_b15 144
+expect rf_mi_b16 48
+expect rf_mi_b17 70
+smk key 0 up
+wait 10
+expect rf_mi_b18 128
+expect rf_mi_b19 48
+smk key 36 down 99
+wait 10
+expect rf_mi_b21 144
+expect rf_mi_b22 84
+expect rf_mi_b23 99
+smk key 36 up
+wait 10
+smk bend -8192
+wait 20
+expect rf_mi_b27 224
+expect rf_mi_b28 0
+expect rf_mi_b29 0
+smk mod 127
+wait 20
+expect rf_mi_b30 176
+expect rf_mi_b31 1
+expect rf_mi_b32 127
+smk pedal 1
+wait 20
+expect rf_mi_b33 176
+expect rf_mi_b34 64
+expect rf_mi_b35 127
+smk tap KNOB-BANK
+smk tap FADER-BANK
+wait 10
+expect rf_mi_n 48
+expect rf_mi_b36 176
+expect rf_mi_b37 110
+expect rf_mi_b38 127
+expect rf_mi_b41 0
+expect rf_mi_b43 111
+expect rf_mi_b44 127
+expect rf_mi_b47 0
+expect rf_mi_bad 0
+expect rf_midi_drop 0
+rf session usb 0
+wait 30
+expect rf_session 0
+expect smk_data_ops 0

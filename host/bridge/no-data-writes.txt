@@ -1,0 +1,17 @@
+# The controller must not take ownership of the current instrument's save area.
+smk stock
+smk foreign
+reboot
+wait 500
+expect smk_owner_clears 0
+expect smk_stock_erases 0
+expect smk_marker 1
+expect smk_mapping 1
+expect smk_foreign 1
+press SAVE
+wait 800
+release SAVE
+wait 1500
+expect smk_data_ops 0
+expect smk_stock_erases 0
+expect smk_owner_clears 0

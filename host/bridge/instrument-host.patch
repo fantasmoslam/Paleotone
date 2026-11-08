@@ -1,0 +1,100 @@
+--- a/app.h
++++ b/app.h
+@@ -6,9 +6,9 @@
+ #include <stdint.h>
+ #include "plat.h"
+ 
+-#define APP_NAME "REMOTE FM1"
++#define APP_NAME "INSTRUMENT HOST"
+ #define APP_SPLASH_RGB RGB(120, 200, 255)
+-#define APP_TAGLINE "DX7 VOICES AND A HOST'S PANEL"
++#define APP_TAGLINE "SMK CONTROLLER BRIDGE"
+ #define APP_PALETTE 2u                   /* gfx.c's CYAN */
+ #define APP_BLOCK 256u                   /* the standalone DX7 (sa/sa_main.c sa_render): 8 of FM6's 32-frame blocks */
+ #define APP_CANVAS_PX (240u * 32u)       /* the standalone screens' two 16-row bands (sa/sa_gfx.c) */
+@@ -90,6 +90,14 @@
+ int plat_store_raw_size(uint32_t obj);
+ int plat_store_raw_save(uint32_t obj, const void *src, uint32_t len);
+ 
++/* USB controller build: do not claim, erase or write any instrument data area.
++ * Factory trim, pairing and existing custom firmware settings remain untouched. */
++#undef APP_SMK_FAMILY
++#define APP_SMK_FAMILY "IHOST"
++#undef APP_SMK_CLEAR
++#undef APP_STORE_OK
++#define APP_STORE_OK(off,n) 0
++
+ /* the contract: the platform calls these */
+ void app_init(void);
+ void app_render(int32_t *lr, uint32_t n, uint32_t master_q12);
+--- a/fm1.toml
++++ b/fm1.toml
+@@ -3,9 +3,9 @@
+ # RemoteFM1's build settings for fm1-base's tools/build.py (run through ../build.sh: fm1-base, patched, in
+ # firmware/build/base; firmware/patches/)
+ name = "RemoteFM1"             # the build's files: build/remotefm1.fwsc, remotefm1-usb.fwsc (--no-ble)
+-id_prefix = "FM-1_52"          # package identity: dev FM-1_5200, releases FM-1_52XXYYZZ (52: "R", RemoteFM1's SysEx
++id_prefix = "FM-1_53"          # package identity: dev FM-1_5200, releases FM-1_52XXYYZZ (52: "R", RemoteFM1's SysEx
+                                # 7D 52 46; FIZZ is FM-1_46, CTL-1 FM-1_6, Radio FM-1_13, the template FM-1_11)
+-usb_product = "FM-1"           # the USB product name as RemoteFM1 0.1 had it (the manufacturer: felucca-bsp's own,
++usb_product = "Instrument Host SMK"           # the USB product name as RemoteFM1 0.1 had it (the manufacturer: felucca-bsp's own,
+                                # "Hügelton Instruments", as 0.1): the same descriptors, so hosts see the same device
+ include = ["src"]              # the protocol layer, the decoder and the push (src/: host/ compiles them too)
+ o2 = ["sa/sa_synth.c"]         # the standalone DX7 (saadet's FM6 in third_party/saadet-fm6, STANDALONE-PLAN.md), -O2
+--- a/src/rfm_main.c
++++ b/src/rfm_main.c
+@@ -67,10 +67,10 @@
+ #define RFA_IDENTITY FELUCCA_ID
+ #endif
+ #if RFM_SHADOW
+-#define RFA_CAPS (RFM_CAP_SHADOW | RFM_CAP_COPY | RFM_CAP_RLE | RFM_CAP_PAL | RFM_CAP_PLAY_GREEN | RFM_CAP_HOLD | \
++#define RFA_CAPS ((1u << 11) | RFM_CAP_SHADOW | RFM_CAP_COPY | RFM_CAP_RLE | RFM_CAP_PAL | RFM_CAP_PLAY_GREEN | RFM_CAP_HOLD | \
+                   RFM_CAP_BLE_FAST | RFM_CAP_MIDI_IN | RFM_CAP_TOUCH)  /* (the radio's settings: fm1.toml ble_dle, ble_2m, ble_rx_bufs) */
+ #else
+-#define RFA_CAPS (RFM_CAP_RLE | RFM_CAP_PAL | RFM_CAP_PLAY_GREEN | RFM_CAP_MIDI_IN | RFM_CAP_TOUCH)
++#define RFA_CAPS ((1u << 11) | RFM_CAP_RLE | RFM_CAP_PAL | RFM_CAP_PLAY_GREEN | RFM_CAP_MIDI_IN | RFM_CAP_TOUCH)
+ #endif
+ #include "rfm_app.c"
+ 
+@@ -1091,6 +1091,7 @@
+  * latest then); waiting for a host (no session): nothing */
+ #define RF_SMK_MS 6u
+ static uint32_t rf_smk_ms_at[3], rf_smk_sent;
++static uint8_t rf_smk_live;
+ static uint8_t rf_smk_due;                          /* bit: a control's latest still to send (0 bend, 1 mod, 2 pedal) */
+ static void rf_smk_session(int type, int id, int v)
+ {
+@@ -1101,6 +1102,7 @@
+     case PLAT_SMK_BEND: st = 0xE0u, d1 = (uint32_t)(v + 8192) & 0x7Fu, d2 = (uint32_t)(v + 8192) >> 7; break;
+     case PLAT_SMK_MOD: st = 0xB0u, d1 = 1u, d2 = (uint32_t)v; break;
+     case PLAT_SMK_PEDAL: st = 0xB0u, d1 = 64u, d2 = v ? 127u : 0u; break;
++    case PLAT_SMK_FADER: st = 0xBFu, d1 = 20u + (uint32_t)id, d2 = (uint32_t)v; break;
+     default: return;
+     }
+     rf_trs_in((st >> 4) | st << 8 | (d1 & 0x7Fu) << 16 | (d2 & 0x7Fu) << 24);
+@@ -1110,7 +1112,11 @@
+ {
+     plat_smk_ev_t e;
+     uint32_t i, now = plat_ms();
+-    plat_smk_faders(rfa.session ? PLAT_SMK_FADERS_TURN4 : sa_smk_faders());   /* (a session: FM-1 knob turns) */
++    if (rfa.session && !rf_smk_live) {
++        for (i=0;i<4u;i++) { int v=plat_smk_fader((int)i); if(v>=0) rf_smk_session(PLAT_SMK_FADER,(int)i,v); }
++    }
++    rf_smk_live = rfa.session != 0;
++    plat_smk_faders(rfa.session ? PLAT_SMK_FADERS_ABS : sa_smk_faders());   /* (a session: FM-1 knob turns) */
+     while (plat_smk_take(&e)) {
+         if (!rfa.session) {
+             if (sa_standalone())
+@@ -1121,8 +1127,10 @@
+             rf_smk_session(e.type, e.id, e.v);
+             continue;
+         }
+-        if (e.type == PLAT_SMK_FADER)
+-            continue;                               /* (none in a session: the faders turn KNOB 1..4) */
++        if (e.type == PLAT_SMK_FADER) {
++            rf_smk_session(e.type, e.id, e.v);
++            continue;
++        }                               /* (none in a session: the faders turn KNOB 1..4) */
+         i = e.type == PLAT_SMK_BEND ? 0u : e.type == PLAT_SMK_MOD ? 1u : 2u;
+         rf_smk_due |= (uint8_t)(1u << i);
+     }

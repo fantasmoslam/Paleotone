@@ -1,0 +1,32 @@
+--- a/src/rfm_app.c
++++ b/src/rfm_app.c
+@@ -197,6 +197,9 @@
+ static void rfa_leds_off(void)
+ {
+     static const uint8_t Z[RFM_NCOL];
++#if BOARD_SMK37
++    plat_smk_banks(0);
++#endif
+     rfa_leds(Z, Z, Z);
+ }
+ 
+@@ -226,6 +229,9 @@
+     if (!rfa.session)
+         return;
+     rfa.session = 0;
++#if BOARD_SMK37
++    plat_smk_banks(0);
++#endif
+     rfa_set_touch(0);
+     rfa.qn = 0;                                         /* nobody waits for those ACKs any more */
+     rfa.flush = 0;
+@@ -290,6 +296,9 @@
+         glow[c] = (uint8_t)((b[RFM_LEDS_MID + c] | b[RFM_LEDS_DIM + c]) & ~lit[c]);
+         bg[c] = (uint8_t)(b[RFM_LEDS_FAINT + c] & ~lit[c] & ~glow[c]);
+     }
++#if BOARD_SMK37
++    plat_smk_banks(b[RFM_LEDS_FLAGS]);
++#endif
+     rfa_leds(lit, glow, bg);
+ }
+ 
