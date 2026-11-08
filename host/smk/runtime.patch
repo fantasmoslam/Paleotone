@@ -1,0 +1,245 @@
+diff --git a/app/src/main/java/com/quixotic7/remotefm1/RfmEngine.kt b/app/src/main/java/com/quixotic7/remotefm1/RfmEngine.kt
+index 00e9148..5a0fa6b 100644
+--- a/app/src/main/java/com/quixotic7/remotefm1/RfmEngine.kt
++++ b/app/src/main/java/com/quixotic7/remotefm1/RfmEngine.kt
+@@ -164,6 +164,7 @@ class RfmEngine(link: RfmLink? = null) : AutoCloseable {
+ 
+     /** rfme_panel into [out] (56 ints, PanelFeed's layout); returns its seq (0: none yet). */
+     fun panel(out: IntArray): Int = nativePanel(handle, out)
++    fun smkPanel(out: IntArray) = nativeSmkPanel(handle, out)
+ 
+     /** Moves when the running core or the button-names setting changed. */
+     val buttonNamesGen: Int get() = nativeButtonNamesGen(handle)
+@@ -335,6 +336,7 @@ class RfmEngine(link: RfmLink? = null) : AutoCloseable {
+         @JvmStatic private external fun nativeTestAudioHang(h: Long, closeMs: Int, openMs: Int)
+         @JvmStatic private external fun nativePreviewDirect(h: Long, have: Int, rgba: java.nio.ByteBuffer): Int
+         @JvmStatic private external fun nativePanel(h: Long, out: IntArray): Int
++        @JvmStatic private external fun nativeSmkPanel(p: Long, out: IntArray)
+         @JvmStatic private external fun nativeButtonNamesGen(h: Long): Int
+         @JvmStatic private external fun nativeButtonNames(h: Long): String
+         @JvmStatic private external fun nativeSetButtonNames(h: Long, use: Boolean)
+diff --git a/app/src/main/java/com/quixotic7/remotefm1/ui/MainScreen.kt b/app/src/main/java/com/quixotic7/remotefm1/ui/MainScreen.kt
+index e6d354c..739c3e9 100644
+--- a/app/src/main/java/com/quixotic7/remotefm1/ui/MainScreen.kt
++++ b/app/src/main/java/com/quixotic7/remotefm1/ui/MainScreen.kt
+@@ -77,7 +77,10 @@ fun MainScreen(a: AppUi, askNotifications: () -> Unit) {
+     }
+     Box(Modifier.fillMaxSize()) {
+         val skin = a.skin                           // (iOS ca42bbc) its colours in place of the theme's
+-        FaceplateView(a.feed, ui, skin?.theme ?: a.themes.current, a.chip, a.protector,
++        val smk = a.model.hello?.caps?.and(1 shl 11) != 0 && a.model.hello != null ||
++            a.model.midiEntries.any { it.desc.displayName.contains("SMK", ignoreCase = true) }
++        if(smk) com.quixotic7.remotefm1.SmkFaceplate(a, skin?.theme ?: a.themes.current)
++        else FaceplateView(a.feed, ui, skin?.theme ?: a.themes.current, a.chip, a.protector,
+                       onWord = { a.openSheet(SheetPageId.FIRMWARE) }, openSheet = { a.openSheet() }, skin = skin)
+         // (A7) the install prompt over the faceplate, as on iOS
+         if (!ui.sheetOpen && !ui.editorOpen && !ui.displayAlone && !a.feed.learn.active) {
+diff --git a/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt b/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt
+index e6082a8..f44d468 100644
+--- a/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt
++++ b/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt
+@@ -141,7 +141,7 @@ private fun MainSheet(a: AppUi) {
+             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                 SourceCard("This ${a.deviceWord}", "Emulator, play by touch", m.source == Source.TABLET, Palette.sheetAccent,
+                            "source-tablet") { a.pick(Source.TABLET) }
+-                SourceCard("My FM-1", fm1Line(a), m.source == Source.FM1,
++                SourceCard("Hardware controller", fm1Line(a), m.source == Source.FM1,
+                            if (a.chip == PanelChip.IN_USE) Palette.sheetAccent else Palette.linkedDot, "source-fm1") { a.pick(Source.FM1) }
+             }
+             // (the FM-1 card's actions: the Bluetooth pairing, as on iOS)
+diff --git a/native/rfmcore/RFMEngine.cpp b/native/rfmcore/RFMEngine.cpp
+index ed4f3f9..a0c5ef3 100644
+--- a/native/rfmcore/RFMEngine.cpp
++++ b/native/rfmcore/RFMEngine.cpp
+@@ -37,6 +37,7 @@
+ #include "RFMMidiMap.h"
+ #include "RFMRealtime.h"
+ #include "RemoteLink.h"
++#include "SmkProfile.h"
+ 
+ static_assert(RFME_B_OCTUP == FM1P_B_OCTUP && RFME_B_SAVE == FM1P_B_SAVE && RFME_E_K4 == FM1P_E_K4, "labels");
+ static_assert(RFMC_EV_KEY == RFM_EV_KEY && RFMC_EV_BUTTON == RFM_EV_BUTTON && RFMC_EV_ENC == RFM_EV_ENC &&
+@@ -209,6 +210,24 @@ struct rfme final {
+     uint32_t learnNotes[16][4] = {};        // (the core thread's) the notes learn took, held: their note-offs too
+     int16_t masterPot = -1;                 // (the core thread's) rfme_panel_t.master_pot, pickup_seq
+     uint16_t pickupSeq = 0;
++    SmkProfile smk;
++    bool smkWas = false;
++    std::atomic<int32_t> smkOut[12]{};
++    void smkRelease() {
++        smk.release([this](const uint8_t *d, unsigned n) { toFirmware(d,n); });
++        smkWas = false;
++    }
++    bool smkInput(const uint8_t *d, unsigned n) {
++        if (smk.control(d,n,masterV,
++            [this](int role,int delta) { const int id=dev->panel()->enc_id[role]; if(id>=0) apply(panelEvent(RFM_EV_ENC,id,delta)); },
++            [this](int value) { apply(panelEvent(RFM_EV_MASTER,0,value)); })) return true;
++        smk.observe(d,n);return false;
++    }
++    void smkPublish() {
++        for(int i=0;i<4;i++) smkOut[i].store(smk.last[i],std::memory_order_relaxed);
++        const int32_t v[]={smk.knobFine,smk.faderMain,int32_t(smk.outer&0xFFFFFFFFu),int32_t(smk.outer>>32),smk.bend,smk.mod,smk.pedal,smkWas};
++        for(int i=0;i<8;i++)smkOut[i+4].store(v[i],std::memory_order_relaxed);
++    }
+     std::atomic<uint32_t> midiMapped{0}, midiLearned{0}, midiToCore{0};
+     std::atomic<uint32_t> namesGen{1};      // (rfme_button_names_gen) moves on a core change or the setting
+     std::atomic<int> namesUse{1};
+@@ -377,6 +396,7 @@ struct rfme final {
+ 
+     void resetMidi()
+     {
++        smk=SmkProfile{};smkWas=false;smkPublish();
+         midiKeys = appliedKeys = 0;
+         std::memset(noteKey, -1, sizeof noteKey);
+         std::memset(keyCount, 0, sizeof keyCount);
+@@ -596,7 +616,7 @@ struct rfme final {
+                     if (h->enc_id[r] == e.index)
+                         role = r;
+                 if (role >= 0)                               // (Device::enc multiplies by enc_dir: undone)
+-                    dev->enc(role, e.value * (h->enc_dir[role] < 0 ? -1 : 1));
++                    dev->enc(role, (smkWas ? smk.scale(role,e.value) : e.value) * (h->enc_dir[role] < 0 ? -1 : 1));
+                 else
+                     h->enc[e.index] += e.value;
+             }
+@@ -606,6 +626,7 @@ struct rfme final {
+             dev->master(masterV);
+             break;
+         case RemoteLink::kEvRelease:                         // the session ended: nothing is held any more
++            if(smkWas) smkRelease();
+             noteKeys = labels = matrixButtons = 0;
+             for (int k = 0; k < FM1P_NKEY; k++)
+                 h->key_lean[k] = 0;
+@@ -701,16 +722,26 @@ struct rfme final {
+     void between(uint32_t ms, bool)
+     {
+         rfm_event_t ev;
++        const bool smkNow=link && attached.load(std::memory_order_relaxed) && link->smkProfile();
++        if(smkWas && !smkNow) smkRelease();
++        smkWas=smkNow;
+         if (link && attached.load(std::memory_order_relaxed)) {
+             while (link->popEvent(ev))
+                 apply(ev);
+             // the unit's TRS MIDI in (MIDI_IN): straight to the core's midi_in, as the website's site.midiIn (not
+             // learnt, not mapped, no keys: it is the firmware's own MIDI in)
+             for (RemoteLink::MidiMsg m; link->popMidi(m);)
+-                toFirmware(m.data, m.len);
++                if(!smkNow || !smkInput(m.data,m.len)) toFirmware(m.data,m.len);
+         }
+-        while (in.pop(ev))
+-            apply(ev);
++        while (in.pop(ev)) {
++            if(ev.type==0x81) {
++                // SMK touch controls use the same interpretation as their physical peers.
++                uint8_t m[]={0xBF,uint8_t(20+ev.index),uint8_t(ev.value)};
++                if(ev.index==4 || ev.index==5) {m[0]=0xB0;m[1]=uint8_t(110+ev.index-4);}
++                smkInput(m,3);
++            } else apply(ev);
++        }
++        smkPublish();
+         syncMap();                                       // (M8: a new map lets go of what the old one held)
+         devMs.store(ms, std::memory_order_relaxed);
+         // (kept while the audio ring is made, for the AU; 2: on every clock, for the app's web managers)
+@@ -1278,7 +1309,8 @@ void rfme_attach(rfme_t *e, int on)
+ {
+     const int prev = e->stop();
+     if (e->attached.exchange(on != 0) != (on != 0) && e->owner) {
+-        if (!on && e->booted) {                         // (what the unit held lets go; the host's notes stay)
++        if (!on && e->booted) {
++            if(e->smkWas) e->smkRelease();                         // (what the unit held lets go; the host's notes stay)
+             e->noteKeys = e->labels = e->matrixButtons = 0;
+             e->pushKeys();
+             e->dev->buttons(0);
+@@ -1516,6 +1548,10 @@ void rfme_run_ms(rfme_t *e, uint32_t ms, rfme_audio_t *out)
+         *out = a;
+ }
+ 
++void rfme_smk_panel(rfme_t *e, int32_t *out) {
++    for(int i=0;i<12;i++) out[i]=e->smkOut[i].load(std::memory_order_relaxed);
++}
++
+ int rfme_event(rfme_t *e, uint8_t type, uint8_t index, int16_t value)
+ {
+     return rfme_event_vel(e, type, index, value, 0);
+diff --git a/native/rfmcore/RemoteLink.cpp b/native/rfmcore/RemoteLink.cpp
+index 4a049ae..02a2854 100644
+--- a/native/rfmcore/RemoteLink.cpp
++++ b/native/rfmcore/RemoteLink.cpp
+@@ -391,6 +391,8 @@ int RemoteLink::loopWrite(void *ctx, const uint8_t *p, uint32_t n)
+ // PANEL_R reports whatever is still held as a fresh press
+ void RemoteLink::releasePanel()
+ {
++    midiGeneration_.fetch_add(1, std::memory_order_release);
++    smk_.store(false, std::memory_order_release);
+     rfm_panel_t *p = const_cast<rfm_panel_t *>(rfm_session_panel(s_));
+     p->keys = 0;
+     p->buttons = 0;
+@@ -420,6 +422,7 @@ void RemoteLink::cbMidiIn(void *ctx, const uint8_t *msgs, uint32_t n)
+         if (!m || k + m > n)
+             break;
+         MidiMsg e;
++        e.generation = self->midiGeneration_.load(std::memory_order_acquire);
+         e.len = (uint8_t)m;
+         std::memcpy(e.data, msgs + k, m);
+         (self->midiQ_.push(e) ? self->trsMidiIn_ : self->trsMidiDropped_).fetch_add(1);
+@@ -440,6 +443,10 @@ void RemoteLink::cbState(void *ctx, int st, const char *why)
+                                 "caps 0x%x, sxq %u", h->name, h->ver, h->fw_ver, h->identity, (int)h->session,
+                                 (unsigned)h->caps, (unsigned)h->sxq);
+     }
++    if (st == RFM_S_STARTING && self->s_) {
++        const rfm_hello_t *h = rfm_session_hello(self->s_);
++        self->smk_.store(h && (h->caps & (1u << 11)), std::memory_order_release);
++    }
+     if (st == RFM_S_ACTIVE) {
+         self->wasConnected_ = true;
+         if (self->and_)
+diff --git a/native/rfmcore/RemoteLink.h b/native/rfmcore/RemoteLink.h
+index 3059a8c..a962ba3 100644
+--- a/native/rfmcore/RemoteLink.h
++++ b/native/rfmcore/RemoteLink.h
+@@ -124,10 +124,17 @@ public:
+     // (RFM_CAP_MIDI_IN) one MIDI message from the unit's TRS jack (MIDI_IN, split by status: a channel message or
+     // real time F8 FA FB FC), in order, for the core's MIDI in. Popped where the panel events are
+     struct MidiMsg {
++        uint32_t generation = 0;
+         uint8_t len = 0;
+         uint8_t data[3] = {0, 0, 0};
+     };
+-    bool popMidi(MidiMsg &m) { return midiQ_.pop(m); }
++    bool popMidi(MidiMsg &m) {
++        while (midiQ_.pop(m)) if (m.generation == midiGeneration_.load(std::memory_order_acquire)) return true;
++        return false;
++    }
++    bool smkProfile() const { return smk_.load(std::memory_order_acquire); }
++    std::atomic<bool> smk_{false};
++    std::atomic<uint32_t> midiGeneration_{0};
+     // true once after a run started or invalidateScreen(): publish now, whatever changed
+     bool takeFullRequest() { return fullReq_.exchange(false, std::memory_order_acq_rel); }
+     void requestFull() { fullReq_.store(true, std::memory_order_release); }   // (any thread: the next block publishes)
+diff --git a/native/rfmcore/include/RFMEngine.h b/native/rfmcore/include/RFMEngine.h
+index 02ef30d..7a1b2e4 100644
+--- a/native/rfmcore/include/RFMEngine.h
++++ b/native/rfmcore/include/RFMEngine.h
+@@ -215,6 +215,7 @@ int rfme_event(rfme_t *e, uint8_t type, uint8_t index, int16_t value);
+ // the same with a key down's velocity (TOUCH: 1..127; 0 none given, kRemoteVel 100)
+ int rfme_event_vel(rfme_t *e, uint8_t type, uint8_t index, int16_t value, uint8_t vel);
+ int rfme_matrix_button(rfme_t *e, int label);   // the matrix id of a label (after boot), -1
++void rfme_smk_panel(rfme_t *e, int32_t *out);
+ int rfme_matrix_encoder(rfme_t *e, int role);   // the matrix encoder of a knob role (after boot), -1
+ 
+ // ---- the on-screen panel (the app's faceplate): the core's panel state besides the LCD, for a UI to poll (30-60 Hz).
+diff --git a/native/rfmcore/rfm_jni.cpp b/native/rfmcore/rfm_jni.cpp
+index 7fc6fb2..883fc70 100644
+--- a/native/rfmcore/rfm_jni.cpp
++++ b/native/rfmcore/rfm_jni.cpp
+@@ -709,6 +709,11 @@ JNIEXPORT jint JNICALL Java_com_quixotic7_remotefm1_RfmEngine_nativePreviewDirec
+     return (jint)rfme_preview(host(p)->e, (uint32_t)have, static_cast<uint8_t *>(dst));
+ }
+ 
++JNIEXPORT void JNICALL Java_com_quixotic7_remotefm1_RfmEngine_nativeSmkPanel(JNIEnv *env,jclass,jlong p,jintArray out) {
++    if(!out || env->GetArrayLength(out)<12)return;
++    int32_t v[12];rfme_smk_panel(host(p)->e,v);env->SetIntArrayRegion(out,0,12,reinterpret_cast<jint*>(v));
++}
++
+ // rfme_panel into out (at least 56 ints): seq, keys, labels, enc[7], master, booted, play_green, master_pot,
+ // pickup_seq, key_led[27], btn_led[14]; returns seq
+ JNIEXPORT jint JNICALL Java_com_quixotic7_remotefm1_RfmEngine_nativePanel(JNIEnv *env, jclass, jlong p, jintArray out)

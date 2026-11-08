@@ -1,0 +1,128 @@
+wait 400
+rf hello usb
+rf session usb 1 3000
+expect rf_session 1
+wait 50
+out
+smk key 5 down 90
+wait 10
+expect_out USB 9F 35 64
+smk key 5 up
+wait 10
+expect_out USB 8F 35 00
+smk pad 16 down 50
+wait 10
+expect_out USB 9F 4F 64
+smk pad 16 up
+wait 10
+# the 2 x 6 buttons are the FM-1's by place (matrix: OCT- 0, OCT+ 1, FX 2, SEL 3, ENV 4, LFO 5, EDIT 6, GLO 7,
+# HOME 8, SAVE 9, ARP 10, SEQ 11, PLAY 12, REC 13): top row ARP NOTE-REPEAT SCALE CHORD GLOBE BT, bottom row PATCH
+# PARA FX SEQ PLAY REC
+smk tap OCT-
+expect_out USB 9E 00 7F
+smk tap OCT+
+expect_out USB 9E 01 7F
+out
+smk tap ARP
+expect_out USB 9E 02 7F
+expect_no_out USB 9E 0A 7F
+smk tap NOTE-REPEAT
+expect_out USB 9E 03 7F
+smk tap SCALE
+expect_out USB 9E 04 7F
+smk tap CHORD
+expect_out USB 9E 05 7F
+smk tap GLOBE
+expect_out USB 9E 06 7F
+out
+smk tap BT
+expect_out USB 9E 07 7F
+expect_no_out USB 9E 09 7F
+smk tap PATCH
+expect_out USB 9E 08 7F
+smk tap PARA
+expect_out USB 9E 09 7F
+smk tap FX
+expect_out USB 9E 0A 7F
+smk tap SEQ
+expect_out USB 9E 0B 7F
+smk tap PLAY
+expect_out USB 9E 0C 7F
+smk tap REC
+expect_out USB 9E 0D 7F
+# KNOB BANK and FADER BANK are no FM-1 button: no panel MIDI for them (MIDI_IN: CC 110 / 111, 12 bytes)
+out
+smk tap KNOB-BANK
+smk tap FADER-BANK
+expect_no_out USB 9E 00 7F
+expect_no_out USB 9E 0E 7F
+# < and > turn SELECT (matrix 0) a detent a press
+out
+smk tap <
+wait 5
+expect_out USB BE 10 3F
+smk tap >
+wait 5
+expect_out USB BE 10 41
+# the knobs: K2 SELECT (matrix 0), K3 ALGORITHM (1), K4 PRESETS (6), K5..K8 KNOB 1..4 (2..5)
+out
+smk turn K2 1
+wait 5
+expect_out USB BE 10 41
+smk turn K3 1
+wait 5
+expect_out USB BE 11 41
+smk turn K4 1
+wait 5
+expect_out USB BE 16 41
+smk turn K5 1
+wait 5
+expect_out USB BE 12 41
+smk turn K8 -1
+wait 5
+expect_out USB BE 15 3F
+# PANEL_R: the buttons held by matrix bit, MASTER from K1 (2896 >> 2)
+smk press NOTE-REPEAT
+rf panelreq usb
+expect rf_panel_buttons 8
+smk release NOTE-REPEAT
+expect rf_panel_master 724
+# the host's LEDS: a white key's lit / mid / faint on its pad; a button's lit on its LED; PLAY's green and red halves
+rf led usb 0 lit
+expect smk_pad_1 255
+rf led usb 2 mid
+expect smk_pad_2 32
+rf led usb 4 faint
+expect smk_pad_3 10
+rf led usb 26 lit
+expect smk_pad_16 255
+rf led usb 1 lit
+expect smk_pads 32769
+rf led usb b3 lit
+expect smk_led_NOTE-REPEAT 1
+rf led usb b3 mid
+expect smk_led_NOTE-REPEAT 0
+rf led usb b2 lit
+expect smk_led_ARP 1
+expect smk_led_FX 0
+rf led usb b2 off
+rf led usb b7 lit
+expect smk_led_BT 1
+rf led usb b7 off
+rf led usb b10 lit
+expect smk_led_FX 1
+rf led usb b10 off
+rf led usb b13 lit
+expect smk_led_REC 1
+rf led usb b13 off
+rf led usb b12 lit
+expect smk_led_PLAY-RED 1
+expect smk_led_PLAY 0
+rf led usb b12 off
+rf led usb green lit
+expect smk_led_PLAY 1
+expect smk_led_PLAY-RED 0
+smk leds
+rf session usb 0
+wait 50
+expect rf_session 0

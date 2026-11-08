@@ -36,7 +36,7 @@ jobs:
           cmake -S host -B build/instrument-host/desktop -DCMAKE_BUILD_TYPE=Release \
             -DFM1VST_DIR="$PWD/build/instrument-host/RemoteFM1Android/vendor/FM1VST" \
             -DREMOTE_ANDROID_DIR="$PWD/build/instrument-host/RemoteFM1Android"
-          cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration host_audio_fidelity host_preset_audition -j 2
+          cmake --build build/instrument-host/desktop --target paleotone_core felucca_core host_core_integration host_audio_fidelity host_preset_audition host_smk_profile -j 2
           ctest --test-dir build/instrument-host/desktop --output-on-failure
       - name: Build isolated two-instrument Android prototype
         run: python3 host/build_android.py --remote build/instrument-host/RemoteFM1Android --jobs 2
@@ -50,4 +50,36 @@ jobs:
             build/instrument-host/release/*
             build/instrument-host/desktop/Testing/Temporary/LastTest.log
             build/instrument-host/RemoteFM1Android/app/build/test-results/testDebugUnitTest/*.xml
+          retention-days: 30
+  controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y rsync libraqm0 libfribidi0
+      - run: python3 -m pip install pillow==12.3.0 fonttools==4.61.1 numpy==2.3.5
+      - name: Test project controller in the real board simulator
+        run: python3 host/build_bridge.py --remote build/instrument-host/bridge-source --host --models pro elite mke
+      - name: Install pinned JieLi toolchain and SDK
+        run: |
+          tools/get_toolchain.sh "$HOME/.jieli"
+          sh tools/get_ac79_sdk.sh "$HOME/fw-AC79_AIoT_SDK"
+      - name: Build model-specific USB controller packages
+        run: python3 host/build_bridge.py --remote build/instrument-host/bridge-source
+      - name: Corresponding controller build sources
+        run: |
+          git archive --format=zip --output=build/instrument-host/controller/Project-source.zip HEAD
+          git -C build/instrument-host/bridge-source archive --format=zip --output="$PWD/build/instrument-host/controller/Bridge-upstream-source.zip" HEAD
+          cd build/instrument-host
+          zip -r Instrument-Host-SMK-Controller-0.2.0.zip controller
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Instrument-Host-SMK-Controller
+          path: |
+            build/instrument-host/controller/*
+            build/instrument-host/Instrument-Host-SMK-Controller-0.2.0.zip
           retention-days: 30
