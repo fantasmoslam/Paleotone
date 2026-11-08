@@ -1031,7 +1031,10 @@ static void dust_process(int32_t *l, int32_t *r, uint32_t n)
 static void djf_process(int32_t *l, int32_t *r, uint32_t n)
 {
     tsvf_t c;
-    if (!djf_block(&djf, song.g[G_FILT], &c, 40))
+    /* (RAPTOR) a deeper sweep on the master: the knob's +-64 reaches +-85 of djf_block's steps (low-pass fully
+     * down ~40 Hz, was ~190 Hz; high-pass up ~11 kHz) with a little more resonance (55, was 40) */
+    int32_t v = song.g[G_FILT] * 4 / 3;
+    if (!djf_block(&djf, v, &c, 55))
         return;
     djf_run(&djf, &c, l, n, 0);
     djf_run(&djf, &c, r, n, 1);
