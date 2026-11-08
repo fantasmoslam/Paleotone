@@ -1,0 +1,308 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     PALEOTONE's installer page (web/make_paleotone_site.py fills in the library and the package's metadata); the
+     installer itself is SLOOP's (fm1pkg.js, fm1ota.js), after Felucca's by Leo Kuroshita, Hügelton Instruments. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>PALEOTONE installer</title>
+<meta name="description" content="Install PALEOTONE, the prehistoric synth firmware, on your M-VAVE FM-1 from Chrome or Edge.">
+<style>
+  /* Clayborn (Frank Baranowski, SIL OFL 1.1): the typeface the FM-1's screen draws */
+  @font-face { font-family: "Clayborn"; src: url("../emu/fonts/Clayborn.ttf") format("truetype"); font-display: swap; }
+  /* the TERMINAL palette (firmware/src/gfx.c): phosphor green on black, amber for what needs attention, the six
+     track colours */
+  :root { --bg: #030604; --fg: #c5fbce; --dim: #7fa888; --tile: #0b130d; --line: #1f3a26; --green: #42eb73;
+          --amber: #ffb221; --t1: #ffb221; --t2: #52d2f7; --t3: #ff79ce; --t4: #ff963a; --t5: #6babff; --t6: #ad96ff;
+          color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; color: var(--fg); min-height: 100vh;
+         font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+         background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(66, 235, 115, .12), transparent 70%),
+                     repeating-linear-gradient(0deg, rgba(0, 0, 0, .35) 0 1px, transparent 1px 3px), var(--bg); }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  .clay { font-family: Clayborn, monospace; letter-spacing: .05em; }
+  .top { display: flex; align-items: center; justify-content: flex-end; }
+  .lang { font-size: 12px; color: var(--dim); cursor: pointer; text-decoration: underline; background: none; border: 0; padding: 0; }
+  .crest { text-align: center; margin: 4px 0 6px; }
+  .crest img { image-rendering: pixelated; filter: drop-shadow(0 0 12px rgba(66, 235, 115, .35)); display: block; margin: 0 auto; }
+  .crest .skull { width: 120px; height: auto; margin-bottom: 14px; }
+  .crest .logo { width: min(460px, 86vw); height: auto; }
+  .tagline { text-align: center; margin: 10px 0 4px; font: 22px/1.2 Clayborn, monospace; letter-spacing: .08em; }
+  .strip { display: flex; height: 4px; margin: 18px auto 22px; max-width: 360px; }
+  .strip i { flex: 1; } .strip i:nth-child(1) { background: var(--t1); } .strip i:nth-child(2) { background: var(--t2); }
+  .strip i:nth-child(3) { background: var(--t3); } .strip i:nth-child(4) { background: var(--t4); }
+  .strip i:nth-child(5) { background: var(--t5); } .strip i:nth-child(6) { background: var(--t6); }
+  .alpha { margin: 0 0 22px; padding: 12px 16px; border-left: 4px solid var(--amber); background: rgba(255, 178, 33, .08); color: #ffe3a3; }
+  .alpha b { color: var(--amber); }
+  .card { background: rgba(8, 16, 10, .92); border: 1px solid var(--line); border-radius: 8px; padding: 20px 20px 18px; margin: 0 0 22px; }
+  h2 { font: 26px/1.1 Clayborn, monospace; letter-spacing: .06em; color: var(--green); margin: 0 0 12px; font-weight: normal; }
+  .steps { list-style: none; counter-reset: s; padding: 0; margin: 0 0 16px; }
+  .steps li { counter-increment: s; position: relative; padding: 0 0 10px 40px; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 28px; height: 28px; border-radius: 4px;
+                      background: var(--c, var(--t1)); color: #031006; font: 20px/30px Clayborn, monospace; text-align: center; }
+  .steps li:nth-child(2) { --c: var(--t2); } .steps li:nth-child(3) { --c: var(--t3); }
+  p { margin: 0 0 14px; }
+  a { color: var(--green); }
+  button#go { font: 26px/1 Clayborn, monospace; letter-spacing: .08em; background: var(--green); color: #031006; border: 0; border-radius: 4px;
+              padding: 14px 0 12px; width: 100%; cursor: pointer; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .3), 0 0 18px rgba(66, 235, 115, .25); }
+  button#go:disabled { background: var(--tile); color: var(--dim); cursor: default; box-shadow: inset 0 0 0 1px var(--line); }
+  #status { margin-top: 12px; min-height: 1.6em; font-variant-numeric: tabular-nums; color: var(--amber); }
+  .small { color: var(--dim); font-size: 12.5px; }
+  .small a { color: inherit; }
+  progress { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin-top: 14px; border: 0; background: var(--tile); }
+  progress::-webkit-progress-bar { background: var(--tile); }
+  progress::-webkit-progress-value { background: var(--green); }
+  progress::-moz-progress-bar { background: var(--green); }
+  pre { color: var(--dim); font-size: 11px; white-space: pre-wrap; margin-top: 10px; max-height: 160px; overflow: auto; }
+  pre:empty { display: none; }
+  [hidden] { display: none !important; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 0; }
+  .ed { display: inline-block; padding: 9px 14px 7px; border-radius: 4px; text-decoration: none; color: var(--green);
+        box-shadow: inset 0 0 0 2px var(--green); font: 19px/1.1 Clayborn, monospace; letter-spacing: .05em; }
+  .ed.play { color: #031006; background: var(--amber); box-shadow: none; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 16px; }
+  .tile { background: var(--tile); padding: 10px 12px 12px; border-top: 3px solid var(--c); border-radius: 0 0 4px 4px; }
+  .tile b { display: block; font: 30px/1 Clayborn, monospace; color: var(--c); letter-spacing: .04em; }
+  .tile span { display: block; font-size: 12.5px; color: var(--dim); margin-top: 6px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; height: auto; display: block; image-rendering: pixelated; border-radius: 4px; border: 1px solid var(--line); }
+  figcaption { font-size: 12.5px; color: var(--dim); margin-top: 6px; }
+  audio { width: 100%; margin: 4px 0 6px; }
+  @media (max-width: 520px) { .tiles { grid-template-columns: repeat(2, 1fr); } h2 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><button class="lang" id="lang"></button></div>
+  <header class="crest">
+    <img class="skull" src="../art/skull.png" alt="">
+    <img class="logo" src="../art/wordmark.png" alt="PALEOTONE">
+    <p class="tagline">Prehistoric synth for the M-VAVE FM-1</p>
+  </header>
+  <div class="strip"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <!--BANNER-->
+  <aside class="alpha" role="note"><b>Early alpha.</b> PALEOTONE is experimental firmware. An install can leave the FM-1 unable to
+    start and in need of recovery. Back up your projects first, keep a known-good firmware, and read the recovery notes below.</aside>
+
+  <section class="card">
+    <h2>Install</h2>
+    <ol class="steps">
+      <li>Back up: open the <a href="../editor/">editor</a>, connect the FM-1 and save a backup. The installer doesn't make one.</li>
+      <li><span data-t="intro"></span> <span data-t="direct"></span></li>
+      <li><span data-t="warn"></span></li>
+    </ol>
+    <p><button id="go" disabled data-t="install"></button></p>
+    <progress id="bar" max="100" value="0"></progress>
+    <p id="status"></p>
+    <pre id="log"></pre>
+    <div class="links">
+      <a class="ed play" href="../emu/">Play it in your browser first</a>
+      <a class="ed" href="../editor/">Open the editor</a>
+    </div>
+    <p class="small" style="margin-top:10px"><a href="../editor/sloop-editor.html" download="sloop-editor.html" data-t="edOffline"></a></p>
+  </section>
+
+  <section class="card">
+    <h2>What's inside</h2>
+    <div class="tiles">
+      <div class="tile" style="--c: var(--t1)"><b>6 tracks</b><span>three synths, SFX, CALLS and drums</span></div>
+      <div class="tile" style="--c: var(--t2)"><b>200+</b><span>sounds in ten kinds, from BASS to FX</span></div>
+      <div class="tile" style="--c: var(--t3)"><b>SAUR</b><span>twenty SAURUS creature calls, one per key on CALL KIT</span></div>
+      <div class="tile" style="--c: var(--t4)"><b>ROAR</b><span>drones, war drums and rituals, with EDIT &gt; RING</span></div>
+      <div class="tile" style="--c: var(--t5)"><b>Big text</b><span>Clayborn on every screen, values large</span></div>
+      <div class="tile" style="--c: var(--t6)"><b>Demo song</b><span>VALLEY OF GIANTS, on all six tracks</span></div>
+    </div>
+    <figure><img src="../art/clayborn-everywhere.png" alt="PALEOTONE's screens: the boot art, the six tracks, SAURUS values, the envelope, the piano roll, the drum roll, mix, song and the drum grid" loading="lazy">
+      <figcaption>The screens, as the FM-1 draws them: one typeface, Clayborn, and everything large.</figcaption></figure>
+    <figure><img src="../art/preset-category-message.png" alt="Turning PRESETS: a bar names the sound and its kind, SAUR TYRANT ROAR" loading="lazy">
+      <figcaption>Turn PRESETS and the bar names the sound and its kind: SAUR for the creatures, ROAR for the drones and drums.</figcaption></figure>
+    <p class="clay" style="font-size:19px;margin:6px 0 2px">Hear the demo song</p>
+    <audio controls preload="none" src="../art/demo-song.mp3"></audio>
+    <p class="small">VALLEY OF GIANTS, the song a new FM-1 plays at its first power-on (TOOLS &gt; DEMO), recorded from the firmware (about 2:40, A B C B C D).</p>
+  </section>
+
+  <section class="card small">
+    <p><span data-t="beta"></span></p>
+    <p><span data-t="brick"></span>
+      <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener">FM-1-transporter</a>. Hold OCT− alone while switching on for USB rescue.</p>
+    <p data-t="back"></p>
+    <p><a href="https://www.m-vave.com/download" target="_blank" rel="noopener">www.m-vave.com/download</a></p>
+    <p>PALEOTONE by <a href="https://github.com/fantasmoslam/Paleotone">fantasmoslam</a>, on <a href="https://github.com/isod89/sloop-fm1" target="_blank" rel="noopener">SLOOP</a> by isod89
+      and <a href="https://github.com/hugelton/Felucca" target="_blank" rel="noopener">Felucca</a> by Leo Kuroshita (@kurogedelic), Hügelton Instruments.
+      Typeface: Clayborn (Frank Baranowski, SIL OFL 1.1). FM6 engine: msfa from Dexed (Apache-2.0). The other parts and their licences: <a href="https://github.com/fantasmoslam/Paleotone/blob/main/LICENSING.md">LICENSING.md</a>.<br>
+      M-VAVE and FM-1 are trademarks of their respective owners; PALEOTONE is not affiliated with them.<br>
+      <span data-t="license"></span> <a href="https://github.com/fantasmoslam/Paleotone">github.com/fantasmoslam/Paleotone</a></p>
+  </section>
+</main>
+<script type="module">
+/*LIB*/
+const $ = (id) => document.getElementById(id);
+const TEXT = {
+  ja: {
+    intro: "FM-1 を USB で接続してください。（Chrome か Edge で使えます）",
+    warn: "書き込み中は USB を抜かないでください。",
+    install: "インストール", langName: "English",
+    editor: "エディタ（インストール後、パソコンから音色やシーケンスを編集）",
+    edOffline: "エディタをダウンロード（パソコンでインターネットなしで使う：ファイルを Chrome / Edge で開く）",
+    appInstall: "アプリとしてインストール（エディタとインストーラーがオフラインで使える・Android も）",
+    direct: "USB ケーブルはパソコンに直接つないでください。Probe や Transporter などの機材は不要です。",
+    brick: "万一インストールに失敗して起動しなくなった場合は、復旧に Transporter が必要です:",
+    beta: "これはベータ版で、不安定な場合があります。このカスタムファームウェアを使ったことで FM-1 が壊れたり不具合が起きたりしても、作者は一切の責任を負いません。自己責任でお使いください。",
+    back: "公式ファームウェアに戻すには、M-VAVE 公式のアップデーター M-UPGRADE（Downloads → PC Software → M-UPGRADE）と公式ファームウェア（PC Firmware → FM-1、V16）が必要です。",
+    nomidi: "このブラウザでは使えません。Chrome か Edge で開いてください。", loadfail: "読み込めませんでした: ",
+    start: "開始します", verify: "確認中", loader: "書き込みモードに切り替え中", write: "書き込み中",
+    reboot: "再起動中", done: "完了しました", stopped: "途中で止まりました。USB を挿し直してもう一度押してください。",
+    error: "エラー: ",
+    denied: "MIDI（SysEx）の使用が許可されませんでした。アドレスバーのサイト設定で MIDI を許可して、もう一度押してください。",
+    notfound: "FM-1 が見つかりません。USB ケーブル（データ通信用か）を確かめ、MIDI を使う他のアプリを閉じてから、もう一度押してください。",
+    other: "このキーボードは ChanceTheMaker の SMK ファームウェア（Felucca SMK、Sloop SMK、Melodee SMK、Doom）のどれかで動いています。それらは専用のアップデーターを持ち、自分のパッケージしか受け付けないため、ここからは上書きインストールできません。何も書き込んでいません。",
+    model: "接続されている機器は FM-1 ではありません。",
+    lost: "USB の接続が切れました。挿し直してもう一度押してください。",
+    noloader: "書き込みモードの FM-1 が見つかりません。USB を挿し直してもう一度押してください（終わるまで書き込みモードのままです）。",
+    noreturn: "FM-1 が戻ってきません。電源を入れ直してください。",
+    mismatch: "書き込みは終わりましたが、FM-1 が別のバージョンを報告しています: ",
+    foreign: "FM-1 は別のファームウェアの書き込みモードです。そのアップデーター（M-UPGRADE）で書き込みを終えてから、もう一度インストールしてください: ",
+    badpkg: "インストールするファイルが壊れています。ページを再読み込みしてください。",
+    leave: "書き込み中です。ページを閉じないでください。",
+    license: "GPL-3.0、無保証。ソース:",
+    stockTitle: "公式ファームウェア（V15）に戻す",
+    stockHelp: "M-VAVE のサイトから公式の FM-1 V15 をダウンロードし、中の FM-1.fwsc（変更していないもの）を選んでください。ファイルはこのブラウザの中で確認され、どこにも送られません。",
+    stockBackup: "公式ファームウェアは PALEOTONE の曲・プロジェクト・サンプルを開けません。先にエディタでバックアップを保存してください（Projects → Backup）。PALEOTONE を入れ直せば、エディタから復元できます。",
+    stockEditor: "エディタを開いてバックアップする", stockSaved: "バックアップをパソコンに保存しました",
+    stockFile: "公式の FM-1.fwsc", stockGo: "公式 V15 をインストール",
+    stockValid: "公式 V15 を確認しました", stockBad: "公式 V15 ではありません: ",
+    stockConfirm: "FM-1 に公式 V15 をインストールします。PALEOTONE の曲は公式ファームウェアでは開けません。バックアップは保存しましたか？",
+    stockFinish: "FM-1 は PALEOTONE の書き込みモードです。先に「インストール」で PALEOTONE の書き込みを終えてから、公式 V15 に戻してください。",
+    back: "公式ファームウェアに戻すには、M-VAVE 公式のアップデーター M-UPGRADE（Downloads → PC Software → M-UPGRADE）と公式ファームウェアを使ってください。FM-1 が見つからない場合は、MIDI を使う他のアプリとブラウザのタブを閉じてください。それでも見つからない場合は、Clipper のインストールページを開き、その「Return to the official firmware」を使ってください（Clipper を入れる必要はありません）。",
+  },
+  en: {
+    intro: "Connect the FM-1 by USB. (Works in Chrome or Edge.)",
+    warn: "Do not unplug the USB cable while writing.",
+    install: "Install", langName: "日本語",
+    editor: "Editor (after installing: edit sounds and sequences from the computer)",
+    edOffline: "Download the editor to use it without internet on a computer (open the file in Chrome or Edge)",
+    appInstall: "Install the app (the editor and the installer offline, Android too)",
+    direct: "Connect the USB cable directly to the computer. No probe or Transporter is needed.",
+    brick: "If an install fails and the FM-1 no longer starts, recovering it needs a Transporter:",
+    beta: "This is a beta and may be unstable. The author accepts no responsibility if your FM-1 is damaged or misbehaves because of this custom firmware. Use it at your own risk.",
+    back: "To go back to the official firmware you need M-VAVE's official updater, M-UPGRADE (Downloads → PC Software → M-UPGRADE), and the official firmware (PC Firmware → FM-1, V16).",
+    nomidi: "This browser cannot do it. Open the page in Chrome or Edge.", loadfail: "Could not load: ",
+    start: "Starting", verify: "Verifying", loader: "Switching to update mode", write: "Writing",
+    reboot: "Restarting", done: "Done", stopped: "Stopped. Replug the USB cable and press Install again.",
+    error: "Error: ",
+    denied: "MIDI (SysEx) access was not allowed. Allow MIDI in the site settings (address bar) and press Install again.",
+    notfound: "FM-1 not found. Check the USB cable (a data cable), close other apps that use MIDI, and press Install again.",
+    other: "This keyboard runs one of ChanceTheMaker's SMK firmwares (Felucca SMK, Sloop SMK, Melodee SMK, Doom). They have their own updater, which takes only their packages, so these firmwares cannot be installed over them from here. Nothing was written.",
+    model: "The connected device is not an FM-1.",
+    lost: "The USB connection was lost. Replug it and press Install again.",
+    noloader: "The FM-1 in update mode was not found. Replug the USB cable and press Install again (it stays in update mode until it is finished).",
+    noreturn: "The FM-1 did not come back. Power-cycle it.",
+    mismatch: "Written, but the FM-1 reports another version: ",
+    foreign: "The FM-1 is in the update mode of another firmware. Finish that update with its own updater (M-UPGRADE), then press Install again: ",
+    badpkg: "The file to install is damaged. Reload the page.",
+    leave: "Writing. Do not close the page.",
+    license: "GPL-3.0, no warranty. Source:",
+    stockTitle: "Return to the official firmware (V15)",
+    stockHelp: "Download the official FM-1 V15 from M-VAVE and select the FM-1.fwsc inside it, unmodified. The file is checked in this browser; it is not sent anywhere.",
+    stockBackup: "The official firmware cannot open PALEOTONE's music, projects or samples. Save a backup with the editor first (Projects → Backup); reinstall PALEOTONE and restore it from the editor whenever you want them back.",
+    stockEditor: "Open the editor to back up", stockSaved: "I saved a backup on this computer",
+    stockFile: "The official FM-1.fwsc", stockGo: "Install the official V15",
+    stockValid: "Official V15 verified", stockBad: "Not the official V15: ",
+    stockConfirm: "Install the official V15 on the FM-1? The official firmware cannot open PALEOTONE's music. Did you save a backup?",
+    stockFinish: "The FM-1 is in PALEOTONE's update mode. Press Install to finish the PALEOTONE update first, then return to the official V15.",
+    back: "To return to the official firmware, use M-VAVE's own updater, M-UPGRADE (Downloads → PC Software → M-UPGRADE), with the official firmware from M-VAVE (PC Firmware → FM-1, V16). If it does not find the FM-1, close every other app and browser tab that uses MIDI; if it still does not, open Clipper's installer page and use its Return to the official firmware (no need to install Clipper).",
+  },
+};
+let lang = (navigator.language || "en").toLowerCase().startsWith("ja") ? "ja" : "en";
+const t = (k) => TEXT[lang][k];
+let lastKey = null, lastArg = "";
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
+  $("lang").textContent = t("langName");
+  if (lastKey) $("status").textContent = t(lastKey) + lastArg;
+}
+$("lang").addEventListener("click", () => { lang = lang === "ja" ? "en" : "ja"; applyLang(); });
+applyLang();
+const sayK = (k, arg = "") => { lastKey = k; lastArg = arg; $("status").textContent = t(k) + arg; };
+const say = (txt) => { lastKey = null; $("status").textContent = txt; };
+const log = (t) => { $("log").textContent += t + "\n"; };
+let image = null;
+const meta = /*META*/;
+
+let writing = false;
+const lockAll = (on) => {
+  writing = on;
+  $("go").disabled = on || !image;
+};
+window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault(); e.returnValue = t("leave"); } });
+
+(async () => {
+  if (!navigator.requestMIDIAccess) { sayK("nomidi"); return; }
+  try {
+    /* (2.7) never the browser's old copy: a new build keeps the file's name (sloop-2.7.fwsc), and a copy kept from the
+       build before is "damaged" here. no-cache asks the server first; a mismatch is fetched once more, bypassing the cache */
+    const sha = async (pkg) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", pkg))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const get = async (cache) => {
+      const r = await fetch(meta.pkg, { cache });
+      if (!r.ok) throw new Error(`${meta.pkg}: HTTP ${r.status}`);
+      return new Uint8Array(await r.arrayBuffer());
+    };
+    const check = meta.sha256 && self.crypto && crypto.subtle;
+    let pkg = await get("no-cache");
+    if (check && (await sha(pkg)) !== meta.sha256) pkg = await get("reload");
+    if (productOf(pkg) !== meta.product) { sayK("badpkg"); return; }
+    if (check) {                                       /* a damaged download is never offered (the loader checks its CRC too) */
+      const h = await sha(pkg);
+      if (h !== meta.sha256) { sayK("badpkg"); log(`sha256 ${h}, expected ${meta.sha256}`); return; }
+    }
+    image = logicalImage(pkg);
+    say(`PALEOTONE ${meta.version} for the FM-1 · ready`);
+    lockAll(writing);
+  } catch (e) { sayK("loadfail", e.message); }
+})();
+
+const total = 74 + 1179;                           /* reads: step 1, step 2 (head + app area, PALEOTONE 2.0 loader) */
+const step = (k, a) => {
+  log(`${k} ${a ?? ""}`);
+  if (k === "start") sayK("start");
+  if (k === "verify") { sayK("verify"); $("bar").value = Math.min(100, (a / total) * 100); }
+  if (k === "loader") sayK("loader");
+  if (k === "write") { sayK("write"); $("bar").value = Math.min(100, ((74 + a) / total) * 100); }
+  if (k === "reboot") sayK("reboot");
+  if (k === "done") { $("bar").value = 100; sayK("done"); }
+};
+const failed = (e) => {
+  if (e && e.code && TEXT[lang][e.code]) sayK(e.code, e.code === "other" ? "" : e.detail || "");
+  else sayK("error", e && e.message);
+  log(String(e && e.stack || e));
+};
+
+$("go").addEventListener("click", async () => {
+  if (writing) return;
+  lockAll(true);
+  let midi;
+  try { midi = await navigator.requestMIDIAccess({ sysex: true }); }
+  catch (e) { sayK("denied"); lockAll(false); return; }
+  try {
+    const up = new Updater(midi, log);
+    const ota = await up.find((id) => /^ota-/i.test(id.model), true);
+    if (ota) {
+      ota.link.close();
+      sayK((await up.resume(image, step, { package: meta.product, anyModel: true })) ? "done" : "stopped");
+    } else {
+      await up.install(image, meta.product, step, true);
+    }
+  } catch (e) { failed(e); }
+  lockAll(false);
+});
+
+/* Returning to the official firmware is done with M-VAVE's own updater (M-UPGRADE): the in-browser
+   revert was removed because it is not reliable on every system. The note under "stockTitle" points there. */
+</script>
+</body>
+</html>

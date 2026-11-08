@@ -1,84 +1,94 @@
-<p align="center"><img src="assets/logo/sloop-logo.png" alt="SLOOP" width="420"></p>
+<p align="center"><img src="web/site/art/skull.png" width="148" alt=""><br>
+<img src="web/site/art/wordmark.png" width="460" alt="PALEOTONE"></p>
 
-<p align="center"><b>SLOOP Pro — the SLOOP groovebox on the M-VAVE SMK-37.</b><br>
-Free and open source (GPL-3.0). SLOOP by isod89, based on <a href="https://github.com/hugelton/Felucca">Felucca</a> by
-Leo Kuroshita / Hügelton Instruments; the SMK-37 board layer by <a href="https://github.com/genkigenki/fm1-to-smk37">genkigenki</a>.
-Everyone who made it possible: <a href="CREDITS.md">CREDITS.md</a>.</p>
+<p align="center"><b>PALEOTONE: prehistoric synth firmware for the M-VAVE FM-1.</b><br>
+Six tracks, SAURUS creature calls, ROAR drones and war drums, on a groovebox you play live.</p>
 
 <p align="center">
-<a href="SLOOP-PRO.md"><b>SLOOP Pro: controls, menu, install</b></a> ·
-<a href="DEMARRAGE-RAPIDE-PRO-FR.md">Démarrage rapide (français)</a> ·
-<a href="TEST-SLOOP-PRO.md">Essais sur le SMK-37</a> ·
-<a href="GUIDE.md">The SLOOP guide</a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/emu/"><b>Play it in your browser</b></a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/installer/"><b>Install on your FM-1</b></a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/editor/">Editor</a> ·
+<a href="web/site/art/demo-song.mp3">Hear the demo song</a> ·
 <a href="BUILDING.md">Building</a> ·
-<a href="../../releases">Releases</a> ·
 <a href="../../issues">Report a bug</a>
 </p>
 
----
+> **Early alpha:** experimental firmware. An install can leave the FM-1 unable to start and in need of recovery.
+> Back up your projects with the editor, keep a known-good firmware package, and read the recovery notes on the
+> install page before installing.
 
-SLOOP turns the keyboard into a four-track groovebox you play live: **three synths and a drum machine**, twelve
-synthesis engines, 153 sounds, 37 drum kits, your own samples, a song mode you play with your hands, 27 punch-in
-effects, a piano-roll note editor, parameter locks, micro timing and fills. **SLOOP Pro** is that firmware on the
-M-VAVE SMK-37 — with what the bigger keyboard brings:
+<p align="center"><img src="web/site/art/clayborn-everywhere.png" width="760" alt="PALEOTONE's screens: the boot art, the six tracks, SAURUS's values, the envelope, the piano roll, the drum roll, MIX, SONG and the drum grid"></p>
+
+## What it is
+
+PALEOTONE is the prehistoric sound of the earlier PALEOTONE (its presets, samples, SAURUS and ROAR engines, drum kits
+and effects) on **RAPTOR's base**: SLOOP 2.8.4 by isod89, the live groovebox firmware built on Felucca. The look is a
+1993 park-operations terminal: phosphor green on black, amber for what needs attention, and one typeface, Clayborn,
+drawn large on every screen.
 
 | | |
 |---|---|
-| **37 velocity keys** | the 27 middle keys as SLOOP's, velocity from your unit's factory curves (KEY VELOCITY: dynamic, soft, hard, fixed); the outer 10 play notes, or drums on the drum track |
-| **16 RGB pads** | the drum kit (default), the selected track's sound (NOTES) or its 16 steps, in the screen's track colours; the sound picker (turn K4); piano, mix and song tiles in the layers; PAD LIGHTS brightness |
-| **4 faders, 5 banks** | A level, B filter, C reverb, D delay of the four tracks, E the selected synth track's envelope (ADSR) |
-| **8 knobs** | MASTER, SELECT, track, sound, and the four dials, as on screen (or the SMK layout) |
-| **Wheels and pedal** | pitch bend (BEND UP / DOWN), vibrato, a sustain pedal on the PEDAL jack |
-| **MIDI** | USB MIDI and the TRS MIDI OUT jack (nothing left hanging when it is turned off), a full **DAW mode** with your own CC map |
-| **Models** | SMK-37 Pro (and Starrykey 37 Play), SMK-37 Elite, MKE-P37: one package each, the installer picks the right one |
+| **Six tracks** | three synths, SFX (the prehistoric world's sounds), CALLS (SAURUS) and drums, each with its own colour |
+| **SAURUS** | the creature voice: one note is one call (CALL, SIZE, SWOOP, LEN, GROWL, BRTH, MOUTH, WILD); twenty creatures, and CALL KIT with every one of them on the keys |
+| **ROAR** | drones, war drums and rituals, with its RING page back (EDIT > RING, on or off) |
+| **PRESETS by kind** | 200+ sounds in ten kinds: BASS, KEYS, ORGN, PAD, LEAD, PLCK, DRUM, FX, and SAUR and ROAR for the creatures and the drones. Turning PRESETS names the sound and its kind at the top of the screen and in a big bar over the knobs (SAUR TYRANT ROAR) |
+| **Big text** | Clayborn everywhere, values large on every value page, messages as big as they fit |
+| **Demo song** | VALLEY OF GIANTS on all six tracks: the first power-on plays it, TOOLS > DEMO brings it back |
+| **Everything SLOOP does** | the sequencer, song mode, punch-in effects, the piano roll, parameter locks, the editor |
 
-> **Status:** SLOOP Pro 2.8.4, a beta built on SLOOP 2.8.4 (fixes: no more distortion at the end of notes, 3.5 mm and USB; UNISON no longer stacks its voices in phase; PHYS strings in tune; NZ ARCADE, SAMPLE and GRAIN follow the top keys; a firm press on a layer button opens its pages; on REC READY a knob changes only its own value; the faders follow a real volume curve; the sustain pedal held as long as you like; no hanging note on TRS MIDI OUT; the lights no longer freeze after 25 days; the installer no longer freezes Chrome on Windows; the way back to the official firmware with V16). Install at your own risk (read the
-> [safety notes](SLOOP-PRO.md#safety)); your unit's calibration is never written, and M-VAVE's own updater takes you
-> back at any time.
+<p align="center"><img src="web/site/art/preset-category-message.png" width="600" alt="Turning PRESETS: the bar names the sound and its kind, SAUR TYRANT ROAR and SAUR MONSTER ROAR"></p>
+
+## Play it in your browser
+
+**[fantasmoslam.github.io/Paleotone/webapp/emu](https://fantasmoslam.github.io/Paleotone/webapp/emu/)** runs the
+firmware's own sound, sequencer and screens in the page (WebAssembly; `web/emu/paleo_web.c`). Play with the mouse or
+the computer keys printed on the panel, or with a MIDI keyboard. Nothing is installed, and projects are not kept in
+the browser.
 
 ## Install
 
-1. Back up the keyboard's flash once (see [Safety](SLOOP-PRO.md#safety)).
-2. Open the installer: **[isod89.github.io/sloop-pro](https://isod89.github.io/sloop-pro/)** in Chrome or Edge,
-   nothing to build. (Or build it yourself on Windows: `INSTALL-SLOOP-PRO.bat` builds the three packages in WSL and
-   opens the same installer from your computer.) The keyboard must run M-VAVE's V016 first: update an older one
-   with M-VAVE's own updater.
-3. Connect the SMK-37 straight to the computer (a USB data cable), close other MIDI apps, tick the box, press
-   **Install SLOOP Pro**. The page reads the model and writes its package, then checks the keyboard after the restart.
+1. Back up the FM-1's projects with the [editor](https://fantasmoslam.github.io/Paleotone/webapp/editor/).
+2. Open the **[installer](https://fantasmoslam.github.io/Paleotone/webapp/installer/)** in Chrome or Edge, connect
+   the FM-1 straight to the computer with a USB data cable, close other MIDI apps, and press **Install**.
 
-The command line does the same: `python3 tools/fm1_install.py build/release/`. Details, the way back to the M-VAVE
-firmware and what to do if something goes wrong: [SLOOP-PRO.md](SLOOP-PRO.md).
+The command line does the same: `python3 tools/fm1_install.py paleotone-fm1.fwsc --yes` (needs
+`pip3 install mido python-rtmidi`). Every push to `main` builds the package in GitHub Actions
+(`.github/workflows/paleotone-fm1.yml`) and puts it, with the build and test logs, on the
+[`paleotone-fm1-output`](../../tree/paleotone-fm1-output) branch.
 
-## Editor
+If an install fails and the FM-1 no longer starts: hold OCT− alone while switching on for USB rescue; if that does
+not help, recovery needs a Transporter ([FM-1-transporter](https://github.com/kurogedelic/FM-1-transporter)).
+M-VAVE's own updater, M-UPGRADE, takes the FM-1 back to the official firmware.
 
-The SLOOP web editor works with SLOOP Pro: sounds, sequences and the piano roll, the drum kits and samples, songs,
-backups, and the SMK-37's **DAW MAP** tab. `OPEN-EDITOR-PRO.bat` opens it (after a build), or use the installer
-page's link.
+## Building
 
-## For FM-1 owners
+See [BUILDING.md](BUILDING.md): JieLi's toolchain and the AC79 SDK, then `./build.sh` makes `build/felucca.fwsc`.
+Without them, the host tests and the browser version still build:
 
-This repository still builds SLOOP for the FM-1 (`./build.sh`, as SLOOP 2.8.4). The FM-1
-firmware and its installer live at [isod89/sloop-fm1](https://github.com/isod89/sloop-fm1); its README is kept here
-as [README-SLOOP.md](README-SLOOP.md).
+```
+python3 -c 'import sys; sys.path.insert(0, "tools"); import build; build.generate()'   # build/gen
+sh tests/run_tests.sh                       # the host tests (after one ./build.sh)
+sh web/emu/build.sh                         # build/emu: PALEOTONE in the browser (clang, lld, wasi-libc)
+node web/emu/emu_test.mjs build/emu/paleotone.wasm
+```
 
-## Credits
+The website (`.github/workflows/paleotone-site.yml`, `web/make_paleotone_site.py`) is published on GitHub Pages after
+every green FM-1 build of `main`: the browser version, the installer (`web/paleotone_install.html`), the editor and
+the art in `web/site/art`.
 
-SLOOP Pro stands on the open work of many people; [CREDITS.md](CREDITS.md) names each of them and what they did.
+This tree is also RAPTOR, the same groovebox on the M-VAVE SMK-37 (`./build.sh --board smk37`; see
+[SLOOP-PRO.md](SLOOP-PRO.md)). The earlier PALEOTONE, built on GHOULBOX, is in this repository's history.
 
-- **Felucca**: Leo Kuroshita ([@kurogedelic](https://github.com/kurogedelic)), Hügelton Instruments, the open FM-1
-  firmware SLOOP is built on.
-- **SLOOP**: isod89 and contributors ([README-SLOOP.md](README-SLOOP.md#credits-and-thanks)).
-- **The SMK-37 port**: M. Geisler ([@genkigenki](https://github.com/genkigenki)):
-  [fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37), the board layer, the SMK-37 features, the reference
-  SLOOP port and the update library of the web installer.
-- **[@ChanceTheMaker](https://github.com/ChanceTheMaker)**, [sloop-smk](https://github.com/ChanceTheMaker/sloop-smk):
-  the ideas behind the pedal, the pad brightness, the envelope fader bank, the TRS note-off flush, honest save
-  results and the installer's disposable MIDI session.
-- **The second core**: [@andrerezemini](https://github.com/andrerezemini) (sloop-lab),
-  [Charles Vestal](https://github.com/charlesvestal) (X0X), [@keremimo](https://github.com/keremimo) (Melodee).
-- **And**: [@renebohne](https://github.com/renebohne), [@juanjiant-bit](https://github.com/juanjiant-bit) (JIANT FM),
-  [@ordenador](https://github.com/ordenador), [AL-255](https://github.com/AL-255/FM-1-RE) (FM-1-RE),
-  [kagaimiq](https://github.com/kagaimiq) (JieLi tools), and the Felucca and SLOOP communities.
+## Credits and licence
 
-M-VAVE, SMK-37, MKE-P37, Starrykey and FM-1 are trademarks of their respective owners; SLOOP Pro is not affiliated
-with them. Licence: GPL-3.0 ([LICENSE](LICENSE), [LICENSING.md](LICENSING.md)).
+PALEOTONE is free software under the GNU GPL, version 3 only: see [LICENSING.md](LICENSING.md) and
+[CREDITS.md](CREDITS.md). Its source must stay available to anyone you give the firmware to.
+
+- **SLOOP** by isod89 and contributors ([README-SLOOP.md](README-SLOOP.md)), and the SMK-37 port by M. Geisler
+  ([@genkigenki](https://github.com/genkigenki)).
+- **Felucca** by Leo Kuroshita ([@kurogedelic](https://github.com/kurogedelic)), Hügelton Instruments.
+- **GHOULBOX** by Jason Persinger, where PALEOTONE's sound began.
+- **Clayborn** by Frank Baranowski (SIL OFL 1.1): the screen's typeface.
+- The browser version follows charlesvestal's [X0X](https://github.com/charlesvestal/fm1-x0x) browser build.
+
+M-VAVE and FM-1 are trademarks of their respective owners; PALEOTONE is not affiliated with them.

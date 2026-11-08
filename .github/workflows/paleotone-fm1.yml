@@ -5,7 +5,7 @@ name: paleotone-fm1
 
 on:
   push:
-    branches: [claude/project-thread-n5rqg8, paleotone-fm1]
+    branches: [main, claude/project-thread-n5rqg8, paleotone-fm1]
   workflow_dispatch:
 
 permissions:
