@@ -7,8 +7,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>PALEOTONE installer</title>
+<title>Install PALEOTONE</title>
 <meta name="description" content="Install PALEOTONE, the prehistoric synth firmware, on your M-VAVE FM-1 from Chrome or Edge.">
+<link rel="icon" href="../art/skull.png">
+<link rel="stylesheet" href="../site.css">
 <style>
   /* Clayborn (Frank Baranowski, SIL OFL 1.1): the typeface the FM-1's screen draws */
   @font-face { font-family: "Clayborn"; src: url("../emu/fonts/Clayborn.ttf") format("truetype"); font-display: swap; }
@@ -25,7 +27,8 @@
                      repeating-linear-gradient(0deg, rgba(0, 0, 0, .35) 0 1px, transparent 1px 3px), var(--bg); }
   main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
   .clay { font-family: Clayborn, monospace; letter-spacing: .05em; }
-  .top { display: flex; align-items: center; justify-content: flex-end; }
+  .top { display: flex; align-items: center; justify-content: flex-end; margin-top: -8px; }
+  .bar .wrap { max-width: 980px; }
   .lang { font-size: 12px; color: var(--dim); cursor: pointer; text-decoration: underline; background: none; border: 0; padding: 0; }
   .crest { text-align: center; margin: 4px 0 6px; }
   .crest img { image-rendering: pixelated; filter: drop-shadow(0 0 12px rgba(66, 235, 115, .35)); display: block; margin: 0 auto; }
@@ -76,6 +79,10 @@
 </style>
 </head>
 <body>
+<header class="bar"><div class="wrap">
+  <a class="home" href="../../"><img src="../art/skull.png" alt=""><span>PALEOTONE</span></a>
+  <nav><a href="../emu/">Play</a><a href="../guide/">Guide</a><a href="./" aria-current="page">Install</a><a href="../editor/">Editor</a></nav>
+</div></header>
 <main>
   <div class="top"><button class="lang" id="lang"></button></div>
   <header class="crest">
@@ -87,6 +94,19 @@
   <!--BANNER-->
   <aside class="alpha" role="note"><b>Early alpha.</b> PALEOTONE is experimental firmware. An install can leave the FM-1 unable to
     start and in need of recovery. Back up your projects first, keep a known-good firmware, and read the recovery notes below.</aside>
+
+  <section class="card">
+    <h2>What is PALEOTONE?</h2>
+    <p><b>PALEOTONE</b> is free, open-source firmware for the <b>M-VAVE FM-1</b>. Installed over USB from this page, it turns
+      the FM-1 into a six-track groovebox from the age of giants: three synths, a track of prehistoric sound effects (thunder,
+      lava, rain, footsteps), a track of creature calls, and a drum machine, all playing at once.</p>
+    <p>You play it live: record by playing, layer pass over pass, punch in effects with one finger, and build sections into a
+      song. More than 200 sounds come in ten kinds, from BASS and PAD to SAUR, the twenty SAURUS creatures, and ROAR, the drones
+      and war drums. Every screen is drawn in one large typeface, phosphor green on black.</p>
+    <p>It's built on SLOOP by isod89 and Felucca by Leo Kuroshita, so everything SLOOP does is still here. Not sure yet?
+      <a href="../emu/">Play it in your browser</a> first; it's the same firmware. The <a href="../guide/">guide</a> shows
+      every button and screen.</p>
+  </section>
 
   <section class="card">
     <h2>Install</h2>
@@ -101,6 +121,7 @@
     <pre id="log"></pre>
     <div class="links">
       <a class="ed play" href="../emu/">Play it in your browser first</a>
+      <a class="ed" href="../guide/">Read the guide</a>
       <a class="ed" href="../editor/">Open the editor</a>
     </div>
     <p class="small" style="margin-top:10px"><a href="../editor/sloop-editor.html" download="sloop-editor.html" data-t="edOffline"></a></p>

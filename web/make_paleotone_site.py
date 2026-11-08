@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Make PALEOTONE's site (GitHub Pages) for the FM-1 build:
 
-  index.html                  redirect to the browser version (webapp/emu/)
+  index.html                  the landing page (web/site/index.html)
+  webapp/site.css             the landing page's and the guide's style (web/site/site.css)
+  webapp/guide/               the user guide (web/site/guide.html), its screens in img/ (web/site/guide/*.png)
   webapp/emu/                 PALEOTONE in the browser: build/emu as web/emu/build.sh made it
   webapp/installer/index.html web/paleotone_install.html with fm1pkg.js, fm1ota.js and the package's metadata inlined
   webapp/editor/              the editor (web/editor.html, SLOOP's, which speaks to this firmware)
@@ -42,8 +44,8 @@ def main(pkg, version, out):
     vtag = re.sub(r"[^A-Za-z0-9.-]", "-", version)
     name = f"paleotone-fm1-{vtag}.fwsc"
     app, fw = out / "webapp", out / "firmware"
-    inst, ed, art = app / "installer", app / "editor", app / "art"
-    for d in (inst, ed, art, fw):
+    inst, ed, art, guide = app / "installer", app / "editor", app / "art", app / "guide"
+    for d in (inst, ed, art, guide / "img", fw):
         d.mkdir(parents=True, exist_ok=True)
     for old in list(fw.glob("felucca-*.fwsc")) + list(fw.glob("paleotone-*.fwsc")):   # one package: the current one
         old.unlink()
@@ -83,12 +85,17 @@ def main(pkg, version, out):
     if (app / "emu").exists():
         shutil.rmtree(app / "emu")
     shutil.copytree(emu, app / "emu")
-    (out / "index.html").write_text(
-        '<!doctype html><meta charset="utf-8"><title>PALEOTONE</title>'
-        '<meta http-equiv="refresh" content="0; url=webapp/emu/"><a href="webapp/emu/">PALEOTONE</a>\n',
-        encoding="utf-8")
+    site = HERE / "site"
+    shutil.copy(site / "site.css", app / "site.css")
+    shutil.copy(site / "guide.html", guide / "index.html")
+    for f in (site / "guide").glob("*.png"):
+        shutil.copy(f, guide / "img" / f.name)
+    home = (site / "index.html").read_text(encoding="utf-8")
+    if home.count("<!--BANNER-->") != 1:
+        raise SystemExit("web/site/index.html must contain <!--BANNER--> once")
+    (out / "index.html").write_text(home.replace("<!--BANNER-->", banner), encoding="utf-8")
     (out / ".nojekyll").write_text("")
-    print(f"site: {out}: webapp/emu, webapp/installer ({len(html)} B), webapp/editor, firmware/{name} "
+    print(f"site: {out}: index.html, webapp/guide, webapp/emu, webapp/installer ({len(html)} B), webapp/editor, firmware/{name} "
           f"({len(raw)} B, {product})")
 
 

@@ -7,6 +7,7 @@ Six tracks, SAURUS creature calls, ROAR drones and war drums, on a groovebox you
 <p align="center">
 <a href="https://fantasmoslam.github.io/Paleotone/webapp/emu/"><b>Play it in your browser</b></a> ·
 <a href="https://fantasmoslam.github.io/Paleotone/webapp/installer/"><b>Install on your FM-1</b></a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/guide/">Guide</a> ·
 <a href="https://fantasmoslam.github.io/Paleotone/webapp/editor/">Editor</a> ·
 <a href="web/site/art/demo-song.mp3">Hear the demo song</a> ·
 <a href="BUILDING.md">Building</a> ·
@@ -73,8 +74,9 @@ node web/emu/emu_test.mjs build/emu/paleotone.wasm
 ```
 
 The website (`.github/workflows/paleotone-site.yml`, `web/make_paleotone_site.py`) is published on GitHub Pages after
-every green FM-1 build of `main`: the browser version, the installer (`web/paleotone_install.html`), the editor and
-the art in `web/site/art`.
+every green FM-1 build of `main`: the landing page (`web/site/index.html`), the guide (`web/site/guide.html`), the
+browser version, the installer (`web/paleotone_install.html`), the editor and the art in `web/site/art`. The guide's
+screens are the firmware's own: `python3 web/site/guide_shots.py` renders them again (`tests/guide_shots.c`).
 
 This tree is also RAPTOR, the same groovebox on the M-VAVE SMK-37 (`./build.sh --board smk37`; see
 [SLOOP-PRO.md](SLOOP-PRO.md)). The earlier PALEOTONE, built on GHOULBOX, is in this repository's history.
