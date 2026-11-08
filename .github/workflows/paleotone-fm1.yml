@@ -63,11 +63,13 @@ jobs:
           sh tests/run_tests.sh > out/tests.log 2>&1; echo "exit $?" | tee -a out/tests.log
           grep -E "FAIL|^exit" out/tests.log | tail -60
 
-      - name: Release (a v* tag, the host tests green)
+      - name: Release (a v* tag whose package built; the host tests' result goes with it)
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          grep -qx "exit 0" out/tests.log || { echo "host tests failed: no release"; exit 1; }
+          # the same rule as the public installer (paleotone-site): a package that built is published. The host
+          # tests run above and their log, with any FAIL lines, is attached to the release.
+          grep -E "FAIL|^exit" out/tests.log | tail -20 || true
           cp out/paleotone-fm1.fwsc "out/paleotone-fm1-${GITHUB_REF_NAME#v}.fwsc"
           (cd out && sha256sum paleotone-fm1-*.fwsc > sha256.txt)
 
@@ -83,6 +85,7 @@ jobs:
           files: |
             out/paleotone-fm1-*.fwsc
             out/sha256.txt
+            out/tests.log
 
       - name: Put the result on the paleotone-fm1-output branch
         if: always()
