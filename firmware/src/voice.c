@@ -20,6 +20,17 @@ static uint32_t vage;                                   /* voice ages: one clock
 #define SMK_VIB_K (SMK_VIB_HZ * 179u)          /* phase per TIMER4 tick: 2^32 / 24e6 = 178.96 */
 static volatile int32_t perf_bend;
 static volatile int32_t perf_modw;
+/* RAPTOR: what the mod wheel does (HOME menu > PLAY > MOD WHEEL, kept in smkset rsv): VIBRATO (SLOOP's), FILTER (opens
+ * the cutoff), TREMOLO (the loudness at SMK_VIB_HZ), SHAPE (the engine's shape), MACRO 1 (sets the selected track's
+ * first macro, main.c smk_wheels; perf_modw 0 here) */
+enum { MW_VIB, MW_FILTER, MW_TREM, MW_SHAPE, MW_MACRO, MW_N };
+static uint8_t modw_dest;
+static int32_t smk_vib_tri(void)                 /* the wheel's triangle, +-32767 */
+{
+    uint32_t ph = fm1_ticks() * SMK_VIB_K;
+    int32_t tri = (int32_t)((ph >> 15) & 0xFFFFu);
+    return (ph & 0x80000000u ? 0xFFFF - tri : tri) - 32768;
+}
 #endif
 /* engines that play recorded material (a position, not a phase): no phases kept or spread */
 #if FELUCCA_SLICE
@@ -862,6 +873,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             m.amp1 = e->ownenv ? env : mulq15(env, v->vel * 258);
             if (p[P_LD_AMP])
                 m.amp1 = mulq15(m.amp1, 32767 - mulq15(p[P_LPOL] ? lfo : (lfo + 32768) >> 1, p[P_LD_AMP] * 258));
+#if BOARD_SMK37
+            if (t == TSEL && modw_dest == MW_TREM && perf_modw)   /* the wheel's tremolo: down to silence at the top */
+                m.amp1 = mulq15(m.amp1, 32767 - (((smk_vib_tri() + 32768) >> 1) * perf_modw >> 7));
+#endif
             if (fade)                                   /* linear to 0 over the fade */
                 m.amp1 = m.amp1 * (int32_t)(t->xf - 1u) / (int32_t)XF_BLOCKS;
             m.amp0 = v->env_out;
@@ -884,11 +899,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             int32_t q = (v->pitch_cur << 8) + v->pitch_frac + ((lfo * p[P_LD_PIT] * 3) >> 7) +
                         ((v->penv * p[P_ED_PIT] * 3) >> 7) + bendq;
 #if BOARD_SMK37
-            if (t == TSEL) {                            /* the wheels: bend and vibrato */
-                uint32_t ph = fm1_ticks() * SMK_VIB_K;
-                int32_t tri = (int32_t)((ph >> 15) & 0xFFFFu);
-                tri = (ph & 0x80000000u ? 0xFFFF - tri : tri) - 32768;   /* triangle, +-32767 */
-                q += perf_bend + ((tri * perf_modw) >> 10);
+            if (t == TSEL) {                            /* the wheels: bend and (MOD WHEEL VIBRATO) vibrato */
+                q += perf_bend;
+                if (modw_dest == MW_VIB)
+                    q += (smk_vib_tri() * perf_modw) >> 10;
             }
 #endif
             pitch = (q >> 8) + tune;
@@ -903,6 +917,12 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         if (v->vel > 110)                               /* accent opens the filter with the env */
             m.cutoff += (m.envq15 * 24) >> 7;
         m.shape = (64 << 8) + ((lfo * p[P_LD_SHP]) >> 7) + ((m.envq15 * p[P_ED_SHP]) >> 7);
+#if BOARD_SMK37
+        if (t == TSEL && modw_dest == MW_FILTER)        /* the wheel opens the filter (top: + ~5 octaves of cutoff) */
+            m.cutoff += perf_modw * 160;
+        else if (t == TSEL && modw_dest == MW_SHAPE)    /* .. or moves the engine's shape */
+            m.shape += perf_modw * 128;
+#endif
         e->render(t, v, out, n, &m);
         nr++;
     }

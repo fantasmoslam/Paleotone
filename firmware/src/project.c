@@ -953,7 +953,8 @@ static void daw_save(void)
 #define SMKSET_MAGIC 0x54534B53u                   /* "SKST" */
 typedef struct {
     uint32_t magic;
-    uint8_t vel, trs, bup, bdn, lim, klay, pad, rsv;   /* bup / bdn: smk_wheel.h bend_*_byte; pad: SLOOP Pro's PAD
+    uint8_t vel, trs, bup, bdn, lim, klay, pad, rsv;   /* rsv: RAPTOR's MOD WHEEL (voice.c modw_dest; 0 VIBRATO, as
+                                                       * before); bup / bdn: smk_wheel.h bend_*_byte; pad: SLOOP Pro's PAD
                                                        * LIGHTS (lcd.c padled_dim; 0 in older data: HIGH, as before) */
 } smkset_t;
 static smkset_t smkset_saved;
@@ -969,6 +970,7 @@ static void smkset_fill(smkset_t *s)
     s->lim = (uint8_t)(lim_classic != 0u);
     s->klay = (uint8_t)(knob_layout != 0u);
     s->pad = (uint8_t)(padled_dim % 3u);
+    s->rsv = (uint8_t)(modw_dest % MW_N);
 }
 static void smkset_boot(void)                      /* after the settings (persist_boot, dsu_boot) */
 {
@@ -982,6 +984,7 @@ static void smkset_boot(void)                      /* after the settings (persis
         knob_layout = (uint8_t)(s.klay & 1u);
         knob_layout_apply();
         padled_dim_set(s.pad < 3u ? s.pad : 0u);
+        modw_dest = (uint8_t)(s.rsv < MW_N ? s.rsv : MW_VIB);
         smkset_fill(&smkset_saved);
         return;
     }

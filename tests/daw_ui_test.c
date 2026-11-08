@@ -219,11 +219,20 @@ int main(int argc, char **argv)
     check(ui.menu == 1 && ui.menu_sel == MI_TRS, "PATCH held: the menu, at MIDI");
     shot("daw-menu-midi");
     check(MS_FIRST[MS_PLAY] == MI_VEL && MS_FIRST[MS_MIDI] == MI_TRS && MS_FIRST[MS_DAW] == MI_DMAP && MI_LOCAL - MI_TRS == 3 &&
-          MI_DRESET - MI_DMAP == 3 && MI_BDN - MI_VEL == 2 && MI_ACCEL == MI_BDN + 1 && MS_FIRST[MS_MIDI] - MS_FIRST[MS_PLAY] == 4 &&
+          MI_DRESET - MI_DMAP == 3 && MI_BDN - MI_VEL == 2 && MI_MODW == MI_BDN + 1 && MI_ACCEL == MI_KLAY + 1 && MS_FIRST[MS_MIDI] - MS_FIRST[MS_PLAY] == 4 &&
           MI_KLAY == MI_ZOOM + 1 && MI_LIMIT - MS_FIRST[MS_AUDIO] == 1 && MI_FRESO == MI_LIMIT + 1 &&
           MS_FIRST[MS_USB] == MI_USB && MS_FIRST[MS_SEQ] == MI_ADV && MI_PADL == MI_KEYS + 1 && MS_FIRST[MS_PADS] == MI_KEYS &&
           MI_SCOPE == MI_PADL + 1 && MS_FIRST[MS_AUDIO] == MI_SCOPE + 1,
-          "PLAY: KEY VELOCITY, BEND UP, BEND DOWN, KNOB ACCEL (2.7); MIDI: TRS, MODE, CHANNEL, LOCAL; DAW: 4; KNOB LAYOUT, LIMITER on their knobs");
+          "PLAY: KEY VELOCITY, BEND UP, BEND DOWN, MOD WHEEL (RAPTOR; KNOB ACCEL on SCREEN); MIDI: TRS, MODE, CHANNEL, LOCAL; DAW: 4; KNOB LAYOUT, LIMITER on their knobs");
+    {   /* RAPTOR: MOD WHEEL: VIBRATO (the default) .. MACRO 1, stops at the ends, OCT+ round */
+        uint16_t c;
+        check(modw_dest == MW_VIB && str_eq(mi_value(MI_MODW, &c), "VIBRATO"), "MOD WHEEL: VIBRATO by default");
+        mi_set(MI_MODW, 1); check(modw_dest == MW_FILTER && str_eq(mi_value(MI_MODW, &c), "FILTER"), "MOD WHEEL right: FILTER");
+        mi_set(MI_MODW, 1); mi_set(MI_MODW, 1); mi_set(MI_MODW, 1); mi_set(MI_MODW, 1);
+        check(modw_dest == MW_MACRO && str_eq(mi_value(MI_MODW, &c), "MACRO 1"), "MOD WHEEL: MACRO 1 last, stops there");
+        mi_set(MI_MODW, 0); check(modw_dest == MW_VIB, "MOD WHEEL: OCT+ goes round to VIBRATO");
+        mi_set(MI_MODW, -1); check(modw_dest == MW_VIB, "MOD WHEEL left at VIBRATO: stays");
+    }
     for (i = 0; i < MS_COUNT; i++)
         if (MS_FIRST[i + 1] - MS_FIRST[i] > 4u || MS_FIRST[i + 1] <= MS_FIRST[i])
             check(0, "a section of 1..4 rows");

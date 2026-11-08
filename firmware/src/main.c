@@ -187,7 +187,24 @@ static void smk_wheels(void)
         return;
     }
     perf_bend = smk_pw_bend(&pw, &wcal, fm1_in.wheel[0], fm1_ms, bend_up, bend_dn);
-    perf_modw = smk_mw_val(&mw, &wcal, fm1_in.wheel[1]);
+    {
+        static int32_t m_was = -1;
+        int32_t m = smk_mw_val(&mw, &wcal, fm1_in.wheel[1]);
+        if (modw_dest != MW_MACRO) {
+            perf_modw = m;
+            m_was = -1;
+            return;
+        }
+        perf_modw = 0;                            /* MOD WHEEL MACRO 1: the selected track's first macro, set while the
+                                                   * wheel moves (a knob changes it in between) */
+        if (m != m_was && m_was >= 0) {
+            int16_t *vp;
+            const param_desc_t *d = page_desc(mac_page(), 0, &vp);
+            if (d && vp && d->max > d->min && !is_drum(TSEL))
+                *vp = (int16_t)(d->min + (d->max - d->min) * m / 127);
+        }
+        m_was = m;
+    }
 }
 #endif
 

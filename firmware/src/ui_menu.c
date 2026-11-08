@@ -17,7 +17,7 @@
  * smk_pad_level; PAD LIGHTS, lcd.c padled_dim; PAD SCOPE, ui_scope.c), AUDIO (LIMITER, fx.c lim_classic; FILTER RESO),
  * USB, SEQ (STEP ADVANCE, DRUM PREVIEW), PLAY (KEY VELOCITY, smk_vel.h; BEND UP / DOWN, smk_wheel.h; KNOB ACCEL), MIDI (TRS
  * MIDI OUT, smk_midi_out.h; MODE, CHANNEL, LOCAL, smk_daw.h), DAW (ui_daw.c), SYSTEM */
-enum { MI_COLOR, MI_ZOOM, MI_KLAY,
+enum { MI_COLOR, MI_ZOOM, MI_KLAY, MI_ACCEL,
        MI_LIGHTS, MI_NOTES,
        MI_KEYS, MI_PADL, MI_SCOPE,
        MI_LOWCUT, MI_LIMIT, MI_FRESO,
@@ -27,11 +27,11 @@ enum { MI_COLOR, MI_ZOOM, MI_KLAY,
 #endif
        MI_RATE,
        MI_ADV, MI_DPREV,
-       MI_VEL, MI_BUP, MI_BDN, MI_ACCEL,
+       MI_VEL, MI_BUP, MI_BDN, MI_MODW,
        MI_TRS, MI_MODE, MI_DCH, MI_LOCAL,
        MI_DMAP, MI_KREL, MI_DEDIT, MI_DRESET,
        MI_CPU1, MI_PANEL, MI_LCLEAR, MI_ABOUT, MI_COUNT };
-static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "KNOB LAYOUT",
+static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "KNOB LAYOUT", "KNOB ACCEL",
                                               "LIGHTS", "NOTES",
                                               "PAD THRESHOLD", "PAD LIGHTS", "PAD SCOPE",
                                               "SPEAKER LOWCUT", "LIMITER", "FILTER RESO",
@@ -40,7 +40,7 @@ static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "KNOB LAYOUT",
                                               "USB SERIAL",
 #endif
                                               "USB RATE", "STEP ADVANCE", "DRUM PREVIEW",
-                                              "KEY VELOCITY", "BEND UP", "BEND DOWN", "KNOB ACCEL", "TRS MIDI OUT",
+                                              "KEY VELOCITY", "BEND UP", "BEND DOWN", "MOD WHEEL", "TRS MIDI OUT",
                                               "MODE", "CHANNEL", "LOCAL", "CC MAP", "KNOBS", "EDIT MAP", "RESET MAP",
                                               "2ND CORE", "HARDWARE CALIBRATION", "MIDI LEARN CLEAR", "ABOUT"};
 enum { MS_SCREEN, MS_LIGHTS, MS_PADS, MS_AUDIO, MS_USB, MS_SEQ, MS_PLAY, MS_MIDI, MS_DAW, MS_SYSTEM, MS_COUNT };
@@ -183,6 +183,10 @@ UI_SMALL static const char *mi_value(uint32_t i, uint16_t *c)
         return b;
     }
     case MI_LIMIT: return lim_classic ? "CLASSIC" : "SOFT";
+    case MI_MODW: {                                   /* RAPTOR: what the mod wheel does (voice.c modw_dest) */
+        static const char *const N[MW_N] = {"VIBRATO", "FILTER", "TREMOLO", "SHAPE", "MACRO 1"};
+        return N[modw_dest % MW_N];
+    }
     case MI_BUP:
     case MI_BDN: {                                    /* semitones of the pitch wheel up / down, the internal sounds */
         static char b[2][16];
@@ -236,7 +240,7 @@ UI_SMALL static void draw_menu(void)
                    lights_notes * 32452843u + usb_full * 49979687u + usb_serial * 86028121u + usb_rate * 15486719u + theme_shown() * 32452867u + theme.crc + cpu1_off * 122949829u +
                    knob_accel_off * 179424673u + drum_preview * 236887691u + step_adv_off * 373587883u + flt_reso * 512927357u;
 #if BOARD_SMK37
-    sig += padled_dim * 2654435761u + vel_mode * 179424673u + trs_out * 373587883u + smo.dead * 573259391u + bend_up * 817504243u +
+    sig += modw_dest * 2246822519u + padled_dim * 2654435761u + vel_mode * 179424673u + trs_out * 373587883u + smo.dead * 573259391u + bend_up * 817504243u +
            bend_dn * 941083987u + lim_classic * 1500450271u + knob_layout * 2147483647u;
     sig += daw_on * 1000003u + daw_ch * 2000029u + daw_local * 3000017u + daw_user * 4000037u + daw_rel * 5000011u +
            daw_user_changed() * 6000047u + (ui.arm == MI_ARM_RESET && ui.arm_t) * 7000003u;
@@ -483,6 +487,10 @@ UI_SMALL static void mi_set(uint32_t i, int32_t s)
         break;
     case MI_BDN:
         bend_dn = (uint8_t)bend_step(bend_dn, s);
+        break;
+    case MI_MODW:                                      /* right / left the next / previous (stops at the ends); OCT+ round */
+        modw_dest = (uint8_t)(s > 0 ? (modw_dest + 1u < MW_N ? modw_dest + 1u : modw_dest)
+                              : s < 0 ? (modw_dest ? modw_dest - 1u : 0u) : (modw_dest + 1u) % MW_N);
         break;
     case MI_LIMIT:                                     /* right CLASSIC, left SOFT; OCT+ toggles */
         lim_classic = (uint8_t)(s > 0 ? 1u : s < 0 ? 0u : !lim_classic);
