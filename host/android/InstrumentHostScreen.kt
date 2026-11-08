@@ -102,9 +102,12 @@ private fun Performance(feed: PanelFeed, initialBank: Int) {
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
             val wide = maxWidth > maxHeight && maxWidth >= 780.dp
             if (wide) {
-                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
-                    Display(feed, Modifier.weight(1f).fillMaxHeight())
-                    ControlBank(feed, Modifier.width(340.dp).fillMaxHeight(), initialBank)
+                val displaySide = minOf(maxHeight, maxWidth - 368.dp)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Row(Modifier.width(displaySide + 368.dp).fillMaxHeight(), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                        Display(feed, Modifier.width(displaySide).fillMaxHeight())
+                        ControlBank(feed, Modifier.width(340.dp).fillMaxHeight(), initialBank)
+                    }
                 }
             } else {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -277,11 +280,13 @@ private fun Instruments(state: HostViewState, select: (String) -> Unit) {
     val current = rows.getOrElse(page) { emptyList() }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val wide = maxWidth > maxHeight
-            if (wide) Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            val wide = maxWidth >= 680.dp
+            val cardHeight = minOf(280.dp, maxHeight)
+            val narrowHeight = minOf(260.dp, (maxHeight - 16.dp) / max(1, current.size))
+            if (wide) Row(Modifier.fillMaxWidth().height(cardHeight), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 current.forEach { InstrumentCard(it, it.id == state.selected, Modifier.weight(1f).fillMaxHeight(), select) }
             } else Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                current.forEach { InstrumentCard(it, it.id == state.selected, Modifier.weight(1f).fillMaxWidth(), select) }
+                current.forEach { InstrumentCard(it, it.id == state.selected, Modifier.height(narrowHeight).fillMaxWidth(), select) }
             }
         }
         if (rows.size > 1) Pager(page, rows.size) { page = it }
@@ -309,7 +314,7 @@ private fun Menu(go: (Page) -> Unit) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         listOf(listOf(Page.SNAPSHOTS to "Saved snapshots", Page.AUDIO to "Audio output"),
             listOf(Page.CONTROLLERS to "Controllers", Page.ABOUT to "About & credits")).forEach { row ->
-            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(Modifier.fillMaxWidth().height(128.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 row.forEach { (page, title) ->
                     Box(Modifier.weight(1f).fillMaxHeight().background(Surface, Shape).clickable { go(page) }
                         .padding(24.dp).testTag("menu-${page.name}"), contentAlignment = Alignment.CenterStart) {
@@ -353,7 +358,7 @@ private fun Audio(state: HostViewState, actions: HostActions) {
         HostText(state.audioLine, color = Quiet, fontSize = 16.sp, maxLines = 3)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             groups.getOrElse(page) { emptyList() }.chunked(2).forEach { row ->
-                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.height(96.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     row.forEach { item ->
                         Box(Modifier.weight(1f).fillMaxHeight().background(Surface, Shape).border(1.dp, if (item.id == state.route) Accent else Edge, Shape)
                             .clickable { actions.output(item.id) }.padding(20.dp).testTag("output-${item.id}"), contentAlignment = Alignment.CenterStart) {
@@ -372,7 +377,7 @@ private fun Controllers() {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         HostText("Touchscreen active. Hardware bridges are in development.", color = Quiet, fontSize = 15.sp)
         listOf("FM-1", "SMK-37").forEach { name ->
-            Row(Modifier.fillMaxWidth().weight(1f).background(Surface, Shape).padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().height(104.dp).background(Surface, Shape).padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
                 HostText(name, color = Ink, fontSize = 24.sp, modifier = Modifier.weight(1f))
                 HostText("Not connected", color = Quiet, fontSize = 14.sp)
             }

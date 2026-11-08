@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.*
 import org.junit.Rule
@@ -34,6 +36,9 @@ class HostLayoutTest {
         rule.activity.overflows.clear()
     }
     @Test fun everyPageAndControlBankFitsWithoutScrolling() {
+        val args = InstrumentationRegistry.getArguments()
+        assertEquals(args.getString("expectedWidth")!!.toInt(), rule.activity.resources.configuration.screenWidthDp)
+        assertEquals(args.getString("expectedHeight")!!.toInt(), rule.activity.resources.configuration.screenHeightDp)
         fit("keyboard"); fit("instrument-display"); fit("control-bank"); fit("audio-toggle")
         fit("dial-PRESETS"); fit("dial-SELECT"); fit("dial-ALGORITHM"); fit("dial-MASTER")
         shot("play-sound")
@@ -51,7 +56,7 @@ class HostLayoutTest {
     }
     @Test fun keyboardAndDialGesturesReachPanel() {
         rule.onNodeWithTag("keyboard").performTouchInput { down(center); advanceEventTime(100) }
-        rule.onNodeWithTag("bank-1").performClick()
+        rule.onNodeWithTag("bank-1").performSemanticsAction(SemanticsActions.OnClick) { it() }
         assertFalse("Changing control banks must preserve held notes", rule.activity.events.any { it.first == 1 && it.third == 0 })
         rule.onNodeWithTag("keyboard").performTouchInput { up() }
         rule.onNodeWithTag("bank-0").performClick()
