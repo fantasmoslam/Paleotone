@@ -18,7 +18,7 @@
   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
   :root {
     --bg: #000; --s1: #0b0b0e; --s2: #1a1a1e; --s3: #36363c; --line: #232329; --dim: #76767e; --fg2: #c4c4cc; --fg: #f2f2f2;
-    --red: #ff2c34; --t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a; --trk: var(--t1);
+    --red: #ff2c34; --t1: #ffb221; --t2: #52d2f7; --t3: #ff79ce; --t4: #ad96ff; --trk: var(--t1);
     --font: "SLOOP Terminus", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
     color-scheme: dark;
   }
@@ -3028,6 +3028,13 @@ const FM6 = (() => {
     [99,99,99,99,99,99,99,0,39,0,0,0,56,0,0,2,0,99,99,99,99,99,99,99,0,39,0,0,0,56,0,0,2,0,99,80,50,60,99,0,0,0,39,0,0,0,59,12,45,2,0,99,70,50,60,99,0,0,0,39,0,0,0,59,12,72,8,0,99,75,50,60,99,0,0,0,39,0,0,0,59,20,70,8,0,99,52,40,55,99,0,0,0,39,0,0,0,58,8,99,2,0,99,99,99,99,50,50,50,50,4,8,35,0,0,0,1,24,87,79,79,68,32,66,65,82,83,32],   /* MARIMBA */
     [99,99,99,85,99,99,99,0,39,0,0,0,56,0,72,2,50,99,99,99,85,99,99,99,0,39,0,0,0,56,0,78,8,0,99,99,99,85,99,99,99,0,39,0,0,0,56,0,76,6,0,99,99,99,85,99,99,99,0,39,0,0,0,56,0,86,4,0,99,99,99,85,99,99,99,0,39,0,0,0,56,0,84,0,0,99,99,99,85,99,99,99,0,39,0,0,0,56,0,90,2,0,99,99,99,99,50,50,50,50,31,8,60,0,3,0,57,24,68,82,65,87,66,65,82,83,32,32],   /* ORGAN */
     [99,99,99,99,99,99,99,0,39,0,0,0,56,0,0,2,0,99,99,99,99,99,99,99,0,39,0,0,0,56,0,0,2,0,99,75,40,60,99,30,0,0,39,0,0,0,58,12,68,2,0,99,60,40,60,99,30,0,0,39,0,0,0,66,8,74,4,0,99,70,40,60,99,40,0,0,39,0,0,0,58,16,76,6,0,99,45,30,60,99,60,0,0,39,0,0,0,58,8,98,2,0,99,99,99,99,50,50,50,50,4,8,35,0,0,0,1,24,78,89,76,79,78,32,80,73,67,75],   /* PLUCK */
+    [99,60,40,70,99,70,60,0,39,0,0,0,56,0,55,2,0,99,60,40,70,99,65,50,0,39,0,0,0,56,0,60,2,0,99,70,40,70,99,60,45,0,39,0,0,0,56,12,70,2,0,99,45,35,70,99,92,88,0,39,0,0,0,72,0,96,2,0,99,55,30,70,99,70,55,0,39,0,0,0,56,16,78,2,0,99,50,35,70,99,94,90,0,39,0,0,0,56,0,99,2,0,99,99,99,99,50,50,50,50,0,14,35,0,0,0,1,24,84,65,82,80,73,84,66,65,83,83],   /* TAR PIT BASS */
+    [99,99,99,99,99,99,99,0,39,0,0,0,56,0,0,2,0,99,99,99,99,99,99,99,0,39,0,0,0,56,0,0,2,0,99,90,50,60,99,0,0,0,39,0,0,0,56,12,50,2,0,99,80,50,60,99,0,0,0,39,0,0,0,59,8,70,8,0,99,85,50,60,99,0,0,0,39,0,0,0,59,16,72,6,30,99,58,45,60,99,0,0,0,39,0,0,0,59,8,99,2,0,85,99,99,99,50,50,50,58,4,8,35,0,0,0,1,24,83,76,73,84,32,68,82,85,77,32],   /* SLIT DRUM */
+    [46,35,30,55,90,80,76,0,39,0,0,0,56,0,58,4,0,48,35,30,55,92,82,78,0,39,0,0,0,56,0,62,2,0,48,35,30,55,94,84,80,0,39,0,0,0,56,0,74,2,0,52,40,35,55,99,92,90,0,39,0,0,0,72,0,90,0,0,50,35,30,55,95,86,82,0,39,0,0,0,56,12,82,2,0,55,40,35,55,99,94,92,0,39,0,0,0,56,4,99,2,0,60,99,99,99,50,50,50,46,0,15,30,60,4,0,57,24,77,65,77,77,79,84,72,32,32,32],   /* MAMMOTH */
+    [25,20,30,35,80,85,80,0,39,0,0,0,56,0,40,10,0,28,25,35,35,99,95,92,0,39,0,0,0,56,0,70,4,0,25,20,30,35,85,88,85,0,39,0,0,0,56,0,58,2,0,30,25,35,35,99,95,92,0,39,0,0,0,80,0,90,2,0,25,20,30,35,85,90,85,0,39,0,0,0,56,0,50,6,0,30,25,35,35,99,95,92,0,39,0,0,0,32,0,92,2,0,99,99,99,99,50,50,50,50,4,10,20,50,4,8,41,24,71,76,65,67,73,69,82,32,32,32],   /* GLACIER PAD */
+    [99,45,30,65,99,70,0,0,39,0,0,0,56,0,66,2,0,99,45,30,65,99,80,0,0,39,0,0,0,56,0,60,8,0,99,35,30,65,99,78,68,0,39,0,0,0,56,0,85,4,0,99,40,30,65,99,88,82,0,39,0,0,0,96,0,88,2,0,99,35,30,65,99,80,70,0,39,0,0,0,56,8,80,2,0,99,40,30,65,99,90,85,0,39,0,0,0,56,0,97,2,0,30,25,99,99,50,30,30,85,4,13,35,0,0,0,1,24,77,69,84,69,79,82,32,32,32,32],   /* METEOR */
+    [80,50,40,70,99,85,80,0,39,0,0,0,56,0,50,2,0,80,50,40,70,99,85,80,0,39,0,0,0,56,0,55,2,0,80,50,40,70,99,90,88,0,39,0,0,0,56,0,70,18,0,80,50,40,70,99,90,88,0,39,0,0,0,56,0,70,6,50,80,50,40,70,99,92,90,0,39,0,0,0,56,0,80,14,0,80,50,40,70,99,92,90,0,39,0,0,0,56,0,85,4,0,99,99,99,99,50,50,50,50,0,15,85,0,12,0,65,24,67,73,67,65,68,65,32,32,32,32],   /* CICADA BUZZ */
+    [99,40,30,30,99,50,0,0,39,0,0,0,56,0,45,14,0,99,28,32,40,99,80,0,0,39,0,0,0,56,0,70,0,0,99,50,38,45,99,50,0,0,39,0,0,0,56,0,65,2,41,99,45,38,45,99,60,0,0,39,0,0,0,72,0,75,8,20,99,35,34,40,99,65,0,0,39,0,0,0,56,12,70,6,50,99,32,34,40,99,70,0,0,39,0,0,0,56,4,96,2,0,99,99,99,99,50,50,50,50,4,8,35,0,0,0,1,24,65,77,66,69,82,66,69,76,76,83],   /* AMBER BELLS */
   ];
   /* backup object 8, the PTCH bank as the firmware stores it (fm6_bank.c fm6_bank_t, 3472 bytes): "FM6B", version 1,
      27 slots, the used bits, 4 reserved, then 27 packed records (an empty slot: zeros). slots: [packed 128 | null] */
@@ -4585,14 +4592,17 @@ class SetGate {
 const THEME = {
   ID: 11, SIZE: 40, MAGIC: 0x324D4854, MAGIC1: 0x314D4854, PREFIX: "SLOOP-THEME-1:",
   WHITE: [255, 255, 255], BLACK: [0, 0, 0],
-  /* the FM-1's own palettes (gfx.c PALETTES) and the tracks' colours (TE_COL_DEF), as RGB 0..255 */
+  /* the FM-1's own palettes, as gfx.c PALETTES has them (RGB565): name, the five steps (faintest .. strongest), the
+     background, the accent, and the six track colours by colour slot (synths 0..2, drums 3, SFX 4, CALLS 5). A theme
+     keeps the first four track colours (theme_t trk[4]); SFX and CALLS stay the palette's. builtin(i): as RGB 0..255 */
   BUILTIN: [
-    ["GREEN", [[0, 40, 12], [0, 84, 30], [16, 140, 54], [56, 200, 92], [120, 255, 146]]],
-    ["AMBER", [[60, 26, 0], [110, 50, 0], [170, 82, 0], [225, 120, 8], [255, 166, 40]]],
-    ["CYAN", [[0, 30, 50], [0, 62, 96], [16, 112, 160], [56, 172, 222], [140, 222, 255]]],
-    ["RED", [[52, 8, 8], [100, 18, 14], [170, 36, 26], [226, 64, 48], [255, 112, 92]]],
-    ["MONO", [[40, 40, 40], [80, 80, 80], [130, 130, 130], [186, 186, 186], [226, 226, 226]]]],
-  TRACKS: [[40, 124, 255], [30, 204, 112], [255, 198, 24], [255, 98, 26]],
+    ["TERMINAL", [0x21A4, 0x536A, 0x8D92, 0xC7D9, 0x474E], 0x0040, 0xFD84, [0xFD84, 0x569E, 0xFBD9, 0xACBF, 0xFCA7, 0x6D5F]],
+    ["JUNGLE", [0x31C5, 0x6B6B, 0xAD32, 0xEF39, 0xAEAA], 0x08A1, 0xFBC6, [0xFBC6, 0xFBD9, 0x6D5F, 0x6736, 0x569E, 0xACBF]],
+    ["VOLCANO", [0x39A5, 0x734B, 0xB533, 0xF75A, 0xFB27], 0x1061, 0xFEAA, [0xFEAA, 0xFBD9, 0x6D5F, 0x6736, 0x569E, 0xACBF]],
+    ["CRYPT", [0x3165, 0x6B0A, 0xACF1, 0xEEF8, 0xECC5], 0x0841, 0xEA68, [0xEA68, 0x569E, 0xACBF, 0xBF4A, 0xFBD9, 0x6D5F]],
+    ["HI-CON", [0x2965, 0x6B4D, 0xB576, 0xFFDF, 0xFF40], 0x0000, 0x073F, [0x073F, 0xFBD9, 0xACBF, 0x6D5F, 0xBF4A, 0xFCA7]]],
+  /* a fresh device's track colours (gfx.c TE_COL_DEF: TERMINAL's six), RGB565 */
+  TRACKS: [0xFD84, 0x569E, 0xFBD9, 0xACBF, 0xFCA7, 0x6D5F],
   to565: ([r, g, b]) => ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3),
   from565: (v) => [Math.round((((v >> 11) & 31) * 255) / 31), Math.round((((v >> 5) & 63) * 255) / 63), Math.round(((v & 31) * 255) / 31)],
   /* as the FM-1 shows it: each colour through RGB565 */
@@ -4661,7 +4671,8 @@ const THEME = {
     if (!m) return null;
     try { return THEME.decode(b64dec(m[1])); } catch (e) { return null; }
   },
-  builtin: (i) => ({ name: THEME.BUILTIN[i][0], c: THEME.BUILTIN[i][1].map((x) => x.slice()), trk: THEME.TRACKS.map((x) => x.slice()), bg: [0, 0, 0], hi: [255, 255, 255] }),
+  builtin: (i) => { const [name, c, bg, hi, trk] = THEME.BUILTIN[i];
+    return { name, c: c.map(THEME.from565), trk: trk.slice(0, 4).map(THEME.from565), bg: THEME.from565(bg), hi: THEME.from565(hi) }; },
   /* five steps from one colour, as the FM-1's palettes go: dark to the colour, the last lighter toward white; on a light
      background (bg given) the other way: faint (light) to strong (dark) */
   ramp(rgb, bg) {
@@ -7170,7 +7181,7 @@ $("midifile").addEventListener("change", async (e) => {
    colours, a name. The preview draws a SLOOP page with them, through RGB565 as the FM-1 shows them. Send writes the
    theme to the FM-1 (with its settings, the song stopped) and shows it; Read takes the FM-1's back; the code line
    shares it (THEME.code / THEME.fromCode). */
-const TH = { t: Object.assign(THEME.builtin(4), { name: "MY THEME" }), from: "4", built: false, sent: null };
+const TH = { t: Object.assign(THEME.builtin(0), { name: "MY THEME" }), from: "0", built: false, sent: null };
 const thOk = () => !!dev && !!dev.info && dev.info.proto >= 11;
 const TH_SCREEN = ["thC1", "thC2", "thC3", "thC4", "thC5"];
 function thBuild() {
@@ -7262,13 +7273,10 @@ function renderTheme() {
 $("thfrom").addEventListener("change", () => {
   const v = $("thfrom").value;
   if (v === "") return;
-  const name = TH.t.name, bg = TH.t.bg, hi = THEME.hiOf(TH.t);
-  TH.t = THEME.builtin(+v);
+  const name = TH.t.name;
+  TH.t = THEME.builtin(+v);                            /* (PALEOTONE: a palette brings its own background, accent and
+                                                          track colours, as MENU > COLOR shows it) */
   TH.t.name = name;
-  TH.t.bg = bg || [0, 0, 0];                           /* (a palette: the screen's five; the background and accent stay;
-                                                          on a light background the palette the other way round) */
-  TH.t.hi = hi;
-  if (THEME.light(TH.t.bg)) TH.t.c.reverse();
   TH.from = v;
   renderTheme();
 });
