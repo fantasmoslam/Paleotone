@@ -54,8 +54,8 @@ private fun Modifier.held(key: Any, action: (Boolean)->Unit) = pointerInput(key)
         else {
             val count=outerTouch[k]?:0
             val next=(count+if(on)1 else -1).coerceAtLeast(0);outerTouch[k]=next
-            if(count==0 && next>0)midi(0x90,48+k,100)
-            if(count>0 && next==0)midi(0x80,48+k,0)
+            if(count==0 && next>0)engine.event(0x82,k,100)
+            if(count>0 && next==0)engine.event(0x82,k,0)
         }
     }
     fun bank(i:Int,on:Boolean) {engine.event(0x81,4+i,if(on)127 else 0)}
@@ -64,7 +64,7 @@ private fun Modifier.held(key: Any, action: (Boolean)->Unit) = pointerInput(key)
             feed.poll();engine.smkPanel(snapshot);val next=snapshot.toList();if(next!=values)values=next
         }} finally {
             feed.releaseAll()
-            outerTouch.filterValues{it>0}.keys.toList().forEach{midi(0x80,48+it,0)};outerTouch.clear()
+            outerTouch.filterValues{it>0}.keys.toList().forEach{engine.event(0x82,it,0)};outerTouch.clear()
             midi(0xB0,64,0);midi(0xE0,0,64)
         }
     }
@@ -151,19 +151,20 @@ private fun Modifier.held(key: Any, action: (Boolean)->Unit) = pointerInput(key)
 
 @Composable private fun SmkKeyboard(feed:PanelFeed,values:List<Int>,modifier:Modifier,send:(Int,Boolean)->Unit) {
     val version=feed.lights.version
+    var touched by remember {mutableStateOf(emptySet<Int>())}
     Canvas(modifier.pointerInput(Unit) {
         val held=mutableMapOf<Long,Int>()
         try {while(true){awaitPointerEventScope {
             val event=awaitPointerEvent();val next=event.changes.filter{it.pressed}.mapNotNull{p->SmkKeys.hit(p.position.x/size.width,p.position.y/size.height)?.let{p.id.value to it}}.toMap()
             for(k in held.values.toSet()-next.values.toSet())send(k,false)
             for(k in next.values.toSet()-held.values.toSet())send(k,true)
-            held.clear();held.putAll(next);event.changes.forEach{it.consume()}
+            held.clear();held.putAll(next);touched=next.values.toSet();event.changes.forEach{it.consume()}
         }}} finally {held.values.toSet().forEach{send(it,false)}}
     }) {
         val _version=version
         val outer=(values[6].toLong() and 0xffffffffL) or (values[7].toLong() shl 32)
         for(k in SmkKeys.keys.sortedBy{it.black}) {
-            val down=if(k.index in 5..31)feed.lights.keyDown(k.index-5) else (outer shr k.index)and 1L!=0L
+            val down=k.index in touched || if(k.index in 5..31)feed.lights.keyDown(k.index-5) else (outer shr k.index)and 1L!=0L
             val color=if(down)Color(0xffbc9ee9) else if(k.black)Color(0xff202228) else Color(0xffdfdfe4)
             drawRect(color,Offset(k.x*size.width+1,0f),Size(k.w*size.width-2,k.h*size.height-1))
             if(k.index in 5..31 && feed.lights.keys[k.index-5]>0)drawRect(Color(0xff72caa0),Offset((k.x+k.w*.25f)*size.width,8f),Size(k.w*size.width*.5f,5f))

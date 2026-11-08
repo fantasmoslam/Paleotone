@@ -123,6 +123,11 @@ rf led usb green lit
 expect smk_led_PLAY 1
 expect smk_led_PLAY-RED 0
 smk leds
+rf send usb 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 06
+expect smk_led_KNOB-BANK 1
+expect smk_led_FADER-BANK 1
 rf session usb 0
 wait 50
 expect rf_session 0
+expect smk_led_KNOB-BANK 0
+expect smk_led_FADER-BANK 0

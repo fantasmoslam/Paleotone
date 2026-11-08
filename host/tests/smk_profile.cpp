@@ -18,4 +18,12 @@ int main() {
  std::vector<std::array<int,3>> released;p.release([&](const uint8_t*m,unsigned){released.push_back({m[0],m[1],m[2]});});
  assert(released.size()==4&&released[0][1]==84);assert(!p.outer&&!p.pedal&&!p.faderMain&&!p.knobFine&&p.last[0]<0);
  for(int i=0;i<4;i++){feed(0xBF,20+i,64);assert(p.last[i]==64);}p.rearm();for(int i=0;i<4;i++)assert(p.last[i]<0);
+ SmkProfile ownership;int messages=0;uint8_t nOn[]={0x90,48,100},nOff[]={0x80,48,0};
+ auto send=[&](const uint8_t*,unsigned){messages++;};
+ assert(ownership.outerNote(nOn,3,false,send));assert(messages==1);
+ ownership.outerNote(nOn,3,true,send);assert(messages==1);
+ ownership.outerNote(nOff,3,false,send);assert(messages==1);
+ ownership.outerNote(nOff,3,true,send);assert(messages==2&&!ownership.outer&&!ownership.touchOuter);
+ ownership.outerNote(nOn,3,true,send);ownership.release(send);assert(messages==7&&!ownership.touchOuter);
+ p.knobFine=true;assert(p.scale(3,1)==0);assert(p.scale(3,1)==1);assert(p.scale(0,1)==1);
 }

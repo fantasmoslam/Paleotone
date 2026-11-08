@@ -13,8 +13,25 @@ def prepare(r):
     assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip()==PIN
     run('git','submodule','update','--init','--depth','1','base',cwd=r)
     run('git','submodule','update','--init','--recursive','--depth','1',cwd=r/'base')
+    installer=r/'tools/fm1_install.py'
+    original=subprocess.check_output(['git','show',f'{PIN}:tools/fm1_install.py'],cwd=r,text=True)
+    old='return a == b or (is_smk(a) and is_smk(b))'
+    new='return bool(a and b) and a == b'
+    assert original.count(old)==1
+    installer.write_text(original.replace(old,new))
+    # Exercise normal and interrupted-update identities before packaging the installer.
+    import importlib.util
+    spec=importlib.util.spec_from_file_location('bridge_installer',installer)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    for model in ['SMK-37 Pro','SMK-37 Elite','MKE-P37']:
+        assert module.same_keyboard(model+'_900',model+'_53000200')
+        assert module.same_keyboard('ota-'+model+'_900',model+'_53000200')
+        for other in ['SMK-37 Pro','SMK-37 Elite','MKE-P37','FM-1','']:
+            if model!=other: assert not module.same_keyboard(other+'_900',model+'_53000200')
     shutil.copy2(ROOT/'host/bridge/instrument-host.patch',r/'firmware/patches/smk37/app/0002-instrument-host.patch')
     shutil.copy2(ROOT/'host/bridge/fader-state.patch',r/'firmware/patches/smk37/fm1-base/0003-fader-state.patch')
+    shutil.copy2(ROOT/'host/bridge/bank-lights-app.patch',r/'firmware/patches/smk37/app/0003-bank-lights.patch')
+    shutil.copy2(ROOT/'host/bridge/bank-lights-board.patch',r/'firmware/patches/smk37/fm1-base/0004-bank-lights.patch')
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--remote',type=Path,required=True);p.add_argument('--host',action='store_true');p.add_argument('--models',nargs='+',default=['pro','elite','mke'],choices=['pro','elite','mke']);a=p.parse_args();r=a.remote.resolve();prepare(r)

@@ -35,20 +35,38 @@ index e6d354c..739c3e9 100644
          // (A7) the install prompt over the faceplate, as on iOS
          if (!ui.sheetOpen && !ui.editorOpen && !ui.displayAlone && !a.feed.learn.active) {
 diff --git a/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt b/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt
-index e6082a8..f44d468 100644
+index e6082a8..8bf3817 100644
 --- a/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt
 +++ b/app/src/main/java/com/quixotic7/remotefm1/ui/SheetPages.kt
-@@ -141,7 +141,7 @@ private fun MainSheet(a: AppUi) {
+@@ -137,11 +137,11 @@ private fun MainSheet(a: AppUi) {
+             DataRows(a, from = null)
+             // (F, iOS 836a983: was "Sound source", read as where the sound comes out. This picks where the firmware
+             // runs; where the sound comes out is Audio output, right under it)
+-            SheetSectionTitle("Firmware runs on")
++            SheetSectionTitle("Controller connection")
              Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                 SourceCard("This ${a.deviceWord}", "Emulator, play by touch", m.source == Source.TABLET, Palette.sheetAccent,
+-                SourceCard("This ${a.deviceWord}", "Emulator, play by touch", m.source == Source.TABLET, Palette.sheetAccent,
++                SourceCard("This ${a.deviceWord}", "Touch and ordinary MIDI", m.source == Source.TABLET, Palette.sheetAccent,
                             "source-tablet") { a.pick(Source.TABLET) }
 -                SourceCard("My FM-1", fm1Line(a), m.source == Source.FM1,
 +                SourceCard("Hardware controller", fm1Line(a), m.source == Source.FM1,
                             if (a.chip == PanelChip.IN_USE) Palette.sheetAccent else Palette.linkedDot, "source-fm1") { a.pick(Source.FM1) }
              }
              // (the FM-1 card's actions: the Bluetooth pairing, as on iOS)
+@@ -149,8 +149,9 @@ private fun MainSheet(a: AppUi) {
+                 Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                     SheetButton("Bluetooth…", tag = "button-bluetooth") { a.overlay = Overlay.BLUETOOTH }
+                 }
+-                SheetNote("The FM-1 plays through its own speaker and headphone jack; this ${a.deviceWord} is its remote.")
+-            } else {
++                SheetNote("The ${a.deviceWord} runs the instrument. Bridge firmware sends controls and receives its screen and lights.")
++            }
++            run {
+                 SheetList(Modifier.padding(top = 10.dp)) {
+                     SheetRow("Audio output", value = AudioRoute.kindTitle(m.pickable, m.outputPick), divider = false, tag = "row-output-main") {
+                         a.page = SheetPageId.AUDIO_OUTPUT
 diff --git a/native/rfmcore/RFMEngine.cpp b/native/rfmcore/RFMEngine.cpp
-index ed4f3f9..a0c5ef3 100644
+index ed4f3f9..c0980db 100644
 --- a/native/rfmcore/RFMEngine.cpp
 +++ b/native/rfmcore/RFMEngine.cpp
 @@ -37,6 +37,7 @@
@@ -59,7 +77,7 @@ index ed4f3f9..a0c5ef3 100644
  
  static_assert(RFME_B_OCTUP == FM1P_B_OCTUP && RFME_B_SAVE == FM1P_B_SAVE && RFME_E_K4 == FM1P_E_K4, "labels");
  static_assert(RFMC_EV_KEY == RFM_EV_KEY && RFMC_EV_BUTTON == RFM_EV_BUTTON && RFMC_EV_ENC == RFM_EV_ENC &&
-@@ -209,6 +210,24 @@ struct rfme final {
+@@ -209,6 +210,25 @@ struct rfme final {
      uint32_t learnNotes[16][4] = {};        // (the core thread's) the notes learn took, held: their note-offs too
      int16_t masterPot = -1;                 // (the core thread's) rfme_panel_t.master_pot, pickup_seq
      uint16_t pickupSeq = 0;
@@ -74,17 +92,18 @@ index ed4f3f9..a0c5ef3 100644
 +        if (smk.control(d,n,masterV,
 +            [this](int role,int delta) { const int id=dev->panel()->enc_id[role]; if(id>=0) apply(panelEvent(RFM_EV_ENC,id,delta)); },
 +            [this](int value) { apply(panelEvent(RFM_EV_MASTER,0,value)); })) return true;
++        if(smk.outerNote(d,n,false,[this](const uint8_t *m,unsigned bytes){toFirmware(m,bytes);}))return true;
 +        smk.observe(d,n);return false;
 +    }
 +    void smkPublish() {
 +        for(int i=0;i<4;i++) smkOut[i].store(smk.last[i],std::memory_order_relaxed);
-+        const int32_t v[]={smk.knobFine,smk.faderMain,int32_t(smk.outer&0xFFFFFFFFu),int32_t(smk.outer>>32),smk.bend,smk.mod,smk.pedal,smkWas};
++        const int32_t v[]={smk.knobFine,smk.faderMain,int32_t((smk.outer|smk.touchOuter)&0xFFFFFFFFu),int32_t((smk.outer|smk.touchOuter)>>32),smk.bend,smk.mod,smk.pedal,smkWas};
 +        for(int i=0;i<8;i++)smkOut[i+4].store(v[i],std::memory_order_relaxed);
 +    }
      std::atomic<uint32_t> midiMapped{0}, midiLearned{0}, midiToCore{0};
      std::atomic<uint32_t> namesGen{1};      // (rfme_button_names_gen) moves on a core change or the setting
      std::atomic<int> namesUse{1};
-@@ -377,6 +396,7 @@ struct rfme final {
+@@ -377,6 +397,7 @@ struct rfme final {
  
      void resetMidi()
      {
@@ -92,7 +111,7 @@ index ed4f3f9..a0c5ef3 100644
          midiKeys = appliedKeys = 0;
          std::memset(noteKey, -1, sizeof noteKey);
          std::memset(keyCount, 0, sizeof keyCount);
-@@ -596,7 +616,7 @@ struct rfme final {
+@@ -596,7 +617,7 @@ struct rfme final {
                      if (h->enc_id[r] == e.index)
                          role = r;
                  if (role >= 0)                               // (Device::enc multiplies by enc_dir: undone)
@@ -101,7 +120,7 @@ index ed4f3f9..a0c5ef3 100644
                  else
                      h->enc[e.index] += e.value;
              }
-@@ -606,6 +626,7 @@ struct rfme final {
+@@ -606,6 +627,7 @@ struct rfme final {
              dev->master(masterV);
              break;
          case RemoteLink::kEvRelease:                         // the session ended: nothing is held any more
@@ -109,7 +128,15 @@ index ed4f3f9..a0c5ef3 100644
              noteKeys = labels = matrixButtons = 0;
              for (int k = 0; k < FM1P_NKEY; k++)
                  h->key_lean[k] = 0;
-@@ -701,16 +722,26 @@ struct rfme final {
+@@ -637,6 +659,7 @@ struct rfme final {
+             return;
+         rfm_leds_t l;
+         remoteLeds(h, l);
++        if(smkWas) l.flags |= (smk.knobFine ? 2u : 0u) | (smk.faderMain ? 4u : 0u);
+         const uint32_t writes = h->lcd_writes;
+         if (linkDue && (linkFull || writes != lastLinkWrites || !rfm_leds_equal(&l, &lastLinkLeds))) {
+             RemoteSnapshot &s = link->back();
+@@ -701,16 +724,29 @@ struct rfme final {
      void between(uint32_t ms, bool)
      {
          rfm_event_t ev;
@@ -128,7 +155,10 @@ index ed4f3f9..a0c5ef3 100644
 -        while (in.pop(ev))
 -            apply(ev);
 +        while (in.pop(ev)) {
-+            if(ev.type==0x81) {
++            if(ev.type==0x82 && (ev.index<5 || (ev.index>=32 && ev.index<37))) {
++                uint8_t m[]={uint8_t(ev.value?0x90:0x80),uint8_t(48+ev.index),uint8_t(ev.value?100:0)};
++                smk.outerNote(m,3,true,[this](const uint8_t *d,unsigned n){toFirmware(d,n);});
++            } else if(ev.type==0x81) {
 +                // SMK touch controls use the same interpretation as their physical peers.
 +                uint8_t m[]={0xBF,uint8_t(20+ev.index),uint8_t(ev.value)};
 +                if(ev.index==4 || ev.index==5) {m[0]=0xB0;m[1]=uint8_t(110+ev.index-4);}
@@ -139,7 +169,7 @@ index ed4f3f9..a0c5ef3 100644
          syncMap();                                       // (M8: a new map lets go of what the old one held)
          devMs.store(ms, std::memory_order_relaxed);
          // (kept while the audio ring is made, for the AU; 2: on every clock, for the app's web managers)
-@@ -1278,7 +1309,8 @@ void rfme_attach(rfme_t *e, int on)
+@@ -1278,7 +1314,8 @@ void rfme_attach(rfme_t *e, int on)
  {
      const int prev = e->stop();
      if (e->attached.exchange(on != 0) != (on != 0) && e->owner) {
@@ -149,7 +179,7 @@ index ed4f3f9..a0c5ef3 100644
              e->noteKeys = e->labels = e->matrixButtons = 0;
              e->pushKeys();
              e->dev->buttons(0);
-@@ -1516,6 +1548,10 @@ void rfme_run_ms(rfme_t *e, uint32_t ms, rfme_audio_t *out)
+@@ -1516,6 +1553,10 @@ void rfme_run_ms(rfme_t *e, uint32_t ms, rfme_audio_t *out)
          *out = a;
  }
  
