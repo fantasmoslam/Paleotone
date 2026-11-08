@@ -589,19 +589,19 @@ async function editorV9() {
   ok(!roland.voices.length && roland.kinds[0] === "maker:41", "v9: another maker's SysEx: its ID");
   ok(!F.parseSysex(Uint8Array.from([1, 2, 3])).sysex, "v9: not SysEx at all: said so");
   /* the device: FM6_LIST / GET / PUT / ERASE */
-  const { m, rq, done } = attachMock({});
+  const { m, rq, done } = attachMock({}), NF = F.FACTORY_PK.length;
   const info = E.parse[C.INFO](await rq(E.req.info()));
   ok(info.proto === 12 && info.nengines === 12 && info.engines[9] === "FM6", "v9: INFO ends with 12 (v12 includes v9), FM6 is engine 9");
   const L = E.parse[C.FM6_LIST](await rq(E.req.fm6List()));
-  if (!(L.factory === 8 && L.bank === 27 && L.slots.length === 35)) console.log("  FM6_LIST", L.factory, L.bank, L.slots.length, js(L.slots.slice(0, 10)));
-  ok(L.factory === 8 && L.bank === 27 && L.slots.length === 35 && L.slots[0].used, "v9: FM6_LIST: 8 factory patches, 27 bank slots");
+  if (!(L.factory === NF && NF === 15 && L.bank === 27 && L.slots.length === NF + 27)) console.log("  FM6_LIST", L.factory, L.bank, L.slots.length, js(L.slots.slice(0, 10)));
+  ok(L.factory === NF && NF === 15 && L.bank === 27 && L.slots.length === NF + 27 && L.slots[0].used, "v9: FM6_LIST: 15 factory patches (PALEOTONE: F1..F15), 27 bank slots");
   const mine = F.factory(3); F.setName(mine, "MY BELL");
   let r = E.parse[C.FM6_PUT](await rq(E.req.fm6Put(F.TARGET.TRACK, 1, F.pack(mine))));
   const g = E.parse[C.FM6_GET](await rq(E.req.fm6Get(F.TARGET.TRACK, 1)));
   ok(r.rc === 0 && g.rc === 0 && F.name(F.unpack(g.packed)).trim() === "MY BELL", "v9: FM6_PUT to track 2, FM6_GET reads it back");
   r = E.parse[C.FM6_PUT](await rq(E.req.fm6Put(F.TARGET.BANK, 4, F.pack(mine)), { timeout: 3000 }));
   const L2 = E.parse[C.FM6_LIST](await rq(E.req.fm6List()));
-  ok(r.rc === 0 && L2.slots[8 + 4].used && L2.slots[8 + 4].name.trim() === "MY BELL", "v9: stored in bank slot B5, listed by name");
+  ok(r.rc === 0 && L2.slots[NF + 4].used && L2.slots[NF + 4].name.trim() === "MY BELL", "v9: stored in bank slot B5, listed by name");
   m.sim.play(true);
   r = E.parse[C.FM6_PUT](await rq(E.req.fm6Put(F.TARGET.BANK, 5, F.pack(mine)), { timeout: 3000 }));
   const re = E.parse[C.FM6_ERASE](await rq(E.req.fm6Erase(4), { timeout: 3000 }));
@@ -1196,7 +1196,7 @@ async function editorCart() {
     && u[0] && u[26] && !u[1] && js(Array.from(u[26])) === js(Array.from(slots[26])) && F.bankUnobj(new Uint8Array(0)).every((x) => x === null)
     && F.bankUnobj(bad) === null && F.bankUnobj(wrong) === null && F.bankUnobj(o.subarray(1)) === null,
   "cart: the bank object == fm6_bank_t (3472 bytes, FM6B, 27 slots); a bad one is refused");
-  const { m, rq, sent, done } = attachMock({});
+  const { m, rq, sent, done } = attachMock({}), NF = F.FACTORY_PK.length;
   const mine = F.factory(3); F.setName(mine, "MY BELL");
   await rq(E.req.fm6Put(F.TARGET.BANK, 4, F.pack(mine)), { timeout: 3000 });     /* B5 */
   await rq(E.req.fm6Put(F.TARGET.BANK, 1, F.pack(mine)), { timeout: 3000 });     /* B2 */
@@ -1204,20 +1204,20 @@ async function editorCart() {
   m.sim.play(true);
   const r3 = await E.fm6CartWrite(rq, packs);
   let L = E.parse[C.FM6_LIST](await rq(E.req.fm6List()));
-  ok(r3 === 3 && L.slots[8 + 1].name.trim() === "MY BELL" && L.slots[8].name.trim() === "MY TINES", "cart: while the song plays: rc 3, the bank unchanged");
+  ok(r3 === 3 && L.slots[NF + 1].name.trim() === "MY BELL" && L.slots[NF].name.trim() === "MY TINES", "cart: while the song plays: rc 3, the bank unchanged");
   m.sim.play(false);
   const p0 = sent[C.BK_PUT] || 0, r0 = await E.fm6CartWrite(rq, packs), puts = sent[C.BK_PUT] - p0;
   L = E.parse[C.FM6_LIST](await rq(E.req.fm6List()));
   const g = E.parse[C.FM6_GET](await rq(E.req.fm6Get(F.TARGET.BANK, 2)));
-  ok(r0 === 0 && L.slots.slice(8, 11).map((x) => x.name.trim()).join() === "CART 1,CART 2,CART 3" && L.slots[8 + 4].name.trim() === "MY BELL"
-    && !L.slots[8 + 3].used && js(Array.from(F.unpack(g.packed))) === js(Array.from(pb.voices[2].v)) && puts === 2 + Math.ceil(3472 / 256),
+  ok(r0 === 0 && L.slots.slice(NF, NF + 3).map((x) => x.name.trim()).join() === "CART 1,CART 2,CART 3" && L.slots[NF + 4].name.trim() === "MY BELL"
+    && !L.slots[NF + 3].used && js(Array.from(F.unpack(g.packed))) === js(Array.from(pb.voices[2].v)) && puts === 2 + Math.ceil(3472 / 256),
   "cart: 3 voices -> B1-B3 in one write (B2 replaced, B5 kept, B4 still empty)");
   const all = pb.voices.slice(0, 27).map((x) => F.pack(x.v));
   const rAll = await E.fm6CartWrite(rq, all);
   L = E.parse[C.FM6_LIST](await rq(E.req.fm6List()));
   let tooMany = "";
   try { await E.fm6CartWrite(rq, pb.voices.map((x) => F.pack(x.v))); } catch (e) { tooMany = e.message; }
-  ok(rAll === 0 && L.slots.slice(8).every((x, k) => x.used && x.name.trim() === `CART ${k + 1}`) && /32 voices/.test(tooMany),
+  ok(rAll === 0 && L.slots.slice(NF).every((x, k) => x.used && x.name.trim() === `CART ${k + 1}`) && /32 voices/.test(tooMany),
     "cart: the first 27 of a 32-voice cartridge fill B1-B27; 32 at once refused");
   const info = E.parse[C.INFO](await rq(E.req.info()));
   const A = await E.backupCapture(rq, info);
@@ -1393,10 +1393,14 @@ async function editorSongFile() {
 async function editorTheme() {
   const C = E.CMD, T = E.THEME;
   const gfx = readFileSync(join(HERE, "../firmware/src/gfx.c"), "utf8");
-  const rgb = (s) => [...s.matchAll(/RGB\((\d+), (\d+), (\d+)\)/g)].map((m) => [+m[1], +m[2], +m[3]]);
-  const pals = [...gfx.matchAll(/\{"(\w+)", \{(RGB[^}]*)\}\}/g)].map((m) => [m[1], rgb(m[2])]);
-  const tdef = rgb((/TE_COL_DEF\[4\] = \{([^}]*)\}/.exec(gfx) || [])[1] || "");
-  ok(js(pals) === js(T.BUILTIN) && js(tdef) === js(T.TRACKS), "theme: the built-in palettes and track colours == gfx.c (PALETTES, TE_COL_DEF)");
+  /* PALEOTONE: {"NAME", {c x 5}, bg, hi, {trk x 6}}, RGB565; TE_COL_DEF is PAL_TERMINAL's track colours */
+  const hx = (s) => (s.match(/0x[0-9A-Fa-f]{4}/g) || []).map(Number);
+  const pals = [...gfx.matchAll(/\{"([\w-]+)", \{([^}]*)\}, (0x[0-9A-Fa-f]{4}), (0x[0-9A-Fa-f]{4}), \{([^}]*)\}\}/g)]
+    .map((m) => [m[1], hx(m[2]), +m[3], +m[4], hx(m[5])]);
+  const pi = +((/#define PAL_TERMINAL (\d+)u/.exec(gfx) || [])[1] ?? -1);
+  ok(pals.length >= 5 && js(pals) === js(T.BUILTIN) && /#define TE_COL_DEF \(PALETTES\[PAL_TERMINAL\]\.trk\)/.test(gfx)
+    && pals[pi] && js(pals[pi][4]) === js(T.TRACKS) && T.BUILTIN.every((b) => b[1].length === 5 && b[4].length === 6),
+  "theme: the built-in palettes (five steps, background, accent, six track colours) and a fresh device's track colours == gfx.c (PALETTES, TE_COL_DEF)");
   ok(/#define THEME_MAGIC 0x324D4854u/.test(gfx) && /#define THEME_MAGIC1 0x314D4854u/.test(gfx)
     && /char name\[8\];[^]*uint16_t c\[5\];[^]*uint16_t trk\[4\];[^]*uint16_t bg;[^]*uint16_t hi;[^]*uint16_t rsv;[^]*uint32_t crc;/.test(gfx)
     && /sizeof\(theme_t\) == 40u/.test(gfx) && T.SIZE === 40 && T.MAGIC === 0x324D4854 && T.MAGIC1 === 0x314D4854,
@@ -1425,11 +1429,11 @@ async function editorTheme() {
   ok(o1 && js(o1.c) === js(back.c) && js(o1.hi) === js([255, 255, 255]) && o2 && js(o2.hi) === js([0, 0, 0]) && T.readable(o2) && T.encode(o1).length === 40,
     "theme: a first-beta THM1 (36 bytes) decodes: accent white, black on a light background; sent again as THM2");
   /* the light-background helpers: Make it readable, Light <-> dark (the five the other way, white, a black accent), the ramp */
-  const wh = { ...T.builtin(0), bg: [255, 255, 255] }, fx = T.fix(wh), inv = T.invert(T.builtin(0)), inv2 = T.invert(inv);
+  const wh = { ...T.builtin(0), bg: [255, 255, 255], hi: [255, 255, 255] }, fx = T.fix(wh), inv = T.invert(T.builtin(0)), inv2 = T.invert(inv);
   const rl = T.ramp([56, 200, 92], [255, 255, 255]);
   ok(!T.readable(wh) && T.readable(fx) && js(fx.c.slice(0, 4)) === js(wh.c.slice(0, 4)) && js(T.fix(mine).c) === js(mine.c)
-    && T.readable(inv) && js(inv.bg) === js([255, 255, 255]) && js(inv.hi) === js([0, 0, 0]) && js(inv.c[4]) === js(T.BUILTIN[0][1][0])
-    && T.readable(inv2) && js(inv2.bg) === js([0, 0, 0]) && js(inv2.c) === js(T.BUILTIN[0][1]) && js(inv2.hi) === js([255, 255, 255])
+    && T.readable(inv) && js(inv.bg) === js([255, 255, 255]) && js(inv.hi) === js([0, 0, 0]) && js(inv.c[4]) === js(T.builtin(0).c[0])
+    && T.readable(inv2) && js(inv2.bg) === js([0, 0, 0]) && js(inv2.c) === js(T.builtin(0).c) && js(inv2.hi) === js([255, 255, 255])
     && rl[0][1] > rl[2][1] && js(rl[3]) === js([56, 200, 92]) && T.readable({ c: rl, bg: [255, 255, 255], hi: [0, 0, 0] }),
     "theme: Make it readable (only the values and accent move), Light <-> dark and back, the ramp on white (faint first)");
   const r5 = T.ramp([56, 200, 92]);
@@ -1499,11 +1503,14 @@ function editorTabs() {
   {   /* 2.4: the device's palette as tokens (:root), used through var(--...); outside them only #000 (text on a colour) */
     const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>")).replace(/:root\s*\{[^}]*\}/g, "");
     const hex = [...css.matchAll(/#[0-9a-f]{3,6}\b/gi)].map((m) => m[0].toLowerCase()).filter((c) => c !== "#000");
-    ok(!hex.length && /--t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a;/.test(html),
+    /* PALEOTONE: a fresh device's track colours (gfx.c TE_COL_DEF, TERMINAL's), the first four, as RGB (THEME.from565) */
+    const want = E.THEME.TRACKS.slice(0, 4).map((v, k) => `--t${k + 1}: ${E.THEME.hex(E.THEME.from565(v))};`).join(" ");
+    ok(!hex.length && html.includes(want),
       "editor: the track colours of the device (gfx.c TE_COL_DEF), colours only as tokens" + (hex.length ? ` (${hex.join(" ")})` : ""));
     const te = readFileSync(join(HERE, "../firmware/src/gfx.c"), "utf8");   /* (2.7: TE_COL_DEF, a theme may change them) */
-    ok(/TE_COL_DEF\[4\] = \{RGB\(40, 124, 255\), RGB\(30, 204, 112\), RGB\(255, 198, 24\), RGB\(255, 98, 26\)\}/.test(te),
-      "editor: ... the same four as the firmware's TE_COL");
+    const tc = (/static uint16_t TE_COL\[6\] = \{([^}]*)\}/.exec(te) || [])[1] || "";
+    ok(js((tc.match(/0x[0-9A-Fa-f]{4}/g) || []).map(Number)) === js(E.THEME.TRACKS),
+      "editor: ... the same as the firmware's TE_COL (its six at start)");
     ok(/SLOOP-FONT\*\/url\(data:font\/ttf;base64,[A-Za-z0-9+\/=]{20000,}\)/.test(html), "editor: the device's Terminus font inlined (tools/gen_webfont.py)");
   }
 }
