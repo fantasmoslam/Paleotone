@@ -6,6 +6,7 @@ name: paleotone-fm1
 on:
   push:
     branches: [main, claude/project-thread-n5rqg8, paleotone-fm1]
+    tags: ['v*']           # a release: the package on the GitHub release (the FM-1 Firmware Hub lists it from there)
   workflow_dispatch:
 
 permissions:
@@ -46,7 +47,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out
-          bash build.sh 2>&1 | tee out/build-fm1.log | tail -15
+          bash build.sh --product FM-1_988 2>&1 | tee out/build-fm1.log | tail -15   # PALEOTONE's own identity
           cp build/felucca.fwsc out/paleotone-fm1.fwsc
           cp build/felucca.dis out/ 2>/dev/null || true
           # the RAM map: every object of 256 bytes or more in .pool, .bss, .lowram, .noinit, biggest first
@@ -61,6 +62,27 @@ jobs:
         run: |
           sh tests/run_tests.sh > out/tests.log 2>&1; echo "exit $?" | tee -a out/tests.log
           grep -E "FAIL|^exit" out/tests.log | tail -60
+
+      - name: Release (a v* tag, the host tests green)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          grep -qx "exit 0" out/tests.log || { echo "host tests failed: no release"; exit 1; }
+          cp out/paleotone-fm1.fwsc "out/paleotone-fm1-${GITHUB_REF_NAME#v}.fwsc"
+          (cd out && sha256sum paleotone-fm1-*.fwsc > sha256.txt)
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: PALEOTONE ${{ github.ref_name }}
+          body: |
+            PALEOTONE for the M-VAVE FM-1 (identity FM-1_988), built from this tag by GitHub Actions.
+            Install it with the web installer (https://fantasmoslam.github.io/Paleotone/webapp/installer/) or
+            `python3 tools/fm1_install.py paleotone-fm1-*.fwsc --yes`. Back up your projects with the editor first.
+            M-VAVE's own updater takes the FM-1 back to the official firmware. SHA-256 in sha256.txt.
+          files: |
+            out/paleotone-fm1-*.fwsc
+            out/sha256.txt
 
       - name: Put the result on the paleotone-fm1-output branch
         if: always()

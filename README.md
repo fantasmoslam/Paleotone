@@ -54,7 +54,9 @@ the browser.
 The command line does the same: `python3 tools/fm1_install.py paleotone-fm1.fwsc --yes` (needs
 `pip3 install mido python-rtmidi`). Every push to `main` builds the package in GitHub Actions
 (`.github/workflows/paleotone-fm1.yml`) and puts it, with the build and test logs, on the
-[`paleotone-fm1-output`](../../tree/paleotone-fm1-output) branch.
+[`paleotone-fm1-output`](../../tree/paleotone-fm1-output) branch. A `v*` tag publishes the same build as a
+[GitHub release](../../releases). PALEOTONE's package identity is `FM-1_988` (its own, so installers and the
+FM-1 Firmware Hub can tell it from SLOOP and the other Felucca firmwares).
 
 If an install fails and the FM-1 no longer starts: hold OCT− alone while switching on for USB rescue; if that does
 not help, recovery needs a Transporter ([FM-1-transporter](https://github.com/kurogedelic/FM-1-transporter)).

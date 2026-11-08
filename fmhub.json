@@ -1,0 +1,10 @@
+{
+  "what": "Prehistoric synth firmware on the SLOOP groovebox: six tracks, SAURUS creature calls with twenty creatures, ROAR drones and war drums, 200+ presets sorted by kind, and a demo song. A 1993 park-terminal look in phosphor green, with big text on every screen, and everything SLOOP does.",
+  "author": "fantasmoslam",
+  "kinds": ["groove"],
+  "play": "https://fantasmoslam.github.io/Paleotone/webapp/emu/",
+  "editor": "https://fantasmoslam.github.io/Paleotone/webapp/editor/",
+  "cheat": "https://fantasmoslam.github.io/Paleotone/webapp/guide/",
+  "image": "web/site/art/hub-card.png",
+  "color": "#41EA73"
+}
