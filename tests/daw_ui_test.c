@@ -228,8 +228,10 @@ int main(int argc, char **argv)
         uint16_t c;
         check(modw_dest == MW_VIB && str_eq(mi_value(MI_MODW, &c), "VIBRATO"), "MOD WHEEL: VIBRATO by default");
         mi_set(MI_MODW, 1); check(modw_dest == MW_FILTER && str_eq(mi_value(MI_MODW, &c), "FILTER"), "MOD WHEEL right: FILTER");
-        mi_set(MI_MODW, 1); mi_set(MI_MODW, 1); mi_set(MI_MODW, 1); mi_set(MI_MODW, 1);
-        check(modw_dest == MW_MACRO && str_eq(mi_value(MI_MODW, &c), "MACRO 1"), "MOD WHEEL: MACRO 1 last, stops there");
+        mi_set(MI_MODW, 1); mi_set(MI_MODW, 1); mi_set(MI_MODW, 1);
+        check(modw_dest == MW_MACRO && str_eq(mi_value(MI_MODW, &c), "MACRO 1"), "MOD WHEEL: MACRO 1");
+        mi_set(MI_MODW, 1); mi_set(MI_MODW, 1);
+        check(modw_dest == MW_MASTER && str_eq(mi_value(MI_MODW, &c), "MASTER FILT"), "MOD WHEEL: MASTER FILT last, stops there");
         mi_set(MI_MODW, 0); check(modw_dest == MW_VIB, "MOD WHEEL: OCT+ goes round to VIBRATO");
         mi_set(MI_MODW, -1); check(modw_dest == MW_VIB, "MOD WHEEL left at VIBRATO: stays");
     }

@@ -184,7 +184,7 @@ UI_SMALL static const char *mi_value(uint32_t i, uint16_t *c)
     }
     case MI_LIMIT: return lim_classic ? "CLASSIC" : "SOFT";
     case MI_MODW: {                                   /* RAPTOR: what the mod wheel does (voice.c modw_dest) */
-        static const char *const N[MW_N] = {"VIBRATO", "FILTER", "TREMOLO", "SHAPE", "MACRO 1"};
+        static const char *const N[MW_N] = {"VIBRATO", "FILTER", "TREMOLO", "SHAPE", "MACRO 1", "MASTER FILT"};
         return N[modw_dest % MW_N];
     }
     case MI_BUP:

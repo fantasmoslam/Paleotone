@@ -190,6 +190,14 @@ static void smk_wheels(void)
     {
         static int32_t m_was = -1;
         int32_t m = smk_mw_val(&mw, &wcal, fm1_in.wheel[1]);
+        if (modw_dest == MW_MASTER) {             /* MASTER FILT: the master DJ filter's low-pass, closing as the wheel
+                                                   * goes up (at the bottom: off); set while the wheel moves */
+            perf_modw = 0;
+            if (m != m_was && m_was >= 0)
+                song.g[G_FILT] = (int16_t)(-(m * 64 / 127));
+            m_was = m;
+            return;
+        }
         if (modw_dest != MW_MACRO) {
             perf_modw = m;
             m_was = -1;

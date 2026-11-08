@@ -23,7 +23,7 @@ static volatile int32_t perf_modw;
 /* RAPTOR: what the mod wheel does (HOME menu > PLAY > MOD WHEEL, kept in smkset rsv): VIBRATO (SLOOP's), FILTER (opens
  * the cutoff), TREMOLO (the loudness at SMK_VIB_HZ), SHAPE (the engine's shape), MACRO 1 (sets the selected track's
  * first macro, main.c smk_wheels; perf_modw 0 here) */
-enum { MW_VIB, MW_FILTER, MW_TREM, MW_SHAPE, MW_MACRO, MW_N };
+enum { MW_VIB, MW_FILTER, MW_TREM, MW_SHAPE, MW_MACRO, MW_MASTER, MW_N };   /* (MASTER FILT: main.c, the DJ filter) */
 static uint8_t modw_dest;
 static int32_t smk_vib_tri(void)                 /* the wheel's triangle, +-32767 */
 {

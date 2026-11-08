@@ -15,7 +15,7 @@ static uint32_t padled_hold_until;
 static uint8_t padled_dim, pads[16][3];
 static void padled_set(uint32_t p, uint8_t r, uint8_t g, uint8_t b) { pads[p & 15u][0] = r, pads[p & 15u][1] = g, pads[p & 15u][2] = b; }
 static void padled_dim_set(uint32_t d) { padled_dim = (uint8_t)(d > 2u ? 2u : d); }
-enum { MW_VIB, MW_FILTER, MW_TREM, MW_SHAPE, MW_MACRO, MW_N };   /* (voice.c, SMK build: the MOD WHEEL) */
+enum { MW_VIB, MW_FILTER, MW_TREM, MW_SHAPE, MW_MACRO, MW_MASTER, MW_N };   /* (voice.c, SMK build: the MOD WHEEL) */
 static uint8_t modw_dest;
 /* PADS > PAD SCOPE (ui_scope.c, smk_input.h): open / closed only */
 static int scope_up, scope_rearms;
