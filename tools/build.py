@@ -349,7 +349,7 @@ def main():
                     help="smk37: the model name, pro (default), elite or mke (default: $MODEL, else pro)")
     ap.add_argument("--product", metavar="ID",
                     help="package identity, prefix + two digits (FM-1_9NN; default: FM-1_900 or "
-                         "the --release identity). PALEOTONE's own is FM-1_966")
+                         "the --release identity). PALEOTONE's own is FM-1_988")
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
     a = ap.parse_args()
     BOARD = (a.board or os.environ.get("BOARD") or "fm1").lower().replace("-", "")

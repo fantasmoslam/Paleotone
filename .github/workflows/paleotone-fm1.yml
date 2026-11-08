@@ -47,7 +47,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out
-          bash build.sh --product FM-1_966 2>&1 | tee out/build-fm1.log | tail -15   # PALEOTONE's own identity
+          bash build.sh --product FM-1_988 2>&1 | tee out/build-fm1.log | tail -15   # PALEOTONE's own identity
           cp build/felucca.fwsc out/paleotone-fm1.fwsc
           cp build/felucca.dis out/ 2>/dev/null || true
           # the RAM map: every object of 256 bytes or more in .pool, .bss, .lowram, .noinit, biggest first
@@ -76,7 +76,7 @@ jobs:
         with:
           name: PALEOTONE ${{ github.ref_name }}
           body: |
-            PALEOTONE for the M-VAVE FM-1 (identity FM-1_966), built from this tag by GitHub Actions.
+            PALEOTONE for the M-VAVE FM-1 (identity FM-1_988), built from this tag by GitHub Actions.
             Install it with the web installer (https://fantasmoslam.github.io/Paleotone/webapp/installer/) or
             `python3 tools/fm1_install.py paleotone-fm1-*.fwsc --yes`. Back up your projects with the editor first.
             M-VAVE's own updater takes the FM-1 back to the official firmware. SHA-256 in sha256.txt.
