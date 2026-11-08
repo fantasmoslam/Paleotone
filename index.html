@@ -1,1 +1,158 @@
-<!doctype html><meta charset="utf-8"><title>PALEOTONE</title><meta http-equiv="refresh" content="0; url=webapp/emu/"><a href="webapp/emu/">PALEOTONE</a>
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     PALEOTONE's landing page, at the site's root (web/make_paleotone_site.py). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>PALEOTONE</title>
+<meta name="description" content="PALEOTONE is free, prehistoric synth firmware for the M-VAVE FM-1: six tracks, creature calls, drones and war drums on a live groovebox. Play it in your browser or install it from Chrome.">
+<meta property="og:title" content="PALEOTONE: prehistoric synth firmware for the M-VAVE FM-1">
+<meta property="og:description" content="Six tracks, SAURUS creature calls, ROAR drones and war drums, on a groovebox you play live. Free and open source.">
+<meta property="og:image" content="https://fantasmoslam.github.io/Paleotone/webapp/art/clayborn-everywhere.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="webapp/art/skull.png">
+<link rel="stylesheet" href="webapp/site.css">
+<style>
+  .hero { text-align: center; padding: 46px 0 30px; }
+  .hero .skull { width: 140px; height: auto; image-rendering: pixelated; filter: drop-shadow(0 0 14px rgba(66, 235, 115, .4)); margin-bottom: 16px; }
+  .hero .logo { display: block; width: min(560px, 88vw); height: auto; margin: 0 auto; image-rendering: pixelated;
+                filter: drop-shadow(0 0 12px rgba(66, 235, 115, .35)); }
+  .hero .tagline { font: 26px/1.2 Clayborn, monospace; letter-spacing: .08em; margin: 16px 0 10px; }
+  .hero .lede { max-width: 620px; margin: 0 auto 24px; color: var(--dim); font-size: 17px; }
+  .hero .btns { justify-content: center; margin-bottom: 26px; }
+  .hero .btn { font-size: 24px; }
+  .big { margin: 0 0 30px; text-align: center; }
+  .big img { display: block; width: 100%; max-width: 760px; margin: 0 auto; height: auto; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 6px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; margin: 0 0 30px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 0 0 30px; }
+  @media (max-width: 760px) { .ways { grid-template-columns: 1fr; } }
+  .way { background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 0 0 8px 8px;
+         padding: 18px 18px 16px; display: flex; flex-direction: column; }
+  .way h3 { margin: 0 0 8px; color: var(--c); }
+  .way p { color: var(--dim); flex: 1; }
+  .way .btn { align-self: flex-start; font-size: 19px; }
+  .creatures { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+  .creatures span { font: 15px/1 Clayborn, monospace; letter-spacing: .05em; padding: 6px 8px 4px; border-radius: 3px;
+                    background: var(--tile); color: var(--t5); box-shadow: inset 0 0 0 1px var(--line); }
+  .creatures.roar span { color: var(--t4); }
+  audio { width: 100%; margin: 4px 0 8px; }
+  section.s { margin: 0 0 34px; }
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap">
+  <a class="home" href="./"><img src="webapp/art/skull.png" alt=""><span>PALEOTONE</span></a>
+  <nav><a href="webapp/emu/">Play</a><a href="webapp/guide/">Guide</a><a href="webapp/installer/">Install</a><a href="https://github.com/fantasmoslam/Paleotone">Source</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <img class="skull" src="webapp/art/skull.png" alt="">
+    <img class="logo" src="webapp/art/wordmark.png" alt="PALEOTONE">
+    <p class="tagline">Prehistoric synth for the M-VAVE FM-1</p>
+    <p class="lede">Free firmware that turns the FM-1 into a six-track groovebox from the age of giants: creature calls, thunder
+      and lava, drones and war drums, a live sequencer and a song mode. Try it in your browser, then put it on your FM-1.</p>
+    <div class="btns">
+      <a class="btn go" href="webapp/emu/">Play it in your browser</a>
+      <a class="btn amber" href="webapp/installer/">Install on your FM-1</a>
+      <a class="btn" href="webapp/guide/">Read the guide</a>
+    </div>
+    <div class="strip"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  
+
+  <figure class="big"><img src="webapp/art/clayborn-everywhere.png" alt="PALEOTONE's screens: the boot art, the six tracks, SAURUS's values, the envelope, the piano roll, the drum roll, MIX, SONG and the drum grid" width="1520" height="1520">
+    <figcaption>Every screen as the FM-1 draws it: phosphor green on black, one typeface, everything large.</figcaption></figure>
+
+  <section class="s two">
+    <div>
+      <h2>What is PALEOTONE?</h2>
+      <p>The <b>M-VAVE FM-1</b> is a small, inexpensive synth with 27 keys, eight knobs and a colour screen. <b>PALEOTONE</b> is
+        new firmware for it: you install it over USB from a web page, and the FM-1 becomes a different instrument.</p>
+      <p>It's a groovebox you play live. Six tracks run at once: three synths, a track of prehistoric sound effects, a track of
+        creature calls and a drum machine. You record by playing, loop by loop, stack passes on top of each other, punch in
+        effects with one finger, and arrange sections into a song, all from the FM-1's own panel.</p>
+      <p>The look is a 1993 park-operations terminal: phosphor green on black, amber for what needs attention, and one
+        chunky typeface, Clayborn, drawn large on every screen so it reads from across the room.</p>
+      <p>PALEOTONE is free and open source (GPL-3.0), built on <b>SLOOP</b> by isod89 and <b>Felucca</b> by Leo Kuroshita.
+        Everything SLOOP does is still here.</p>
+    </div>
+    <figure><img class="shot" src="webapp/guide/img/tracks.png" alt="The TRACKS screen: six tracks, CANYON HORN, ICE AGE PAD, SUB BASS, DINO WORLD, CALL KIT, DRUM KIT" width="480" height="480">
+      <figcaption>The home screen: six tracks, each in its own colour.</figcaption></figure>
+  </section>
+
+  <section class="s">
+    <h2>What's inside</h2>
+    <div class="tiles">
+      <div class="tile" style="--c: var(--t1)"><b>6 tracks</b><span>three synths, SFX, CALLS and drums, all playing at once</span></div>
+      <div class="tile" style="--c: var(--t2)"><b>200+</b><span>sounds in ten kinds: BASS, KEYS, ORGN, PAD, LEAD, PLCK, DRUM, FX, SAUR, ROAR</span></div>
+      <div class="tile" style="--c: var(--t3)"><b>SAURUS</b><span>a creature voice: one note is one call, twenty creatures</span></div>
+      <div class="tile" style="--c: var(--t4)"><b>ROAR</b><span>drones, war drums and rituals that march by themselves</span></div>
+      <div class="tile" style="--c: var(--t5)"><b>Live</b><span>record by playing, overdub, punch-in effects, undo</span></div>
+      <div class="tile" style="--c: var(--t6)"><b>Song</b><span>four sections, chains and a song mode</span></div>
+    </div>
+  </section>
+
+  <section class="s two">
+    <figure><img class="shot" src="webapp/art/preset-category-message.png" alt="Turning PRESETS: a bar names the sound and its kind, SAUR TYRANT ROAR and SAUR MONSTER ROAR" width="980" height="480">
+      <figcaption>Turn PRESETS and a bar names the sound and its kind.</figcaption></figure>
+    <div>
+      <h2>Creatures on the keys</h2>
+      <p><b>SAURUS</b> is a voice built for animals: a throat, a mouth and a breath, shaped by SIZE, SWOOP, GROWL and WILD.
+        Each note is one call. CALL KIT puts every creature on the keys at once.</p>
+      <div class="creatures"><span>TYRANT ROAR</span><span>RAPTOR BARK</span><span>PTERO SHRIEK</span><span>HADRO HORN</span><span>BRACHIO CALL</span><span>BABY REX</span><span>SEA MONSTER</span><span>COMPY PACK</span><span>SWAMP CROAK</span><span>NEST CHIRPS</span></div>
+      <p><b>ROAR</b> plays drones and drum ensembles, with its RING page to let the drones ring through the rests.</p>
+      <div class="creatures roar"><span>EARTHQUAKE</span><span>PRIMEVAL</span><span>STAMPEDE</span><span>WAR CHANT</span><span>RITUAL FIRE</span><span>TITAN MARCH</span><span>FIVE MOONS</span></div>
+      <p>And <b>SFX</b> puts the world around them on the keys: thunder, rain, a volcano, lava, footsteps, wings, a river, a tar pit.</p>
+    </div>
+  </section>
+
+  <section class="s card">
+    <h2>Hear it</h2>
+    <p>VALLEY OF GIANTS, the demo song a new FM-1 plays at its first power-on, recorded straight from the firmware: all six
+      tracks, about two minutes forty.</p>
+    <audio controls preload="none" src="webapp/art/demo-song.mp3"></audio>
+    <p class="small"><a href="webapp/art/demo-song.mp3" download>Download the MP3</a></p>
+  </section>
+
+  <section class="s">
+    <h2>Three ways in</h2>
+    <div class="ways">
+      <div class="way" style="--c: var(--green)"><h3>Play</h3>
+        <p>The real firmware running in your browser: the same sounds, sequencer and screens. Play with the mouse, your computer
+          keyboard or a MIDI keyboard. Nothing to install.</p>
+        <a class="btn go" href="webapp/emu/">Play now</a></div>
+      <div class="way" style="--c: var(--amber)"><h3>Install</h3>
+        <p>Chrome or Edge, a USB data cable and about a minute. Back up your projects with the editor first; the install page
+          walks you through it.</p>
+        <a class="btn amber" href="webapp/installer/">Install</a></div>
+      <div class="way" style="--c: var(--t2)"><h3>Learn</h3>
+        <p>The guide covers every button, layer and page, with the real screens: tracks, creature calls, drums, recording,
+          the mix and the song.</p>
+        <a class="btn" href="webapp/guide/">Read the guide</a></div>
+    </div>
+  </section>
+
+  <aside class="alpha" role="note"><b>Before you install.</b> Back up your projects with the <a href="webapp/editor/">editor</a>.
+    If an install is interrupted, the FM-1 can be recovered: see the <a href="webapp/guide/#trouble">recovery notes</a>. M-VAVE's own
+    updater takes the FM-1 back to the official firmware at any time.</aside>
+</main>
+
+<footer><div class="wrap">
+  <p>PALEOTONE by <a href="https://github.com/fantasmoslam/Paleotone">fantasmoslam</a> ·
+    <a href="https://github.com/fantasmoslam/Paleotone">Source on GitHub</a> ·
+    <a href="https://github.com/fantasmoslam/Paleotone/issues">Report a bug</a> ·
+    <a href="webapp/editor/">Editor</a></p>
+  <p>Built on <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 and contributors, and
+    <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita (@kurogedelic), Hügelton Instruments. PALEOTONE's
+    sound began in GHOULBOX by Jason Persinger. Typeface: Clayborn by Frank Baranowski (SIL OFL 1.1). The browser version follows
+    charlesvestal's X0X browser build. Free software under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>;
+    the other parts and their licences are in <a href="https://github.com/fantasmoslam/Paleotone/blob/main/LICENSING.md">LICENSING.md</a>.</p>
+  <p>M-VAVE and FM-1 are trademarks of their respective owners; PALEOTONE is not affiliated with them.</p>
+</div></footer>
+</body>
+</html>

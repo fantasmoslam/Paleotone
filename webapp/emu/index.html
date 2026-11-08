@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
      Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-     The page follows X0X's browser page, web/emu/index.html of charlesvestal/fm1-x0x (GPL-3.0), a Felucca fork. -->
+     PALEOTONE in the browser (web/emu/paleo_web.c). The page follows X0X's browser page, web/emu/index.html of charlesvestal/fm1-x0x (GPL-3.0), a Felucca fork. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -9,58 +9,44 @@
 <meta name="color-scheme" content="dark">
 <title>PALEOTONE</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22/%3E%3Crect x=%224%22 y=%224%22 width=%228%22 height=%228%22 fill=%22%23fff%22/%3E%3C/svg%3E">
-<meta name="description" content="PALEOTONE, the prehistoric synth firmware for the FM-1, running in your browser: the same code the instrument runs.">
+<meta name="description" content="PALEOTONE, the prehistoric synth firmware for the FM-1, in your browser: six tracks, SAURUS creature calls, the same code the instrument runs.">
 <style>
-/* DotGothic16 (SIL OFL 1.1, fonts/OFL.txt), cut to printable ASCII, for the knob labels */
-@font-face { font-family: "DotGothic16"; src: url("fonts/DotGothic16-subset.woff") format("woff"); font-display: swap; }
+/* Clayborn (Frank Baranowski, SIL OFL 1.1, fonts/Clayborn-LICENSE.txt): the typeface the FM-1's screen draws */
+@font-face { font-family: "Clayborn"; src: url("fonts/Clayborn.ttf") format("truetype"); font-display: swap; }
 :root { --bg: #8e8e93; --fg: #111; --dim: #2c2c2e; --rule: #5a5a5e;
-        --body: #1d1d1f; --tray: #141415; --part: #2a2a2d; --edge: #3a3a3e; --label: #d6d6d8;
-        --lit: #fff4d6; --green: #5fe08a;
-        /* the jungle around it (GHOULBOX: the dungeon), in TERMINAL's colours (GHOULBOX: CRYPT's) (build/gen/ui_palettes.h; the art: tools/gen_emu_art.py) */
-        --bone: #c4fac8; --amber: #46e874; --ember: #ffb020; --night: #040a06; --plaque: rgba(8, 8, 8, .86);
+        --body: #1b1d1b; --tray: #121412; --part: #262a27; --edge: #384039; --label: #c5fbce;
+        --lit: #fff4d6; --green: #42eb73;
+        /* the TERMINAL palette (firmware/src/gfx.c): phosphor green on black, amber for what needs attention */
+        --bone: #c5fbce; --amber: #42eb73; --ember: #ffb221; --night: #030604; --plaque: rgba(6, 12, 8, .9);
+        --t1: #ffb221; --t2: #52d2f7; --t3: #ff79ce; --t4: #ff963a; --t5: #6babff; --t6: #ad96ff;
         color-scheme: dark; }   /* (dark: Chrome's forced dark leaves the page be) */
 html { background: var(--night); }
-body { margin: 0; color: var(--bone); font: 13px/1.6 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-       min-height: 100vh; image-rendering: pixelated;
-       background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 35%, rgba(0, 0, 0, .78) 100%) fixed,
-                   url("art/wall.png") 0 0 / 256px 128px var(--night); }
+body { margin: 0; color: var(--bone); font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+       min-height: 100vh;
+       background: radial-gradient(ellipse 70% 55% at 50% 38%, rgba(66, 235, 115, .10), transparent 70%) fixed,
+                   repeating-linear-gradient(0deg, rgba(0, 0, 0, .35) 0 1px, transparent 1px 3px) fixed,
+                   var(--night); }
 main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 32px; }
-/* the crest: the boot screen's skull and name, x2 */
-.crest { display: flex; justify-content: center; align-items: center; gap: 24px; margin: 4px 0 18px; }
-.crest .skull { width: 176px; height: 96px; }
-.crest .logo { height: 104px; width: auto; filter: drop-shadow(0 0 10px rgba(70, 232, 116, .35)); }
-.crest img { image-rendering: auto; }   /* (drawn smooth at 2x: tools/gen_emu_art.py) */
-.tagline { margin: -8px 0 18px; text-align: center; font: 700 19px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-           "Helvetica Neue", Arial, sans-serif; color: var(--bone); letter-spacing: .02em; text-shadow: 0 0 3px #000, 0 0 6px #000, 0 2px 0 #000; }
-/* the calls under the tagline: Install as the installer's own button (a pixel slab in torch amber) */
-.calls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 24px; margin: 0 0 24px; }
-.slab { display: inline-block; font: 600 18px/1 monospace; letter-spacing: .08em; text-decoration: none; color: var(--night);
-        background: var(--amber); padding: 14px 32px; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .35),
-        inset 0 4px 0 rgba(255, 255, 255, .3), 0 0 0 2px #000; }
+.alpha { max-width: 1040px; margin: 0 auto 18px; padding: 10px 16px; border-left: 4px solid var(--ember);
+         background: rgba(255, 178, 33, .08); color: #ffe3a3; font-size: 14px; }
+.alpha b { color: var(--ember); }
+/* the crest: the boot screen's skull and name, as the FM-1 draws them (x4) */
+.crest { display: flex; justify-content: center; align-items: center; gap: 28px; margin: 6px 0 10px; }
+.crest img { image-rendering: pixelated; filter: drop-shadow(0 0 12px rgba(66, 235, 115, .35)); }
+.crest .skull { width: 148px; height: auto; }
+.crest .logo { width: min(520px, 62vw); height: auto; }
+.tagline { margin: 0 0 18px; text-align: center; font: 26px/1.2 Clayborn, monospace; color: var(--bone); letter-spacing: .06em; }
+.calls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 18px; margin: 0 0 24px; }
+.slab { display: inline-block; font: 22px/1 Clayborn, monospace; letter-spacing: .06em; text-decoration: none; color: #031006;
+        background: var(--green); padding: 12px 26px 10px; border-radius: 4px; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .3), 0 0 18px rgba(66, 235, 115, .25); }
 .slab:active { transform: translateY(2px); }
-.slab.bone { background: var(--bone); font-size: 15px; padding: 12px 22px; }
-.calls .plain { font: 700 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-               text-shadow: 0 0 3px #000, 0 0 6px #000, 0 2px 0 #000; }
-/* the instrument between two torches (the firmware's own, x4: its 4 frames each 120 ms, the right one 2 frames on) */
-.stage { display: grid; grid-template-columns: 48px minmax(0, 1040px) 48px; gap: 40px; align-items: center;
-         justify-content: center; isolation: isolate; }   /* (the glow: over the wall, under the torch) */
-.torch { position: relative; width: 48px; height: 120px; background: url("art/torch.png") 0 0 / 192px 120px no-repeat;
-         animation: torch .48s steps(4) infinite; }
-.torch.r { animation-delay: -.24s; }
-.torch::before { content: ""; position: absolute; left: 50%; top: 18px; width: 420px; height: 420px; margin: -210px 0 0 -210px;
-                 background: radial-gradient(circle, rgba(70, 232, 116, .30), rgba(255, 176, 32, .10) 40%, transparent 68%);
-                 animation: glow 1.7s ease-in-out infinite alternate; pointer-events: none; z-index: -1; }
-.torch.r::before { animation-duration: 1.3s; }
-@keyframes torch { to { background-position: -192px 0; } }
-@keyframes glow { 0% { opacity: .75; } 40% { opacity: 1; } 55% { opacity: .82; } 100% { opacity: .95; } }
-@media (prefers-reduced-motion: reduce) { .torch, .torch::before { animation: none; } }
-@media (max-width: 1100px) { .stage { grid-template-columns: minmax(0, 1040px); } .stage .torch { display: none; } }
-@media (max-width: 600px) { .crest .skull { width: 88px; height: 48px; } .crest .logo { height: 52px; width: auto; }
-                            .crest { gap: 12px; } .tagline { font-size: 15px; }
+.slab.bone { background: transparent; color: var(--green); box-shadow: inset 0 0 0 2px var(--green); }
+.calls .plain { font: 20px/1.4 Clayborn, monospace; letter-spacing: .05em; color: var(--ember); }
+.stage { display: block; max-width: 1040px; margin: 0 auto; }
+@media (max-width: 600px) { .crest .skull { width: 72px; } .crest { gap: 12px; } .tagline { font-size: 19px; }
                             p.keys span, p.keys label { display: block; white-space: normal; margin: 4px 0; } }
-/* the text on stone plaques (a window's frame: EDGE outside, STONE inside, as gfx.c cv_window) */
 .keys, .utility, footer { max-width: 1040px; margin-left: auto; margin-right: auto; background: var(--plaque); padding: 12px 16px;
-                box-shadow: 0 0 0 2px #6b4513, 0 0 0 4px #000, 0 0 0 6px #3a3a3e; }
+                border: 1px solid #1f3a26; border-radius: 6px; }
 @media (orientation: portrait) and (max-width: 700px) { main { padding: 8px 8px 24px; } }
 a { color: inherit; }
 .device { position: relative; width: 100%; aspect-ratio: 1000 / 624; user-select: none; -webkit-user-select: none;
@@ -108,12 +94,12 @@ a { color: inherit; }
 .start p { margin: 0; max-width: 32em; text-align: center; color: #fff; }
 .audio-recovery { position: absolute; z-index: 4; left: 50%; top: 3%; transform: translateX(-50%); box-sizing: border-box;
                   display: flex; align-items: center; gap: 12px; width: max-content; max-width: 92%; padding: 9px 10px 9px 14px;
-                  color: var(--bone); background: rgba(8, 8, 8, .94); border: 1px solid #6b4513;
+                  color: var(--bone); background: rgba(8, 8, 8, .94); border: 1px solid #2c5a37;
                   box-shadow: 0 0 0 2px #000, 0 0 0 3px var(--edge), 0 8px 24px rgba(0, 0, 0, .55); }
 .audio-recovery[hidden] { display: none; }
 .audio-recovery p { margin: 0; text-align: left; }
 .audio-recovery button { flex: 0 0 auto; min-height: 44px; padding: 8px 13px; border: 0; color: var(--night); background: var(--amber);
-                         font: 700 13px/1.2 DotGothic16, monospace; cursor: pointer; box-shadow: inset 0 -3px rgba(0, 0, 0, .32); }
+                         font: 700 13px/1.2 Clayborn, monospace; cursor: pointer; box-shadow: inset 0 -3px rgba(0, 0, 0, .32); }
 .audio-recovery button:disabled { opacity: .55; cursor: progress; }
 .keys, .utility, footer { margin-top: 22px; color: var(--bone); text-align: center; }
 a { color: var(--amber); }
@@ -127,17 +113,17 @@ footer { margin-top: 12px; font-size: 12px; }
 footer nav a { margin: 0 6px; }
 footer small { font-size: 11px; opacity: .8; }
 .utility { text-align: left; }
-.utility > summary { cursor: pointer; color: var(--amber); font: 700 15px/1.4 DotGothic16, monospace; letter-spacing: .04em; }
+.utility > summary { cursor: pointer; color: var(--amber); font: 700 15px/1.4 Clayborn, monospace; letter-spacing: .04em; }
 .utility-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 12px; }
 .utility label { white-space: nowrap; }
-.utility button, .utility select { border: 1px solid #6b4513; color: var(--bone); background: #1d1d1f; font: inherit;
+.utility button, .utility select { border: 1px solid #2c5a37; color: var(--bone); background: #1d1d1f; font: inherit;
                                   min-height: 34px; padding: 6px 11px; }
 .utility button { cursor: pointer; box-shadow: inset 0 -2px rgba(0, 0, 0, .45); }
 .utility button:hover:not(:disabled), .utility button:focus-visible { border-color: var(--amber); }
 .utility button:disabled { opacity: .45; cursor: default; }
 .utility .primary { color: var(--night); background: var(--amber); font-weight: 700; }
 .recorder { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 5px 8px;
-            border: 1px solid rgba(239, 223, 198, .2); background: rgba(0, 0, 0, .2); }
+            border: 1px solid rgba(197, 251, 206, .2); background: rgba(0, 0, 0, .2); }
 .record-format { display: inline-flex; align-items: center; gap: 6px; color: #b9ac99; font-size: 12px; }
 .record-format select { min-height: 30px; padding: 4px 7px; }
 .recorder .record { color: #ffd9d2; border-color: #7c2c24; }
@@ -157,15 +143,15 @@ footer small { font-size: 11px; opacity: .8; }
 .midi-map { margin-top: 8px; }
 .midi-map summary { cursor: pointer; }
 .midi-map table { margin: 8px auto 0; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.midi-map th, .midi-map td { padding: 3px 10px; border-bottom: 1px solid rgba(239, 223, 198, .18); text-align: left; }
-.tools-manual-link { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid rgba(239, 223, 198, .18); text-align: right; }
-.tools-manual-link a { font: 700 13px/1.4 DotGothic16, monospace; letter-spacing: .035em; }
+.midi-map th, .midi-map td { padding: 3px 10px; border-bottom: 1px solid rgba(197, 251, 206, .16); text-align: left; }
+.tools-manual-link { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid rgba(197, 251, 206, .16); text-align: right; }
+.tools-manual-link a { font: 700 13px/1.4 Clayborn, monospace; letter-spacing: .035em; }
 .screen-hint { cursor: zoom-in; }
 body.focus-mode { overflow: hidden; background: #000; }
 body.focus-mode main { max-width: none; padding: 0; }
 body.focus-mode main > :not(.stage) { display: none; }
 body.focus-mode .stage { display: block; width: 100vw; height: 100vh; }
-body.focus-mode .torch, body.focus-mode .device svg, body.focus-mode .device .hit, body.focus-mode .device .start { display: none; }
+body.focus-mode .device svg, body.focus-mode .device .hit, body.focus-mode .device .start { display: none; }
 body.focus-mode .device { width: 100vw; height: 100vh; aspect-ratio: auto !important; background: #000; }
 body.focus-mode .device canvas { position: fixed; left: 50% !important; top: 50% !important;
                                  width: min(100vw, 100vh) !important; height: min(100vw, 100vh) !important;
@@ -175,19 +161,17 @@ body.focus-mode .audio-recovery { position: fixed; top: max(16px, env(safe-area-
 </head>
 <body>
 <main>
-<aside class="alpha-notice" role="note" style="margin:1rem 0;padding:1rem;border:2px solid #f0b85a;background:#241d12;color:#ffe3a3;font:16px/1.5 sans-serif;text-align:left"><strong>EARLY ALPHA — experimental firmware</strong><br>Paleotone is still being tested. Audio glitches, recording problems and other bugs may occur. Installing can leave your FM-1 unable to boot and require recovery. Back up your projects and settings, keep a known-good firmware package, and read the recovery instructions before installing. Playing in this browser does not install firmware.</aside>
 <header class="crest">
-  <img class="skull" src="art/skull.png?v=paleotone-20261025" alt="">
-  <img class="logo" src="art/logo.png?v=paleotone-20261025" alt="PALEOTONE">
+  <img class="skull" src="art/skull.png" alt="">
+  <img class="logo" src="art/wordmark.png" alt="PALEOTONE">
 </header>
-<p class="tagline">Prehistoric synth for the FM-1 · play it here, in your browser</p>
+<p class="tagline">Prehistoric synth for the FM-1 &middot; play it in your browser</p>
 <nav class="calls"><a class="slab" href="../installer/">Install on your FM-1</a>
-  <a class="slab bone" href="../../manual/">User manual</a>
+  <a class="slab bone" href="../guide/">Guide</a>
   <a class="slab bone" href="../editor/">Editor</a>
-  <a class="plain" href="https://github.com/fantasmoslam/Paleotone">Source</a>
-  <a class="plain" href="https://ko-fi.com/ghoulbox" target="_blank" rel="noopener">Support GHOULBOX, which Paleotone is built on</a></nav>
+  <a class="plain" href="../../">Home</a>
+  <a class="plain" href="https://github.com/fantasmoslam/Paleotone">Source</a></nav>
 <div class="stage">
-<div class="torch" aria-hidden="true"></div>
 <div class="device" id="device">
   <svg id="panel" viewBox="0 0 1000 624" aria-hidden="true"></svg>
   <canvas id="screen" width="240" height="240" role="button" tabindex="0" aria-label="Screen; enter Focus Mode"></canvas>
@@ -196,7 +180,6 @@ body.focus-mode .audio-recovery { position: fixed; top: max(16px, env(safe-area-
     <p id="audio-recovery-status" role="status" aria-live="polite">Audio is paused.</p><button id="audio-resume" type="button">Resume audio</button>
   </div>
 </div>
-<div class="torch r" aria-hidden="true"></div>
 </div>
 
 <p class="keys">
@@ -207,7 +190,7 @@ body.focus-mode .audio-recovery { position: fixed; top: max(16px, env(safe-area-
 </p>
 
 <details class="utility" id="utility">
-  <summary>MIDI, saves, audio &amp; display</summary>
+  <summary>MIDI, recording &amp; display</summary>
   <div class="utility-grid">
     <label><input type="checkbox" id="midi"> MIDI in</label>
     <label><input type="checkbox" id="panel-midi"> Panel CC mapping</label>
@@ -222,25 +205,27 @@ body.focus-mode .audio-recovery { position: fixed; top: max(16px, env(safe-area-
       <span class="rec-peak" id="rec-peak">−∞ dBFS</span>
       <p class="rec-help">FLAC lossless · MP3 high-quality VBR · WAV original 24-bit PCM · up to 10 minutes · processed only in this browser</p>
     </div>
-    <button type="button" id="state-export" class="primary" disabled>Export state</button>
-    <button type="button" id="state-import" disabled>Import state</button>
-    <button type="button" id="state-recover" disabled>Undo last import</button>
+    <button type="button" id="state-export" hidden class="primary" disabled>Export state</button>
+    <button type="button" id="state-import" hidden disabled>Import state</button>
+    <button type="button" id="state-recover" hidden disabled>Undo last import</button>
     <button type="button" id="focus-mode">Focus screen</button>
     <input id="state-file" type="file" accept=".json,application/json" hidden>
   </div>
   <p class="tool-status" id="tool-status" role="status" aria-live="polite"></p>
   <details class="midi-map"><summary>Panel MIDI CC list</summary>
     <table><thead><tr><th>CC</th><th>Control</th><th>Message</th></tr></thead><tbody id="midi-map"></tbody></table>
-    <p>Buttons must send 127 when pressed and 0 when released. Panel CC messages are consumed by the emulator; PALEOTONE’s direct sound CC map remains available for every other CC.</p>
+    <p>Buttons must send 127 when pressed and 0 when released. Panel CC messages are consumed by the emulator; PALEOTONE's MIDI CC map remains available for every other CC.</p>
   </details>
-  <p class="tools-manual-link"><a href="tools.html" target="_blank" rel="noopener">Open the Web Synth Tools manual ↗</a></p>
 </details>
 
 <footer>
-  <small class="version">PALEOTONE · on GHOULBOX 2.3.2 and Felucca v1.4.1</small><br>
-  PALEOTONE, a fork of GHOULBOX by Jason Persinger · on <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments · <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · browser build after charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> · DotGothic16 font, <a href="fonts/OFL.txt">SIL OFL 1.1</a> · the name in Pirata One (SIL OFL 1.1)<br>
-  <nav><a href="../installer/">Install</a><a href="../editor/">Editor</a><a href="https://github.com/fantasmoslam/Paleotone">Source</a><a href="../../firmwares/">All FM-1 firmwares</a></nav>
-  <small>M-VAVE and FM-1 are trademarks of their respective owners. PALEOTONE, GHOULBOX and Felucca are not affiliated with or endorsed by them.</small>
+  <small class="version">PALEOTONE 2.8.4 · on SLOOP and Felucca</small><br>
+  PALEOTONE for the FM-1 · on <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 and
+  <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments · <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> ·
+  browser build after charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> · Clayborn by Frank Baranowski, <a href="fonts/Clayborn-LICENSE.txt">SIL OFL 1.1</a><br>
+  Projects and user presets are not kept in the browser: they live on the instrument.<br>
+  <nav><a href="../../">Home</a><a href="../guide/">Guide</a><a href="../installer/">Install</a><a href="../editor/">Editor</a><a href="https://github.com/fantasmoslam/Paleotone">Source</a></nav>
+  <small>M-VAVE and FM-1 are trademarks of their respective owners. PALEOTONE, SLOOP and Felucca are not affiliated with or endorsed by them.</small>
 </footer>
 </main>
 
@@ -262,11 +247,11 @@ const PLAY_GREEN = 14;
 const WHITE = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26];
 const BLACK = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25];
 const BLACK_AFTER = [0, 1, 2, 4, 5, 7, 8, 9, 11, 12, 14];      // the white key each black one follows
-const STORE = "ghoulbox-emu-flash";   // (GHOULBOX: its own saves, not a Felucca page's)
-const MIDI_PREF = "ghoulbox-emu-midi"; // (GHOULBOX: MIDI in off until asked: a plugged-in FM-1 would play it)
-const PANEL_PREF = "ghoulbox-emu-panel-midi", KNOB_PREF = "ghoulbox-emu-knob-mode", VEL_PREF = "ghoulbox-emu-velocity";
-const PENDING = "ghoulbox-emu-import-project", RECOVERY = "ghoulbox-emu-import-recovery";
-const FIRMWARE = "GHOULBOX 2.3.2 on Felucca v1.4.1";
+const STORE = "paleotone-fm1-emu-flash";
+const MIDI_PREF = "paleotone-fm1-emu-midi"; // (MIDI in off until asked: a plugged-in FM-1 would play it)
+const PANEL_PREF = "paleotone-fm1-emu-panel-midi", KNOB_PREF = "paleotone-fm1-emu-knob-mode", VEL_PREF = "paleotone-fm1-emu-velocity";
+const PENDING = "paleotone-fm1-emu-import-project", RECOVERY = "paleotone-fm1-emu-import-recovery";
+const FIRMWARE = "PALEOTONE 2.8.4";
 
 // ------------------------------------------------------------------ the panel
 // Two drawings of the same controls: WIDE after the FM-1's own layout, TALL for a phone held upright (the
@@ -282,7 +267,7 @@ const KEYMAP = {};
 ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "Digit0", "Minus", "Equal"]
   .forEach((c, i) => KEYMAP[c] = { btn: B[[...ROW1, ...ROW2][i]] });
 Object.assign(KEYMAP, { BracketLeft: { btn: B["OCT-"] }, BracketRight: { btn: B["OCT+"] } });
-// GHOULBOX: what the panel prints for each
+// what the panel prints for each
 const CAP = { Comma: ",", Period: ".", Slash: "/", Semicolon: ";", Quote: "'", Minus: "-", Equal: "=", BracketLeft: "[", BracketRight: "]" };
 const KEYCAP = {}, BTNCAP = {};
 for (const [c, m] of Object.entries(KEYMAP)) {
@@ -313,7 +298,7 @@ function el(tag, attrs, parent = svg) {
   parent.appendChild(e);
   return e;
 }
-const SANS = "-apple-system, 'Helvetica Neue', Arial, sans-serif", DOT = "'DotGothic16', " + SANS;
+const SANS = "-apple-system, 'Helvetica Neue', Arial, sans-serif", DOT = "'Clayborn', " + SANS;
 function label(parent, x, y, s, size, font = SANS, ink = "var(--label)") {
   const t = el("text", { x, y, "text-anchor": "middle", "font-family": font,
                          "font-size": size, "font-weight": 600, fill: ink, "letter-spacing": ".04em" }, parent);
@@ -511,7 +496,7 @@ function bindKnob(k) {
 const tall = matchMedia("(orientation: portrait) and (max-width: 700px)");
 build(tall.matches ? "tall" : "wide");
 tall.addEventListener("change", () => build(tall.matches ? "tall" : "wide"));
-document.fonts?.load("16px DotGothic16").then(() => build(layout), () => {});   // the labels' width: the hit areas
+document.fonts?.load("16px Clayborn").then(() => build(layout), () => {});   // the labels' width: the hit areas
 
 const ARROWS = { ArrowUp: [EN.SELECT, 1], ArrowDown: [EN.SELECT, -1], ArrowRight: [EN.ALGORITHM, 1], ArrowLeft: [EN.ALGORITHM, -1] };
 addEventListener("keydown", (e) => {
@@ -973,7 +958,7 @@ audioResume.addEventListener("click", async () => {
   } catch (error) {
     audioResume.disabled = false;
     audioRecoveryState("Audio did not resume. Tap again, or reload this page in a regular Safari tab.");
-    console.warn("GHOULBOX: could not resume audio", error);
+    console.warn("PALEOTONE: could not resume audio", error);
   }
 });
 async function switchOn() {
@@ -989,11 +974,11 @@ async function switchOn() {
     // resumeAudio calls resume() and starts its silent source now, while this click still has user activation.
     const unlocked = resumeAudio(ac);
     const [wasm] = await withTimeout(Promise.all([
-      fetch("felucca.wasm").then((r) => { if (!r.ok) throw new Error(`felucca.wasm: ${r.status}`); return r.arrayBuffer(); }),
+      fetch("paleotone.wasm").then((r) => { if (!r.ok) throw new Error(`paleotone.wasm: ${r.status}`); return r.arrayBuffer(); }),
       ac.audioWorklet.addModule("worklet.js"),
       unlocked,
     ]), 15000, "The audio engine files took too long to load");
-    node = new AudioWorkletNode(ac, "felucca", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+    node = new AudioWorkletNode(ac, "paleotone", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
     node.connect(ac.destination);
     let warned = false;
     await withTimeout(new Promise((res, rej) => {
@@ -1014,7 +999,7 @@ async function switchOn() {
           if (m.leds) drawLights(lastLeds = m.leds, m.anim);
           if (m.sectors && !saveFlash(m.sectors) && !warned) {
             warned = true;
-            console.warn("Felucca: this browser does not keep the saves; they last until the page closes.");
+            console.warn("PALEOTONE: this browser does not keep the saves; they last until the page closes.");
           }
         }
       };
@@ -1022,7 +1007,7 @@ async function switchOn() {
     }), 10000, "The audio engine did not finish starting");
     document.getElementById("start").hidden = true;
     go.textContent = "On";
-    if (ac.sampleRate !== 44100) console.warn(`Felucca: the browser plays at ${ac.sampleRate} Hz, the pitch is off by ${(1200 * Math.log2(ac.sampleRate / 44100)).toFixed(0)} cents.`);
+    if (ac.sampleRate !== 44100) console.warn(`PALEOTONE: the browser plays at ${ac.sampleRate} Hz, the pitch is off by ${(1200 * Math.log2(ac.sampleRate / 44100)).toFixed(0)} cents.`);
     syncButtons();
     syncKeys();
     send({ type: "visible", on: !document.hidden });

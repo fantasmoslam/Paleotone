@@ -1,0 +1,77 @@
+/* SPDX-License-Identifier: GPL-3.0-only
+   PALEOTONE's site: the landing page (/) and the guide (webapp/guide/). Served at webapp/site.css.
+   Clayborn (Frank Baranowski, SIL OFL 1.1) is the typeface the FM-1's screen draws; the colours are its TERMINAL
+   palette (firmware/src/gfx.c): phosphor green on black, amber for what needs attention, the six track colours. */
+@font-face { font-family: "Clayborn"; src: url("emu/fonts/Clayborn.ttf") format("truetype"); font-display: swap; }
+:root { --bg: #030604; --fg: #c5fbce; --dim: #7fa888; --tile: #0b130d; --card: rgba(8, 16, 10, .92); --line: #1f3a26;
+        --green: #42eb73; --amber: #ffb221; --ink: #031006;
+        --t1: #ffb221; --t2: #52d2f7; --t3: #ff79ce; --t4: #ff963a; --t5: #6babff; --t6: #ad96ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { background: var(--bg); scroll-padding-top: 64px; }
+body { margin: 0; color: var(--fg); min-height: 100vh; overflow-x: hidden;
+       font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+       background: radial-gradient(ellipse 70% 30% at 50% 0%, rgba(66, 235, 115, .12), transparent 70%),
+                   repeating-linear-gradient(0deg, rgba(0, 0, 0, .35) 0 1px, transparent 1px 3px), var(--bg); }
+a { color: var(--green); }
+img { max-width: 100%; }
+p { margin: 0 0 14px; }
+.clay, h1, h2, h3 { font-family: Clayborn, monospace; font-weight: normal; letter-spacing: .05em; }
+h2 { font-size: 34px; line-height: 1.05; color: var(--green); margin: 0 0 14px; overflow-wrap: break-word; }
+@media (max-width: 560px) { h2 { font-size: 28px; } }
+h3 { font-size: 24px; line-height: 1.1; color: var(--amber); margin: 26px 0 10px; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+.narrow { max-width: 760px; }
+.dim, .small { color: var(--dim); }
+.small { font-size: 13px; }
+kbd { font: 15px/1 Clayborn, monospace; letter-spacing: .05em; color: var(--ink); background: var(--fg); border-radius: 3px;
+      padding: 2px 5px 1px; white-space: nowrap; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .3); }
+kbd.k { background: var(--tile); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* the bar on top */
+.bar { position: sticky; top: 0; z-index: 5; background: rgba(3, 6, 4, .92); backdrop-filter: blur(6px);
+       border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; gap: 18px; height: 52px; }
+.bar .home { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--green); margin-right: auto;
+             font: 22px/1 Clayborn, monospace; letter-spacing: .08em; }
+.bar .home img { width: 28px; height: auto; image-rendering: pixelated; }
+.bar nav { display: flex; gap: 16px; }
+.bar nav a { color: var(--fg); text-decoration: none; font: 18px/1 Clayborn, monospace; letter-spacing: .06em; }
+.bar nav a:hover, .bar nav a[aria-current] { color: var(--green); }
+@media (max-width: 560px) { .bar .home span { display: none; } .bar nav { gap: 12px; } .bar nav a { font-size: 16px; } }
+
+.strip { display: flex; height: 4px; max-width: 360px; margin: 0 auto; }
+.strip i { flex: 1; }
+.strip i:nth-child(1) { background: var(--t1); } .strip i:nth-child(2) { background: var(--t2); }
+.strip i:nth-child(3) { background: var(--t3); } .strip i:nth-child(4) { background: var(--t4); }
+.strip i:nth-child(5) { background: var(--t5); } .strip i:nth-child(6) { background: var(--t6); }
+
+.alpha { margin: 0 0 22px; padding: 12px 16px; border-left: 4px solid var(--amber); background: rgba(255, 178, 33, .08); color: #ffe3a3; }
+.alpha b { color: var(--amber); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 22px 20px 18px; margin: 0 0 22px; }
+
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-block; padding: 11px 18px 9px; border-radius: 4px; text-decoration: none; color: var(--green);
+       box-shadow: inset 0 0 0 2px var(--green); font: 22px/1.05 Clayborn, monospace; letter-spacing: .06em; }
+.btn.go { color: var(--ink); background: var(--green); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .3), 0 0 18px rgba(66, 235, 115, .25); }
+.btn.amber { color: var(--ink); background: var(--amber); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .3); }
+
+.shot { display: block; width: 100%; height: auto; image-rendering: pixelated; border-radius: 4px; border: 1px solid var(--line); background: #000; }
+figure { margin: 0 0 16px; }
+figcaption { font-size: 13px; color: var(--dim); margin-top: 6px; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 16px; }
+.tile { background: var(--tile); padding: 12px 14px 14px; border-top: 3px solid var(--c, var(--green)); border-radius: 0 0 4px 4px; }
+.tile b { display: block; font: 30px/1 Clayborn, monospace; color: var(--c, var(--green)); letter-spacing: .04em; }
+.tile span { display: block; font-size: 13.5px; color: var(--dim); margin-top: 6px; }
+@media (max-width: 680px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+
+table { border-collapse: collapse; width: 100%; margin: 0 0 16px; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font: 17px/1.2 Clayborn, monospace; letter-spacing: .05em; color: var(--green); font-weight: normal; }
+td:first-child { white-space: nowrap; }
+.tbl { overflow-x: auto; margin: 0 0 16px; }
+.tbl table { margin: 0; }
+@media (max-width: 560px) { td:first-child { white-space: normal; } th, td { padding: 6px 6px; } }
+
+footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 22px 0 40px; font-size: 13px; color: var(--dim); }
+footer a { color: inherit; }

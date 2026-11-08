@@ -1,0 +1,581 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     PALEOTONE's user guide (web/make_paleotone_site.py serves it at webapp/guide/, the screens from web/site/guide/ in
+     img/). The screens are the firmware's own, rendered by tests/guide_shots.c (python3 web/site/guide_shots.py). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>PALEOTONE guide</title>
+<meta name="description" content="How to play PALEOTONE on the M-VAVE FM-1: the six tracks, the creature calls, the drums, recording, the layers, every page and the song mode, with the screens.">
+<meta property="og:title" content="PALEOTONE guide">
+<meta property="og:description" content="How to play PALEOTONE, prehistoric synth firmware for the M-VAVE FM-1, with every screen.">
+<meta property="og:image" content="../art/clayborn-everywhere.png">
+<link rel="icon" href="../art/skull.png">
+<link rel="stylesheet" href="../site.css">
+<style>
+  .hero { text-align: center; padding: 34px 0 18px; }
+  .hero h1 { font-size: 54px; line-height: 1; color: var(--green); margin: 0 0 8px; }
+  .hero p { max-width: 620px; margin: 0 auto 18px; color: var(--dim); }
+  .toc { columns: 2; column-gap: 28px; padding: 0; margin: 0; list-style: none; counter-reset: c; }
+  .toc li { counter-increment: c; break-inside: avoid; padding: 2px 0; }
+  .toc li::before { content: counter(c, decimal-leading-zero) " "; font-family: Clayborn, monospace; color: var(--amber); }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media (max-width: 560px) { .toc { columns: 1; } }
+  section.g { padding: 26px 0 8px; border-top: 1px solid var(--line); }
+  section.g > h2 .n { color: var(--amber); margin-right: 10px; }
+  .row { display: grid; grid-template-columns: 260px 1fr; gap: 22px; align-items: start; margin: 0 0 18px; }
+  .row.wide { grid-template-columns: 1fr; }
+  .row > figure { margin: 0; }
+  .row > *, .shots > * { min-width: 0; }
+  @media (max-width: 680px) { .row { grid-template-columns: 1fr; } .row > figure { max-width: 340px; } }
+  .shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 0 18px; }
+  .shots.three { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 680px) { .shots, .shots.three { grid-template-columns: repeat(2, 1fr); } }
+  .shots figcaption { font: 15px/1.2 Clayborn, monospace; letter-spacing: .05em; color: var(--fg); }
+  .tip { padding: 10px 14px; border-left: 3px solid var(--green); background: rgba(66, 235, 115, .06); margin: 0 0 16px; }
+  .warn { padding: 10px 14px; border-left: 3px solid var(--amber); background: rgba(255, 178, 33, .07); margin: 0 0 16px; color: #ffe3a3; }
+  ol.do { padding-left: 22px; } ol.do li { margin: 0 0 8px; }
+  .sw { display: inline-block; width: 11px; height: 11px; border-radius: 2px; background: var(--c); vertical-align: -1px; margin-right: 4px; }
+  .top { font-size: 13px; float: right; margin-top: -40px; }
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap">
+  <a class="home" href="../../"><img src="../art/skull.png" alt=""><span>PALEOTONE</span></a>
+  <nav><a href="../emu/">Play</a><a href="./" aria-current="page">Guide</a><a href="../installer/">Install</a><a href="../editor/">Editor</a></nav>
+</div></header>
+
+<main class="wrap narrow">
+  <div class="hero">
+    <h1>THE GUIDE</h1>
+    <p>Everything PALEOTONE does on the FM-1, button by button. Every picture is a real screen, drawn by the firmware itself.
+      Read it from the top the first time, then come back to it as a reference. You can follow along without an FM-1 in the
+      <a href="../emu/">browser version</a>.</p>
+    <div class="strip"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <section class="card">
+    <h2>Contents</h2>
+    <ol class="toc">
+      <li><a href="#start">Before you start</a></li>
+      <li><a href="#panel">The panel</a></li>
+      <li><a href="#words">How to read this guide</a></li>
+      <li><a href="#tracks">Six tracks</a></li>
+      <li><a href="#taphold">Tap, hold and lock</a></li>
+      <li><a href="#first">Your first five minutes</a></li>
+      <li><a href="#sounds">Sounds and PRESETS</a></li>
+      <li><a href="#saurus">SAURUS: the creature calls</a></li>
+      <li><a href="#sfx">SFX: the prehistoric world</a></li>
+      <li><a href="#roar">ROAR: drones, war drums, RING</a></li>
+      <li><a href="#drums">The drum track</a></li>
+      <li><a href="#rec">Recording</a></li>
+      <li><a href="#layers">The seven layers</a></li>
+      <li><a href="#pages">Every page, knob by knob</a></li>
+      <li><a href="#song">Sections and the song</a></li>
+      <li><a href="#menu">The HOME menu</a></li>
+      <li><a href="#midi">MIDI, the editor, backups</a></li>
+      <li><a href="#trouble">Troubleshooting and recovery</a></li>
+    </ol>
+  </section>
+
+  <!-- 1 -->
+  <section class="g" id="start">
+    <h2><span class="n">01</span>Before you start</h2>
+    <div class="warn"><b>Back up first.</b> Installing replaces the FM-1's firmware. Save your projects with the editor before you
+      start, and see <a href="#trouble">recovery</a> if an install is ever interrupted.</div>
+    <ol class="do">
+      <li><b>Back up.</b> Open the <a href="../editor/">editor</a> in Chrome or Edge, connect the FM-1 and save a backup of your projects.</li>
+      <li><b>Install.</b> Open the <a href="../installer/">installer</a>, connect the FM-1 straight to the computer with a USB data
+        cable (no hub), close other MIDI apps, and press <b>Install</b>. It takes about a minute; don't unplug it.</li>
+      <li><b>Switch on.</b> The first power-on shows the boot screen, then plays the demo song, VALLEY OF GIANTS. Press
+        <kbd>PLAY</kbd> to stop it. It's yours to change, or clear with TOOLS &gt; NEW.</li>
+    </ol>
+    <div class="row">
+      <figure><img class="shot" src="img/splash.png" alt="The boot screen: the PALEOTONE skull and wordmark, PREHISTORIC SYNTH, 2.8.4 ON SLOOP + FELUCCA" loading="lazy" width="480" height="480"></figure>
+      <div>
+        <p>PALEOTONE is built on SLOOP 2.8.4 by isod89 (itself on Felucca), so everything SLOOP's sequencer, song mode and editor do
+          is here. On top of that come six tracks instead of four, three prehistoric engines (SAURUS, SFX and ROAR), more than 200
+          sounds in ten kinds, five prehistoric drum kits, and big Clayborn text on every screen.</p>
+        <p class="dim">No FM-1 yet? The <a href="../emu/">browser version</a> runs the same firmware. Play it with the mouse, the
+          computer keys printed on its panel, or a MIDI keyboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="g" id="panel">
+    <h2><span class="n">02</span>The panel</h2>
+    <figure><img class="shot" src="img/panel.png" alt="The FM-1's panel in the browser version: MASTER, SELECT, PRESETS and ALGORITHM knobs, OCT− and OCT+, the screen, KNOB 1 to 4, twelve buttons and 27 keys" loading="lazy" width="1040" height="650">
+      <figcaption>The FM-1 as the browser version draws it, with the TRACKS screen in the middle.</figcaption></figure>
+    <div class="tbl"><table>
+      <tr><th>Control</th><th>Its main job</th></tr>
+      <tr><td><kbd>MASTER</kbd></td><td>Output volume (headphones and line out).</td></tr>
+      <tr><td><kbd>SELECT</kbd></td><td>The tempo on TRACKS and inside a layer; on a page, the previous or next page of that button.</td></tr>
+      <tr><td><kbd>PRESETS</kbd></td><td>The selected track's sound (on the drum track, the kit). A bar names the sound and its kind.</td></tr>
+      <tr><td><kbd>ALGORITHM</kbd></td><td>Selects the track, 1 to 6, on every screen.</td></tr>
+      <tr><td><kbd>KNOB 1–4</kbd></td><td>Whatever the four dials at the bottom of the screen show.</td></tr>
+      <tr><td><kbd>OCT−</kbd> <kbd>OCT+</kbd></td><td>Octave down and up (both together: back to 0). On the drum track, ghost and hard hits while held.</td></tr>
+      <tr><td><kbd>PLAY</kbd></td><td>Start and stop. Works inside every layer.</td></tr>
+      <tr><td><kbd>REC</kbd></td><td>Record (tap). Hold about 2 seconds to clear the selected track.</td></tr>
+      <tr><td><kbd>HOME</kbd></td><td>Back to the TRACKS screen. Hold it for the menu. Tap it while holding a layer button to lock the layer.</td></tr>
+      <tr><td><kbd>FX</kbd> <kbd>SCL</kbd> <kbd>ENV</kbd> <kbd>LFO</kbd> <kbd>EDIT</kbd> <kbd>GLO</kbd> <kbd>SAVE</kbd> <kbd>ARP</kbd> <kbd>SEQ</kbd></td>
+        <td>Tap for that button's pages, hold for its layer (ENV and LFO only have pages). See <a href="#taphold">tap, hold and lock</a>.</td></tr>
+      <tr><td>27 keys</td><td>16 white keys (F3 to G5, called key 1 to key 16 here) and 11 black keys.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="g" id="words">
+    <h2><span class="n">03</span>How to read this guide</h2>
+    <div class="tbl"><table>
+      <tr><th>Written</th><th>Means</th></tr>
+      <tr><td><b>tap FX</b></td><td>Press FX and let go without touching anything else.</td></tr>
+      <tr><td><b>hold FX</b></td><td>Keep FX pressed. Its layer shows after about a third of a second.</td></tr>
+      <tr><td><b>FX + key 3</b></td><td>Hold FX and, while it is held, press white key 3.</td></tr>
+      <tr><td><b>FX + KNOB 2</b></td><td>Hold FX and turn KNOB 2.</td></tr>
+      <tr><td><b>key 1 … key 16</b></td><td>The white keys from the lowest (F3) to the highest (G5).</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th>Key</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td></tr>
+      <tr><th>Note</th><td>F3</td><td>G3</td><td>A3</td><td>B3</td><td>C4</td><td>D4</td><td>E4</td><td>F4</td><td>G4</td><td>A4</td><td>B4</td><td>C5</td><td>D5</td><td>E5</td><td>F5</td><td>G5</td></tr>
+    </table></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="g" id="tracks">
+    <h2><span class="n">04</span>Six tracks</h2>
+    <div class="row">
+      <figure><img class="shot" src="img/tracks.png" alt="The TRACKS screen: 72 BPM, LOOP, six tracks CANYON HORN, ICE AGE PAD, SUB BASS, DINO WORLD, CALL KIT, DRUM KIT, and the knobs SWNG LEVEL STEPS PAN" loading="lazy" width="480" height="480">
+        <figcaption>TRACKS, the home screen, with the demo song loaded.</figcaption></figure>
+      <div>
+        <p>PALEOTONE plays six tracks at once, each with its own colour. Turn <kbd>ALGORITHM</kbd> to pick the track you play,
+          record and edit; the screen takes its colour.</p>
+        <div class="tbl"><table>
+          <tr><th>Track</th><th>Plays</th><th>At first</th></tr>
+          <tr><td><span class="sw" style="--c:var(--t1)"></span>1</td><td>a synth</td><td>MARIMBA</td></tr>
+          <tr><td><span class="sw" style="--c:var(--t2)"></span>2</td><td>a synth</td><td>JUNGLE PAD</td></tr>
+          <tr><td><span class="sw" style="--c:var(--t3)"></span>3</td><td>a synth</td><td>JUNGLE NIGHT</td></tr>
+          <tr><td><span class="sw" style="--c:var(--t4)"></span>4</td><td>SFX, the prehistoric world</td><td>DINO WORLD</td></tr>
+          <tr><td><span class="sw" style="--c:var(--t5)"></span>5</td><td>CALLS, the SAURUS creatures</td><td>CALL KIT</td></tr>
+          <tr><td><span class="sw" style="--c:var(--t6)"></span>6</td><td>drums, 16 sounds on the keys</td><td>DRUM KIT</td></tr>
+        </table></div>
+        <p class="small">Tracks 1 to 5 can each take any sound: the names are where they start. The demo song swaps in its own
+          (CANYON HORN, ICE AGE PAD, SUB BASS).</p>
+      </div>
+    </div>
+    <div class="row">
+      <figure><img class="shot" src="img/tracks-playing.png" alt="TRACKS while playing: the step counter runs and each track's pattern moves on the right" loading="lazy" width="480" height="480"></figure>
+      <div>
+        <p>Each line shows a track's sound and, on the right, its pattern; the top shows the tempo, LOOP or SONG, the section
+          and, while it plays, the step. The four knobs set the selected track's <b>SWNG</b> (swing), <b>LEVEL</b>, <b>STEPS</b>
+          (its length) and <b>PAN</b>. <kbd>SELECT</kbd> is the tempo.</p>
+        <p><b>White</b> on the screen always means what you're touching; <b>red</b> means recording.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="g" id="taphold">
+    <h2><span class="n">05</span>Tap, hold and lock</h2>
+    <p>Every function button has two lives.</p>
+    <ul>
+      <li><b>Tap</b> it and its <b>pages</b> open: sound design and settings. Tap it again for its next page, or turn
+        <kbd>SELECT</kbd> to walk them both ways. Each button remembers the page you used last.</li>
+      <li><b>Hold</b> it and you get a <b>layer</b>: while it's held, the white keys and the four knobs do something else, and
+        the screen shows the 16 keys as 16 tiles (four rows of four). Let go and you're back to playing.</li>
+      <li><b>Lock</b> a layer: hold its button and <b>tap HOME</b>. It stays open with both hands free. Any other button lets it
+        go; PLAY, REC and OCT− / OCT+ keep working inside it.</li>
+    </ul>
+    <div class="shots">
+      <figure><img class="shot" src="img/layer-fx.png" alt="PUNCH layer" loading="lazy" width="480" height="480"><figcaption>FX · PUNCH</figcaption></figure>
+      <figure><img class="shot" src="img/layer-edit.png" alt="ERASE layer" loading="lazy" width="480" height="480"><figcaption>EDIT · ERASE</figcaption></figure>
+      <figure><img class="shot" src="img/layer-arp.png" alt="ROLL layer" loading="lazy" width="480" height="480"><figcaption>ARP · ROLL</figcaption></figure>
+      <figure><img class="shot" src="img/layer-seq.png" alt="STEPS layer" loading="lazy" width="480" height="480"><figcaption>SEQ · STEPS</figcaption></figure>
+      <figure><img class="shot" src="img/layer-sel.png" alt="KEY layer" loading="lazy" width="480" height="480"><figcaption>SCL · KEY</figcaption></figure>
+      <figure><img class="shot" src="img/layer-mix.png" alt="MIX layer" loading="lazy" width="480" height="480"><figcaption>GLO · MIX</figcaption></figure>
+      <figure><img class="shot" src="img/layer-song.png" alt="SONG layer" loading="lazy" width="480" height="480"><figcaption>SAVE · SONG</figcaption></figure>
+    </div>
+    <p class="small">The layers are described one by one in <a href="#layers">the seven layers</a>.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="g" id="first">
+    <h2><span class="n">06</span>Your first five minutes</h2>
+    <ol class="do">
+      <li><b>Hear the demo.</b> Press <kbd>PLAY</kbd>. VALLEY OF GIANTS plays on all six tracks. Lost it? SAVE pages &gt; TOOLS &gt; DEMO brings it back.</li>
+      <li><b>Call a creature.</b> Turn <kbd>ALGORITHM</kbd> to track 5 (blue, CALL KIT) and play the keys: each key is a different
+        creature, from a growl to a pterosaur shriek.</li>
+      <li><b>Shake the ground.</b> Track 4 (orange, DINO WORLD) has thunder, rain, a volcano and footsteps, one per key.</li>
+      <li><b>Find a sound.</b> On any of tracks 1 to 5, turn <kbd>PRESETS</kbd>. The bar names each sound and its kind; try the
+        SAUR and ROAR kinds.</li>
+      <li><b>Record a beat.</b> Turn to track 6 (purple, DRUM KIT), press <kbd>REC</kbd> and play the drums. Hold <kbd>OCT−</kbd> for
+        ghost notes, <kbd>OCT+</kbd> for hard hits. REC again stops recording; the loop plays on.</li>
+      <li><b>Punch in an effect.</b> Hold <kbd>FX</kbd> and hold a key: an effect on the whole mix for as long as you hold it.</li>
+      <li><b>Undo.</b> <kbd>EDIT</kbd> + <kbd>OCT−</kbd> takes the last change back; <kbd>EDIT</kbd> + <kbd>OCT+</kbd> puts it back.</li>
+    </ol>
+  </section>
+
+  <!-- 7 -->
+  <section class="g" id="sounds">
+    <h2><span class="n">07</span>Sounds and PRESETS</h2>
+    <div class="row">
+      <figure><img class="shot" src="img/presets-bar.png" alt="Turning PRESETS on track 5: the bar at the bottom reads SAUR COMPY PACK" loading="lazy" width="480" height="480">
+        <figcaption>Turning PRESETS on track 5: SAUR COMPY PACK.</figcaption></figure>
+      <div>
+        <p>Turn <kbd>PRESETS</kbd> to change the selected track's sound. Your favourites come first, then the factory sounds by
+          kind, then your own presets. The track's line shows the new name, and a big bar over the knobs names the sound and its kind.</p>
+        <div class="tbl"><table>
+          <tr><th>Kind</th><th>Sounds</th><th>For</th></tr>
+          <tr><td>BASS</td><td>12</td><td>sub, analog and FM basses</td></tr>
+          <tr><td>KEYS</td><td>6</td><td>pianos, electric pianos</td></tr>
+          <tr><td>ORGN</td><td>12</td><td>organs and FM bells</td></tr>
+          <tr><td>PAD</td><td>33</td><td>pads, choirs, jungle and ice-age beds</td></tr>
+          <tr><td>LEAD</td><td>27</td><td>leads, horns, flutes</td></tr>
+          <tr><td>PLCK</td><td>23</td><td>plucks, marimbas, kalimbas</td></tr>
+          <tr><td>DRUM</td><td>9</td><td>pitched drum and percussion sounds</td></tr>
+          <tr><td>FX</td><td>40</td><td>weather, swarms, glitches, the SFX world</td></tr>
+          <tr><td>SAUR</td><td>21</td><td>SAURUS creatures and CALL KIT</td></tr>
+          <tr><td>ROAR</td><td>20</td><td>ROAR drones, war drums and rituals</td></tr>
+        </table></div>
+      </div>
+    </div>
+    <p>Each sound is played by an engine: SLOOP's twelve (ANALOG, FM6, SAMPLE, PHYS and the rest) plus PALEOTONE's three. Tap
+      <kbd>EDIT</kbd> to shape the sound with its engine's pages, and save it as your own from the SAVE pages (USER).</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="g" id="saurus">
+    <h2><span class="n">08</span>SAURUS: the creature calls</h2>
+    <p>SAURUS is a creature voice: <b>one note is one call</b>, with a body, a throat and a breath. Its twenty creatures run from
+      LOW GROWL and DEEP RUMBLE through HADRO HORN, TYRANT ROAR, RAPTOR BARK and PTERO SHRIEK to BABY REX, SEA MONSTER and COMPY PACK.
+      <b>CALL KIT</b> puts all twenty on the keys at once, starting at C2: play a herd.</p>
+    <div class="shots three">
+      <figure><img class="shot" src="img/page-edit-saurus.png" alt="SAURUS CALL page: CALL KEYS, SIZE 64, SWOOP 64, LEN 104 ms" loading="lazy" width="480" height="480"><figcaption>EDIT · CALL</figcaption></figure>
+      <figure><img class="shot" src="img/page-edit-saurus2.png" alt="SAURUS THROAT page: GROWL 50, BRTH 50, MOUTH 64, WILD 50" loading="lazy" width="480" height="480"><figcaption>EDIT · THROAT</figcaption></figure>
+    </div>
+    <div class="tbl"><table>
+      <tr><th>Knob</th><th>Does</th></tr>
+      <tr><td>CALL</td><td>The call's shape: BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN and more. KEYS (on CALL KIT) gives each key its own creature.</td></tr>
+      <tr><td>SIZE</td><td>How big the animal is: its throat's formants, from small to huge.</td></tr>
+      <tr><td>SWOOP</td><td>How deep the call's pitch moves (up to two octaves).</td></tr>
+      <tr><td>LEN</td><td>How long one call lasts.</td></tr>
+      <tr><td>GROWL</td><td>A rough throat: the fry of a big animal, an octave down, and grit.</td></tr>
+      <tr><td>BRTH</td><td>Breath and air.</td></tr>
+      <tr><td>MOUTH</td><td>The mouth's shape: closed and dark, or open and bright.</td></tr>
+      <tr><td>WILD</td><td>Makes each call its own: a little longer or shorter, a little off pitch.</td></tr>
+    </table></div>
+  </section>
+
+  <!-- 9 -->
+  <section class="g" id="sfx">
+    <h2><span class="n">09</span>SFX: the prehistoric world</h2>
+    <p>Track 4's <b>DINO WORLD</b> puts sixteen sounds of the prehistoric world on the white keys, one per key:</p>
+    <div class="tbl"><table>
+      <tr><td>1 THUNDER</td><td>2 RUMBLE</td><td>3 WIND</td><td>4 RAIN</td></tr>
+      <tr><td>5 VOLCANO</td><td>6 LAVA</td><td>7 QUAKE</td><td>8 FOOTSTEP</td></tr>
+      <tr><td>9 WINGS</td><td>10 INSECTS</td><td>11 FAR ROAR</td><td>12 RIVER</td></tr>
+      <tr><td>13 FIRE</td><td>14 ROCKFALL</td><td>15 TAR PIT</td><td>16 SQUAWK</td></tr>
+    </table></div>
+    <p>Sequence them like drums for a living landscape: rain on every bar, thunder now and then, a far roar on the last beat.
+      The FX kind in PRESETS has more weather and swarms (TROPIC STORM, MONSOON, GEYSER, METEOR, CICADA BUZZ…).</p>
+  </section>
+
+  <!-- 10 -->
+  <section class="g" id="roar">
+    <h2><span class="n">10</span>ROAR: drones, war drums, RING</h2>
+    <div class="row">
+      <figure><img class="shot" src="img/page-edit-roar.png" alt="ROAR's DRONE page on PRIMEVAL: DRN D, DLVL 79, 5TH 71, BRTH 47" loading="lazy" width="480" height="480">
+        <figcaption>EDIT on a ROAR sound (PRIMEVAL): DRONE.</figcaption></figure>
+      <div>
+        <p>ROAR plays drones under a melody, and drum ensembles that march by themselves: EARTHQUAKE, TUNDRA, PRIMEVAL, STAMPEDE,
+          WAR CHANT, WAR PARADE, RITUAL FIRE, TITAN MARCH, HEARTBEAT, TALK DRUMS, FIVE MOONS, CHAOS DRUMS and more, twenty in all.</p>
+        <p>The <b>DRONE</b> page sets the drone's note (<b>DRN</b>), its level (<b>DLVL</b>), a fifth above it (<b>5TH</b>) and its
+          breath (<b>BRTH</b>).</p>
+      </div>
+    </div>
+    <div class="row">
+      <figure><img class="shot" src="img/page-ring.png" alt="The RING page: RING ON" loading="lazy" width="480" height="480">
+        <figcaption>EDIT &gt; RING: ON or OFF.</figcaption></figure>
+      <div>
+        <p><b>RING</b> is back: on a ROAR sound, tap <kbd>EDIT</kbd> until RING shows (or turn <kbd>SELECT</kbd>) and turn KNOB 1
+          to switch it ON or OFF. With RING on, the drones ring on through the rests while the song plays, instead of stopping with
+          each note. It's saved with the sound.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="g" id="drums">
+    <h2><span class="n">11</span>The drum track</h2>
+    <p>Track 6 plays 16 drum sounds, one per white key. A black key plays the sound of the white key on its left, for two-finger
+      rolls. Hold <kbd>OCT−</kbd> while you hit for ghost notes and <kbd>OCT+</kbd> for hard hits: the FM-1's keys have no velocity,
+      so every hit is GHOST, SOFT, NORM or HARD.</p>
+    <div class="tbl"><table>
+      <tr><td>1 KICK</td><td>2 KICK2</td><td>3 SNARE</td><td>4 CLAP</td></tr>
+      <tr><td>5 HAT</td><td>6 OPEN</td><td>7 PEDAL</td><td>8 RIM</td></tr>
+      <tr><td>9 SNR2</td><td>10 TOM L</td><td>11 TOM H</td><td>12 CRASH</td></tr>
+      <tr><td>13 RIDE</td><td>14 SHAKE</td><td>15 CONGA</td><td>16 BELL</td></tr>
+    </table></div>
+    <p><kbd>PRESETS</kbd> on the drum track picks the <b>kit</b>: PALEOTONE's DRUM KIT, TRIBAL KIT, WAR DRUMS, BONE RATTLE and
+      RITUAL, then SLOOP's 32 (808, 909, BOOMBAP, JUNGLE, TECHNO, AMBIENT…), your own sample kits USR1–USR4 and synthesised kits SYN1–SYN4.</p>
+    <h3>The DRUMS screen</h3>
+    <p>With track 6 selected, tap <kbd>EDIT</kbd> on TRACKS: the DRUMS screen opens. Tap EDIT again (or turn SELECT) to go from the
+      grid to the kit to one sound.</p>
+    <div class="shots three">
+      <figure><img class="shot" src="img/drums-grid.png" alt="DRUMS grid: every sound's steps in a grid, knobs SOUND STEP HIT LEVEL" loading="lazy" width="480" height="480"><figcaption>GRID</figcaption></figure>
+      <figure><img class="shot" src="img/drums-kit.png" alt="DRUMS kit: the 16 sounds, knobs KIT LEVEL REVERB PAN" loading="lazy" width="480" height="480"><figcaption>KIT</figcaption></figure>
+      <figure><img class="shot" src="img/drums-sound.png" alt="DRUMS sound: KICK selected, knobs SOUND TUNE DECAY LEVEL" loading="lazy" width="480" height="480"><figcaption>SOUND</figcaption></figure>
+    </div>
+    <div class="tbl"><table>
+      <tr><th>Screen</th><th>KNOB 1</th><th>KNOB 2</th><th>KNOB 3</th><th>KNOB 4</th></tr>
+      <tr><td>GRID</td><td>SOUND (the row)</td><td>STEP (the column)</td><td>HIT: set or clear it</td><td>LEVEL of that hit</td></tr>
+      <tr><td>KIT</td><td>KIT</td><td>LEVEL</td><td>REVERB</td><td>PAN</td></tr>
+      <tr><td>SOUND</td><td>SOUND</td><td>TUNE</td><td>DECAY</td><td>LEVEL</td></tr>
+    </table></div>
+  </section>
+
+  <!-- 12 -->
+  <section class="g" id="rec">
+    <h2><span class="n">12</span>Recording</h2>
+    <div class="row">
+      <figure><img class="shot" src="img/rec-ready.png" alt="REC READY: PLAY A NOTE, IT STARTS THE LOOP. Knobs LENGTH, START, QUANT" loading="lazy" width="480" height="480">
+        <figcaption>REC while stopped: REC READY.</figcaption></figure>
+      <div>
+        <p>PALEOTONE records live and layers every pass over the last (overdub). Notes land on the nearest step as you heard them.</p>
+        <div class="tbl"><table>
+          <tr><th>When</th><th>REC does</th></tr>
+          <tr><td>Playing</td><td>Records the selected track at once. REC again stops recording; the loop plays on.</td></tr>
+          <tr><td>Stopped</td><td>Arms: REC READY. Your first note starts the loop and is step 1. PLAY starts it too; REC again cancels.</td></tr>
+          <tr><td>Stopped, empty project</td><td>A free take: play at your own tempo, then press REC on the "1" after your last bar to close the loop.</td></tr>
+          <tr><td>Held about 2 s</td><td>Clears the selected track. Let go before the ring fills and nothing happens.</td></tr>
+        </table></div>
+        <p>On the REC READY screen, <b>LENGTH</b> sets the loop (1, 2 or 4 bars), <b>START</b> picks your first note or a one-bar
+          count-in, and <b>QUANT</b> on snaps to the steps while off keeps your timing.</p>
+      </div>
+    </div>
+    <p>Turn <kbd>ALGORITHM</kbd> while recording and the take moves to the next track without stopping. The PLAY light flashes
+      on every beat; an audible click is GLO &gt; GLOBAL &gt; CLICK.</p>
+  </section>
+
+  <!-- 13 -->
+  <section class="g" id="layers">
+    <h2><span class="n">13</span>The seven layers</h2>
+    <p>Hold the button; the keys and knobs change job until you let go (or <a href="#taphold">lock</a> it with HOME).</p>
+
+    <h3>FX · PUNCH</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-fx.png" alt="PUNCH layer tiles: LOW, MID, HIGH, LOOP 4, LOOP 8, LOOP 16, LOOP 32, REWIND, OCT UP, FLANGE, STUTT, REV, STOP, HALF, PAN, FREEZE, LOOPBT, LOW, HIGH, PHONE, CRUSH, MONO, FADE, ALIAS, GATE, ECHO, WOBBLE" loading="lazy" width="480" height="480"></figure>
+      <div>
+        <p><b>FX + a key</b> (white or black) plays that key's punch-in effect on the whole mix for as long as it's held: kills,
+          loops and stutters, rewind, tape stop, half speed, freeze, filters, crush, phone, echo, wobble.</p>
+        <div class="tbl"><table>
+          <tr><td>FX + KNOB 1</td><td>master FILTER: left low-pass, right high-pass</td></tr>
+          <tr><td>FX + KNOB 2</td><td>DUST: old sampler and vinyl</td></tr>
+          <tr><td>FX + KNOB 3</td><td>DUCK: sidechain pump from the kick</td></tr>
+          <tr><td>FX + KNOB 4</td><td>TRK FLT: the same filter on the selected track only</td></tr>
+          <tr><td>FX + OCT− / OCT+</td><td>reverb throw / echo throw while held</td></tr>
+        </table></div>
+      </div>
+    </div>
+
+    <h3>EDIT · ERASE</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-edit.png" alt="ERASE layer: EVERY STEP, the 16 keys, knobs SHIFT LENGTH TRANSP" loading="lazy" width="480" height="480"></figure>
+      <div class="tbl"><table>
+        <tr><td>EDIT + key, playing</td><td>erases that sound or note from every step the playhead passes while you hold it</td></tr>
+        <tr><td>EDIT + key, stopped</td><td>erases it from the whole pattern</td></tr>
+        <tr><td>EDIT + KNOB 1</td><td>SHIFT: every step one later or earlier</td></tr>
+        <tr><td>EDIT + KNOB 2</td><td>LENGTH: right doubles the pattern, left halves it</td></tr>
+        <tr><td>EDIT + KNOB 3</td><td>TRANSP: every note a semitone up or down</td></tr>
+        <tr><td>EDIT + OCT− / OCT+</td><td>undo / redo</td></tr>
+        <tr><td>EDIT + a black key</td><td>drum track: the white keys mute and unmute their sound instead</td></tr>
+      </table></div>
+    </div>
+
+    <h3>ARP · ROLL</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-arp.png" alt="ROLL layer: HOLD + KEY, knob RATE" loading="lazy" width="480" height="480"></figure>
+      <div>
+        <p><b>ARP + a held key</b> repeats it on the grid, locked to the tempo and swing, until you let go. <b>KNOB 1</b> is the
+          RATE: 1/8, 1/16, 1/32, 32T, 1/64. On the drum track add OCT− or OCT+ for ghost or hard rolls. While recording, a roll is
+          written as ratchets. (The arpeggiator itself is on the ARP pages: tap ARP.)</p>
+      </div>
+    </div>
+
+    <h3>SEQ · STEPS</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-seq.png" alt="STEPS layer, PAGE 1/4: the steps with their notes D4, A3, C4, D#4, A#3, knobs NOTE DIV SWNG STEPS" loading="lazy" width="480" height="480"></figure>
+      <div class="tbl"><table>
+        <tr><td>SEQ + empty step</td><td>sets it, with the sound or note you played last</td></tr>
+        <tr><td>SEQ + set step (tap)</td><td>clears it</td></tr>
+        <tr><td>SEQ + OCT− / OCT+</td><td>the page: steps 1–16, 17–32, 33–48, 49–64</td></tr>
+        <tr><td>SEQ + KNOB 1–4</td><td>NOTE (or sound) to set · DIV · SWNG of the track · STEPS (1–64)</td></tr>
+        <tr><td>SEQ + step + KNOB 1–4</td><td>its note (or which drum sound) · LEVEL / VEL · RATCHET x1–x4 · NUDGE</td></tr>
+        <tr><td>SEQ + step + PRESETS</td><td>a parameter lock on that step (ALGORITHM picks which parameter)</td></tr>
+        <tr><td>SEQ + step + OCT+</td><td>fill condition: normal, FILL ONLY, NO FILL</td></tr>
+        <tr><td>SEQ + step + OCT−</td><td>clears the step's nudge, locks and fill condition</td></tr>
+      </table></div>
+    </div>
+
+    <h3>SCL · KEY</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-sel.png" alt="KEY layer: KEY C CHR, the 16 keys as notes, knobs CHORD SCALE KEYS TRANSP" loading="lazy" width="480" height="480"></figure>
+      <div class="tbl"><table>
+        <tr><td>SCL + any key</td><td>the key of the song: the root of all the synth tracks</td></tr>
+        <tr><td>SCL + KNOB 1</td><td>CHORD of the track: OFF, TRIAD, 7TH, 9TH, SUS4, POWER (one finger, one chord)</td></tr>
+        <tr><td>SCL + KNOB 2</td><td>SCALE: 16 scales</td></tr>
+        <tr><td>SCL + KNOB 3</td><td>KEYS: OFF (chromatic), SNAP (rounded to the scale), WHITE (the white keys walk the scale)</td></tr>
+        <tr><td>SCL + KNOB 4</td><td>TRANSP the track, ±24 semitones</td></tr>
+      </table></div>
+    </div>
+
+    <h3>GLO · MIX</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-mix.png" alt="MIX layer: M1 to M6, S1 to S6, FILL, BAR, TAP, 72; knobs 1, 2, 3, DR" loading="lazy" width="480" height="480"></figure>
+      <div class="tbl"><table>
+        <tr><td>GLO + key 1–6</td><td>mute / unmute track 1–6</td></tr>
+        <tr><td>GLO + key 7–12</td><td>solo track 1–6 (solos add up)</td></tr>
+        <tr><td>GLO + key 13 (held)</td><td>FILL while held</td></tr>
+        <tr><td>GLO + key 14</td><td>FILL BAR: the next bar plays as a fill</td></tr>
+        <tr><td>GLO + key 16</td><td>tap tempo</td></tr>
+        <tr><td>GLO + KNOB 1–4</td><td>levels of tracks 1, 2, 3 and the drums</td></tr>
+      </table></div>
+    </div>
+
+    <h3>SAVE · SONG</h3>
+    <div class="row">
+      <figure><img class="shot" src="img/layer-song.png" alt="SONG layer: A B C D, SAVE A to SAVE D, LOOP, REC, CHAIN" loading="lazy" width="480" height="480"></figure>
+      <div class="tbl"><table>
+        <tr><td>SAVE + key 1–4</td><td>play section A–D (playing: from the next bar)</td></tr>
+        <tr><td>SAVE + several of keys 1–4</td><td>a quick chain, played in turn when you let go</td></tr>
+        <tr><td>SAVE + key 5–8</td><td>save the loop into A–D (over a used one: again within 3 s)</td></tr>
+        <tr><td>SAVE + key 13</td><td>LOOP or SONG mode</td></tr>
+        <tr><td>SAVE + key 14</td><td>SONG REC: what you play from the next bar is written into the song</td></tr>
+        <tr><td>SAVE + key 16</td><td>the SONG screen</td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="g" id="pages">
+    <h2><span class="n">14</span>Every page, knob by knob</h2>
+    <p>Tap a button for its pages; tap again (or turn SELECT) for the next. The top of a page shows the tempo and the track; the
+      bottom shows the engine, the sound and the page (ENV 1/2…). Values are drawn large, with a bar under each.</p>
+    <div class="shots">
+      <figure><img class="shot" src="img/page-env.png" alt="ENV page: ATK 18 ms, DEC 230 ms, SUS 88, REL 185 ms" loading="lazy" width="480" height="480"><figcaption>ENV</figcaption></figure>
+      <figure><img class="shot" src="img/page-lfo.png" alt="LFO page: RATE 1.18 Hz, WAVE SIN, PHS 0, FADE 1.0 ms" loading="lazy" width="480" height="480"><figcaption>LFO</figcaption></figure>
+      <figure><img class="shot" src="img/page-fx.png" alt="FX page: DST 8, CHO 16, DLY 14, REV 36" loading="lazy" width="480" height="480"><figcaption>FX</figcaption></figure>
+      <figure><img class="shot" src="img/page-tape.png" alt="TAPE page: TAPE 0, CRSH 0, AMB 0, CRKL 31" loading="lazy" width="480" height="480"><figcaption>FX · TAPE</figcaption></figure>
+      <figure><img class="shot" src="img/page-edit.png" alt="EDIT OSC page on ANALOG: WAVE SYNC, SYNC 14, MIX 31, NOIS 0" loading="lazy" width="480" height="480"><figcaption>EDIT</figcaption></figure>
+      <figure><img class="shot" src="img/page-voice.png" alt="VOICE page: VCE POLY, GLD 1.0 ms, GLMOD RATE, PRIO LAST" loading="lazy" width="480" height="480"><figcaption>EDIT · VOICE</figcaption></figure>
+      <figure><img class="shot" src="img/page-sel.png" alt="SEL page: ROOT C, SCL CHR, QNT OFF, CHORD OFF" loading="lazy" width="480" height="480"><figcaption>SCL</figcaption></figure>
+      <figure><img class="shot" src="img/page-arp.png" alt="ARP page: MODE OFF, RATE 1/16, OCT 1, GATE 50" loading="lazy" width="480" height="480"><figcaption>ARP</figcaption></figure>
+      <figure><img class="shot" src="img/page-notes.png" alt="NOTES page: a piano roll with NOTE, PITCH, LEN, FORCE" loading="lazy" width="480" height="480"><figcaption>SEQ · NOTES</figcaption></figure>
+      <figure><img class="shot" src="img/page-pattern.png" alt="PATTERN page: LEN 64, DIV 1/8, SWG 0, GATE 50, and the pattern drawn" loading="lazy" width="480" height="480"><figcaption>SEQ · PATTERN</figcaption></figure>
+      <figure><img class="shot" src="img/page-global.png" alt="GLOBAL page: BPM 72, SWING 0, CLICK OFF, TUNE 0" loading="lazy" width="480" height="480"><figcaption>GLO</figcaption></figure>
+      <figure><img class="shot" src="img/page-midi.png" alt="MIDI page: CH1 1, CH2 2, CH3 3, CH4 10" loading="lazy" width="480" height="480"><figcaption>GLO · MIDI</figcaption></figure>
+    </div>
+    <div class="tbl"><table>
+      <tr><th>Button</th><th>Its pages</th></tr>
+      <tr><td>ENV</td><td><b>ENV</b> (ATK DEC SUS REL) · <b>ENV DEST</b> (how much the envelope moves the filter, the pitch and the shape)</td></tr>
+      <tr><td>LFO</td><td><b>LFO</b> (RATE WAVE PHS FADE) · <b>LFO 2</b> · <b>LFO DEST</b></td></tr>
+      <tr><td>FX</td><td><b>FX</b> (DST CHO DLY REV sends) · <b>FILTER</b> · <b>INSERT</b> · <b>INSERT 2</b> · <b>DLY</b> · <b>REVERB</b> · <b>TAPE</b> (TAPE CRSH AMB CRKL: the whole mix through a worn cassette, crushed, with ambience and crackle)</td></tr>
+      <tr><td>SCL</td><td><b>SEL</b> (ROOT SCL QNT CHORD) · <b>SEL 2</b> (TRN STRUM VLEAD)</td></tr>
+      <tr><td>EDIT</td><td>the engine's pages: <b>EDIT 1</b> · <b>EDIT 2</b> · <b>FILTER</b> · <b>VOICE</b> · <b>VOICE 2</b>. SAURUS shows CALL and THROAT; ROAR shows DRONE and RING</td></tr>
+      <tr><td>ARP</td><td><b>ARP</b> (MODE RATE OCT GATE) · <b>ARP 2</b></td></tr>
+      <tr><td>SEQ</td><td><b>NOTES</b> (the piano roll, note by note) · <b>PATTERN</b> (LEN DIV SWG GATE) · <b>SONG</b></td></tr>
+      <tr><td>GLO</td><td><b>GLOBAL</b> (BPM SWING CLICK TUNE) · <b>SYSTEM</b> · <b>DRUMS</b> · <b>MIDI</b> · <b>MIDI 2</b></td></tr>
+      <tr><td>SAVE</td><td><b>PRESETS</b> · <b>USER</b> (your own sounds) · <b>SECTION</b> · <b>TOOLS</b></td></tr>
+    </table></div>
+    <div class="row">
+      <figure><img class="shot" src="img/page-tools.png" alt="TOOLS page: CLRSQ, INIT, DEMO, NEW" loading="lazy" width="480" height="480">
+        <figcaption>SAVE &gt; TOOLS.</figcaption></figure>
+      <div>
+        <p><b>TOOLS</b> does things that can't be taken back, so each one asks twice: turn the knob one click, <i>AGAIN</i> shows,
+          turn it one more click within a moment to do it.</p>
+        <div class="tbl"><table>
+          <tr><td>CLRSQ</td><td>clears the selected track's pattern</td></tr>
+          <tr><td>INIT</td><td>sets the selected track's sound back to a plain start</td></tr>
+          <tr><td>DEMO</td><td>loads the demo song, VALLEY OF GIANTS</td></tr>
+          <tr><td>NEW</td><td>a new, empty project</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 -->
+  <section class="g" id="song">
+    <h2><span class="n">15</span>Sections and the song</h2>
+    <div class="row">
+      <figure><img class="shot" src="img/song.png" alt="SONG screen: LOOP MODE, 72 BPM, STOPPED; rows 1 A 4 BARS, 2 B 4 BARS, 3 C EMPTY, 4 D EMPTY; ROW PART BARS LEN" loading="lazy" width="480" height="480">
+        <figcaption>The SONG screen (tap SAVE on TRACKS).</figcaption></figure>
+      <div>
+        <p>A project holds four <b>sections</b>, A to D: each is a loop of all six tracks. Build one, save it with
+          <b>SAVE + key 5–8</b>, change it, save the next. Then play them live with <b>SAVE + key 1–4</b>, or chain them.</p>
+        <p>The <b>SONG screen</b> writes them in order. KNOB 1–4 pick the ROW, its PART (A–D), BARS and LEN. REC stores the row,
+          SAVE saves the chain, OCT− switches LOOP / SONG mode and OCT+ twice loads. In SONG mode, PLAY plays the song from the top.</p>
+        <p class="small">The demo song is a song: sections A B C B C D, about 2:40.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 -->
+  <section class="g" id="menu">
+    <h2><span class="n">16</span>The HOME menu</h2>
+    <div class="row">
+      <figure><img class="shot" src="img/menu.png" alt="MENU, SCREEN 1/5: K1 COLOR TERMINAL, K2 ZOOM OFF, K3 KNOB ACCEL ON" loading="lazy" width="480" height="480"></figure>
+      <div>
+        <p><b>Hold HOME</b> for the menu; hold it again (or OCT−) to leave. SELECT moves between its sections, KNOB 1–3 set what
+          each line shows.</p>
+        <div class="tbl"><table>
+          <tr><td>SCREEN</td><td>COLOR (TERMINAL is PALEOTONE's palette), ZOOM, KNOB ACCEL</td></tr>
+          <tr><td>LIGHTS</td><td>how bright the keys and buttons glow</td></tr>
+          <tr><td>AUDIO</td><td>output and USB audio settings</td></tr>
+          <tr><td>SEQ</td><td>the sequencer's settings</td></tr>
+          <tr><td>SYSTEM</td><td>the version, calibration and update</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 -->
+  <section class="g" id="midi">
+    <h2><span class="n">17</span>MIDI, the editor, backups</h2>
+    <p><b>MIDI.</b> Plug the FM-1 into a computer or a USB host. GLO &gt; MIDI sets the channels: a keyboard on channel 1, 2 or 3
+      plays track 1, 2 or 3, and CH4 is the drums (10 at first). Notes you play on the FM-1 go out on USB MIDI. A MIDI keyboard
+      works in the browser version too.</p>
+    <p><b>The editor.</b> The <a href="../editor/">PALEOTONE editor</a> runs in Chrome or Edge and talks to the FM-1 over USB:
+      back up and restore projects, edit patterns in a piano roll, import MIDI files, load your own samples and drum kits. It also
+      comes as a single file you can keep offline (on the install page).</p>
+    <p><b>Saving.</b> Your work is kept on the FM-1 as you go. Before an install or anything risky, make a backup with the editor.</p>
+  </section>
+
+  <!-- 18 -->
+  <section class="g" id="trouble">
+    <h2><span class="n">18</span>Troubleshooting and recovery</h2>
+    <div class="tbl"><table>
+      <tr><th>Problem</th><th>Try</th></tr>
+      <tr><td>The installer can't find the FM-1</td><td>Use Chrome or Edge, a USB <i>data</i> cable straight to the computer (no hub), and close every other MIDI app (DAWs, the editor in another tab). Unplug and plug back in.</td></tr>
+      <tr><td>No sound</td><td>Turn up MASTER. Check GLO + keys 1–6 for mutes and 7–12 for solos. Check the track's LEVEL on TRACKS.</td></tr>
+      <tr><td>The keys do something odd</td><td>A layer may be locked (LOCK on the screen): tap HOME. Check SCL + KNOB 3 (KEYS) and KNOB 1 (CHORD).</td></tr>
+      <tr><td>A knob or button feels wrong</td><td>Calibrate: hold OCT− and OCT+ while switching on (or HOME menu &gt; SYSTEM).</td></tr>
+      <tr><td>The FM-1 won't start after an install</td><td>Hold <b>OCT−</b> alone while switching on: USB rescue. Then open the installer again and install.</td></tr>
+      <tr><td>USB rescue doesn't help</td><td>Recovery needs a Transporter: see <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener">FM-1-transporter</a>.</td></tr>
+      <tr><td>Back to the official firmware</td><td>M-VAVE's own updater, M-UPGRADE: <a href="https://www.m-vave.com/download" target="_blank" rel="noopener">m-vave.com/download</a>.</td></tr>
+      <tr><td>Something else</td><td><a href="https://github.com/fantasmoslam/Paleotone/issues" target="_blank" rel="noopener">Report a bug</a>: what you did, what you expected, what happened.</td></tr>
+    </table></div>
+  </section>
+</main>
+
+<footer><div class="wrap narrow">
+  PALEOTONE by <a href="https://github.com/fantasmoslam/Paleotone">fantasmoslam</a>, on <a href="https://github.com/isod89/sloop-fm1">SLOOP</a>
+  by isod89 and <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments. SLOOP's own,
+  longer guide covers everything the two share. Typeface: Clayborn by Frank Baranowski (SIL OFL 1.1). Free software under the
+  <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>. M-VAVE and FM-1 are trademarks of their respective owners;
+  PALEOTONE is not affiliated with them.
+</div></footer>
+</body>
+</html>

@@ -1,103 +1,63 @@
 # Felucca licensing
 
-Felucca is free software, licensed under the GNU General Public License, version 3 only
-(`GPL-3.0-only`, full text in `LICENSE`). That covers the code and its own assets. A few
-bundled or ported parts keep their own licences; they are listed below, and their licence
-texts are in `LICENSES/`.
+Felucca is free software. Its **code** is licensed under the GNU General Public License,
+version 3 only (`GPL-3.0-only`, full text in `LICENSE`). Its **assets** are not part of
+that licence: the icon atlas `assets/icons.png`, the panel image `docs/panel.jpg` and the drum sounds made by
+`tools/gen_waves.py` (the Hügelton Sample Pack) are Copyright (C) 2026 Hügelton Instruments,
+all rights reserved. Their licence terms will be published later. SLOOP's firmware does not contain the
+Hügelton Sample Pack: its sampled drum kit is made of CC0 recordings (`assets/samples-cc0/KIT`), and
+`gen_waves.py` only feeds the SLICE engine's demo loop, which SLOOP does not build.
 
 Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 
-## What is GPL-3.0-only
+## What is code (GPL-3.0-only)
 
-Every file in this tree that carries an `SPDX-License-Identifier: GPL-3.0-only` header:
+Every file in this tree that carries an `SPDX-License-Identifier: GPL-3.0-only` header (one source file
+carries another: `firmware/src/fm6_core.c`, msfa, Apache-2.0, below; the firmware built with it is
+GPL-3.0-only as a whole):
 
 - the firmware: `firmware/` (app, HAL, update loader)
 - the build script and tools: `build.sh`, `tools/`
-- the web pages (installer, editor, the browser emulator `web/emu/`) and their tests: `web/` (not the Fukiai and DotGothic16 fonts, below)
+- the web pages (installer, editor) and their tests: `web/` (not the Fukiai font, below)
 - the host tests: `tests/`
 
-Three source files are ports and keep the licence of their originals:
-`firmware/src/phys_dsp.c` (DaisySP, MIT), `firmware/src/phys_symp.c` (Rings, MIT) and
-`firmware/src/fm6_core.c` (msfa, Apache-2.0). The firmware built with them is GPL-3.0-only as
-a whole.
-
-You may use, study, change and share Felucca under the GPL. If you distribute Felucca, or
+You may use, study, change and share it under the GPL. If you distribute Felucca, or
 firmware derived from it, you must also give your recipients its complete corresponding
-source under the same licence. That includes devices that ship with modified Felucca inside.
+source under the same licence. That includes devices that ship with modified Felucca
+inside.
 
-## Hügelton Instruments' own work
+## Additional permission (GPL-3.0 section 7)
 
-All by Hügelton Instruments (Leo Kuroshita), in this tree:
+As an additional permission under GPL-3.0 section 7, you may combine Felucca, or a work
+based on it, with the Felucca Assets (above), and convey the combination.
+This is allowed even though the Felucca Assets are not licensed under the GPL, provided
+that:
 
-| What | Licence | Where |
-| --- | --- | --- |
-| Felucca: firmware, tools, web pages, tests | GPL-3.0-only | `LICENSE` |
-| The PHASE engine's waveforms: a C port of the oscillator of CrispyZebra (<https://github.com/hugelton/CrispyZebra>) | GPL-3.0 | `firmware/src/eng_phase.c` |
-| The DRUM voices and kit | GPL-3.0-only | `firmware/src/drum_voice.c`, `firmware/src/eng_drum.c` |
-| The Hügelton Sample Pack: Felucca's drum sounds, made by `tools/gen_waves.py`, from which the SLICE engine's BREAK is built (not CC0) | GPL-3.0-only | `tools/gen_waves.py` |
-| The controls picture | GPL-3.0-only | `docs/controls.jpg` |
-| The Fukiai icon font (<https://github.com/hugelton/Fukiai>): the firmware's icons (rasterised at build time by `tools/gen_aa_icons.py`) and the web editor's | MIT | `web/fukiai.ttf`, `LICENSES/MIT-Fukiai.txt`, `web/FUKIAI-LICENSE.txt` |
+- you follow the GPL for every part that is not a Felucca Asset; and
+- you follow the terms published for the assets.
+
+The Felucca Assets are data (wavetables, icons, sample data). They are not program
+code. A firmware image built from the GPL sources with replacement assets, or with no
+assets, is entirely governed by the GPL.
 
 ## Third-party material
 
 | What | Licence | Where |
 | --- | --- | --- |
-| Inter Tight font by The Inter Project Authors (GHOULBOX: in the tree, not used by the build): the UI text, rasterised into the firmware at build time (`tools/gen_aa_font.py`; the generated tables are not offered as a font, and the font declares no Reserved Font Name) | SIL OFL 1.1 | `assets/fonts/InterTight[wght].ttf`, `LICENSES/OFL-InterTight.txt` (also `assets/fonts/OFL.txt`) |
-| VT323 font by The VT323 Project Authors (Peter Hull) (GHOULBOX; in the tree, not used by DINOBOX's build): GHOULBOX's UI text, rasterised into the firmware at build time (`tools/gen_aa_font.py --preset ghoulbox`; the generated tables are not offered as a font) | SIL OFL 1.1 | `assets/fonts/VT323-Regular.ttf`, `LICENSES/OFL-VT323.txt` |
-| Share Tech Mono font by Carrois Type Design, Ralph du Carrois (DINOBOX): the UI text and the keycaps' labels, rasterised into the firmware at build time (`tools/gen_aa_font.py --preset dinobox`, `tools/gen_aa_keycaps.py`; the generated tables are not offered as a font; the font file is Google Fonts' own, unmodified: Reserved Font Name "Share") | SIL OFL 1.1 | `assets/fonts/ShareTechMono-Regular.ttf`, `LICENSES/OFL-ShareTechMono.txt` |
-| Pirata One font by Rodrigo Fuenzalida and Nicolas Massi (GHOULBOX): GHOULBOX's boot / ABOUT wordmark (DINOBOX: the video tools only), rasterised into the firmware at build time (`tools/gen_ghoulbox_art.py`; the generated bitmaps are pictures of one word, not offered as a font; the font itself is unmodified) | SIL OFL 1.1 (Reserved Font Name "Pirata") | `assets/fonts/PirataOne-Regular.ttf`, `LICENSES/OFL-PirataOne.txt` |
-| Instrument samples (Versilian Studios VSCO-2 Community Edition, VCSL): the SAMPLE sets, also the SLICE engine's PIANO (the PIANO set's middle C) | CC0 1.0 | `assets/samples-cc0/`, provenance in `ATTRIBUTION.txt` there |
-| DaisySP by Electrosmith, Corp and Emilie Gillet (<https://github.com/electro-smith/DaisySP>): the PHYS engine's modal and string models and the resonator, ported to fixed point | MIT | `firmware/src/phys_dsp.c`, `LICENSES/MIT-DaisySP.txt` |
-| Rings by Emilie Gillet (<https://github.com/pichenettes/eurorack>): the PHYS engine's sympathetic strings, ported to fixed point | MIT | `firmware/src/phys_symp.c`, `LICENSES/MIT-Rings.txt` |
-| msfa by Google Inc. and Pascal Gauthier, from Dexed (<https://github.com/asb2m10/dexed>): the FM6 engine's synthesis, ported to integer C (Dexed itself is GPL-3.0; only msfa is used; the FM6 factory patches are Felucca's own) | Apache-2.0 | `firmware/src/fm6_core.c`, `LICENSES/Apache-2.0-msfa.txt` |
-| klattsch by Tony Gies (<https://github.com/tgies/klattsch>): design reference for the VOICE engine; no code copied. Formant data from Klatt (1980) / Hillenbrand et al. (1995) | MIT (klattsch) | credit only |
-| X0X by charlesvestal (<https://github.com/charlesvestal/fm1-x0x>), a Felucca fork: the design of the browser emulator (the worklet, the device clock driven by its audio, the exports); its files credit it in their headers | GPL-3.0 | `web/emu/` |
-| DotGothic16 font by The DotGothic16 Project Authors (<https://github.com/fontworks-fonts/DotGothic16>): the browser emulator's knob labels, served with its page (cut to printable ASCII; the font declares no Reserved Font Name) | SIL OFL 1.1 | `web/emu/fonts/DotGothic16-subset.woff`, `LICENSES/OFL-DotGothic16.txt` (also `web/emu/fonts/OFL.txt`) |
-| libflac.js 5.6.0 by DFKI GmbH (<https://github.com/mmig/libflac.js>): the web synth's FLAC encoder wrapper | MIT | `web/emu/vendor/libflac/libflac.min.wasm.js`, `LICENSES/MIT-libflac.js.txt` |
-| libFLAC 1.3.4 by Josh Coalson and the Xiph.Org Foundation (<https://github.com/xiph/flac/tree/1.3.4>): compiled into the web synth's FLAC WebAssembly module | BSD 3-Clause | `web/emu/vendor/libflac/libflac.min.wasm.wasm`, `LICENSES/BSD-3-Clause-libFLAC.txt` |
-| wasm-media-encoders 0.7.0 by arseneyr (<https://github.com/arseneyr/wasm-media-encoders>): the web synth's MP3 encoder wrapper | MIT | `web/emu/vendor/mp3/WasmMediaEncoder.min.js`, `LICENSES/MIT-wasm-media-encoders.txt` |
-| LAME by the LAME project (<https://github.com/arseneyr/lame/tree/98db548e8e851defbba3184125ce10725355c332>): compiled into the web synth's separately loaded MP3 WebAssembly module | LGPL-2.0-or-later | `web/emu/vendor/mp3/mp3.wasm`, `LICENSES/LGPL-2.0-LAME.txt`, `LICENSES/LAME-NOTICE.txt` |
-| JieLi AC79 SDK by JieLi Technology: three of its files go into every `.fwsc` package (below); none are in this tree | Apache-2.0 | `LICENSES/Apache-2.0.txt` |
-
-The exact browser-codec versions, source commits, build-source links and binary SHA-256 hashes are recorded in
-`web/emu/vendor/README.md`. The LAME WebAssembly file is loaded as a separate runtime module and can be replaced
-with a compatible build from the cited source. None of these codecs is linked into the FM-1 firmware.
-
-On the device, HOME held > ABOUT opens the information screen; turning PRESETS scrolls on into
-CREDITS, a short list of these authors, licences and source URLs.
-
-## JieLi SDK files in the packages (Apache-2.0)
-
-A `.fwsc` package made by `tools/build.py` (with `tools/fm1pkg_make.py`; this is the package the
-web installer installs) holds three unmodified files from the JieLi AC79 SDK
-(<https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK>, `cpu/wl82/tools/`). They are read from your SDK
-checkout at build time (see BUILDING.md); no SDK files are in this tree.
-
-| File in the package | What it is |
-| --- | --- |
-| `uboot.boot` | the first-stage boot loader (SPL) |
-| `cfg_tool.bin` | the chip configuration block |
-| `eq_cfg_hw.bin` | the default hardware EQ table |
-
-They are licensed under the Apache License, Version 2.0 (`LICENSES/Apache-2.0.txt`), not under
-the GPL, and their copyright stays with JieLi Technology. The SDK has no NOTICE file. Apache-2.0
-files may be distributed together with GPL-3.0 code; Felucca itself stays GPL-3.0-only.
-
-Every distribution of a package carries the licence texts with it: the release folder
-(`tools/build.py --release`) and the site (`web/make_site.py`, next to the package in
-`firmware/` and linked from the installer page).
-
-## No vendor material
-
-No M-VAVE material is part of Felucca. The firmware links no vendor code and contains no vendor
-data, and the packages hold only Felucca and the three SDK files above. The installer's
-"Return to official V15" holds only the official file's size and SHA-256: you select the
-official firmware file you downloaded yourself, and it is checked and installed in your browser,
-never uploaded or redistributed.
+| Instrument and drum samples (Versilian Studios VSCO-2 CE, VCSL; Sonic Pi: SCRCH) | CC0 1.0 | `assets/samples-cc0/`, provenance in `ATTRIBUTION.txt` there |
+| Terminus font 8x16: the FM-1's screen (Terminus Bold, ter-u16b, SLOOP 2.6), and the web editor's font (the regular ter-u16n; `tools/gen_webfont.py` makes it a TrueType font inlined in `web/editor.html`) | SIL OFL 1.1 | `assets/fonts/ter-u16b.bdf`, `assets/fonts/ter-u16n.bdf`, `assets/fonts/Terminus-LICENSE.txt` |
+| Fukiai icon font (Hügelton Instruments), web editor only | MIT | `web/fukiai.ttf`, `web/FUKIAI-LICENSE.txt` |
+| Clayborn by Frank Baranowski: the FM-1's screen (`tools/gen_font.py`, the boot art) and the website's titles (served unmodified) | SIL OFL 1.1 | `assets/fonts/Clayborn.ttf`, `assets/fonts/Clayborn-LICENSE.txt` |
+| CrispyZebra by Leo Kuroshita (<https://github.com/hugelton/CrispyZebra>): the PHASE engine's waveforms are a C port of its oscillator | GPL-3.0 | `firmware/src/eng_phase.c` |
+| klattsch by Tony Gies (<https://github.com/tgies/klattsch>): design reference for the VOICE (formant) engine; no code copied. Formant data from Klatt (1980) / Hillenbrand et al. (1995) | MIT (klattsch) | credit only |
+| msfa by Google Inc. and Pascal Gauthier, from Dexed (<https://github.com/asb2m10/dexed>): the FM6 engine's synthesis (SLOOP 2.4), ported to integer C for Felucca 1.0 by Leo Kuroshita (Dexed itself is GPL-3.0; only msfa is used; the FM6 factory patches are Felucca's own) | Apache-2.0 | `firmware/src/fm6_core.c`, `LICENSES/Apache-2.0-msfa.txt` |
+| DaisySP (Electrosmith, Emilie Gillet) and Rings' sympathetic strings (Emilie Gillet): the PHYS engine's models (SLOOP 2.5, from Felucca 1.0, ported to fixed point by Leo Kuroshita) | MIT | `firmware/src/phys_dsp.c`, `firmware/src/phys_symp.c` (the notice is in each file) |
+| JieLi AC79 SDK: `uboot.boot`, `cfg_tool.bin`, `eq_cfg_hw.bin` are read from your SDK checkout at build time and placed in the package; no SDK files are in this tree | Apache-2.0 | <https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK> |
 
 ## Contributions
 
-Contributions are welcome under GPL-3.0-only.
+Contributions are welcome under GPL-3.0-only. By submitting one, you agree that it may be
+combined with the Felucca Assets under the section 7 permission above.
 
 ## Trademarks
 
