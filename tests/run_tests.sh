@@ -44,6 +44,8 @@ run "flash storage (A/B, torn writes)" "$OUT/storage_test"
 
 $CC -o "$OUT/recovery_test" tests/recovery_test.c
 run "application USB recovery and boot-loop guard" "$OUT/recovery_test"
+$CC -Ifirmware/hal -o "$OUT/fm1_jedec_test" tests/fm1_jedec_test.c
+run "FM-1 flash chips: P25Q80 and UC25HQ80 (newer units), app and update loader" "$OUT/fm1_jedec_test"
 
 $CC -o "$OUT/arranger_test" tests/arranger_test.c
 run "song order, timing, repeats and missing scenes" "$OUT/arranger_test"
