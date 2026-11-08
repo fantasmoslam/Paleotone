@@ -347,6 +347,9 @@ def main():
                     help="target board: fm1 (default) or smk37 (default: $BOARD, else fm1)")
     ap.add_argument("--model", choices=sorted(MODELS), default=None,
                     help="smk37: the model name, pro (default), elite or mke (default: $MODEL, else pro)")
+    ap.add_argument("--product", metavar="ID",
+                    help="package identity, prefix + two digits (FM-1_9NN; default: FM-1_900 or "
+                         "the --release identity). PALEOTONE's own is FM-1_966")
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
     a = ap.parse_args()
     BOARD = (a.board or os.environ.get("BOARD") or "fm1").lower().replace("-", "")
@@ -374,6 +377,11 @@ def main():
         if BOARD == "smk37":         # the product's name in front (splash.c: PRO is the badge, the digits under it)
             VERSION = "SLOOP PRO " + a.release.upper()
         name = f"{stem}-{a.release}.fwsc"
+    product = a.product
+    if product:                     # a firmware's own identity (the hubs tell firmwares apart by it)
+        if not re.fullmatch(re.escape(BOARD_PREFIX[BOARD]) + r"\d\d", product):
+            raise SystemExit(f"--product {product}: use {BOARD_PREFIX[BOARD]}NN (two digits)")
+        PRODUCT = product
     fm1pkg_make.SDK = a.sdk
     for rel, sha in SDK_SHA256.items():          # fail early without the SDK
         if hashlib.sha256(fm1pkg_make.sdk_file(rel)).hexdigest() != sha:
