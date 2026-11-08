@@ -14,9 +14,8 @@ Six tracks, SAURUS creature calls, ROAR drones and war drums, on a groovebox you
 <a href="../../issues">Report a bug</a>
 </p>
 
-> **Early alpha:** experimental firmware. An install can leave the FM-1 unable to start and in need of recovery.
-> Back up your projects with the editor, keep a known-good firmware package, and read the recovery notes on the
-> install page before installing.
+> **Before you install:** back up your projects with the editor. If an install is interrupted, the FM-1 can be
+> recovered (see [Install](#install)), and M-VAVE's own updater takes it back to the official firmware.
 
 <p align="center"><img src="web/site/art/clayborn-everywhere.png" width="760" alt="PALEOTONE's screens: the boot art, the six tracks, SAURUS's values, the envelope, the piano roll, the drum roll, MIX, SONG and the drum grid"></p>
 
