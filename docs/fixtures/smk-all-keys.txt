@@ -1,0 +1,417 @@
+# All 37 physical keys and all 16 pads, velocity and release, using the real board map.
+wait 400
+rf hello usb
+rf session usb 1 3000
+wait 40
+rf send usb 14 01
+wait 10
+expect rf_mi_n 12
+out
+smk key 0 down 70
+wait 8
+expect rf_mi_b12 144
+expect rf_mi_b13 48
+expect rf_mi_b14 70
+smk key 0 up
+wait 8
+expect rf_mi_b15 128
+expect rf_mi_b16 48
+out
+smk key 1 down 71
+wait 8
+expect rf_mi_b18 144
+expect rf_mi_b19 49
+expect rf_mi_b20 71
+smk key 1 up
+wait 8
+expect rf_mi_b21 128
+expect rf_mi_b22 49
+out
+smk key 2 down 72
+wait 8
+expect rf_mi_b24 144
+expect rf_mi_b25 50
+expect rf_mi_b26 72
+smk key 2 up
+wait 8
+expect rf_mi_b27 128
+expect rf_mi_b28 50
+out
+smk key 3 down 73
+wait 8
+expect rf_mi_b30 144
+expect rf_mi_b31 51
+expect rf_mi_b32 73
+smk key 3 up
+wait 8
+expect rf_mi_b33 128
+expect rf_mi_b34 51
+out
+smk key 4 down 74
+wait 8
+expect rf_mi_b36 144
+expect rf_mi_b37 52
+expect rf_mi_b38 74
+smk key 4 up
+wait 8
+expect rf_mi_b39 128
+expect rf_mi_b40 52
+out
+smk key 5 down 75
+wait 8
+expect_out USB 9F 35 4B
+smk key 5 up
+wait 8
+expect_out USB 8F 35 00
+out
+smk key 6 down 76
+wait 8
+expect_out USB 9F 36 4C
+smk key 6 up
+wait 8
+expect_out USB 8F 36 00
+out
+smk key 7 down 77
+wait 8
+expect_out USB 9F 37 4D
+smk key 7 up
+wait 8
+expect_out USB 8F 37 00
+out
+smk key 8 down 78
+wait 8
+expect_out USB 9F 38 4E
+smk key 8 up
+wait 8
+expect_out USB 8F 38 00
+out
+smk key 9 down 79
+wait 8
+expect_out USB 9F 39 4F
+smk key 9 up
+wait 8
+expect_out USB 8F 39 00
+out
+smk key 10 down 80
+wait 8
+expect_out USB 9F 3A 50
+smk key 10 up
+wait 8
+expect_out USB 8F 3A 00
+out
+smk key 11 down 81
+wait 8
+expect_out USB 9F 3B 51
+smk key 11 up
+wait 8
+expect_out USB 8F 3B 00
+out
+smk key 12 down 82
+wait 8
+expect_out USB 9F 3C 52
+smk key 12 up
+wait 8
+expect_out USB 8F 3C 00
+out
+smk key 13 down 83
+wait 8
+expect_out USB 9F 3D 53
+smk key 13 up
+wait 8
+expect_out USB 8F 3D 00
+out
+smk key 14 down 84
+wait 8
+expect_out USB 9F 3E 54
+smk key 14 up
+wait 8
+expect_out USB 8F 3E 00
+out
+smk key 15 down 85
+wait 8
+expect_out USB 9F 3F 55
+smk key 15 up
+wait 8
+expect_out USB 8F 3F 00
+out
+smk key 16 down 86
+wait 8
+expect_out USB 9F 40 56
+smk key 16 up
+wait 8
+expect_out USB 8F 40 00
+out
+smk key 17 down 87
+wait 8
+expect_out USB 9F 41 57
+smk key 17 up
+wait 8
+expect_out USB 8F 41 00
+out
+smk key 18 down 88
+wait 8
+expect_out USB 9F 42 58
+smk key 18 up
+wait 8
+expect_out USB 8F 42 00
+out
+smk key 19 down 89
+wait 8
+expect_out USB 9F 43 59
+smk key 19 up
+wait 8
+expect_out USB 8F 43 00
+out
+smk key 20 down 90
+wait 8
+expect_out USB 9F 44 5A
+smk key 20 up
+wait 8
+expect_out USB 8F 44 00
+out
+smk key 21 down 91
+wait 8
+expect_out USB 9F 45 5B
+smk key 21 up
+wait 8
+expect_out USB 8F 45 00
+out
+smk key 22 down 92
+wait 8
+expect_out USB 9F 46 5C
+smk key 22 up
+wait 8
+expect_out USB 8F 46 00
+out
+smk key 23 down 93
+wait 8
+expect_out USB 9F 47 5D
+smk key 23 up
+wait 8
+expect_out USB 8F 47 00
+out
+smk key 24 down 94
+wait 8
+expect_out USB 9F 48 5E
+smk key 24 up
+wait 8
+expect_out USB 8F 48 00
+out
+smk key 25 down 95
+wait 8
+expect_out USB 9F 49 5F
+smk key 25 up
+wait 8
+expect_out USB 8F 49 00
+out
+smk key 26 down 96
+wait 8
+expect_out USB 9F 4A 60
+smk key 26 up
+wait 8
+expect_out USB 8F 4A 00
+out
+smk key 27 down 97
+wait 8
+expect_out USB 9F 4B 61
+smk key 27 up
+wait 8
+expect_out USB 8F 4B 00
+out
+smk key 28 down 98
+wait 8
+expect_out USB 9F 4C 62
+smk key 28 up
+wait 8
+expect_out USB 8F 4C 00
+out
+smk key 29 down 99
+wait 8
+expect_out USB 9F 4D 63
+smk key 29 up
+wait 8
+expect_out USB 8F 4D 00
+out
+smk key 30 down 100
+wait 8
+expect_out USB 9F 4E 64
+smk key 30 up
+wait 8
+expect_out USB 8F 4E 00
+out
+smk key 31 down 101
+wait 8
+expect_out USB 9F 4F 65
+smk key 31 up
+wait 8
+expect_out USB 8F 4F 00
+out
+smk key 32 down 102
+wait 8
+expect rf_mi_b42 144
+expect rf_mi_b43 80
+expect rf_mi_b44 102
+smk key 32 up
+wait 8
+expect rf_mi_b45 128
+expect rf_mi_b46 80
+out
+smk key 33 down 103
+wait 8
+expect rf_mi_b48 144
+expect rf_mi_b49 81
+expect rf_mi_b50 103
+smk key 33 up
+wait 8
+expect rf_mi_b51 128
+expect rf_mi_b52 81
+out
+smk key 34 down 104
+wait 8
+expect rf_mi_b54 144
+expect rf_mi_b55 82
+expect rf_mi_b56 104
+smk key 34 up
+wait 8
+expect rf_mi_b57 128
+expect rf_mi_b58 82
+out
+smk key 35 down 105
+wait 8
+expect rf_mi_b60 144
+expect rf_mi_b61 83
+expect rf_mi_b62 105
+smk key 35 up
+wait 8
+expect rf_mi_b63 128
+expect rf_mi_b64 83
+out
+smk key 36 down 106
+wait 8
+expect rf_mi_b66 144
+expect rf_mi_b67 84
+expect rf_mi_b68 106
+smk key 36 up
+wait 8
+expect rf_mi_b69 128
+expect rf_mi_b70 84
+out
+smk pad 1 down 61
+wait 8
+expect_out USB 9F 35 3D
+smk pad 1 up
+wait 8
+expect_out USB 8F 35 00
+out
+smk pad 2 down 62
+wait 8
+expect_out USB 9F 37 3E
+smk pad 2 up
+wait 8
+expect_out USB 8F 37 00
+out
+smk pad 3 down 63
+wait 8
+expect_out USB 9F 39 3F
+smk pad 3 up
+wait 8
+expect_out USB 8F 39 00
+out
+smk pad 4 down 64
+wait 8
+expect_out USB 9F 3B 40
+smk pad 4 up
+wait 8
+expect_out USB 8F 3B 00
+out
+smk pad 5 down 65
+wait 8
+expect_out USB 9F 3C 41
+smk pad 5 up
+wait 8
+expect_out USB 8F 3C 00
+out
+smk pad 6 down 66
+wait 8
+expect_out USB 9F 3E 42
+smk pad 6 up
+wait 8
+expect_out USB 8F 3E 00
+out
+smk pad 7 down 67
+wait 8
+expect_out USB 9F 40 43
+smk pad 7 up
+wait 8
+expect_out USB 8F 40 00
+out
+smk pad 8 down 68
+wait 8
+expect_out USB 9F 41 44
+smk pad 8 up
+wait 8
+expect_out USB 8F 41 00
+out
+smk pad 9 down 69
+wait 8
+expect_out USB 9F 43 45
+smk pad 9 up
+wait 8
+expect_out USB 8F 43 00
+out
+smk pad 10 down 70
+wait 8
+expect_out USB 9F 45 46
+smk pad 10 up
+wait 8
+expect_out USB 8F 45 00
+out
+smk pad 11 down 71
+wait 8
+expect_out USB 9F 47 47
+smk pad 11 up
+wait 8
+expect_out USB 8F 47 00
+out
+smk pad 12 down 72
+wait 8
+expect_out USB 9F 48 48
+smk pad 12 up
+wait 8
+expect_out USB 8F 48 00
+out
+smk pad 13 down 73
+wait 8
+expect_out USB 9F 4A 49
+smk pad 13 up
+wait 8
+expect_out USB 8F 4A 00
+out
+smk pad 14 down 74
+wait 8
+expect_out USB 9F 4C 4A
+smk pad 14 up
+wait 8
+expect_out USB 8F 4C 00
+out
+smk pad 15 down 75
+wait 8
+expect_out USB 9F 4D 4B
+smk pad 15 up
+wait 8
+expect_out USB 8F 4D 00
+out
+smk pad 16 down 76
+wait 8
+expect_out USB 9F 4F 4C
+smk pad 16 up
+wait 8
+expect_out USB 8F 4F 00
+rf panelreq usb
+expect rf_panel_keys 0
+expect rf_mi_n 72
+expect rf_mi_bad 0
+expect rf_midi_drop 0
+rf session usb 0
+wait 20
+expect smk_data_ops 0
