@@ -26,3 +26,28 @@ Record the exact FM-1/SMK models, currently installed firmware and Android-repor
 - Preserve the owned port's model/package checks and calibration/storage boundaries. No flash or recovery procedure has been executed as part of this inspection.
 
 Interface design work is paused. The active Android shell is the original interface, with the held-key preset fix retained in Paleotone.
+
+## 0.1.5 MIDI routing correction
+
+The supplied Tab S6 diagnostic screenshot identifies the current controller as
+**Hügelton Instruments RAPTOR SMK**, USB **1209:0001**. Android enumerates it;
+`linked` meant a device handed to the native backend, not a negotiated bridge
+session. In **This tablet** mode, the bridge's eager claim combined with the
+ordinary MIDI input's unconditional exclusion prevented controller notes.
+
+The host now uses the selected source to assign exclusive MIDI port ownership:
+
+- This tablet: keep device discovery, release native bridge ports, then admit
+  candidate devices to ordinary MIDI input (subject to the saved input selection).
+- FM-1: reserve candidates and release ordinary MIDI ports before allowing native
+  bridge registration. Existing candidate identification and OMX exclusions stay
+  intact.
+- Serialize rapid mode changes and reject late native-open callbacks after release
+  or physical removal. Keep Bluetooth transport discovery available while native
+  bridge ports are released.
+
+Five JVM regression cases check startup in both modes, ordered transfers in both
+directions, repeated selections and rapid source changes. The patch is restored
+and reapplied deterministically to the pinned runtime on every Android build.
+Actual SMK notes, reconnect and mode-switch behavior still require physical testing.
+This does not qualify SMK screen/LED feedback or every additional physical control.
