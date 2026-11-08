@@ -144,7 +144,6 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     v->s[5]++;
     pitch = m->pitch16 - v->s[3] + ARPS[ar & 3][(v->s[5] / 28) % 3] * 16;   /* ~50 Hz, chip-style */
     inc = pitch_inc(clamp(pitch, 0, 2047));
-    inc += (uint32_t)((int32_t)(inc >> 12) * v->tfine);   /* GHOULBOX: TEMP's rest */
     if (p[P_E5])
         inc += (uint32_t)(((int32_t)(inc >> 12) * (((osc_sine(v->ph[1]) >> 8) * p[P_E5]) >> 4)) >> 4);   /* no overflow */
     v->ph[1] += 0x01000000u;
@@ -194,8 +193,8 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
             held = s;
         }
         ph0 += inc;
-        lp += mulq15(held - lp, lpk);
-        out[i] += voice_amp(lp, m, i);
+        lp += mulq15(clamp(held - lp, -65535, 65535), lpk);   /* (a WAVE / CHIP change mid-note: no wrap) */
+        out[i] += mulq15(mulq15(lp, amp_at(m, i)), VOICE_FS);
     }
     v->ph[0] = ph0;
     v->s[0] = held;
@@ -205,6 +204,7 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 }
 
 static const preset_t LOFI_PRESETS[] = {
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
     {"PULSE LD", {0, 0, 32, 0, 0, 20, 0, 127}, {0, 60, 90, 30}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
     {"WAVE BASS", {1, 1, 0, 0, 0, 0, 0, 90}, {0, 50, 70, 20}, 0, 1, FX(0, 0, 10, 0), PAT(2)},
     {"ARP 8BIT", {2, 0, 96, 0, 0, 0, 2, 110}, {0, 60, 80, 40}, 0, 0, FX(0, 0, 30, 20), PAT(13)},
@@ -212,20 +212,30 @@ static const preset_t LOFI_PRESETS[] = {
     {"WAVE LEAD", {0, 4, 92, 0, 0, 18, 0, 110}, {0, 70, 90, 30}, 0, 1, FX(0, 0, 40, 25), PAT(3)},
     /* STEP: 25 % pulse, DCY 34 = D7 (a 15-step decay over 0.5 s), REL ~54 ms of staircase after note-off */
     {"STEP LEAD", {4, 0, 40, 34, 0, 16, 0, 127}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
-    /* GHOULBOX presets (tools/ghoulbox_presets.py) */
+    /* DINOBOX's */
     {"FOSSIL LEAD", {2, 2, 80, 30, 6, 50, 0, 100}, {0, 70, 110, 50}, 0, 1, FX(0, 15, 35, 85), PAT(4)},
     {"DINO CHOIR", {1, 4, 40, 10, 0, 35, 0, 75}, {70, 90, 115, 100}, 0, 0, FX(0, 70, 25, 105), PAT(5)},
     {"BONE WHISTLE", {3, 1, 30, 12, 4, 60, 0, 40}, {15, 70, 110, 40}, 0, 1, FX(0, 25, 30, 95), PAT(4)},
     {"PIXEL RAPTOR", {2, 0, 20, 40, 90, 20, 0, 110}, {0, 50, 50, 20}, 0, 1, FX(0, 0, 30, 70), PAT(4)},
     {"EGG ARP", {0, 0, 32, 0, 0, 0, 2, 100}, {0, 60, 90, 40}, 0, 0, FX(0, 10, 40, 80), PAT(13)},
     {"CAVE ECHO", {1, 1, 48, 20, 0, 18, 0, 66}, {20, 80, 110, 90}, 0, 0, FX(0, 20, 90, 110), PAT(3)},
-    /* GHOULBOX end */
+    /* DINOBOX's end */
 };
 
+/* (after Clipper 1.2) UNISON (voice.c unison_spread): the oscillator moved by r (Q32) of a turn of the note and
+ * the noise register from its own place (every note's from 0x7FFF: every voice the same noise) */
+static void lofi_spread(track_t *t, voice_t *v, uint32_t r)
+{
+    (void)t;
+    v->ph[0] += r;
+    v->s[2] = (int32_t)(((uint32_t)v->s[2] ^ (r >> 17)) & 0x7FFFu);
+    if (!v->s[2])
+        v->s[2] = 1;
+}
+
 static const engine_t ENG_LOFI = {
-    .name = "LOFI",
-    .page_title = {"CHIP", "MOTN"},
-    .edit = {
+    "LOFI", {"CHIP", "MOTN"},
+    {
         {"CHIP", F_ENUM, 0, 4, 0, N_CHIP, 0},
         {"WAVE", F_ENUM, 0, 4, 0, N_RWAVE, 0},
         {"DUTY", F_INT, 0, 127, 64, 0, 0},              /* WRAM: the table, DUTY / 8 (lofi_desc) */
@@ -235,12 +245,6 @@ static const engine_t ENG_LOFI = {
         {"ARP", F_ENUM, 0, 3, 0, N_RARP, 0},
         {"TONE", F_PCT, 0, 127, 127, 0, 0},
     },
-    .presets = LOFI_PRESETS,
-    .npresets = NELEM(LOFI_PRESETS),
-    .note_on = lofi_note_on,
-    .render = lofi_render,
-    .knob = {P_E1, P_E2, P_E3, P_REL},
-    .keep = 0x11,                /* the held sample and the low-pass */
-    .amp = lofi_amp,
-    .desc = lofi_desc,
+    LOFI_PRESETS, sizeof(LOFI_PRESETS) / sizeof(LOFI_PRESETS[0]), 1, lofi_note_on, lofi_render,
+    0x3F2C, {P_E1, P_E2, P_E3, P_REL}, 0, lofi_amp, lofi_desc,
 };

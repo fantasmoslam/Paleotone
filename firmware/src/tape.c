@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; GHOULBOX changes 2026 */
-/* TAPE and CRSH (G_TAPE, G_CRSH, GHOULBOX): the whole mix (dry + buses) through a cheap sampler and a worn
+/* RAPTOR: Paleotone's tape.c, unchanged but for this line.
+ * TAPE and CRSH (G_TAPE, G_CRSH, GHOULBOX): the whole mix (dry + buses) through a cheap sampler and a worn
  * cassette, before MASTER (the level into the tape sets how hard it saturates, as a bounce would; MASTER is
  * the monitor). Both 0: nothing runs, the mix is bit for bit as without them.
  * CRSH (the keyboard): fewer bits (16 .. 7) and a sample-and-hold at 1/1 .. 1/6 of 44.1 kHz, no filter
@@ -16,7 +17,7 @@
 #define TP_C (140 << 8)                                 /* its centre delay, Q8 samples (~3.2 ms) */
 #define TP_WOW_INC 1558426u                             /* phase steps per block (FS / CTL a second): 0.5 Hz */
 #define TP_FLUT_INC 21818000u                           /* 7 Hz */
-static int32_t tp_buf[2][TP_LEN] __attribute__((section(".pool")));
+static int32_t tp_buf[2][TP_LEN] __attribute__((section(".lowram")));   /* (RAPTOR: the pool holds the 1.49 s delay) */
 static struct {
     uint32_t w, ph_wow, ph_flut, hold_n;
     int32_t d_prev, drift, drift_to, rng, hiss_lp[2], lp1[2], lp2[2], hold[2];

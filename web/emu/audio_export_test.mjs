@@ -60,7 +60,7 @@ globalThis.currentTime = 0;
 globalThis.AudioWorkletProcessor = class {
   constructor() { this.port = { postMessage: (message, transfer = []) => posted.push({ message, transfer }) }; }
 };
-globalThis.registerProcessor = (name, processor) => { if (name === "felucca") Worklet = processor; };
+globalThis.registerProcessor = (name, processor) => { if (name === "paleotone") Worklet = processor; };
 await import(`./worklet.js?audio-export-test=${Date.now()}`);
 const memory = { buffer: new ArrayBuffer(4096) };
 const processor = new Worklet();

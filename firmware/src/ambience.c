@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GHOULBOX (on Felucca by Leo Kuroshita, Hügelton Instruments) */
-/* The ambience (G_AMB, G_CRKL, GHOULBOX): a cave's air and a torch's crackle on the mix, with no track and no voice
+/* RAPTOR: Paleotone's ambience.c, unchanged but for this line.
+ * The ambience (G_AMB, G_CRKL, GHOULBOX): a cave's air and a torch's crackle on the mix, with no track and no voice
  * (CAVE WIND and TORCH, the NOISE sounds, take a track each). Into the dry mix and a share into the reverb's send,
  * before TAPE / CRSH and MASTER (fx.c mix_block); it plays whether the song plays or not (room tone). AMB 0: nothing
  * runs, the mix bit for bit as without it; turned on, it starts from silence.

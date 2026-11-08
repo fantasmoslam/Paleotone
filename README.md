@@ -1,138 +1,95 @@
-# PALEOTONE: FM-1 Prehistoric Synth
+<p align="center"><img src="web/site/art/skull.png" width="148" alt=""><br>
+<img src="web/site/art/wordmark.png" width="460" alt="PALEOTONE"></p>
 
-> **Early alpha:** experimental firmware. Installation can leave the FM-1 unable to boot and require recovery. Back up projects/settings and retain a known-good firmware before installing. Audio and recording issues remain under investigation.
+<p align="center"><b>PALEOTONE: prehistoric synth firmware for the M-VAVE FM-1.</b><br>
+Six tracks, SAURUS creature calls, ROAR drones and war drums, on a groovebox you play live.</p>
 
-[Play in your browser](https://fantasmoslam.github.io/Paleotone/webapp/emu/) · **[Install on your FM-1](https://fantasmoslam.github.io/Paleotone/webapp/installer/)** · [Manual](https://fantasmoslam.github.io/Paleotone/manual/)
-
-<p>
-  <img src="docs/paleotone-splash.png" width="23%" alt="PALEOTONE boot artwork">
-  <img src="docs/paleotone-home.png" width="23%" alt="PALEOTONE home screen">
-  <img src="docs/paleotone-saurus.png" width="23%" alt="SAURUS creature voices">
-  <img src="docs/paleotone-scape.png" width="23%" alt="SCAPE MUSIC">
+<p align="center">
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/emu/"><b>Play it in your browser</b></a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/installer/"><b>Install on your FM-1</b></a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/guide/">Guide</a> ·
+<a href="https://fantasmoslam.github.io/Paleotone/webapp/editor/">Editor</a> ·
+<a href="web/site/art/demo-song.mp3">Hear the demo song</a> ·
+<a href="BUILDING.md">Building</a> ·
+<a href="../../issues">Report a bug</a>
 </p>
 
-**PALEOTONE** (formerly DINOBOX) is epic prehistoric firmware for the **M-VAVE FM-1**: roaring beasts, booming war drums, misty jungle
-pads and volcanic rumbles. It is a fork of [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth)
-2.3.2 by Jason Persinger, itself built on [Felucca](https://github.com/hugelton/Felucca) 1.4.1 by Leo Kuroshita,
-Hügelton Instruments. Everything GHOULBOX does (its composer, RING, KEYS, the hall reverb, tape and crush, twelve
-voices) works the same; the look, the names and the sounds are new.
+> **Before you install:** back up your projects with the editor. If an install is interrupted, the FM-1 can be
+> recovered (see [Install](#install)), and M-VAVE's own updater takes it back to the official firmware.
 
-**Hardware status:** the owner has tested PALEOTONE on an FM-1, including the lightweight USB second-screen
-messages (90 and 91). This does not establish hardware coverage of every feature or development branch.
-An earlier experimental screen-companion build required Flipper-assisted recovery; USB rescue alone was
-insufficient. Keep a known-good firmware package and recovery instructions before trying experimental firmware.
+<p align="center"><img src="web/site/art/clayborn-everywhere.png" width="760" alt="PALEOTONE's screens: the boot art, the six tracks, SAURUS's values, the envelope, the piano roll, the drum roll, MIX, SONG and the drum grid"></p>
 
-The [USB second-screen app](https://fantasmoslam.github.io/Paleotone/webapp/screen/) follows the FM-1's controls.
-Open it in Chrome or Edge, connect a USB data cable, and allow MIDI/SysEx. This is the graphics companion:
-it uses the firmware's C screen renderer and provides Original and Expanded views. This one link covers every
-build: the page reads the connected FM-1 and, when the instrument runs a newer companion build, forwards to the
-page made for it (`screen-unified/`). It defaults to the working companion source `19727a9`; a firmware and a page
-still have to come from matching builds. Opening the webpage does not install firmware. Phone support remains
-untested.
-The separate [lightweight display](https://fantasmoslam.github.io/Paleotone/webapp/screen-lite/) uses screen-state
-messages 90/91 and is not a replacement for the graphics companion.
+## What it is
 
-## What's different from GHOULBOX
+PALEOTONE is the prehistoric sound of the earlier PALEOTONE (its presets, samples, SAURUS and ROAR engines, drum kits
+and effects) on **RAPTOR's base**: SLOOP 2.8.4 by isod89, the live groovebox firmware built on Felucca. The look is a
+1993 park-operations terminal: phosphor green on black, amber for what needs attention, and one typeface, Clayborn,
+drawn large on every screen.
 
-- **A 1993 park-operations terminal.** The TERMINAL palette (phosphor green on black, amber for what needs
-  attention) is a new FM-1's colours; JUNGLE and VOLCANO are beside it in MENU > DISPLAY > COLOR (GHOULBOX's CRYPT
-  too). The windows are green-screen glass with faint scanlines and amber corner brackets; the cursor is a prompt;
-  electric fence posts with blinking warning lamps stand beside HOME's scope; the type is Share Tech Mono drawn as
-  pixels (GHOULBOX: VT323). ROAR's icon is a T. rex head; MENU's DISPLAY tab is a reptile's eye.
-- **The boot screen and ABOUT page:** a Dilophosaurus skull, the PALEOTONE title in big terminal pixels and "PREHISTORIC
-  SYNTH".
-- **ROAR** is GHOULBOX's hurdy-gurdy engine (GURDY), renamed for what it does here: pages DRONE and CALL, its
-  controls BRTH (was WHL), RASP (BUZZ) and PULS (COUP, whose CRANK is now TURN). **EPOCH** is GHOULBOX's DREAM: tap
-  HOME after KEYS, pick a mood and a key, and it composes a slow piece from your four tracks.
-- **119 sounds of its own, nothing inherited.** Every sound in PRESETS is PALEOTONE's: GHOULBOX's slots hold new
-  prehistoric settings (projects and user presets saved with GHOULBOX still load, in the same engines), 62 more join
-  them (SAURUS's 20 among them), and Felucca's stock sounds are hidden (a project that uses one still plays it).
-- **Its own sample material, synthesized**: a night jungle, a tropical storm, a lithophone and the ENCOUNTER kit
-  (footfalls near and far, a mud stomp, a claw tap, a branch snap, a falling tree, a splash, a rock fall, leaves,
-  bone clacks, a ground ripple, thunder, a huff), in the place of GHOULBOX's four recordings, 12 KB smaller.
-- **New FM6 patches F9..F15** and **the TRIBE drum kit**: BOOM, SKIN, CLAP, SEEDS, RATTL, LOG, BONE and ROCK.
-- **Four new power-on scenes** (MENU > SYSTEM > SCENE): JUNGLE (the default), VOLCANO, STAMPEDE and VALLEY, plus
-  BLANK.
+| | |
+|---|---|
+| **Six tracks** | three synths, SFX (the prehistoric world's sounds), CALLS (SAURUS) and drums, each with its own colour |
+| **SAURUS** | the creature voice: one note is one call (CALL, SIZE, SWOOP, LEN, GROWL, BRTH, MOUTH, WILD); twenty creatures, and CALL KIT with every one of them on the keys |
+| **ROAR** | drones, war drums and rituals, with its RING page back (EDIT > RING, on or off) |
+| **PRESETS by kind** | 200+ sounds in ten kinds: BASS, KEYS, ORGN, PAD, LEAD, PLCK, DRUM, FX, and SAUR and ROAR for the creatures and the drones. Turning PRESETS names the sound and its kind at the top of the screen and in a big bar over the knobs (SAUR TYRANT ROAR) |
+| **Big text** | Clayborn everywhere, values large on every value page, messages as big as they fit |
+| **Demo song** | VALLEY OF GIANTS on all six tracks: the first power-on plays it, TOOLS > DEMO brings it back |
+| **Everything SLOOP does** | the sequencer, song mode, punch-in effects, the piano roll, parameter locks, the editor |
 
-### SAURUS, the creature voice
+<p align="center"><img src="web/site/art/preset-category-message.png" width="600" alt="Turning PRESETS: the bar names the sound and its kind, SAUR TYRANT ROAR and SAUR MONSTER ROAR"></p>
 
-An engine of its own (engine 15): one note is one call. A throat that buzzes, rasps and breathes, shaped by:
+## Play it in your browser
 
-| Control | What it does |
-| --- | --- |
-| CALL | The call's shape over its length: HOLD (a drone), BELLOW, ROAR, BARK, HOOT, TRILL, CHIRP, MOAN, HISS, SNORT |
-| SIZE | The animal: small (high throat) to sauropod (formants two octaves down) |
-| SWOOP | How far the call's pitch moves (up to two octaves) |
-| LEN | How long the call takes (1 ms to 10 s); the ADSR still shapes and ends the note |
-| GROWL | Roughness: a subharmonic, jitter, wider throat bands and drive |
-| BRTH | Breath noise in the voice |
-| MOUTH | Closed "oo" to open "ah"; the call opens and closes it |
-| WILD | Each note's own variation: length, pitch, roughness |
+**[fantasmoslam.github.io/Paleotone/webapp/emu](https://fantasmoslam.github.io/Paleotone/webapp/emu/)** runs the
+firmware's own sound, sequencer and screens in the page (WebAssembly; `web/emu/paleo_web.c`). Play with the mouse or
+the computer keys printed on the panel, or with a MIDI keyboard. Nothing is installed, and projects are not kept in
+the browser.
 
-20 creatures: BRACHIO CALL, TYRANT ROAR, RAPTOR BARK, RAPTOR CHAT, CREST HOOT, PTERO SHRIEK, HERD MOAN, FRILL HISS,
-SAURO SNORT, DEEP RUMBLE, TITAN APE, NEST CHIRPS, SWAMP CROAK, MONSTER ROAR, DISTANT HERD, LOW GROWL, BABY REX, SEA
-MONSTER, HADRO HORN, COMPY PACK. All synthesised.
+## Install
 
-### The sounds
+1. Back up the FM-1's projects with the [editor](https://fantasmoslam.github.io/Paleotone/webapp/editor/).
+2. Open the **[installer](https://fantasmoslam.github.io/Paleotone/webapp/installer/)** in Chrome or Edge, connect
+   the FM-1 straight to the computer with a USB data cable, close other MIDI apps, and press **Install**.
 
-| Engine | Sounds |
-| --- | --- |
-| ANALOG | JUNGLE PAD, EPIC STRINGS, CANYON HORN, STOMP BASS, AMBER LEAD, SWAMP BASS, FERN SWELL, STAR SKY, ICE AGE PAD |
-| VOICE | TRIBE CHANT, EPIC CHOIR, RAPTOR CALL, REX ROAR, DEEP CHANT, SPIRIT VOX, SHAMAN, NIGHT WAIL |
-| WHEEL | AMBER ORGAN, CANOPY, SWAMP REED, MOSS FLUTE, TEMPLE ORGAN, BONE KEYS, LAGOON |
-| PHYS | LOG MARIMBA, GEODE BELLS, VALLEY HARP, TARPIT DRONE, HIDE DRUM, WATER DROPS, BOWED BONE, SITAR VINE, TUSK TINES |
-| TRIO | PANGAEA PAD, BRONTO HORN, SKY STRINGS, PTERO CRY, LAVA BRASS, SPORE CLOUD, PRIMAL STAB, AURORA PAD |
-| LOFI | FOSSIL LEAD, DINO CHOIR, BONE WHISTLE, PIXEL RAPTOR, EGG ARP, CAVE ECHO |
-| PHASE | TITAN BRASS, ICE CRYSTAL, RESIN PAD, DEEP PULSE |
-| NOISE | VOLCANO, LAVA CRACKLE, MONSOON, GEYSER, SWARM, WIND RIDGE |
-| ROAR | PRIMEVAL, EARTHQUAKE, STAMPEDE, REX GROWL, SWAMP FIDDLE, TRIBE PIPES, WAR CHANT, TUNDRA, WAR PARADE, JUNGLE CAMP, RITUAL FIRE, TITAN MARCH, HEARTBEAT, HERD RUN, TRIBAL WAR, TALK DRUMS, ODD RITUAL, FIVE MOONS, SPIRAL, CHAOS DRUMS |
-| FM6 | TAR PIT BASS, SLIT DRUM, MAMMOTH, GLACIER PAD, METEOR, CICADA BUZZ, AMBER BELLS (patches F9..F15), TAR GROWL, MAMMOTH CALL, GLACIER WIDE |
-| SAMPLE | JUNGLE NIGHT, ENCOUNTER (the kit, one sound per key from F3), LITHOPHONE, TROPIC STORM |
-| GRAIN | NIGHT SWARM, STONE MIST, STORM CLOUD, AMBER DUST (grains of the jungle, the stones and the storm) |
-| DRUM | TRIBAL KIT, WAR DRUMS, BONE RATTLE, RITUAL |
-| SAURUS | the 20 creatures above |
+The command line does the same: `python3 tools/fm1_install.py paleotone-fm1.fwsc --yes` (needs
+`pip3 install mido python-rtmidi`). Every push to `main` builds the package in GitHub Actions
+(`.github/workflows/paleotone-fm1.yml`) and puts it, with the build and test logs, on the
+[`paleotone-fm1-output`](../../tree/paleotone-fm1-output) branch.
 
-The sample material is made by `tools/gen_dino_samples.py` (no recordings), the FM6 patches are in
-`tools/gen_fm6_patches.py`, the TRIBE kit in `firmware/src/drum_voice.c`.
+If an install fails and the FM-1 no longer starts: hold OCT− alone while switching on for USB rescue; if that does
+not help, recovery needs a Transporter ([FM-1-transporter](https://github.com/kurogedelic/FM-1-transporter)).
+M-VAVE's own updater, M-UPGRADE, takes the FM-1 back to the official firmware.
 
 ## Building
 
-PALEOTONE builds exactly as GHOULBOX and Felucca do: see [BUILDING.md](BUILDING.md). On Linux x86-64 (or macOS with
-Docker):
+See [BUILDING.md](BUILDING.md): JieLi's toolchain and the AC79 SDK, then `./build.sh` makes `build/felucca.fwsc`.
+Without them, the host tests and the browser version still build:
 
 ```
-pip3 install Pillow fonttools
-tools/get_toolchain.sh                         # JieLi's toolchain, to ~/.jieli/toolchain
-git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
-    https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK
-./build.sh                                     # -> build/felucca.fwsc, the package to install
+python3 -c 'import sys; sys.path.insert(0, "tools"); import build; build.generate()'   # build/gen
+sh tests/run_tests.sh                       # the host tests (after one ./build.sh)
+sh web/emu/build.sh                         # build/emu: PALEOTONE in the browser (clang, lld, wasi-libc)
+node web/emu/emu_test.mjs build/emu/paleotone.wasm
 ```
 
-This repository also builds on GitHub: every push to `main` runs `.github/workflows/build-firmware.yml`, which puts
-`paleotone.fwsc` and the build's log on the `build-output` branch.
+The website (`.github/workflows/paleotone-site.yml`, `web/make_paleotone_site.py`) is published on GitHub Pages after
+every green FM-1 build of `main`: the landing page (`web/site/index.html`), the guide (`web/site/guide.html`), the
+browser version, the installer (`web/paleotone_install.html`), the editor and the art in `web/site/art`. The guide's
+screens are the firmware's own: `python3 web/site/guide_shots.py` renders them again (`tests/guide_shots.c`).
 
-Install `build/felucca.fwsc` with `python3 tools/fm1_install.py build/felucca.fwsc` (needs `pip3 install mido
-python-rtmidi`) or with the FM-1 Firmware Hub's installer.
-
-Without the toolchain, `python3 tools/build.py --gen-only && HOST_ONLY=1 tests/run_tests.sh` runs the host tests.
-
-## Changing the sounds
-
-The prehistoric sounds are one table in `tools/ghoulbox_presets.py` (name, the engine's eight EDIT values, the
-envelope, mono, the effect sends and a suggested pattern). Edit it, run `python3 tools/ghoulbox_presets.py`, and it
-writes them into the engines and the web editor. The scenes are `GB_SCENES` in `firmware/src/engines.c`, the boot
-art `tools/gen_ghoulbox_art.py`, the palettes `tools/gen_ui_palettes.py`, the windows and cursor `firmware/src/gfx.c`
-(`cv_stone`, `cv_window`, `cv_sword`), the fence posts `firmware/src/ui_graph.c` (`torch_draw`) and the T. rex and eye
-icons `tools/gen_aa_icons.py` (`OWN`).
+This tree is also RAPTOR, the same groovebox on the M-VAVE SMK-37 (`./build.sh --board smk37`; see
+[SLOOP-PRO.md](SLOOP-PRO.md)). The earlier PALEOTONE, built on GHOULBOX, is in this repository's history.
 
 ## Credits and licence
 
-PALEOTONE is free software under the GNU GPL, version 3 only, like GHOULBOX and Felucca: see
-[LICENSING.md](LICENSING.md). Its source must stay available to anyone you give the firmware to.
+PALEOTONE is free software under the GNU GPL, version 3 only: see [LICENSING.md](LICENSING.md) and
+[CREDITS.md](CREDITS.md). Its source must stay available to anyone you give the firmware to.
 
-- [GHOULBOX](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth) by Jason Persinger: everything PALEOTONE
-  is built on. Its README, with the history of all its versions, is in [docs/GHOULBOX-README.md](docs/GHOULBOX-README.md).
-  To support its author: [Ko-fi](https://ko-fi.com/ghoulbox).
-- [Felucca](https://github.com/hugelton/Felucca) by Leo Kuroshita, Hügelton Instruments.
-- Share Tech Mono by Carrois Type Design (SIL OFL 1.1): the screen's type and title.
-- The other parts and their licences: [LICENSING.md](LICENSING.md).
+- **SLOOP** by isod89 and contributors ([README-SLOOP.md](README-SLOOP.md)), and the SMK-37 port by M. Geisler
+  ([@genkigenki](https://github.com/genkigenki)).
+- **Felucca** by Leo Kuroshita ([@kurogedelic](https://github.com/kurogedelic)), Hügelton Instruments.
+- **GHOULBOX** by Jason Persinger, where PALEOTONE's sound began.
+- **Clayborn** by Frank Baranowski (SIL OFL 1.1): the screen's typeface.
+- The browser version follows charlesvestal's [X0X](https://github.com/charlesvestal/fm1-x0x) browser build.
+
+M-VAVE and FM-1 are trademarks of their respective owners; PALEOTONE is not affiliated with them.

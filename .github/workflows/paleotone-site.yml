@@ -1,0 +1,76 @@
+# PALEOTONE's website on GitHub Pages (the gh-pages branch): PALEOTONE in the browser (webapp/emu, the firmware's
+# sound, sequencer and UI in WebAssembly), the installer with the package the FM-1 build made (the
+# paleotone-fm1-output branch), the editor, the art.
+#   main:          after every green FM-1 build of main, published at the site's root
+#   other pushes:  a preview at preview/<branch>/ (the same package, the pages of the branch)
+# Only the site's own paths are written (web/make_paleotone_site.py): other pages on gh-pages stay.
+name: paleotone-site
+
+on:
+  workflow_run:
+    workflows: [paleotone-fm1]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [claude/project-thread-mqbr6v]
+    paths: [web/**, .github/workflows/paleotone-site.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # (the gh-pages branch)
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  site:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang lld wasi-libc libclang-rt-18-dev-wasm32
+          python3 -m pip install --break-system-packages pillow==12.3.0 fonttools==4.61.1
+
+      - name: Generated headers
+        run: python3 -c 'import sys; sys.path.insert(0, "tools"); import build; build.generate()'
+
+      - name: PALEOTONE in the browser
+        run: |
+          sh web/emu/build.sh
+          node web/emu/emu_test.mjs build/emu/paleotone.wasm
+
+      - name: The package from the FM-1 build
+        run: |
+          git fetch --depth 1 origin paleotone-fm1-output
+          git show FETCH_HEAD:RESULT | tee result.txt
+          grep -q ' success$' result.txt || { echo "the last FM-1 build failed"; exit 1; }
+          if [ "${{ github.event_name }}" = workflow_run ]; then
+            grep -q "^${{ github.event.workflow_run.head_sha }} " result.txt || { echo "the package is not this commit's"; exit 1; }
+          fi
+          git show FETCH_HEAD:paleotone-fm1.fwsc > paleotone-fm1.fwsc
+
+      - name: Site
+        run: |
+          VERSION=$(sed -n 's/^#define FELUCCA_VERSION "PALEOTONE \([^"]*\)".*/\1/p' firmware/src/ui.c)
+          BRANCH="${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}"
+          git fetch --depth 1 origin gh-pages
+          git worktree add pages FETCH_HEAD
+          if [ "$BRANCH" = main ]; then OUT=pages; FLAG=; else OUT="pages/preview/$(echo "$BRANCH" | tr '/' '-')"; FLAG=--preview; fi
+          python3 web/make_paleotone_site.py paleotone-fm1.fwsc "$VERSION" "$OUT" $FLAG
+          cd pages
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" \
+            commit -q -m "PALEOTONE site: $BRANCH ${GITHUB_SHA::7} (PALEOTONE $VERSION)" || { echo "no change"; exit 0; }
+          git push origin HEAD:gh-pages

@@ -1,0 +1,31 @@
+{
+ "name": "SLOOP Pro",
+ "short_name": "SLOOP Pro",
+ "id": "editor/",
+ "start_url": "editor/",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#000000",
+ "theme_color": "#000000",
+ "description": "SLOOP Pro for the M-VAVE SMK-37: the editor and the installer, also without internet",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

@@ -11,6 +11,8 @@ static struct {
     uint32_t len;
     uint8_t dtr_seen, stalled;   /* stalled: the host stopped reading, drop the rest of this reply */
 } con;
+static uint32_t lowram_state(void);                  /* main.c: the SRAM below the RAM region, proved at boot */
+static uint32_t stack_free_main(void), stack_free_sup(void), stack_sp(void);   /* main.c: core 0's stacks, painted at boot */
 
 static void con_putc(char c)
 {
@@ -140,8 +142,13 @@ static void con_flr(const char *p)                  /* flash read over SPI (no X
     static uint8_t b[256];
     int ok, ok2;
     uint32_t a = con_num(&p, &ok), n = con_num(&p, &ok2), i;
+#if BOARD_SMK37
+    if (!ok || a < 0x9D000u || a >= 0x100000u) {
+        con_puts("usage: flr OFFSET [LEN<=256]   (0x9D000..0xFFFFF)\r\n");
+#else
     if (!ok || a < 0x93000u || a >= 0x100000u) {
         con_puts("usage: flr OFFSET [LEN<=256]   (0x93000..0xFFFFF)\r\n");
+#endif
         return;
     }
     if (!ok2 || !n)
@@ -167,28 +174,6 @@ static void con_flr(const char *p)                  /* flash read over SPI (no X
 }
 #endif
 
-#if FELUCCA_UAC
-static void con_uac(void)                              /* USB audio input: stream state and glitches */
-{
-    uint32_t p = uac.pkts, base = uac.r48 ? 48u : 44u;
-    con_kv("uac_alt", uac.alt);
-    con_kv("uac_hz", uac.r48 ? 48000 : 44100);      /* the rate the host set (SET_CUR; 44100 until it does) */
-    con_kv("uac_rate_sets", (int32_t)uac.rate_sets);
-    con_kv("uac_starts", (int32_t)uac.starts);
-    con_kv("uac_pkts", (int32_t)p);
-    con_kv("uac_rate_hz", p ? (int32_t)base * 1000 + (int32_t)(uac.frames - base * p) * 1000 / (int32_t)p : 0);   /* < 5 h */
-    con_kv("uac_underruns", (int32_t)uac.underruns);
-    con_kv("uac_overruns", (int32_t)uac.overruns);
-    con_kv("uac_missed", (int32_t)uac.missed);
-    con_kv("uac_stalls", (int32_t)uac.stalls);
-    con_kv("uac_adj_up", (int32_t)uac.adj_up);
-    con_kv("uac_adj_down", (int32_t)uac.adj_down);
-    con_kv("uac_fill", (int32_t)uac.fill_min);
-    con_kv("uac_fill_lo", uac.fill_lo == 0xFFFFFFFFu ? -1 : (int32_t)uac.fill_lo);
-    con_kv("uac_fill_hi", (int32_t)uac.fill_hi);
-}
-#endif
-
 static void con_status(void)
 {
     const engine_t *e = ENGINES[TSEL->eng_req % NENGINES];
@@ -197,8 +182,23 @@ static void con_status(void)
     con_puts("\r\n");
     con_kv("uptime_ms", (int32_t)fm1_ms);
     con_kv("cpu_pct", (int32_t)(song.cpu_q8 * 100u / 256u));
+#if FELUCCA_CPU1
+    con_kv("cpu1", (int32_t)cpu1_state);                 /* 1 did not start, 2 self-test failed, 3 running (cpu1.c) */
+    con_kx("cpu1_trace", fm1_c1_trace);
+    con_kv("cpu1_timeouts", (int32_t)cpu1_timeouts);
+    con_kv("cpu1_gave_up", (int32_t)fm1_c1_gave_up);      /* (2.8.3) 1 a wrong job read, 2 one late, 3 barred till power-off */
+    con_kv("cpu1_bad", (int32_t)fm1_c1_mb.bad);           /* jobs core 1 read wrong and refused (fm1_cpu1.h) */
+    con_kx("cpu1_bad_fn", fm1_c1_mb.bad_fn);
+    con_kv("cpu1_units", cpu1_units);                    /* the render units it gets: -1 its share, else a mask (fx.c) */
+    con_kv("cpu1_busy_pct", (int32_t)(cpu1_busy_q8 * 100u / 256u));   /* its time in the render, of a half (fx.c) */
+    con_kv("cpu1_wait_pct", (int32_t)(cpu1_wait_q8 * 100u / 256u));   /* core 0's time waiting for it */
+    con_kv("cpu1_stack_free", (int32_t)cpu1_stack_free());   /* bytes of its stack the render never reached */
+#endif
+    con_kv("lowram", (int32_t)lowram_state());           /* the SRAM below the RAM region: 1 proved at boot, 2 not (main.c) */
+    con_kv("stack_free", (int32_t)stack_free_main());    /* core 0's main stack (24 KB): bytes never reached since boot */
+    con_kv("sstack_free", (int32_t)stack_free_sup());    /* its supervisor stack (8 KB) */
+    con_kx("sp", stack_sp());                           /* where the main loop runs now: which of the two regions */
     con_kv("audio_max_us", (int32_t)felucca_dbg.max_us);
-    con_kv("audio_late", (int32_t)felucca_dbg.late);
     con_kv("voices_shed", (int32_t)shed_count);
     con_kv("voices_given_up", (int32_t)voice_kills);
     con_kv("track", (int32_t)song.sel + 1);
@@ -221,15 +221,6 @@ static void con_status(void)
     con_kv("usb_max_gap_polls", (int32_t)usb.max_gap);
     con_kv("midi_rx_pkts", (int32_t)usb.rx_pkts);
     con_kv("midi_tx_pkts", (int32_t)usb.tx_pkts);
-#if FELUCCA_UAC
-    con_uac();
-#endif
-    con_kv("uart_enabled", FELUCCA_UART);
-#if FELUCCA_UART
-    con_kv("uart_rx_bytes", (int32_t)um.bytes);
-    con_kv("uart_rx_msgs", (int32_t)um.msgs);
-    con_kv("uart_rx_drops", (int32_t)um.drops);
-#endif
 #if FELUCCA_FLASH
     con_kv("flash", flash_ok);
 #endif
@@ -245,72 +236,6 @@ static void con_dbg(void)
     uint32_t i;
     for (i = 0; i < sizeof NAMES / sizeof NAMES[0] && i < sizeof felucca_dbg / 4u; i++)
         con_kx(NAMES[i], w[i]);
-#if FELUCCA_UAC
-    con_uac();
-#endif
-}
-
-/* input scan (hal/fm1_input.h fm1_in_stat) since the last `inp`, then cleared: tick gaps (= LED
- * on-time of a column), per-column LED share in 1/1000, the tick cost, the dim pulse (its average width and the
- * bits of the 595 shift it spans), encoder transitions */
-static void con_inp(void)
-{
-    static uint32_t t_last;
-    uint32_t now = fm1_ticks(), win = now - t_last, i, k;
-    uint32_t win_us = win / FM1_TICKS_PER_US;
-    t_last = now;
-    con_kv("window_ms", (int32_t)(win_us / 1000u));
-    con_kv("ticks_per_s", (int32_t)(win_us >= 1000u ? fm1_in_stat.ticks * 1000u / (win_us / 1000u) : 0u));
-    con_kv("gap_max_us", (int32_t)(fm1_in_stat.gap_max / FM1_TICKS_PER_US));
-    con_puts("gap_hist <.15 .3 .6 1.2 2.4 4.8 9.6 more ms:");
-    for (i = 0; i < FM1_GAP_BINS; i++) {
-        con_putc(' ');
-        con_dec((int32_t)fm1_in_stat.gap_hist[i]);
-    }
-    con_puts("\r\n");
-    con_kv("tick_cost_avg_ns", (int32_t)(fm1_in_stat.ticks ? fm1_in_stat.cost_sum / fm1_in_stat.ticks * 1000u / FM1_TICKS_PER_US : 0u));
-    con_kv("tick_cost_max_us", (int32_t)(fm1_in_stat.cost_max / FM1_TICKS_PER_US));
-    con_kv("tick_cpu_permille", (int32_t)(win >= 1000u ? fm1_in_stat.cost_sum / (win / 1000u) : 0u));
-    con_kv("dim_pulse_ns", (int32_t)(fm1_in_stat.dim_n ? fm1_in_stat.dim_sum / fm1_in_stat.dim_n * 1000u / FM1_TICKS_PER_US : 0u));
-    con_kv("dim_bits", (int32_t)fm1__dim_k);
-    con_puts("led_on_permille:");
-    for (i = 0; i < FM1_NCOL; i++) {
-        con_putc(' ');
-        con_dec((int32_t)(win >= 1000u ? fm1_in_stat.on[i] / (win / 1000u) : 0u));
-    }
-    con_puts("\r\nled_on_max_us:");
-    for (i = 0; i < FM1_NCOL; i++) {
-        con_putc(' ');
-        con_dec((int32_t)(fm1_in_stat.on_max[i] / FM1_TICKS_PER_US));
-    }
-    con_puts("\r\nenc moves/lost/detent state:");
-    for (k = 0; k < FM1_NENC; k++) {
-        con_putc(' ');
-        con_dec((int32_t)fm1_in_stat.enc_moves[k]);
-        con_putc('/');
-        con_dec((int32_t)fm1_in_stat.enc_lost[k]);
-        con_putc('/');
-        con_dec(fm1_in.enc_rest[k]);
-    }
-    con_puts("\r\n");
-    {   /* note keys, from the first scan that saw the contact (us): debounced press, note-on, DAC out */
-        uint32_t n = fm1_in_stat.press_n, m = fm1_in_stat.kb_n;
-        con_kv("key_presses", (int32_t)n);
-        con_kv("key_press_avg_us", (int32_t)(n ? fm1_in_stat.press_sum / n / FM1_TICKS_PER_US : 0u));
-        con_kv("key_press_max_us", (int32_t)(fm1_in_stat.press_max / FM1_TICKS_PER_US));
-        con_kv("key_notes", (int32_t)m);
-        con_kv("key_noteon_avg_us", (int32_t)(m ? fm1_in_stat.kb_sum / m / FM1_TICKS_PER_US : 0u));
-        con_kv("key_noteon_max_us", (int32_t)(fm1_in_stat.kb_max / FM1_TICKS_PER_US));
-        con_kv("key_dac_avg_us", (int32_t)(m ? fm1_in_stat.dac_sum / m / FM1_TICKS_PER_US : 0u));
-        con_kv("key_dac_max_us", (int32_t)(fm1_in_stat.dac_max / FM1_TICKS_PER_US));
-    }
-    con_kv("timer_irqs", (int32_t)felucca_dbg.timer_irqs);
-    con_kv("nested", (int32_t)felucca_dbg.nested);
-    {
-        uint32_t k2 = fm1__lock();
-        memset((void *)&fm1_in_stat.gap_max, 0, sizeof fm1_in_stat - sizeof fm1_in_stat.last);
-        fm1__unlock(k2);
-    }
 }
 
 static void con_crash(void)
@@ -341,22 +266,126 @@ static void con_params(void)
     }
 }
 
+#if BOARD_SMK37
+static void con_smk(void)                               /* the SMK-37 Pro inputs (smk_input.h) */
+{
+    uint32_t i;
+    con_kv("adc_ok", (int32_t)fm1_in.adc_ok);
+    con_kv("adc_miss", (int32_t)fm1_in.adc_miss);
+    con_kv("frames", (int32_t)fm1_in.frames);
+    con_puts("pad raw ");
+    for (i = 0; i < SMK_NPAD; i++) { con_dec(fm1_in.pad_raw[i]); con_putc(' '); }
+    con_puts("\r\npad base ");
+    for (i = 0; i < SMK_NPAD; i++) { con_dec(fm1_in.pad_base[i]); con_putc(' '); }
+    con_puts("\r\npad st ");
+    for (i = 0; i < SMK_NPAD; i++) { con_dec(fm1_in.pad_st[i]); con_putc(' '); }
+    con_puts("\r\nfader raw ");
+    for (i = 0; i < 4u; i++) { con_dec(fm1_in.fad_raw[i]); con_putc(' '); }
+    con_puts("\r\nfader ");
+    for (i = 0; i < 4u; i++) { con_dec(fm1_in.fader[i]); con_putc(' '); }
+    con_puts("\r\n");
+    con_kv("wheel0", fm1_in.wheel[0]);
+    con_kv("wheel1", fm1_in.wheel[1]);
+    con_kv("bend", perf_bend);
+    con_kv("modw", perf_modw);
+    con_kv("pedal", fm1_in.pedal);
+    con_kv("batt", fm1_in.batt);
+    con_kx("buttons", fm1_in.buttons);
+    con_kx("notes", fm1_in.notes);
+    for (i = 0; i < FM1_NENC; i++) {
+        con_puts("enc");
+        con_dec((int32_t)i);
+        con_putc('=');
+        con_dec(fm1_in.enc_steps[i]);
+        con_putc(i + 1u == FM1_NENC ? '\r' : ' ');
+    }
+    con_puts("\r\n");
+}
+
+/* what the firmware sends the pads: GRB words by hardware pad (0..7 top row, 8..15 bottom row) */
+static void con_leds(void)
+{
+    uint32_t i;
+    for (i = 0; i < SMK_NPAD; i++) {
+        con_puts("pad");
+        con_dec((int32_t)i);
+        con_puts(" grb ");
+        con_hex(padled_rgb[i], 6);
+        con_puts(i % 4u == 3u ? "\r\n" : "  ");
+    }
+}
+
+/* the pad LEDs' colour order: hardware pad 8 (bottom left) red, 9 green, 10 blue, 11 white, for 20 s */
+static void con_padtest(void)
+{
+    uint32_t i;
+    for (i = 0; i < SMK_NPAD; i++)
+        padled_set(i, 0, 0, 0);
+    padled_set(8, 40, 0, 0);
+    padled_set(9, 0, 40, 0);
+    padled_set(10, 0, 0, 40);
+    padled_set(11, 40, 40, 40);
+    padled_hold_until = ms_deadline(20000u);
+    con_puts("top row from the left: red green blue white\r\n");
+}
+
+/* one button LED alone for 8 s, to map them (bled 0..18) */
+static void con_bled(const char *p)
+{
+    int ok;
+    uint32_t n = con_num(&p, &ok);
+    if (!ok || n >= SMK_NLED) {
+        con_puts("usage: bled 0..18\r\n");
+        return;
+    }
+    bled_id = (uint8_t)n;
+    bled_hold_until = ms_deadline(8000u);
+    con_puts("on\r\n");
+}
+#endif
+
 static void con_exec(const char *p)
 {
     if (con_word(&p, "help") || con_word(&p, "?"))
-        con_puts("status  dbg  inp  crash  params  memr ADDR [LEN]  flr OFF [LEN]  uboot yes\r\n");
+        con_puts("status  dbg  crash  params  memr ADDR [LEN]  flr OFF [LEN]  cpu1 units MASK|auto  uboot yes\r\n");
     else if (con_word(&p, "status"))
         con_status();
     else if (con_word(&p, "dbg"))
         con_dbg();
     else if (con_word(&p, "crash"))
         con_crash();
-    else if (con_word(&p, "inp"))
-        con_inp();
     else if (con_word(&p, "params"))
         con_params();
+#if BOARD_SMK37
+    else if (con_word(&p, "smk"))
+        con_smk();
+    else if (con_word(&p, "padtest"))
+        con_padtest();
+    else if (con_word(&p, "leds"))
+        con_leds();
+    else if (con_word(&p, "bled"))
+        con_bled(p);
+#endif
     else if (con_word(&p, "memr"))
         con_memr(p);
+#if FELUCCA_CPU1
+    else if (con_word(&p, "cpu1")) {                     /* cpu1 units MASK | auto: the render units core 1 gets (fx.c
+                                                         * units_split: bit k = synth part k, bit 3 = the drums), live */
+        if (con_word(&p, "units")) {
+            int ok;
+            uint32_t v;
+            if (con_word(&p, "auto"))
+                cpu1_units = -1;
+            else if ((v = con_num(&p, &ok)), ok && v <= 15u)
+                cpu1_units = (int32_t)v;
+            else {
+                con_puts("usage: cpu1 units MASK(0-15)|auto\r\n");
+                return;
+            }
+        }
+        con_kv("cpu1_units", cpu1_units);
+    }
+#endif
 #if FELUCCA_FLASH
     else if (con_word(&p, "flr"))
         con_flr(p);

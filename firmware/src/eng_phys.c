@@ -26,16 +26,9 @@
  * ACC is the accent at full velocity (brighter, longer, louder strike; velocity scales it), EXC
  * mixes the exciter itself into the output (the mallet / pick). The track's ENV / LFO -> FLT move BRIT.
  *
- * MODEL 4 was DRUM before 1.0: the kit is its own engine now (eng_drum.c); projects and user presets
- * that saved it load as that engine (core.h drum_from_phys).
- *
- * DUST (resonant particles, value 2 before 1.0) was dropped: MODEL 2 is MEMB now. Projects and
- * user presets saved before say so (project.c, upreset.c) and load DUST as MODAL bowed, its nearest
- * kin (random hits into resonators): phys_legacy.
- *
- * Polyphony 3 per part (engine_t.poly): each part's voices 0..2 own a state slot in the pool
- * section (phys_slot: SYMP's, the largest: the string's 512 + 128 sample lines, Q20, and three
- * 256-sample sympathetic lines, 16-bit), 12 slots in all. Voice amplitude: the track's ADSR as for every
+ * Polyphony 3 per part (engine_t.poly): each part's voices 0..2 own a state slot (SYMP's, the largest:
+ * the string's 512 + 128 sample lines, Q20, and three 256-sample sympathetic lines, 16-bit). SLOOP 2.5:
+ * the slots live in the part's engine arena (engines.c eng_arena_of), shared with GRAIN and FM6. Voice amplitude: the track's ADSR as for every
  * engine; the presets hold SUS at 127 so the model's own decay is heard and REL damps it after the key.
  * Cost (host, 8 notes asked = 3 voices): see the README and cpu_baseline.txt. */
 #include "phys_dsp.c"
@@ -45,7 +38,7 @@ enum { PM_MODAL, PM_STRING, PM_MEMB, PM_SYMP, PM_COUNT };
 #define PHYS_POLY 3
 /* output: model 1.0 -> this (VOICE_FS scale), then a soft knee; per model (a strike of all the modes in
  * phase peaks high but is short) */
-static const int32_t PHYS_GAIN[PM_COUNT] = {28000, 12000, 90000, 12000};
+static const int32_t PHYS_GAIN[PM_COUNT] = {28000, 12000, 90000, 12000};   /* RAPTOR: Paleotone's levels */
 
 typedef struct {
     uint8_t model;               /* PM_* the state belongs to */
@@ -56,7 +49,6 @@ typedef struct {
     } u;
 } phys_slot_t;
 
-ENG_MEM_FITS("PHYS", sizeof(phys_slot_t) * PHYS_POLY);   /* (it sets ENG_MEM_PART) */
 
 static const char *const N_PHYS_MODEL[] = {"MODAL", "STRNG", "MEMB", "SYMP"};
 static const char *const N_PHYS_CHORD[] = {"OCT", "5TH", "4TH", "MAJ", "MIN", "SUS", "7TH", "ROOT", 0};
@@ -83,29 +75,46 @@ static const int16_t PHYS_CHORDS[7][PX_NSYMP] = {
 };
 static const int8_t PHYS_DETUNE[PX_NSYMP] = {1, -1, 0};   /* 1/16 semitone (6 cents): the strings beat a little */
 
-/* a project or user preset saved before 1.0 (MODEL 2 was DUST): its E values as today's */
-static void phys_legacy(int16_t *e)
+/* SLOOP 2.5: the slots live in the part's engine arena (engines.c), in one of two layouts over the same
+ * bytes: SYMP (the largest: a string and three sympathetic lines) two slots, the other models three
+ * smaller ones (a string or a modal bank). A switch of layout starts the part's notes over, as a MODEL
+ * change under a note always did. SYMP plays two voices (phys_poly), the others three. */
+#define PHYS_SLOT_BIG ((sizeof(phys_slot_t) + 7u) & ~7u)
+#define PHYS_SLOT_SMALL ((__builtin_offsetof(phys_slot_t, u) + sizeof(px_string_t) + 7u) & ~7u)
+#define PHYS_ARENA (2u * PHYS_SLOT_BIG > 3u * PHYS_SLOT_SMALL ? 2u * PHYS_SLOT_BIG : 3u * PHYS_SLOT_SMALL)
+_Static_assert(sizeof(px_modal_t) <= sizeof(px_string_t), "a small PHYS slot holds MODAL and MEMB too");
+static uint8_t phys_lay[NPART];          /* 1 + the layout the slots are in (0 small, 1 SYMP), 0 = none yet */
+static uint32_t phys_poly(const track_t *t)
 {
-    if (e[0] == 2) {                                     /* DUST -> MODAL bowed (random hits into resonators) */
-        e[0] = PM_MODAL;
-        e[6] = 64;
-    }
+    return (uint32_t)t->p[P_E0] % PM_COUNT == PM_SYMP ? 2u : 3u;
 }
-
 static phys_slot_t *phys_slot_of(track_t *t, voice_t *v)
 {
-    uint32_t i;
+    uint32_t i, p, big, k, sz;
+    uint8_t *a;
     if (t < &trk[0] || t >= &trk[NPART])
         return 0;
+    p = (uint32_t)(t - trk);
     i = (uint32_t)(v - t->v);
-    return i < PHYS_POLY ? (phys_slot_t *)ENG_MEM(t - trk) + i : 0;
+    big = (uint32_t)t->p[P_E0] % PM_COUNT == PM_SYMP;
+    if (i >= phys_poly(t))
+        return 0;
+    a = (uint8_t *)eng_arena_of(t, ENGI_PHYS);
+    sz = big ? PHYS_SLOT_BIG : PHYS_SLOT_SMALL;
+    if (phys_lay[p] != big + 1u) {                       /* the other layout: every slot starts over */
+        for (k = 0; k < phys_poly(t); k++)
+            ((phys_slot_t *)(a + k * sz))->model = 0xFF;
+        phys_lay[p] = (uint8_t)(big + 1u);
+    }
+    return (phys_slot_t *)(a + i * sz);
 }
 
-/* a clean state for model md */
+/* a clean state for model md (only its own part of the union: a small slot holds no more) */
 static void phys_reset(phys_slot_t *S, uint32_t md, uint32_t seed)
 {
     uint32_t i, *w = (uint32_t *)&S->u;
-    for (i = 0; i < sizeof S->u / 4u; i++)
+    uint32_t n = md == PM_SYMP ? sizeof(px_symp_t) : md == PM_STRING ? sizeof(px_string_t) : sizeof(px_modal_t);
+    for (i = 0; i < n / 4u; i++)
         w[i] = 0;
     S->model = (uint8_t)md;
     seed |= 1u;
@@ -214,6 +223,7 @@ static void phys_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 /* MODAL partials by STRC: 34 harmonic, 70 1 : 2.83 : 5.48 : 8.90 (a free bar, a chime: 1 : 2.76 : 5.40 : 8.93),
  * 98 1 : 3.57 : 7.65, 116 1 : 4.0 : 9.0 (a tuned bar: 1 : 4 : 10) */
 static const preset_t PHYS_PRESETS[] = {
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
     /* name, {MODEL, STRC, BRIT, DAMP, POS, ACC, BOW, EXC}, {A D S R}, fenv, mono */
     {"BELL TREE", {PM_MODAL, 70, 100, 106, 12, 100, 0, 6}, {0, 100, 127, 96}, 0, 0, FX(0, 20, 30, 60), PAT(7)},
     {"MARIMBA", {PM_MODAL, 116, 38, 40, 24, 90, 0, 30}, {0, 90, 127, 52}, 0, 0, FX(0, 0, 15, 30), PAT(6)},
@@ -226,7 +236,7 @@ static const preset_t PHYS_PRESETS[] = {
     /* SYMP: {MODEL, CHRD, BRIT, DAMP, SYMP, ACC, BUZZ, EXC} */
     {"DRONE STRING", {PM_SYMP, 127, 80, 88, 64, 100, 92, 0}, {0, 100, 127, 90}, 0, 0, FX(0, 10, 20, 50), PAT(3)},
     {"HARP", {PM_SYMP, 8, 62, 74, 60, 90, 0, 0}, {0, 100, 127, 80}, 0, 0, FX(0, 20, 20, 60), PAT(3)},
-    /* GHOULBOX presets (tools/ghoulbox_presets.py) */
+    /* DINOBOX's */
     {"LOG MARIMBA", {0, 100, 22, 60, 40, 110, 0, 55}, {0, 95, 127, 55}, 0, 0, FX(0, 10, 20, 85), PAT(3)},
     {"GEODE BELLS", {0, 50, 120, 115, 8, 100, 0, 20}, {0, 100, 127, 95}, 0, 0, FX(0, 25, 20, 105), PAT(7)},
     {"VALLEY HARP", {1, 10, 85, 70, 55, 115, 0, 10}, {0, 100, 127, 90}, 0, 0, FX(0, 30, 25, 110), PAT(20)},
@@ -236,7 +246,7 @@ static const preset_t PHYS_PRESETS[] = {
     {"BOWED BONE", {1, 0, 60, 100, 30, 110, 100, 0}, {60, 95, 127, 90}, 0, 0, FX(0, 20, 10, 110), PAT(17)},
     {"SITAR VINE", {3, 30, 100, 90, 20, 120, 0, 60}, {0, 100, 127, 80}, 0, 0, FX(0, 10, 30, 95), PAT(20)},
     {"TUSK TINES", {0, 40, 70, 100, 60, 100, 0, 0}, {0, 100, 127, 80}, 0, 0, FX(0, 30, 30, 95), PAT(13)},
-    /* GHOULBOX end */
+    /* DINOBOX's end */
 };
 
 static const engine_t ENG_PHYS = {
@@ -256,8 +266,9 @@ static const engine_t ENG_PHYS = {
     .npresets = NELEM(PHYS_PRESETS),
     .note_on = phys_note_on,
     .render = phys_render,
-    .knob = {P_E1, P_E2, P_E3, P_E4},
+    .fil_page = -1,
+    .color = 0xFD8F,
+    .macro = {P_E1, P_E2, P_E3, P_E4},
     .poly = PHYS_POLY,
     .desc = phys_desc,
-    .mem = sizeof(phys_slot_t) * PHYS_POLY,
 };

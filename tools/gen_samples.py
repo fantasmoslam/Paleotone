@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-"""Build the SAMPLER engine's sample sets from WAV files into a C header.
+"""RAPTOR: Paleotone's sample sets and its generator (this file is Paleotone's, its header written in the
+form RAPTOR's eng_sample.c reads: no retired aliases, the sets numbered 0..6, the presets as Paleotone has them).
+
+Build the SAMPLER engine's sample sets from WAV files into a C header.
 
 Samples are stored as IMA ADPCM (4 bit) at their native rate; loop points
 and roots come from the WAV 'smpl' chunk and the file name (C3 = MIDI 60
@@ -70,10 +73,9 @@ TR = 22050                                   # stored sample rate
 # from the web editor). TRANH was removed (66 KB of flash); its index 1 stays, an alias of PIANO
 # ("alias": the set named). PERC (the GM kit) was removed (66 KB); its index 4 stays, an alias of
 # PIANO too (PERC_SLOT; its sounds load as the DRUM engine)
-CC0_SETS = [("PIANO", "oneshot"), ("PIANO", "alias"), ("FLUTE", "sus"), ("SAX", "sus"), ("PIANO", "alias"),
-            # GHOULBOX 1.1: appended (data sets 5..8); their SET values follow USR1..3 (8..11: eng_sample.c smp_set_at)
-            # DINOBOX: GHOULBOX's four recordings replaced (same indices) by DINOBOX's own synthesized material
-            # (tools/gen_dino_samples.py, CC0): a night jungle, an encounter kit, a lithophone, a tropical storm
+CC0_SETS = [("PIANO", "oneshot"), ("FLUTE", "sus"), ("SAX", "sus"),
+            # DINOBOX's own synthesized material (tools/gen_dino_samples.py, CC0): a night jungle, an encounter kit,
+            # a lithophone, a tropical storm
             ("JUNGLE", "loop"), ("STEPS", "kit"), ("STONE", "oneshot"), ("STORM", "loop")]
 USR_V0 = 5                                   # eng_sample.c SMP_USR_V0: the SET value of USR1 (1.0's, fixed)
 NUSR = 3                                     # the user slots USR1..3
@@ -431,40 +433,20 @@ class Builder:
         L.append("};")
         L.append(f"#define SMP_NSETS {max(1, len(sets))}")
         named = sets or [("NONE", 0, 0)]
-        perc = PERC_SLOT if len(named) > PERC_SLOT else len(named)
-        L.append(f"#define SMP_NPRESETS {len(named) if len(named) > PERC_SLOT + 1 else perc}"
-                 "   /* GHOULBOX: the sets after PERC's alias have presets too (it stays hidden: SMP_SET_ORIG) */")
-        if len(named) > PERC_SLOT:
-            L.append(f"#define SMP_PERC_SLOT {PERC_SLOT}   /* once PERC (the GM kit): an alias, its sounds load as DRUM */")
-        L.append("/* the initializers from SMP_NPRESETS on (the retired PERC's alias) are outside factory browsing */")
+        L.append("/* Paleotone's SAMPLE presets, a set each (SET: RAPTOR's numbering, 0..6) */")
         L.append("static const preset_t SMP_PRESET_TABLE[] = {")
         for i, (name, _, _) in enumerate(named):
             k = self.kinds.get(name, "wave")
             a, d, s_, r = ENV[k]
             loop = 0 if k == "kit" else 1
-            pat = ", PAT(12)" if k == "kit" else ""     # a kit: engines.c PATTERNS[11] BEAT
-            si = self.alias.get(i, i)                   # an alias: the original's preset (hidden by its name)
-            val = si if si < USR_V0 else si + NUSR      # its SET value (GHOULBOX: after USR1..3 from set 5 on)
+            pat = ", PAT(12)" if k == "kit" else ""     # a kit: Paleotone's PATTERNS[11] BEAT
             fx = ", " + GB_FX if name in PRESET_NAME else ""
-            L.append(f'    {{"{PRESET_NAME.get(name, name)}", {{{val}, 0, 0, {loop}, 127, 0, 0, 0}}, {{{a}, {d}, {s_}, {r}}}, 0, 0{fx}{pat}}},')
+            L.append(f'    {{"{PRESET_NAME.get(name, name)}", {{{i}, 0, 0, {loop}, 127, 0, 0, 0}}, {{{a}, {d}, {s_}, {r}}}, 0, 0{fx}{pat}}},')
         L.append("};")
-        orig = [self.alias.get(i, i) for i in range(len(named))]
-        L.append("/* SET i plays SMP_SET_ORIG[i]: != i for a retired set kept as an alias (its preset i too) */")
-        L.append("static const uint8_t SMP_SET_ORIG[] = {" + ", ".join(map(str, orig)) + "};")
-        L.append(f"#define SMP_NALIAS {sum(1 for i, o in enumerate(orig) if o != i and i < perc)}   /* among the presets */")
         names = ", ".join(f'"{n}"' for n, _, _ in named)
         L.append("#define SMP_SET_NAMES_INIT " + names)
-        L.append("/* GHOULBOX: SET / SRC values 0..4 are the 1.0 sets, then USR1..3, then the sets added since */")
-        L.append("#define SMP_SET_NAMES_V1 " + ", ".join(f'"{n}"' for n, _, _ in named[:USR_V0]))
-        L.append("#define SMP_SET_NAMES_NEW " + ", ".join(f'"{n}"' for n, _, _ in named[USR_V0:]))
-        new = list(range(USR_V0 + NUSR, len(named) + NUSR))           # the sets added since, by value
-        old = [v for v in range(USR_V0) if self.alias.get(v, v) == v] + [v for v in range(USR_V0) if self.alias.get(v, v) != v]
-        L.append("/* GHOULBOX: the SET / SRC knob's order (params.c enum_order): the sets added since, USR1..3, the 1.0 sets,"
-                 " their aliases last (every value once) */")
-        L.append("static const uint8_t SMP_SET_ORDER[] = {" + ", ".join(map(str, new + list(range(USR_V0, USR_V0 + NUSR)) + old)) + "};")
         L.append("static const char *const SMP_SET_NAMES[] = {" + names + "};")
         L += self.break_header()
-        L += self.piano_header()
         return "\n".join(L) + "\n"
 
     @staticmethod
@@ -549,7 +531,6 @@ def main(out):
                 b.cc0_set(name, kind)
     if slice_on():                                  # SLICE's BREAK: only when that engine is built
         b.slice_break()                             # last: the sets' offsets stay as they were
-        b.slice_piano()                             # (the PIANO set's zone, or with PIANO_LO a copy after BREAK)
     text = b.header()
     Path(out).write_text(text)
     CACHE.parent.mkdir(parents=True, exist_ok=True)

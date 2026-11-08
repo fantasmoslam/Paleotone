@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+"""RAPTOR's sounds are Paleotone's: each engine's factory preset array copied from a Paleotone checkout, whole and in
+its order (a project stores the preset number). Run again after Paleotone's presets change.
+
+  python3 tools/paleotone_sounds.py PALEOTONE_DIR
+
+tests/paleotone_cmp.c renders every preset here and in Paleotone through the engine and compares them."""
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+# Paleotone file, its array -> RAPTOR file, its array
+ENGINES = [("eng_analog.c", "ANALOG_PRESETS", "eng_analog.c", "ANALOG_PRESETS"),
+           ("eng_phase.c", "PHASE_PRESETS", "eng_phase.c", "PHASE_PRESETS"),
+           ("eng_lofi.c", "LOFI_PRESETS", "eng_lofi.c", "LOFI_PRESETS"),
+           ("eng_formant.c", "FORMANT_PRESETS", "eng_formant.c", "FORMANT_PRESETS"),
+           ("eng_trio.c", "TRIO_PRESETS", "eng_trio.c", "TRIO_PRESETS"),
+           ("eng_wheel.c", "WHEEL_PRESETS", "eng_drawbar.c", "DRAWBAR_PRESETS"),
+           ("eng_phys.c", "PHYS_PRESETS", "eng_phys.c", "PHYS_PRESETS"),
+           ("eng_noise.c", "NOISE_PRESETS", "eng_noise.c", "NOISE_PRESETS"),
+           ("eng_fm6.c", "FM6_PRESETS", "eng_fm6.c", "FM6_PRESETS"),
+           ("eng_grain.c", "GRAIN_PRESETS", "eng_grain.c", "GRAIN_PRESETS"),
+           ("eng_saurus.c", "SAURUS_PRESETS", "eng_saurus.c", "SAURUS_PRESETS")]
+# Paleotone's SAMPLE / GRAIN set values (0..4 its 1.0 sets with two aliases of PIANO, 5..7 USR1..3, 8..11 DINOBOX's)
+# -> RAPTOR's (PIANO FLUTE SAX JUNGLE STEPS STONE STORM 0..6, then the user slots: eng_sample.c SMP_NSETS + k)
+SET_MAP = {0: 0, 1: 0, 2: 1, 3: 2, 4: 0, 5: 7, 6: 8, 7: 9, 8: 3, 9: 4, 10: 5, 11: 6}
+MARK = "/* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */"
+
+
+def span(s, arr):
+    i = s.index(f"static const preset_t {arr}[] = {{")
+    return i + len(f"static const preset_t {arr}[] = {{"), s.index("\n};", i)
+
+
+# the PRESETS list (ui.c BANK, by kind): Paleotone's categories (its category.c PRESET_CAT, a letter per preset in its
+# engine's order) -> SLOOP's kinds. Paleotone engine number -> RAPTOR's (ENGINES[] differ: FM6 9, PHYS 10, NOISE 11,
+# SAURUS 12, SFX 13, ROAR 14, DRUM 15)
+PAL_ENG = {0: "0", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "ENGI_PHYS", 10: "ENGI_DRUM",
+           11: "ENGI_NOISE", 12: "ENGI_FM6", 14: "ENGI_ROAR", 15: "ENGI_SAURUS"}
+PAL_FILE = {0: ("eng_analog.c", "ANALOG_PRESETS"), 2: ("eng_phase.c", "PHASE_PRESETS"), 3: ("eng_lofi.c", "LOFI_PRESETS"),
+            5: ("eng_formant.c", "FORMANT_PRESETS"), 6: ("eng_trio.c", "TRIO_PRESETS"), 7: ("eng_wheel.c", "WHEEL_PRESETS"),
+            8: ("eng_grain.c", "GRAIN_PRESETS"), 9: ("eng_phys.c", "PHYS_PRESETS"), 10: ("eng_drum.c", "DRUM_PRESETS"),
+            11: ("eng_noise.c", "NOISE_PRESETS"), 12: ("eng_fm6.c", "FM6_PRESETS"), 14: ("eng_gurdy.c", "GURDY_PRESETS"),
+            15: ("eng_saurus.c", "SAURUS_PRESETS")}
+# SAMPLE: RAPTOR's sets have no aliases (tools/gen_samples.py): its presets and their categories
+SAMPLE_BANK = [("PIANO", "K"), ("FLUTE", "L"), ("SAX", "L"), ("JUNGLE NIGHT", "F"), ("ENCOUNTER", "D"),
+               ("LITHOPHONE", "U"), ("TROPIC STORM", "F")]
+KIND = {"B": "BK_BASS", "K": "BK_KEYS", "P": "BK_PAD", "L": "BK_LEAD", "U": "BK_PLUCK", "D": "BK_DRUM", "F": "BK_FX",
+        "O": "BK_FX"}
+KINDS = ["BK_BASS", "BK_KEYS", "BK_ORGAN", "BK_PAD", "BK_LEAD", "BK_PLUCK", "BK_DRUM", "BK_SAUR", "BK_ROAR", "BK_FX"]
+BY_ENGINE = {15: "BK_SAUR", 14: "BK_ROAR"}           # PALEOTONE: SAURUS and ROAR their own kinds, whatever the category
+
+
+def bank(pal):
+    src = Path(pal) / "firmware/src"
+    cat = (src / "category.c").read_text()
+    body = cat[cat.index("PRESET_CAT[16] = {"):]
+    body = body[:body.index("\n};")]
+    strings = []
+    for line in body.splitlines()[1:]:
+        code = re.sub(r"/\*.*", "", line)
+        if not code.strip() and strings and "*" in line:
+            continue
+        lits = re.findall(r'"([A-Z]*)"', code)
+        if lits or code.strip().startswith('""'):
+            strings.append("".join(lits))
+    ents = []
+    for e, (f, arr) in PAL_FILE.items():
+        a, b = span((src / f).read_text(), arr)
+        names = re.findall(r'^ *\{"([^"]+)",', (src / f).read_text()[a:b], re.M)
+        letters = strings[e]
+        for k, n in enumerate(names):
+            kind = KIND.get(letters[k] if k < len(letters) else "O", "BK_FX")
+            if e == 7 and kind == "BK_KEYS":
+                kind = "BK_ORGAN"
+            kind = BY_ENGINE.get(e, kind)
+            ents.append((kind, PAL_ENG[e], n))
+        if e == 15:                                      # (SAURUS's CALL KIT: every creature on the keys)
+            ents.append(("BK_SAUR", PAL_ENG[e], "CALL KIT"))
+        if e == 3:                                       # (after LOFI: SAMPLE, engine 4)
+            ents += [(KIND[c], "4", n) for n, c in SAMPLE_BANK]
+    out = ["/* generated by tools/paleotone_sounds.py: the PRESETS list (ui.c BANK), Paleotone's sounds by its categories */"]
+    for k in KINDS:
+        for kind, e, n in ents:
+            if kind == k:
+                out.append(f'    {{{kind}, {e}, "{n}"}},')
+    (ROOT / "firmware/src/ui_bank.h").write_text("\n".join(out) + "\n")
+    print(f"ui_bank.h: {len(ents)} sounds")
+
+
+def main(pal):
+    src = Path(pal) / "firmware/src"
+    for pf, pa, df, da in ENGINES:
+        ps = (src / pf).read_text()
+        a, b = span(ps, pa)
+        body = ps[a:b].replace("/* GHOULBOX presets (tools/ghoulbox_presets.py) */", "/* DINOBOX's */") \
+                      .replace("/* GHOULBOX end */", "/* DINOBOX's end */")
+        if pa == "GRAIN_PRESETS":                       # SRC (EDIT 1): RAPTOR's numbering of the sets
+            body = re.sub(r'(\{"[^"]+", \{)(\d+)', lambda m: m.group(1) + str(SET_MAP[int(m.group(2))]), body)
+        path = ROOT / "firmware/src" / df
+        s = path.read_text()
+        c, d = span(s, da)
+        s = s[:c] + "\n    " + MARK + body + s[d:]
+        path.write_text(s)
+        print(f"{df}: {len(re.findall(r'^ *\{\"', body, re.M))} presets from Paleotone")
+    bank(pal)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit(__doc__)
+    main(sys.argv[1])

@@ -1,4 +1,19 @@
-# Building Felucca
+# Building SLOOP Pro (and SLOOP)
+
+SLOOP Pro is SLOOP's SMK-37 build. On Windows, `INSTALL-SLOOP-PRO.bat` builds the three SLOOP Pro packages in WSL
+(`build-sloop-pro.ps1`: `SLOOP_WSL_DISTRO`, `SLOOP_TOOLCHAIN`, `SLOOP_SDK`, defaults as SLOOP's own script; the SDK
+files are taken from `build\deps\ac79` here or in a `sloop-fm1` folder next to this one), writes them with their
+SHA-256 to `build\release\`, and opens the installer on <http://localhost:8767/webapp/installer/>. On Linux or
+WSL: `tools/build_pro.sh` (the three packages, the site in `build/sloop-pro-site/`, then the FM-1 reference build
+for the tests).
+
+| Package | Model | Identity |
+| --- | --- | --- |
+| `sloop-pro.fwsc` | SMK-37 Pro, Starrykey 37 Play | `SMK-37 Pro_900` |
+| `sloop-pro-elite.fwsc` | SMK-37 Elite | `SMK-37 Elite_900` |
+| `sloop-pro-mke.fwsc` | MKE-P37 | `MKE-P37_900` |
+
+The rest of this page is SLOOP's (the FM-1 build is the default of `./build.sh`, the reference the host tests use).
 
 The build makes three files in `build/`:
 
@@ -8,10 +23,17 @@ The build makes three files in `build/`:
 | `loader/ota.bin` | the update loader |
 | `felucca.fwsc` | the installable package (app + loader) |
 
+## Windows (WSL)
+
+`INSTALL-SLOOP.bat` builds in a WSL distribution and opens the installer on
+`http://localhost:8766/webapp/installer/`. It needs Python 3 with Pillow on Windows, a WSL
+distribution with the JieLi toolchain, and the three SDK files (below) in `build/deps/ac79`.
+Set `SLOOP_WSL_DISTRO` (default `Ubuntu`) and `SLOOP_TOOLCHAIN` (a Linux path, default
+`/root/.jieli/toolchain`) if yours differ.
+
 ## Prerequisites (macOS)
 
-- Python 3 with Pillow and fontTools: `pip3 install Pillow fonttools` (the UI font and icons are
-  rasterised at build time)
+- Python 3 with Pillow: `pip3 install Pillow`
 - Docker Desktop. The JieLi toolchain is Linux x86-64 only; the build runs each tool in a
   `linux/amd64` `debian:bookworm-slim` container (Rosetta on Apple silicon). Keep the source
   tree in a folder Docker can share, e.g. under `/Users`.
@@ -30,7 +52,6 @@ The build makes three files in `build/`:
   ```
 
 - Node.js (optional, for the web tests).
-- Emscripten (optional, `emcc`: the browser emulator, `web/emu/`).
 
 On Linux x86-64 the toolchain runs natively and Docker is not needed.
 
@@ -43,54 +64,35 @@ On Linux x86-64 the toolchain runs natively and Docker is not needed.
 `JIELI_TOOLCHAIN` and `AC79_SDK` override the default locations
 (`~/.jieli/toolchain`, `~/fw-AC79_AIoT_SDK`).
 
-`./build.sh --release 1.0` makes a release build: the package identity becomes `FM-1_910`
-and the version string `v1.0`; the package is `build/felucca-1.0.fwsc`, and
-`build/release-1.0/` holds what a release ships: the package, the app
-(`felucca-1.0-app.bin`), `SHA256SUMS`, the sample attribution, `LICENSE`, `LICENSING.md` and
-`LICENSES/` (the package contains Apache-2.0 SDK files, so the licence texts travel with it).
+`./build.sh --release 0.9-beta` makes a release build: the package identity becomes
+`FM-1_909` and the version string `0.9-BETA`; the package is `build/felucca-0.9-beta.fwsc`.
 
-Build options (environment, `0` or `1`; defaults in `firmware/src/felucca.c`, `core.h` and `icons.c`):
+Build options (environment, `0` or `1`; defaults in `firmware/src/felucca.c`):
 
 | Flag | Default | |
 | --- | --- | --- |
 | `FELUCCA_FLASH` | 1 | settings, presets and projects in flash |
 | `FELUCCA_OTA` | 1 | update entry (needs `FELUCCA_FLASH`) |
 | `FELUCCA_CDC` | 1 | USB serial console |
-| `FELUCCA_CDC_DEFAULT` | 1 | `0`: the console is built in but left out of USB from boot (as MENU > USB SERIAL OFF) |
-| `FELUCCA_UAC` | 1 | USB audio input (the master output, stereo, 44.1 kHz) |
-| `FELUCCA_UAC_48K` | 0 | `1`: the USB audio input offers 48 kHz too (Felucca's default; GHOULBOX 2.2 gave its 8 KB to headroom). Leaves under 16 KiB spare, so build it with `FELUCCA_SPARE_MIN=0` (`firmware/src/usb.c`) |
-| `FELUCCA_UART` | 1 | TRS MIDI IN |
-| `FELUCCA_SLICE` | 1 | the SLICE engine |
-| `FELUCCA_ICONS` | 1 | parameter icons on the knob cards |
-| `FELUCCA_FM4` | 0 | the retired DIGITAL engine (4-operator FM) instead of its FM6 conversion |
+| `FELUCCA_UAC` | 1 | USB audio input: the master output, 44.1 kHz stereo (after Felucca 1.0) |
+| `FELUCCA_UART` | 1 (SMK-37: 0) | TRS MIDI IN (the 3.5 mm jack); must stay 0 on the SMK-37 (PH8 is a key row there) |
 
-`FELUCCA_USB_LAYOUT` (`0` to `3`, default `0`) picks other USB descriptor layouts for testing; see
-`firmware/src/usb.c`.
+Target board: `BOARD=smk37 ./build.sh` (or `./build.sh --board smk37`) builds for the M-Vave SMK-37 Pro:
+`-DBOARD_SMK37=1` for the app and the update loader, identity `SMK-37 Pro_900` (release `SMK-37 Pro_9XY`),
+the SMK flash layout (PRCT 0x9D000, the stock region table with USRTRIM / USRFLASH) and the package
+`build/sloop-pro.fwsc` (SLOOP Pro). The intermediate files (`build/felucca.bin`, `build/loader/ota.bin`, `build/felucca.dis`)
+are shared: build the FM-1 again before `tests/run_tests.sh`. The default stays the FM-1, byte for byte.
+The SMK-37 Elite and the MKE-P37 are the same keyboard under other model names, and M-Vave's updater only takes
+a unit's own model: `MODEL=elite` or `MODEL=mke` (with `BOARD=smk37`) builds under that name (identity
+`SMK-37 Elite_900` / `MKE-P37_900`, `build/sloop-pro-elite.fwsc` / `-mke.fwsc`).
+The SMK-37 models, controls and install: [SLOOP-PRO.md](SLOOP-PRO.md).
 
 ## Samples
 
 The CC0 instrument samples that the SAMPLE engine uses are in `assets/samples-cc0/`
 (Versilian Studios, see `ATTRIBUTION.txt` there). `tools/fetch_cc0.py` downloads them
-again from the source repositories. Without that folder the build still works, with no
-instrument sets in the SAMPLE engine and no PIANO in SLICE (the PIANO set's middle C): they play a plain sine
-at the note's pitch instead, and the screen says NO SAMPLE.
-
-## Browser emulator
-
-```
-./build.sh
-web/emu/build.sh
-python3 -m http.server -d build/emu 8790     # open http://localhost:8790/
-```
-
-`web/emu/felucca_web.c` builds the firmware's sources as the host tests do, against a simulated FM-1, and
-Emscripten compiles it to WebAssembly (`build/emu/felucca.wasm`, with `index.html`, `worklet.js`, the browser helper
-modules and the font in `fonts/`). The page keeps the flash's storage sectors (projects, user presets, settings) in
-the browser. It can export and import its complete state and record the final stereo output (FLAC, MP3 or 24-bit WAV; the compressed formats are encoded in the browser, with WAV as
-the fallback). Not
-emulated: USB (audio, MIDI out, the editor, updates), TRS MIDI and the user sample slots. A build of it is on the site:
-<https://ghoulbox.messy.quest/> (the site's home page; Felucca's own is at
-<https://hugelton.github.io/Felucca/webapp/try/>).
+again from the source repositories. Without that folder the build still works and the
+SAMPLE engine has only the generated drum kit.
 
 ## Tests
 
@@ -98,32 +100,58 @@ emulated: USB (audio, MIDI out, the editor, updates), TRS MIDI and the user samp
 tests/run_tests.sh
 ```
 
-Runs the host tests and, with Node.js, the web page tests (and, with Emscripten too, the browser emulator's). Run it after `./build.sh`
-(it uses `build/` and needs `AC79_SDK` set as for the build). The suites cover flash storage,
-user presets, projects of every format, backup, the keys and knobs, MIDI (USB, TRS, clock,
-control), USB audio, the update entry and loader, the command-line installer, the UI (the real
-drawing code against stubs: every screen in every palette is rendered and checked for clipped or
-overlapping text; PNGs land in `build/ui_new/`), every engine (DRUM, NOISE, PHYS, FM6, SLICE, the
-DIGITAL conversion), the chord keys, the modulation matrix, the FX layer, the reverbs, the SLICER
-and swing. With `DAISYSP` pointing at a DaisySP checkout, the PHYS models are also compared with
-their floating-point originals; without it that test is skipped.
+Runs the host tests (flash storage, user presets, MIDI parser, update entry, update
+loader, a DSP render, the 4-track mix, project formats, the SLICER, the regression suite,
+the command-line installer) and, with Node.js, the web page tests. Run it after `./build.sh`
+(it uses `build/` and needs `AC79_SDK` set as for the build).
 
 The regression suite (`tests/regress.c`) renders every engine and preset and compares a
 hash of each render with `tests/golden.txt`; it also checks levels, voices and the CPU
-cost (`tests/cpu_baseline.txt`, `tests/target_budget.txt`). After an intended change of
-the sound, `GOLDEN_UPDATE=1 sh tests/run_tests.sh` rewrites the hashes; `BUDGET_UPDATE=1`
-does the same for the cost files.
+cost (`tests/cpu_baseline.txt`, `tests/target_budget.txt`). The host CPU cost is relative
+to the idle + drums mix, counted by the kernel on macOS and under callgrind on Linux when
+valgrind is installed (exact, about 45 s more); without either it is timed, a rough check.
+After an intended change of the sound, `GOLDEN_UPDATE=1 sh tests/run_tests.sh` rewrites
+the hashes; `BUDGET_UPDATE=1` does the same for the cost files.
+
+## Browser audio preview
+
+The browser preview uses the firmware's DSP and sequencer with RAM-backed user samples.
+It requires Python 3, a host C compiler, Node.js for tests, and Emscripten (`brew install emscripten` on macOS).
+It does not need the JieLi toolchain, AC79 SDK, Docker, or an FM-1.
+
+```sh
+python3 tools/build_preview.py
+tests/run_preview_tests.sh
+```
+
+The build produces `build/preview/sloop-preview.wasm`. The tests compare all twelve engines sample by sample
+against the same adapter compiled for the host and verify sequencing, live mixer changes, stop, and user samples.
+`web/make_site.py` includes the preview and caches it for the site app when the WASM build is present:
+
+```sh
+# Use a release package downloaded from isod89/sloop-fm1, or your own firmware build.
+python3 web/make_site.py build/releases/sloop-2.6.fwsc 2.6 build/site
+python3 -m http.server 8766 --bind 127.0.0.1 --directory build/site
+```
+
+Open `http://localhost:8766/webapp/editor/?mock=1`, **Connect**, then **Play loop** to hear all four tracks.
+**Show preview** opens the piano/pads, volume and editable sequence; **Hide preview** folds them while
+playback continues. The piano keys and labeled computer keys audition the selected track.
+The audio controls are available only in simulated mode. The physical-device editor continues to use Web MIDI.
+The standalone downloaded HTML editor does not include the WASM asset.
 
 ## Install
 
-Use the web installer in Chrome or Edge:
-<https://hugelton.github.io/Felucca/webapp/installer/>. It installs the released package.
+SLOOP Pro on Windows: `INSTALL-SLOOP-PRO.bat` builds and opens the web installer (Chrome or Edge). The `.fwsc` of
+each release is on the GitHub releases page. SLOOP Pro's site: `python3 web/make_site.py --pro X.Y OUT
+sloop-pro.fwsc sloop-pro-elite.fwsc sloop-pro-mke.fwsc`.
 
 From the command line (needs `pip3 install mido python-rtmidi`):
 
 ```
-python3 tools/fm1_install.py build/felucca.fwsc
-python3 tools/fm1_install.py --info          # identity of the connected FM-1
+python3 tools/fm1_install.py build/release/          # SLOOP Pro: the package for the connected model
+python3 tools/fm1_install.py build/felucca.fwsc      # SLOOP (FM-1)
+python3 tools/fm1_install.py --info                  # identity of the connected keyboard
 ```
 
 Or, to install your own build from the web installer, make a local copy of the site and open it from `localhost`

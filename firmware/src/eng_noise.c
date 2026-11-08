@@ -63,6 +63,20 @@ static uint32_t noise_inc(int32_t p)
     inc = pitch_inc((uint32_t)clamp(p, 0, 2047));
     return sh && inc >= 0x80000000u >> (sh - 1u) ? 0xFFFFFFFFu : inc << sh;
 }
+/* (after 2.8.3) the same, unbounded (Q32: 2^32 = one clock a sample). LFSR: a clock past the sample rate steps the
+ * register more than once a sample (the sequence read further on, as the register would be at that time): its pitch
+ * goes on rising with the keys. It used to stop at one step a sample, so every note above it played the same pitch
+ * (NZ ARCADE: TONE +84 semitones, the whole upper half of the keyboard; clipper-fm1 #10) */
+static uint64_t noise_inc64(int32_t p)
+{
+    uint32_t sh = 0;
+    while (p > 2047) {
+        p -= 192;
+        sh++;
+    }
+    return (uint64_t)pitch_inc((uint32_t)clamp(p, 0, 2047)) << (sh < 20u ? sh : 20u);
+}
+#define NZ_STEPS_MAX 64u                              /* register steps a sample at most (64 x 44.1 kHz) */
 
 static uint32_t isqrt32(uint32_t x)
 {
@@ -94,15 +108,20 @@ static void noise_note_on(track_t *t, voice_t *v)
     v->ph[2] = 0;
 }
 
-static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+/* RAPTOR: the NOISE engine plays as Paleotone's (its LFSR clock stops at one step a sample, as there: ARCADE's top
+ * keys); SFX (eng_sfx.c) keeps SLOOP's unbounded clock */
+static uint8_t noise_pal;
+/* pe: the eight EDIT values P_E0..P_E7 (the track's own, or eng_sfx.c's recipe) */
+static void noise_core(const int16_t *pe, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
-    const int16_t *p = t->p;
-    uint32_t mode = (uint32_t)p[P_E0] & 3u, sel = ((uint32_t)p[P_E5] >> 4) & 7u, i;
-    int32_t res = p[P_E3], drft = p[P_E6], crsh = mode < NZ_LFSR ? p[P_E7] : 0;
+    uint32_t mode = (uint32_t)pe[0] & 3u, sel = ((uint32_t)pe[5] >> 4) & 7u, i;
+    int32_t res = pe[3], drft = pe[6], crsh = mode < NZ_LFSR ? pe[7] : 0;
     int32_t ic1 = v->s[0], ic2 = v->s[1], rng = v->s[2], b0 = v->s[4], b1 = v->s[5], b2 = v->s[6], br = v->s[7];
     uint32_t ph = v->ph[0], reg = v->ph[1];         /* state in locals: out[] may alias v->s[] */
     int32_t drift = (int32_t)v->ph[2], d16 = 0, gain = 32767, gq, colr, cut, k, a1, a2, a3, g, bpg, mix, cf, thr = 0;
     uint32_t inc = 0, taps = NOISE_TAPS[sel];
+    uint64_t inc64 = 0;                               /* (after 2.8.3) LFSR: its clock, Q32, past the sample rate too */
+    const int32_t plim = noise_pal ? 0x7FFFFFFF : 65535;   /* the colour poles' bound (RAPTOR: none on NOISE, as Paleotone) */
     /* drift: a new random target every 0.7..3 s, followed with a 0.7 s lag */
     if (drft) {
         int32_t tg = v->s[3] >> 16, cnt = v->s[3] & 0xFFFF;
@@ -117,10 +136,10 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         gain = 32767 - ((((32767 - (drift >> 4)) >> 1) * drft) >> 8);   /* down to -6 dB as it falls */
     }
     /* COLR (+ SHP), 0..127 << 8: white -> pink -> brown */
-    colr = clamp((p[P_E1] << 8) + m->shape - (64 << 8), 0, 127 << 8);
+    colr = clamp((pe[1] << 8) + m->shape - (64 << 8), 0, 127 << 8);
     cf = colr <= (64 << 8) ? colr << 1 : ((colr - (64 << 8)) * 520) >> 8;   /* the crossfade, Q15 */
     /* FREQ (+ FLT), key-tracked by TRK around C4, the drift: SVF cutoff units (256 an index, 0.86 st) */
-    cut = (p[P_E2] << 8) + m->cutoff + (((m->pitch16 - 60 * 16) * p[P_E4] * 151) >> 10) + ((d16 * 4785) >> 8);
+    cut = (pe[2] << 8) + m->cutoff + (((m->pitch16 - 60 * 16) * pe[4] * 151) >> 10) + ((d16 * 4785) >> 8);
     cut = clamp(cut, 0, 127 << 8);
     g = SVF_G[cut >> 8];
     if (cut < (127 << 8))
@@ -142,14 +161,15 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         if (gq > 65535)
             gq = 65535;
     }
-    if (mode <= NZ_DUST && p[P_E5]) {                 /* impulses: 1 .. 2000 a second */
-        uint32_t e = (uint32_t)p[P_E5] * 22u, r = 1u << (e >> 8);   /* 2^(DENS * 11 / 127), Q8 fraction */
+    if (mode <= NZ_DUST && pe[5]) {                 /* impulses: 1 .. 2000 a second */
+        uint32_t e = (uint32_t)pe[5] * 22u, r = 1u << (e >> 8);   /* 2^(DENS * 11 / 127), Q8 fraction */
         r += (r * (e & 255u)) >> 8;
         thr = (int32_t)((r * 97391u) >> 16);          /* per 2^16 of a sample: rate * 65536 / FS, Q16 */
     }
     if (mode == NZ_LFSR) {
         uint32_t mask = taps;                         /* the register's own bits (MODE / LEN changes) */
-        inc = noise_inc(m->pitch16 + p[P_E7] * 16 + d16);
+        inc64 = noise_pal ? (uint64_t)noise_inc(m->pitch16 + pe[7] * 16 + d16)   /* (Paleotone: one step a sample at most) */
+                          : noise_inc64(m->pitch16 + pe[7] * 16 + d16);
         mask |= mask >> 1;
         mask |= mask >> 2;
         mask |= mask >> 4;
@@ -159,7 +179,7 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
             reg = (uint32_t)rng | 1u;
         reg &= mask;
     } else if (mode == NZ_META) {
-        inc = p[P_E7] || d16 ? noise_inc(m->pitch16 + p[P_E7] * 16 + d16) : m->inc;
+        inc = pe[7] || d16 ? noise_inc(m->pitch16 + pe[7] * 16 + d16) : m->inc;
     }
     for (i = 0; i < n; i++) {
         int32_t w, x, v1, v2, v3, y;
@@ -175,9 +195,10 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
             break;
         }
         case NZ_LFSR: {
-            uint32_t o = ph;
-            ph += inc;
-            if (ph < o)
+            uint64_t a = (uint64_t)ph + inc64;
+            uint32_t ns = (uint32_t)(a >> 32) < NZ_STEPS_MAX ? (uint32_t)(a >> 32) : NZ_STEPS_MAX;
+            ph = (uint32_t)a;
+            while (ns--)                               /* (after 2.8.3: as many steps as clocks in this sample) */
                 reg = (reg >> 1) ^ (-(reg & 1u) & taps);
             w = (reg & 1u) ? 12000 : -12000;
             break;
@@ -192,14 +213,14 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         x = w;
         if (colr) {                                   /* pink: three leaky poles (Kellet), brown: a leaky integrator */
             int32_t pk;
-            b0 = ((b0 * 32690) >> 15) + ((w * 3245) >> 15);
-            b1 = ((b1 * 31555) >> 15) + ((w * 9716) >> 15);
+            b0 = clamp(((b0 * 32690) >> 15) + ((w * 3245) >> 15), -plim, plim);   /* (after 2.8.3: bounded: a held */
+            b1 = clamp(((b1 * 31555) >> 15) + ((w * 9716) >> 15), -plim, plim);   /* LFSR level grew them past 2^31 / 32690) */
             b2 = ((b2 * 18678) >> 15) + ((w * 17247) >> 14);
             pk = (b0 + b1 + b2 + ((w * 6055) >> 15)) >> 2;
             if (colr <= (64 << 8)) {
                 x = w + mulq15(pk - w, cf);
             } else {
-                br = ((br * 32580) >> 15) + ((w * 3480) >> 15);
+                br = clamp(((br * 32580) >> 15) + ((w * 3480) >> 15), -plim, plim);
                 x = pk + mulq15(br - pk, cf);
             }
         }
@@ -238,23 +259,42 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     v->ph[2] = (uint32_t)drift;
 }
 
+static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+{
+    noise_pal = 1;
+    noise_core(&t->p[P_E0], v, out, n, m);
+    noise_pal = 0;
+}
+
 /* {MODE, COLR, FREQ, RES, TRK, DENS, DRFT, CRSH / CLK} */
 static const preset_t NOISE_PRESETS[] = {
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
     {"WIND", {NZ_ANLG, 64, 70, 100, 127, 0, 70, 0}, {90, 90, 110, 90}, 0, 0, FX(0, 30, 20, 80), PAT(5)},
     {"RAIN", {NZ_DUST, 30, 88, 80, 64, 105, 40, 0}, {10, 90, 127, 70}, 0, 0, FX(0, 0, 20, 70), PAT(5)},
     /* a 7-bit register (127 steps) clocked 84 semitones (7 octaves) above the key: one period per key period,
      * a pitched chip-style buzz */
     {"ARCADE", {NZ_LFSR, 0, 127, 0, 127, 112, 0, 84}, {0, 80, 0, 50}, 0, 0, FX(0, 0, 10, 20), PAT(3)},
     {"METAL", {NZ_META, 0, 100, 40, 100, 32, 0, 0}, {0, 75, 40, 60}, 10, 0, FX(0, 20, 30, 45), PAT(7)},
-    /* GHOULBOX presets (tools/ghoulbox_presets.py) */
+    /* DINOBOX's */
     {"VOLCANO", {0, 120, 22, 40, 0, 40, 110, 0}, {100, 90, 127, 120}, 0, 0, FX(20, 0, 10, 110), PAT(17)},
     {"LAVA CRACKLE", {1, 40, 90, 50, 0, 70, 30, 0}, {30, 90, 127, 90}, 0, 0, FX(0, 0, 0, 80), PAT(17)},
     {"MONSOON", {1, 20, 108, 10, 0, 127, 50, 0}, {80, 90, 127, 110}, 0, 0, FX(0, 0, 0, 100), PAT(17)},
     {"GEYSER", {0, 60, 60, 100, 20, 0, 80, 0}, {40, 90, 127, 100}, 0, 0, FX(0, 0, 20, 100), PAT(17)},
     {"SWARM", {3, 40, 110, 90, 0, 60, 100, 30}, {40, 90, 127, 80}, 0, 0, FX(0, 30, 20, 90), PAT(17)},
     {"WIND RIDGE", {0, 90, 45, 110, 10, 0, 127, 0}, {110, 90, 127, 120}, 0, 0, FX(0, 20, 0, 115), PAT(17)},
-    /* GHOULBOX end */
+    /* DINOBOX's end */
 };
+
+/* (after Clipper 1.2) UNISON (voice.c unison_spread): the phase moved by r (Q32) and the noise from its own
+ * seed (the note's: every voice the same noise at DTUNE 0) */
+static void noise_spread(track_t *t, voice_t *v, uint32_t r)
+{
+    (void)t;
+    v->ph[0] += r;
+    v->s[2] = (int32_t)((uint32_t)v->s[2] ^ r);
+    if (!v->s[2])
+        v->s[2] = 1;
+}
 
 static const engine_t ENG_NOISE = {
     .name = "NOISE",
@@ -273,7 +313,8 @@ static const engine_t ENG_NOISE = {
     .npresets = NELEM(NOISE_PRESETS),
     .note_on = noise_note_on,
     .render = noise_render,
-    .knob = {P_E2, P_E3, P_E1, P_REL},
-    .keep = 0xF3,                /* the filter, the colour poles */
+    .fil_page = 0,
+    .color = 0xC618,
+    .macro = {P_E2, P_E3, P_E1, P_REL},
     .desc = noise_desc,
 };

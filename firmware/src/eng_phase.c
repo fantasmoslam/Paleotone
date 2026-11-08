@@ -130,8 +130,7 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     int32_t depth = (p[P_E2] << 8) + m->cutoff + mulq15(m->envq15, p[P_E3] * 256);
     uint32_t dcw, inc = m->inc, inc2;
     int32_t det = p[P_E4], line2 = det != 0 || p[P_E5], ring = p[P_E5], sub = p[P_E6] * 200;
-    int32_t d16 = det * 16 / 100, rem = det * 16 - d16 * 100;   /* (cents_inc(), written out: the host
-                                                                 * compiler makes the loop slower with it) */
+    int32_t d16 = det * 16 / 100, rem = det * 16 - d16 * 100;
     uint32_t ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2];
     int32_t tg0 = v->s[0], tg1 = v->s[1];                    /* WAVE / WAVE2 toggles */
     pd_t b1, b2;
@@ -139,7 +138,7 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     dcw = (uint32_t)depth * 65535u / (127u << 8);
     dcw = (dcw * 56000u) >> 16;                              /* the classic range of the bend */
     inc2 = pitch_inc(clamp(m->pitch16 + d16, 0, 2047));
-    inc2 += (uint32_t)((int32_t)(inc2 >> 12) * (rem * 2367 / 16000 + v->tfine));   /* (GHOULBOX: + TEMP's rest) */
+    inc2 += (uint32_t)((int32_t)(inc2 >> 12) * (rem * 2367 / 16000));
     pd_setup(&b1, w1, dcw);
     pd_setup(&b2, w2 ? w2 - 1u : w1, dcw);                   /* WAVE2 (every other cycle) */
     for (i = 0; i < n; i++) {
@@ -161,7 +160,7 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
             ph2 += inc >> 1;
             s += mulq15(osc_sine(ph2), sub);
         }
-        out[i] += voice_amp(s, m, i) << 1;
+        out[i] += mulq15(mulq15(s, amp_at(m, i)), VOICE_FS) << 1;
     }
     v->ph[0] = ph0;
     v->ph[1] = ph1;
@@ -171,6 +170,7 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
 }
 
 static const preset_t PHASE_PRESETS[] = {
+    /* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */
     /* name, {WAVE, WAVE2, DCW, ENV, DTN, LINE, SUB, -}, {A D S R}, fenv, mono */
     {"BRASS", {0, 0, 30, 90, 0, 0, 0, 0}, {8, 70, 90, 40}, 0, 0, FX(0, 20, 20, 40), PAT(6)},
     {"ORGAN", {3, 0, 40, 0, 0, 0, 0, 0}, {0, 127, 127, 30}, 0, 0, FX(0, 40, 0, 30), PAT(6)},
@@ -178,18 +178,26 @@ static const preset_t PHASE_PRESETS[] = {
     {"RESO", {5, 0, 60, 60, 0, 0, 0, 0}, {0, 70, 30, 60}, 0, 0, FX(0, 0, 40, 40), PAT(1)},
     {"BELL", {6, 0, 80, 50, 0, 0, 0, 0}, {0, 95, 0, 90}, 0, 0, FX(0, 0, 30, 70), PAT(7)},
     {"WIRE", {4, 7, 70, 40, 7, 0, 0, 0}, {10, 80, 80, 60}, 0, 0, FX(15, 30, 30, 40), PAT(4)},
-    /* GHOULBOX presets (tools/ghoulbox_presets.py) */
+    /* DINOBOX's */
     {"TITAN BRASS", {5, 0, 80, 100, 20, 1, 70, 0}, {45, 80, 108, 70}, 0, 0, FX(12, 20, 15, 95), PAT(4)},
     {"ICE CRYSTAL", {3, 7, 90, 30, 8, 0, 0, 0}, {0, 90, 127, 80}, 0, 0, FX(0, 30, 40, 110), PAT(7)},
     {"RESIN PAD", {6, 1, 50, 60, 30, 1, 40, 0}, {90, 90, 120, 110}, 0, 0, FX(0, 80, 20, 115), PAT(5)},
     {"DEEP PULSE", {2, 0, 70, 40, 0, 0, 100, 0}, {0, 60, 90, 30}, 0, 1, FX(10, 0, 10, 40), PAT(8)},
-    /* GHOULBOX end */
+    /* DINOBOX's end */
 };
 
+/* (after Clipper 1.2) UNISON (voice.c unison_spread): line 1, line 2 (DTN cents up) and the sub (an octave
+ * down) moved by r (Q32) of a turn of the note, each by its share (lines 2 and the sub from 0 at each note) */
+static void phase_spread(track_t *t, voice_t *v, uint32_t r)
+{
+    v->ph[0] += r;
+    v->ph[1] += uni_turns(r, v->pitch16, t->p[P_E4] * 16 / 100);
+    v->ph[2] += r >> 1;
+}
+
 static const engine_t ENG_PHASE = {
-    .name = "PHASE",
-    .page_title = {"PHS", "LINE"},
-    .edit = {
+    "PHASE", {"PHS", "LINE"},
+    {
         {"WAVE", F_ENUM, 0, 7, 0, N_PD_WAVE, 0},
         {"WAVE2", F_ENUM, 0, 8, 0, N_PD_WAVE2, 0},
         {"DCW", F_PCT, 0, 127, 60, 0, 0},
@@ -199,9 +207,6 @@ static const engine_t ENG_PHASE = {
         {"SUB", F_PCT, 0, 127, 0, 0, 0},
         {"-", F_INT, 0, 0, 0, 0, 0},
     },
-    .presets = PHASE_PRESETS,
-    .npresets = NELEM(PHASE_PRESETS),
-    .note_on = phase_note_on,
-    .render = phase_render,
-    .knob = {P_E2, P_E3, P_E4, P_REL},
+    PHASE_PRESETS, sizeof(PHASE_PRESETS) / sizeof(PHASE_PRESETS[0]), 0, phase_note_on, phase_render,
+    0x05DF, {P_E2, P_E3, P_E4, P_REL},
 };

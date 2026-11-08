@@ -133,18 +133,21 @@ static void crank_idle(uint32_t now)                   /* no click since the las
 /* a track that cranks: GURDY at COUP CRANK (ui_input.c: SELECT is the crank while there is one) */
 static int crank_track(const track_t *t)
 {
-    return t->eng_req % NENGINES == ENGI_GURDY && t->p[P_E5] == (int16_t)GURDY_CRANK;
+    return t->eng_req % NENGINES == ENGI_ROAR && t->p[P_E5] == (int16_t)GURDY_CRANK;
 }
+
+/* the presets that ring (bit k: GURDY_PRESETS[k]): PRIMEVAL, EARTHQUAKE, TRIBE PIPES: RING ON when one loads (ui.c
+ * apply_preset_to). PALEOTONE: RING is the track's, EDIT > RING, kept in P_FTYPE (params.c RING_DESC) */
+#define GURDY_RING 0x23u
+static int gurdy_ring_on(const track_t *t) { return t->p[P_FTYPE] != 0; }
 
 /* RING: the drones ring through the rests: a GURDY track with RING ON while the transport runs (voice.c voice_release),
  * not muted (a muted track plays no next note: its drones would ring on, and GLO's mute would not silence them) */
 static int gurdy_rings(const track_t *t)
 {
-    return t->p[P_RING] && !t->p[P_MUTE] && t->engine == ENGI_GURDY && song.playing;
+    return gurdy_ring_on(t) && !t->p[P_MUTE] && t->engine == ENGI_ROAR && song.playing;
 }
 
-/* the presets that ring (bit k: GURDY_PRESETS[k]; ui.c sound loads): HURDY GURDY, DRONE WHEEL, BAGPIPE */
-#define GURDY_RING 0x23u
 
 /* the bow's pressure (Q15) for the crank's speed: GEAR (WHL) is the speed of full pressure, 60 clicks/s (0) .. 12
  * (127); below 2 clicks/s none; linear between (a slow crank ~6 dB under a full one at half its speed) */
@@ -185,7 +188,7 @@ static void gurdy_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     int32_t buzz = p[P_E4] * 258, body = p[P_E6] * 258, wobl = p[P_E7];
     uint32_t coup = (uint32_t)clamp(p[P_E5], 0, 18), i, dper = 0, dlen = 1, ha = 0, lv = 0, di = 0, bnd = ~0u, nlv = 0;
     uint32_t ninc = 0, invd = 0;
-    int32_t dd, fd, df = temper(p, (uint32_t)drn, &dd) - v->tfine, ff = temper(p, (uint32_t)drn + 7u, &fd) - v->tfine;
+    int32_t dd = 0, fd = 0, df = 0, ff = 0;             /* (RAPTOR: equal temperament, Paleotone's TEMP EQUAL) */
     uint32_t inc = m->inc, dinc = cents_inc(drn * 16 + dd, 0, m->fine + df), finc = cents_inc((drn + 7) * 16 + fd, 0, m->fine + ff);
                                                         /* GHOULBOX: the drones on TEMP's own degrees, not the note's */
     uint32_t ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2];
@@ -387,7 +390,8 @@ static const engine_t ENG_GURDY = {
     .note_on = gurdy_note_on,
     .render = gurdy_render,
     .desc = gurdy_desc,
-    .knob = {P_E4, P_E3, P_E1, P_REL},
+    .fil_page = -1,
+    .color = 0xC3A0,
+    .macro = {P_E4, P_E3, P_E1, P_REL},
     .poly = 1,                                          /* one wheel: one melody note */
-    .keep = 0xAF,                                       /* the body, the wander and the pressure carry on */
 };

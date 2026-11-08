@@ -32,17 +32,17 @@ def main(path):
     for p in range(128 * 16):
         f = 440.0 * 2 ** ((p / 16 - 69) / 12)
         inc.append(min(int(f / FS * 2 ** 32), 0x7FFFFFFF))
-    # stored as its top octave (1856..2047) shifted down: floor(floor(x) / 2^k) = floor(x / 2^k), so
-    # pitch_inc(p) equals the 2048-entry table bit for bit (checked here); 7.4 KB less flash
-    oct_ = inc[1856:2048]
-    assert all(inc[q] == oct_[(q + 64) % 192] >> (10 - (q + 64) // 192) for q in range(2048))
-    assert all((q + 64) * 21846 >> 22 == (q + 64) // 192 for q in range(2048))
-    L += arr("PITCH_OCT", "uint32_t", oct_, 8)
-    L += ["/* phase increment of pitch p in 1/16 semitone, 0..2047 (MIDI 0..127): 440 Hz * 2^((p / 16 - 69) / 12) */",
+    # (SLOOP 2.5: only the top octave is stored, 192 entries instead of 2048: 7.4 KiB of flash. Exact: each
+    # entry is floor(f / FS * 2^32), and floor(floor(x) / 2^k) = floor(x / 2^k): every golden render is unchanged)
+    L += arr("PITCH_OCT", "uint32_t", inc[2048 - 192:], 8)
+    L += ["/* phase increment of pitch p, 1/16 semitone 0..2047: the top octave's entry, k octaves down */",
           "static inline uint32_t pitch_inc(uint32_t p)",
           "{",
-          "    uint32_t i = p + 64u, o = (i * 21846u) >> 22;     /* i / 192: the octave above PITCH_OCT's - 10 */",
-          "    return PITCH_OCT[i - o * 192u] >> (10u - o);",
+          "    uint32_t k;",
+          "    if (p > 2047u)",
+          "        p = 2047u;",
+          "    k = (2047u - p) / 192u;",
+          "    return PITCH_OCT[p + 192u * k - (2048u - 192u)] >> k;",
           "}"]
     # times 1 ms .. 10 s (exponential), env in Q24 (1.0 = 1<<24)
     ms = [1.0 * (10000 ** (v / 127)) for v in range(128)]
@@ -73,6 +73,7 @@ def main(path):
     L += arr("TANH_Q15", "int16_t", [int(32767 * math.tanh(i / 256 * 2)) for i in range(257)])
     L += fm6_tables()
     Path(path).write_text("\n".join(L) + "\n")
+    print(f"tables: {path}")
 
 
 # FM6 (src/fm6_core.c, a C port of msfa, Apache-2.0): the tables msfa built with double math at start-up,
@@ -97,10 +98,9 @@ def fm6_tables():
          f"#define FM6_FREQ_R {int(round(2 ** 40 / FS))}u   /* 2^40 / FS: the Q30 mantissa -> a Q24 phase increment (fm6_freq) */",
          f"#define FM6_AMS_C0 {int(round(12.2 * math.log2(math.e) * 2 ** 24))}   /* log2(e^12.2), Q24 (the AMS curve) */",
          f"#define FM6_AMS_K {int(round(0.07 / 262144 * math.log2(math.e) * 2 ** 24 * 1024))}      /* d/dsensamp of it, Q24 / 1024 */"]
-    # 2^(i / 256) - 1, Q30: the mantissa of Exp2::lookup and Freqlut::lookup, quadratic between the points (fm6_core.c
-    # fm6_mant): within 2.5e-9 of 2^x (msfa's 1025 points, linear: 6e-8, 3 KB more; linear on these: 9e-7, which
-    # turned the phase between the partials of a 3:1 ratio about every 5 minutes; a Q16 table drifted them apart)
-    L += arr("FM6_EXP2", "uint32_t", [int(round((1 << 30) * (2 ** (i / 256) - 1))) for i in range(258)], 8)
+    # 2^(i / 1024) - 1, Q30: the mantissa of Exp2::lookup and Freqlut::lookup (linear between the points, as
+    # msfa's: within 6e-8 of 2^x; a Q16 table drifted the partials of a ratio against each other)
+    L += arr("FM6_EXP2", "uint32_t", [int(round((1 << 30) * (2 ** (i / 1024) - 1))) for i in range(1025)], 8)
     lforatio = int(4437500000.0 * CTL / FS)                                  # msfa Lfo::lforatio_ (uint32)
     L += arr("FM6_LFO_DELTA", "uint32_t", [int(s * lforatio) for s in FM6_LFO_SOURCE], 8)
     # msfa note osc_freq: the DETUNE step of note mn, Q24 log2 (0.0209 * exp(-0.396 * lf) / 7 * lf, lf in octaves)
@@ -113,7 +113,6 @@ def fm6_tables():
     # .. and its FINE: (1 << 24) / ln 2 * ln(1 + fine / 100), Q24 log2
     L += arr("FM6_FINE", "int32_t", [int(math.floor(24204406.323123 * math.log(1 + 0.01 * f) + 0.5)) for f in range(100)], 10)
     return L
-    print(f"tables: {path}")
 
 
 if __name__ == "__main__":

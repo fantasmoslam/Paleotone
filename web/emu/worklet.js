@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-// Felucca in an AudioWorklet: felucca.wasm is the whole FM-1 firmware against a simulated FM-1
-// (web/emu/felucca_web.c). Each render quantum asks it for 128 frames, which runs the device's clock forward;
+// PALEOTONE in an AudioWorklet: paleotone.wasm is the FM-1 firmware's sound, sequencer and UI against a simulated
+// FM-1 (web/emu/paleo_web.c). Each render quantum asks it for 128 frames, which runs the device's clock forward;
 // between quanta the page's input goes in and, about 30 times a second (4 when the page is hidden), the screen,
 // the lights and any changed flash go out. After X0X's web/emu/worklet.js (charlesvestal/fm1-x0x, GPL-3.0).
 
 import { STORE_AREAS } from "./emu_io.js";
 import { Pcm24Recorder, RECORD_MAX_SECONDS } from "./audio_export.js";
+import { wasiStubs } from "./wasi_stubs.js";
 
 // The flash the page keeps: storage.c's areas (projects, user presets and their FM6 patches, the user sample
 // slots 0x97000..0xDFFFF; the autosave 0xE5000..0xE6FFF (1.2) and FM6's voice bank 0xE7000 (1.4.1); the settings and
@@ -59,16 +60,19 @@ if (typeof registerProcessor === "function") {
     async onMessage(m) {
       if (m.type === "load") {
         try {
-          const { instance } = await WebAssembly.instantiate(m.wasm, {});
-          const ex = instance.exports;
+          let ex = null;
+          const { instance } = await WebAssembly.instantiate(m.wasm, wasiStubs(() => ex.memory));
+          ex = instance.exports;
           ex._initialize();
-          ex.web_nor_erase();
-          restoreSectors(new Uint8Array(ex.memory.buffer, ex.web_nor(), ex.web_nor_size()), m.sectors);
+          if (ex.web_nor) {                             // (a build with a flash: the saves kept in this browser)
+            ex.web_nor_erase();
+            restoreSectors(new Uint8Array(ex.memory.buffer, ex.web_nor(), ex.web_nor_size()), m.sectors);
+          }
           ex.web_master(m.master ?? 700);
           ex.web_boot();
           if (m.runtime && !projectInput(ex, m.runtime, true)) throw new Error("The imported live project is invalid");
           this.ex = ex;
-          this.sentWrites = ex.web_flash_writes_count();
+          this.sentWrites = ex.web_flash_writes_count ? ex.web_flash_writes_count() : 0;
           this.port.postMessage({ type: "ready", rate: ex.web_sample_rate() });
         } catch (err) {
           this.port.postMessage({ type: "error", message: String(err && err.message || err) });
@@ -77,7 +81,9 @@ if (typeof registerProcessor === "function") {
       }
       const ex = this.ex;
       if (!ex) return;
-      if (m.type === "snapshot") {
+      if ((m.type === "snapshot" || m.type === "validate-project") && !ex.web_project_capture) {
+        this.port.postMessage({ type: m.type, id: m.id, error: "This build keeps no projects in the browser" });
+      } else if (m.type === "snapshot") {
         const p = ex.web_project_capture(), n = ex.web_project_size();
         if (!p || !n) { this.port.postMessage({ type: "snapshot", id: m.id, error: "Could not capture the live project" }); return; }
         const runtime = new Uint8Array(ex.memory.buffer, p, n).slice();
@@ -147,7 +153,7 @@ if (typeof registerProcessor === "function") {
         msg.fb = new Uint16Array(mem, ex.web_screen(), 240 * 240).slice();
         transfer.push(msg.fb.buffer);
       }
-      const writes = ex.web_flash_writes_count();
+      const writes = ex.web_flash_writes_count ? ex.web_flash_writes_count() : 0;
       if (writes !== this.sentWrites) {               // a save is done within one main-loop pass: whole here
         this.sentWrites = writes;
         msg.sectors = storeSectors(new Uint8Array(mem, ex.web_nor(), ex.web_nor_size()));
@@ -187,5 +193,5 @@ if (typeof registerProcessor === "function") {
       return true;
     }
   }
-  registerProcessor("felucca", Felucca);
+  registerProcessor("paleotone", Felucca);
 }

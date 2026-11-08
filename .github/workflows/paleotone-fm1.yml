@@ -1,0 +1,73 @@
+# PALEOTONE for the FM-1, on RAPTOR's SLOOP base: builds the FM-1 package, runs the host tests, and puts the package
+# and the logs on the branch paleotone-fm1-output (felucca.fwsc there: install it with the FM-1 web installer or
+# tools/fm1_install.py).
+name: paleotone-fm1
+
+on:
+  push:
+    branches: [main, claude/project-thread-n5rqg8, paleotone-fm1]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # (the paleotone-fm1-output branch)
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: debian:bookworm-slim
+    timeout-minutes: 75
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pip git curl xz-utils ca-certificates libraqm0 gcc libc6-dev make valgrind
+          pip3 install --break-system-packages pillow==12.3.0 fonttools==4.61.1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4      # (the web tests need a newer Node than Debian 12's)
+        with:
+          node-version: 22
+
+      - name: JieLi toolchain
+        run: sh tools/get_toolchain.sh "$HOME/.jieli"
+
+      - name: JieLi AC79 SDK
+        run: |   # gitee drops the connection now and then: retry
+          for i in 1 2 3 4 5; do
+            rm -rf "$HOME/fw-AC79_AIoT_SDK"
+            git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK" && exit 0
+            sleep $((i * 15))
+          done
+          exit 1
+
+      - name: FM-1 build
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p out
+          bash build.sh 2>&1 | tee out/build-fm1.log | tail -15
+          cp build/felucca.fwsc out/paleotone-fm1.fwsc
+          cp build/felucca.dis out/ 2>/dev/null || true
+          # the RAM map: every object of 256 bytes or more in .pool, .bss, .lowram, .noinit, biggest first
+          python3 -c 'import re
+          rows=[(int(m.group(2),16),m.group(1),m.group(3)) for m in re.finditer(r"\s(\.(?:pool|bss|lowram|noinit)\S*)\s+([0-9a-f]+)\s+(\S+)$",open("build/felucca.syms").read(),re.M)]
+          [print("%7d %-12s %s"%r) for r in sorted(rows,reverse=True) if r[0]>=256]' > out/ram-fm1.txt || true
+          sha256sum out/*.fwsc | tee out/sha256.txt
+
+      - name: Host tests
+        shell: bash
+        continue-on-error: true
+        run: |
+          sh tests/run_tests.sh > out/tests.log 2>&1; echo "exit $?" | tee -a out/tests.log
+          grep -E "FAIL|^exit" out/tests.log | tail -60
+
+      - name: Put the result on the paleotone-fm1-output branch
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/o && cp -r out/. /tmp/o/ 2>/dev/null || true
+          echo "${{ github.sha }} ${{ job.status }}" > /tmp/o/RESULT
+          cd /tmp/o && git init -q -b paleotone-fm1-output && git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" paleotone-fm1-output

@@ -4,23 +4,21 @@
 static const char *const N_ONOFF_E[] = {"OFF", "ON"};
 /* IMA ADPCM sample sets (tools/gen_samples.py), native rates, zones across
  * the keyboard, loops with the ADPCM state stored at the loop start.
- * SET is P_E0 (EDIT 1, KNOB 1). SET 4 was PERC, the GM drum kit: retired, an alias of PIANO; its sounds
- * load as the DRUM engine (core.h drum_from_perc). */
+ * SET is P_E0 (EDIT 1, KNOB 1). */
 typedef struct {
     uint32_t off, n, ls, le;     /* byte offset, samples, loop start / end (sample index) */
     uint32_t rate;               /* source rate / 44100, Q16 */
     int16_t root16;              /* root pitch in 1/16 semitone */
     int16_t pred;                /* ADPCM state at the loop start */
-    uint8_t idx, lo, hi, looped;
+    uint8_t idx, lo, hi, looped; /* looped: 0 one-shot, 1 loops [ls, le] (the factory sets), 2 (2.7, user slots: the
+                                  * editor's LOOP and LOOP+TAIL) loops while the note is held, then plays on to the end */
 } smp_zone_t;
+#define SMP_LOOP_HELD 2u
 typedef struct {
     const char *name;
     uint16_t z0, nz;
 } smp_set_t;
 #include "felucca_samples.h"
-#if defined(SMP_PERC_SLOT) && SMP_PERC_SLOT != SMP_SET_PERC
-#error "tools/gen_samples.py PERC_SLOT != core.h SMP_SET_PERC"
-#endif
 
 static const int16_t IMA_STEP[89] = {
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97,
@@ -38,26 +36,34 @@ static uint32_t pow2_q16(int32_t d16)
 }
 
 /* ---- user sample slots (loaded from the web editor into flash, see web/EDITOR_PROTOCOL.md)
- * 3 slots of 80 KiB at flash 0xA0000.. (Felucca data region), read through the plain XIP
+ * 4 slots of 80 KiB (the SMK-37: 40 KiB): 3 at flash 0xA0000.., USR4 at 0xE7000 (Felucca data regions), read through the plain XIP
  * window. Slot = header (magic, count, name, data length, CRC32) + up to 16 zones in the
  * smp_zone_t layout (off relative to the slot's data at +512) + IMA ADPCM data. */
 #include "../hal/fm1_xip.h"   /* relative: hostsim includes this file too */
-#define SMP_USER_SLOTS 3
-#define SMP_USER_BASE 0xA0000u
+#define SMP_USER_SLOTS 4
+#if BOARD_SMK37
+/* SMK-37 (SLOOP Pro): USRFLASH 0xC2000..0xE9FFF (FL_SMP in fm1_flash_map.h) holds the four slots, 40 KiB each (the
+ * FM-1's 80 KiB: the SMK-37 has half the free flash; the rest is its calibration and stock resources). USR1..USR4
+ * as on the FM-1; the editor stores a slot at 11025 Hz when its sounds do not fit at 22050 Hz (each zone has its
+ * own rate), so a slot still holds about 7 s. (SLOOP Pro 2.8.1 had two 80 KiB slots there and USR3 / USR4 empty.) */
+#define SMP_USER_SIZE 0xA000u
+#define SMP_USER_BASE 0xC2000u                      /* USR1..USR4: 0xC2000, 0xCC000, 0xD6000, 0xE0000 (..0xE9FFF) */
+#define SMP_USER_HAS(k) 1
+#define SMP_USER_OFF(k) (SMP_USER_BASE + (uint32_t)(k) * SMP_USER_SIZE)
+_Static_assert(SMP_USER_BASE + SMP_USER_SLOTS * SMP_USER_SIZE <= 0xEA000u, "SMK: user slots past FL_SMP");
+#else
 #define SMP_USER_SIZE 0x14000u
+#define SMP_USER_BASE 0xA0000u                      /* USR1..USR3: 0xA0000..0xDBFFF */
+#define SMP_USER4_BASE 0xE7000u                     /* USR4 (2.4): the free flash after the FM6 bank, 0xE7000..0xFAFFF */
+#ifndef SMP_USER_HAS                                /* (a host test may keep USR4: the USR3+4 kit's logic, as on the SMK-37) */
+#define SMP_USER_HAS(k) ((k) < 3u)                  /* PALEOTONE: USR1..USR3; USR4's flash keeps the six-track projects'
+                                                     * SFX and CALLS (storage.c, FL_EXT) */
+#endif
+#define SMP_USER_OFF(k) ((k) < 3u ? SMP_USER_BASE + (k) * SMP_USER_SIZE : SMP_USER4_BASE)
+#endif
 #define SMP_USER_DATA 512u
 #define SMP_USER_MAGIC 0x504D5346u                  /* "FSMP" */
 #define SMP_NALL (SMP_NSETS + SMP_USER_SLOTS)
-#define SMP_USR_V0 5u                                /* SET / SRC value of USR1: 1.0's, fixed; sets added later come after USR3 */
-#define SMP_NONE 0xFFFFFFFFu
-_Static_assert(SMP_NSETS >= SMP_USR_V0, "the 1.0 sets (assets/samples-cc0) are needed: USR1 stays at value 5");
-/* GHOULBOX: the built-in set SET / SRC value v plays (SMP_SETS index), SMP_NONE for a user slot */
-static uint32_t smp_set_at(uint32_t v)
-{
-    v %= SMP_NALL;
-    return v < SMP_USR_V0 ? v : v < SMP_USR_V0 + SMP_USER_SLOTS ? SMP_NONE : v - SMP_USER_SLOTS;
-}
-static uint32_t smp_usr_at(uint32_t v) { return (v % SMP_NALL - SMP_USR_V0) % SMP_USER_SLOTS; }   /* (a user slot's v) */
 typedef struct {
     uint32_t magic;
     uint16_t version;
@@ -68,10 +74,10 @@ typedef struct {
 } smp_user_hdr_t;                                   /* 32 + 16 x 28 = 480 B, data at +512 */
 static smp_zone_t usr_zone[SMP_USER_SLOTS][16];     /* RAM copy, off rebased onto SMP_DATA */
 static uint8_t usr_nz[SMP_USER_SLOTS];
-static const char *const SMP_ALL_NAMES[SMP_NALL] = {SMP_SET_NAMES_V1, "USR1", "USR2", "USR3", SMP_SET_NAMES_NEW};   /* (by value) */
+static const char *const SMP_ALL_NAMES[SMP_NALL] = {SMP_SET_NAMES_INIT, "USR1", "USR2", "USR3", "USR4"};
 
 #ifndef SMP_USER_XIP                                /* host tests: a RAM image of the slots */
-#define SMP_USER_XIP(k) fm1_xip_ptr(SMP_USER_BASE + (k) * SMP_USER_SIZE)
+#define SMP_USER_XIP(k) fm1_xip_ptr(SMP_USER_OFF((uint32_t)(k)))
 #endif
 static const uint8_t *smp_user_xip(uint32_t k) { return SMP_USER_XIP(k); }
 #if FELUCCA_SLICE
@@ -82,63 +88,39 @@ static void slc_user_scan(uint32_t k, int valid);   /* eng_slice.c: SLICE's slic
 static uint32_t smp_user_gen;                       /* + 1 per slot scan (GRAIN: its seek index follows uploads) */
 
 /* (re)read slot k from flash: valid header -> zones usable; call after boot and after an upload
- * (main loop: SLICE scans the slot's audio here). The zones are checked in a copy: an unusable slot leaves
- * every zone of it empty (n 0: a voice still on it ends), never a half-checked one */
+ * (main loop: SLICE scans the slot's audio here) */
+/* a zone of a slot header usable (inside the slot's data, well formed) */
+static int smp_zone_ok(const smp_zone_t *z, uint32_t data_len)
+{
+    return z->off <= data_len && z->n <= 2u * SMP_USER_SIZE && z->off + (z->n + 1u) / 2u <= data_len &&
+           z->idx <= 88u && z->rate && z->rate <= 4u << 16 && z->ls <= z->le && z->le < z->n && z->lo <= z->hi;
+}
 static void smp_user_scan(uint32_t k)
 {
     const smp_user_hdr_t *h = (const smp_user_hdr_t *)smp_user_xip(k);
-    smp_zone_t zt[16];
-    uint32_t i, base, nz = 0;
+    static smp_zone_t zs[16];
+    uint32_t i, base;
     smp_user_gen++;
-    usr_nz[k] = 0;
+    usr_nz[k] = 0;                                  /* (from here no new voice takes the slot) */
     slc_user_scan(k, 0);
-    if (h->magic == SMP_USER_MAGIC && h->version == 1 && h->nz && h->nz <= 16u &&
-        h->data_len <= SMP_USER_SIZE - SMP_USER_DATA) {
-        base = (uint32_t)(uintptr_t)(smp_user_xip(k) + SMP_USER_DATA) - (uint32_t)(uintptr_t)SMP_DATA;
-        for (nz = h->nz, i = 0; i < nz; i++) {
-            smp_zone_t *z = &zt[i];
-            *z = h->zone[i];
-            if (z->off > h->data_len || z->n > 2u * SMP_USER_SIZE || z->off + (z->n + 1u) / 2u > h->data_len ||
-                z->idx > 88u || !z->rate || z->rate > 4u << 16 || z->ls > z->le || z->le >= z->n || z->lo > z->hi) {
-                nz = 0;                             /* zone outside the data or malformed: slot unusable */
-                break;
-            }
-            z->off += base;
-        }
-    }
-    for (i = 0; i < 16u; i++)
-        usr_zone[k][i] = i < nz ? zt[i] : (smp_zone_t){0};
-    if (!nz)
+    if (!SMP_USER_HAS(k))
+        return;                                     /* no flash behind this slot (PALEOTONE: USR4 on the FM-1) */
+    if (h->magic != SMP_USER_MAGIC || h->version != 1 || !h->nz || h->nz > 16u ||
+        h->data_len > SMP_USER_SIZE - SMP_USER_DATA)
         return;
-    usr_nz[k] = (uint8_t)nz;
-    slc_user_scan(k, 1);
-}
-
-/* A missing sample (SAMPLE, GRAIN, SLICE: an empty or invalid user slot, a set this build has no data for) plays
- * this instead, like a hardware sampler with its sample gone: a plain sine at the note's pitch (+ d16, 1/16
- * semitones), at half the peak of a full sample, through the engine's one-pole low-pass (lp Q15, state *y) and the
- * voice's amp (the ADSR: no click at the start, phase 0, or the end). *ph its phase. The UI says so once
- * (engines.c snd_missing, ui_input.c sample_notice). */
-static void smp_sine(int32_t *out, uint32_t n, const vmod_t *m, int32_t d16, int32_t tf, int32_t lp, uint32_t *ph,
-                     int32_t *y)
-{
-    uint32_t i, p = *ph, inc = pitch_inc((uint32_t)clamp(m->pitch16 + d16, 0, 2047));
-    int32_t s = *y;
-    inc += (uint32_t)((int32_t)(inc >> 12) * tf);       /* GHOULBOX: TEMP's rest (voice_t tfine) */
-    for (i = 0; i < n; i++, p += inc) {
-        s += mulq15((sine_i(p) >> 1) - s, lp);
-        out[i] += voice_amp(s, m, i) << 1;
+    base = (uint32_t)(uintptr_t)(smp_user_xip(k) + SMP_USER_DATA) - (uint32_t)(uintptr_t)SMP_DATA;
+    for (i = 0; i < h->nz; i++) {                   /* checked in a copy: a voice still playing the slot */
+        zs[i] = h->zone[i];                         /* never reads a zone that is not valid */
+        if (!smp_zone_ok(&zs[i], h->data_len))
+            return;                                 /* zone outside the data or malformed: slot unusable */
+        zs[i].off += base;
     }
-    *ph = p;
-    *y = s;
-}
-/* SET / SRC si (0..SMP_NALL - 1) has no sample data: an empty or invalid user slot, a built-in set without data */
-static int smp_set_missing(uint32_t si)
-{
-    uint32_t s = smp_set_at(si);
-    if (s != SMP_NONE)
-        return !SMP_ZONES[SMP_SETS[s].z0].n;
-    return !usr_nz[smp_usr_at(si)];
+    fm1_irq_off();
+    for (i = 0; i < h->nz; i++)
+        usr_zone[k][i] = zs[i];
+    usr_nz[k] = h->nz;
+    fm1_irq_on();
+    slc_user_scan(k, 1);
 }
 
 /* zone index in a voice: < 0x8000 built-in, else 0x8000 | slot << 5 | zone */
@@ -148,7 +130,7 @@ static inline const smp_zone_t *smp_zone(uint32_t zi)
 }
 
 /* voice: ph[0] position (samples), ph[1] fraction Q16, s[0] predictor, s[1] step
- * index, s[2] previous sample, s[3] current sample, s[4] zone, s[5] step Q16 */
+ * index, s[2] previous sample, s[3] current sample, s[4] zone, s[5] (UNISON) output samples before it starts */
 static inline int32_t sample_next(const smp_zone_t *z, voice_t *v, int loop)
 {
     uint32_t pos = v->ph[0], b = SMP_DATA[z->off + (pos >> 1)];
@@ -163,7 +145,7 @@ static inline int32_t sample_next(const smp_zone_t *z, voice_t *v, int loop)
     v->s[0] = clamp(v->s[0] + ((code & 8u) ? -vd : vd), -32768, 32767);
     v->s[1] = clamp(v->s[1] + IMA_IDX[code & 7u], 0, 88);
     pos++;
-    if (pos > z->le && z->looped && loop) {
+    if (pos > z->le && z->looped && loop && (z->looped != SMP_LOOP_HELD || v->gate)) {   /* (HELD, let go: the tail) */
         pos = z->ls;
         v->s[0] = z->pred;
         v->s[1] = z->idx;
@@ -174,24 +156,18 @@ static inline int32_t sample_next(const smp_zone_t *z, voice_t *v, int loop)
 
 static void sample_note_on(track_t *t, voice_t *v)
 {
-    uint32_t si = (uint32_t)t->p[P_E0] % SMP_NALL, s = smp_set_at(si), i, zi = 0xFFFFu, width = 128u;
-    if (s != SMP_NONE) {                            /* a built-in set: its zones split the keyboard */
-        const smp_set_t *set = &SMP_SETS[s];
+    uint32_t si = (uint32_t)t->p[P_E0] % SMP_NALL, i, zi = 0xFFFFu;
+    if (si < SMP_NSETS) {
+        const smp_set_t *set = &SMP_SETS[si];
         for (i = 0; i < set->nz; i++)
-            if (v->note >= SMP_ZONES[set->z0 + i].lo && v->note <= SMP_ZONES[set->z0 + i].hi) {
+            if (v->note >= SMP_ZONES[set->z0 + i].lo && v->note <= SMP_ZONES[set->z0 + i].hi)
                 zi = set->z0 + i;
-                break;
-            }
         v->s[4] = (int32_t)(zi == 0xFFFFu ? set->z0 : zi);
-    } else {                                        /* user slot: silent if empty; the narrowest zone plays */
-        uint32_t k = smp_usr_at(si);
-        for (i = 0; i < usr_nz[k]; i++) {
-            const smp_zone_t *z = &usr_zone[k][i];
-            if (v->note >= z->lo && v->note <= z->hi && z->hi - z->lo <= width) {
+    } else {                                        /* user slot: silent if empty */
+        uint32_t k = si - SMP_NSETS;
+        for (i = 0; i < usr_nz[k]; i++)
+            if (v->note >= usr_zone[k][i].lo && v->note <= usr_zone[k][i].hi)
                 zi = 0x8000u | k << 5 | i;
-                width = z->hi - z->lo;
-            }
-        }
         v->s[4] = (int32_t)(zi == 0xFFFFu ? 0 : zi);
     }
     v->ph[0] = 0;
@@ -199,29 +175,46 @@ static void sample_note_on(track_t *t, voice_t *v)
     v->s[0] = 0;
     v->s[1] = 0;
     v->s[2] = v->s[3] = 0;
+    v->s[5] = 0;                 /* (after Clipper 1.2) no start delay (UNISON: sample_spread) */
     v->s[6] = zi == 0xFFFFu;     /* 1 = sample ended (one-shot); a kit key with no sound stays silent */
     v->s[7] = 0;                 /* lo-pass state */
-    if (smp_set_missing(si))
-        v->s[6] = 2;             /* 2 = no sample data: the sine (smp_sine; ph[0] its phase) */
 }
 
+#ifndef SMP_STEP_MAX
+#define SMP_STEP_MAX (8u << 16)   /* decodes an output sample at most (a 44.1 kHz zone 3 octaves up: 8, the cost bound as before) */
+#endif
 static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
     const smp_zone_t *z = smp_zone((uint32_t)v->s[4]);
     uint32_t i, frac = v->ph[1];
-    int32_t d16 = clamp(m->pitch16 + p[P_E1] * 16 - z->root16, -1536, 576);   /* <= 3 octaves up: bounded decode load */
-    uint32_t r = pow2_q16(d16), stepq = ((r + (uint32_t)((int32_t)(r >> 12) * v->tfine)) >> 8) * (z->rate >> 8);
-                                                      /* Q16 samples per output (GHOULBOX: + TEMP's rest, tfine) */
+    int32_t d16 = clamp(m->pitch16 + p[P_E1] * 16 - z->root16, -1536, 1536);
+    uint32_t r = pow2_q16(d16), stepq = (r >> 8) * (z->rate >> 8);   /* Q16 samples per output */
+    uint32_t lim = (pow2_q16(576) >> 8) * (z->rate >> 8);   /* the decode load bounded: 3 octaves up, or SMP_STEP_MAX
+                                                         * source samples an output sample if that is more (a 16 kHz
+                                                         * set, one zone: its pitch went flat 3 octaves over its root) */
     int32_t bits = p[P_E2], lp = 4000 + ((clamp((p[P_E4] << 8) + m->cutoff, 0, 127 << 8) * 28767) >> 15);
     int32_t drv = p[P_E6], sh = bits / 10;
-    if (v->s[6] == 2) {                               /* no sample data: the sine at the note's pitch + TUNE */
-        smp_sine(out, n, m, p[P_E1] * 16, v->tfine, lp, &v->ph[0], &v->s[7]);
-        return;
-    }
+    vmod_t m0;
+    if (stepq > (lim > SMP_STEP_MAX ? lim : SMP_STEP_MAX))
+        stepq = lim > SMP_STEP_MAX ? lim : SMP_STEP_MAX;
     if (v->s[6] || !z->n) {
         v->active = 0;
         return;
+    }
+    if (v->s[5]) {                                    /* (after Clipper 1.2) UNISON: this voice starts later */
+        if ((uint32_t)v->s[5] >= n) {
+            v->s[5] -= (int32_t)n;
+            return;
+        }
+        i = (uint32_t)v->s[5];                        /* within this block: the rest of it, its level ramp as it was */
+        v->s[5] = 0;
+        m0 = *m;
+        m0.amp0 = amp_at(m, i);
+        m0.amp1 = m0.amp0 + (m->amp1 - m->amp0);
+        m = &m0;
+        out += i;
+        n -= i;
     }
     if (v->ph[0] == 0 && v->ph[1] == 0 && v->s[3] == 0)
         v->s[3] = sample_next(z, v, p[P_E3]);         /* prime the interpolator */
@@ -234,10 +227,6 @@ static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             if (v->ph[0] >= z->n) {                   /* one-shot reached its end */
                 v->s[6] = 1;
                 v->s[3] = 0;
-                if (frac >= 65536u) {                /* past the last sample-to-zero interval */
-                    v->s[2] = 0;
-                    frac &= 65535u;
-                }
                 break;
             }
             v->s[3] = sample_next(z, v, p[P_E3]);
@@ -248,17 +237,37 @@ static void sample_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         if (drv)
             s = softclip(s + (((s >> 2) * (drv * 150)) >> 11));   /* = s * drv * 600 / 32768, no overflow */
         v->s[7] += mulq15(s - v->s[7], lp);           /* gentle tone control (CUT) */
-        out[i] += voice_amp(v->s[7], m, i) << 1;
+        out[i] += mulq15(mulq15(v->s[7], amp_at(m, i)), VOICE_FS) << 1;
         if (v->s[6])
             break;
     }
     v->ph[1] = frac;
 }
 
+
+/* (after Clipper 1.2) UNISON (voice.c unison_spread): the voice starts r (Q32) of four periods of the pitch it
+ * sounds later (s[5]: output samples of silence first; nothing decoded, per note): every voice read the same samples
+ * from the same start, in phase (+9 dB over POLY). Four: a sample may sound lower than its key says (UP BASS: two
+ * octaves). At most the time of 256 source samples (~6 .. 12 ms at its root) and of a quarter of the zone */
+static void sample_spread(track_t *t, voice_t *v, uint32_t r)
+{
+    const int16_t *p = t->p;
+    const smp_zone_t *z = smp_zone((uint32_t)v->s[4]);
+    int32_t d16 = clamp(v->pitch16 + p[P_E1] * 16 - z->root16, -1536, 1536);
+    uint32_t stepq = (pow2_q16(d16) >> 8) * (z->rate >> 8);   /* Q16 source samples an output sample */
+    uint32_t b = pitch_inc((uint32_t)clamp(v->pitch16 + p[P_E1] * 16, 0, 2047));   /* the pitch it sounds (TUNE) */
+    uint32_t d, q;                                    /* (32-bit divides: two a voice, per note) */
+    if (v->s[6] || !z->n || !b || !stepq || v->ph[0] || v->ph[1])
+        return;
+    d = (0xFFFFFFFFu / b) << 2;                       /* four periods (output samples; < 21600 at pitch 0) */
+    q = ((z->n >> 2 < 256u ? z->n >> 2 : 256u) << 16) / stepq;   /* the time of 256 source samples */
+    v->s[5] = (int32_t)(((d < q ? d : q) * (r >> 16)) >> 16);   /* x r (the span shortened, not clamped: a clamp */
+                                                                 /* gave many voices the same start) */
+}
+
 static const engine_t ENG_SAMPLE = {
-    .name = "SAMPLE",
-    .page_title = {"SET", "TONE"},
-    .edit = {
+    "SAMPLE", {"SET", "TONE"},
+    {
         {"SET", F_ENUM, 0, SMP_NALL - 1, 0, SMP_ALL_NAMES, 0},
         {"TUNE", F_SEMI, -24, 24, 0, 0, 0},
         {"BITS", F_INT, 0, 127, 0, 0, 0},
@@ -268,10 +277,6 @@ static const engine_t ENG_SAMPLE = {
         {"DRV", F_PCT, 0, 127, 0, 0, 0},
         {"-", F_INT, 0, 0, 0, 0, 0},
     },
-    .presets = SMP_PRESET_TABLE,
-    .npresets = SMP_NPRESETS,
-    .note_on = sample_note_on,
-    .render = sample_render,
-    .knob = {P_E0, P_E4, P_ATK, P_REL},
-    .sampled = 1,
+    SMP_PRESET_TABLE, sizeof(SMP_PRESET_TABLE) / sizeof(SMP_PRESET_TABLE[0]), -1, sample_note_on, sample_render,
+    0xFFFF, {P_E0, P_E4, P_ATK, P_REL},
 };

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-"""Load WAV files into a Felucca user sample slot (USR1..USR3) over USB-MIDI.
+"""Load WAV files into a Felucca user sample slot (USR1..USR4) over USB-MIDI.
 
   fm1_sample_upload.py info
-  fm1_sample_upload.py load SLOT NAME file.wav[:ROOT[:LO-HI]] ...   (SLOT 1..3)
+  fm1_sample_upload.py load SLOT NAME file.wav[:ROOT[:LO-HI]] ...   (SLOT 1..4)
   fm1_sample_upload.py erase SLOT
   fm1_sample_upload.py build NAME OUT_PREFIX file.wav[...] ...      (no device: writes OUT_PREFIX.hdr / .bin)
 
 Each file becomes one zone: mono, 22050 Hz, IMA ADPCM (sampleio.py, the same encoder
 as the built-in sets and the web editor). ROOT is a MIDI note (default: from the file
 name, C4 = 60, else 60); without LO-HI the zones split the keyboard between their roots.
-A slot holds 80 KiB (about 7 s at 22050 Hz). Protocol: web/EDITOR_PROTOCOL.md, cmds 11..15.
+A slot holds 80 KiB (about 7 s at 22050 Hz); the SMK-37's (SLOOP Pro) 40 KiB, stored at 11025 Hz when the
+files do not fit at 22050 Hz (about 7 s too). Protocol: web/EDITOR_PROTOCOL.md, cmds 11..15.
 Needs mido (and a backend such as python-rtmidi) for the device commands.
 """
 import sys
@@ -23,25 +24,6 @@ import sampleio as sio  # noqa: E402
 
 HDR = [0x7D, 0x46, 0x4C]
 RC = {1: "size", 2: "header", 3: "data CRC", 4: "flash", 5: "zones"}
-
-
-def printable(b):
-    """bytes from the device as text for the terminal: printable ASCII only (no escape sequences)"""
-    return "".join(chr(c) if 32 <= c < 127 else "?" for c in b)
-
-
-def slot_info(r):
-    """the SMP_INFO reply -> one line per slot; ValueError when it is malformed"""
-    try:
-        n, i, out = r[0], 2, []
-        for k in range(n):
-            nz = r[i]
-            j = r.index(0, i + 1)
-            out.append(f"USR{k + 1}: {'empty' if not nz else f'{nz} zones, {printable(r[i + 1:j])}, {r[j + 1]} KiB'}")
-            i = j + 2
-        return out
-    except (IndexError, ValueError):
-        raise ValueError("malformed SMP_INFO reply from the device") from None
 
 
 def pack7(b):
@@ -61,8 +43,8 @@ class Link:
         except ImportError:
             sys.exit("needs mido: pip install mido python-rtmidi")
         self.mido = mido
-        outs = [n for n in mido.get_output_names() if "Felucca" in n]
-        ins = [n for n in mido.get_input_names() if "Felucca" in n]
+        outs = [n for n in mido.get_output_names() if "Felucca" in n or "RAPTOR" in n or "PALEOTONE" in n]
+        ins = [n for n in mido.get_input_names() if "Felucca" in n or "RAPTOR" in n or "PALEOTONE" in n]
         if not outs or not ins:
             sys.exit("no MIDI port named Felucca: connect the FM-1 (running Felucca) by USB")
         self.o = mido.open_output(outs[0])
@@ -87,31 +69,50 @@ class Link:
         raise TimeoutError(f"no reply to cmd {cmd}")
 
 
-def build(name, specs):
-    """specs: "file.wav[:ROOT[:LO-HI]]" -> (header, ADPCM data) for SMP_END / SMP_WRITE"""
-    zones = []
+def build(name, specs, slot_kib=80):
+    """specs: "file.wav[:ROOT[:LO-HI]]" -> (header, ADPCM data) for SMP_END / SMP_WRITE. slot_kib: the unit's slot
+    (SMP_INFO): the SMK-37's 40 KiB slot is stored at 11025 Hz when the files do not fit at 22050 Hz (as the editor)"""
+    zones, srcs = [], []
     for spec in specs:
         parts = spec.split(":")
+        # Keep a Windows drive prefix separate from the optional :ROOT:LO-HI suffix.
+        if len(parts) > 1 and len(parts[0]) == 1 and parts[0].isalpha() and parts[1].startswith(("/", "\\")):
+            parts = [parts[0] + ":" + parts[1], *parts[2:]]
         path = Path(parts[0])
         root = int(parts[1]) if len(parts) > 1 and parts[1] else sio.note_from_name(path.stem)
         lo, hi = (int(v) for v in parts[2].split("-")) if len(parts) > 2 else (None, None)
         sr, x = sio.read_any_wav(path)
+        srcs.append((sr, x))
         x = sio.resample(x, sr, sio.SLOT_RATE)
         if not x:
             raise ValueError(f"{path}: no audio")
         zones.append((sio.to_int16(x), root, lo, hi))
-    return sio.user_slot(name, zones)
+    max_data = min(slot_kib * 1024, sio.SLOT_SIZE) - sio.SLOT_DATA_OFF
+    try:
+        return sio.user_slot(name, zones, max_data)
+    except ValueError as e:
+        if slot_kib * 1024 >= sio.SLOT_SIZE or not str(e).startswith("too long"):
+            raise
+    half = sio.SLOT_RATE // 2
+    print(f"{name}: stored at {half} Hz to fit the {slot_kib} KiB slot")
+    zones = [(sio.to_int16(sio.resample(x, sr, half)), z[1], z[2], z[3]) for (sr, x), z in zip(srcs, zones)]
+    return sio.user_slot(name, zones, max_data, half)
 
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ("info", "load", "erase", "build"):
         sys.exit(__doc__)
     cmd = sys.argv[1]
+    link = None
     if cmd in ("load", "build"):
         if len(sys.argv) < 5:
             sys.exit(__doc__)
+        kib = 80
+        if cmd == "load":                                  # the unit's slot size (SMP_INFO: the SMK-37's 40 KiB)
+            link = Link()
+            kib = link.req(15, [])[1] or 80
         try:
-            hdr, data = build(sys.argv[3] if cmd == "load" else sys.argv[2], sys.argv[4:])
+            hdr, data = build(sys.argv[3] if cmd == "load" else sys.argv[2], sys.argv[4:], kib)
         except (OSError, ValueError) as e:
             sys.exit(f"cannot build the slot: {e}")
         if cmd == "build":
@@ -120,15 +121,18 @@ def main():
             print(f"{sys.argv[2]}: {len(data)} B ADPCM, {hdr[6]} zones")
             return
     if cmd != "info":
-        if len(sys.argv) < 3 or sys.argv[2] not in ("1", "2", "3"):
-            sys.exit("SLOT is 1, 2 or 3")
+        if len(sys.argv) < 3 or sys.argv[2] not in ("1", "2", "3", "4"):
+            sys.exit("SLOT is 1, 2, 3 or 4 (USR4: SLOOP 2.4 and later)")
         slot = int(sys.argv[2]) - 1
-    link = Link()
+    link = link or Link()
     if cmd == "info":
-        try:
-            print("\n".join(slot_info(link.req(15, []))))
-        except ValueError as e:
-            sys.exit(str(e))
+        r = link.req(15, [])
+        n, i = r[0], 2
+        for k in range(n):
+            nz = r[i]
+            j = r.index(0, i + 1)
+            print(f"USR{k + 1}: {'empty' if not nz else f'{nz} zones, {bytes(r[i + 1:j]).decode()}, {r[j + 1]} KiB'}")
+            i = j + 2
         return
     if cmd == "erase":
         print("erase:", "ok" if link.req(14, [slot], 10)[1] == 0 else "FAILED")

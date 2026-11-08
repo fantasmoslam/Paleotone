@@ -1,104 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
-/* Icons: 4-bit alpha cells of the Fukiai icon font (MIT), Huffman-coded (cv_alpha_hc), 12 px (parameters, lists) and 16 px
- * (header, dialogs, menu): web/fukiai.ttf -> build/gen/ui_icons.h
- * (tools/gen_aa_icons.py; names from assets/icons.json). Which icon a parameter gets is decided
- * here, by its label. FELUCCA_ICONS=0 turns the parameter icons off (labels get their full width back). */
-#include "ui_icons.h"
+/* Parameter icons: a 12 x 12 px, 2-bit glyph left of each column label.
+ * Art: assets/icons.png + icons.json -> build/gen/felucca_icons.h
+ * (tools/gen_icons.py). Which icon a parameter gets is decided here, by its label.
+ * FELUCCA_ICONS=0 turns them off (labels get their full width back). */
+#include "felucca_icons.h"
 #ifndef FELUCCA_ICONS
-#define FELUCCA_ICONS 1
+#define FELUCCA_ICONS (FELUCCA_ICONS_N > 0)   /* on when the atlas has icons */
 #endif
-#define ICON_CELL 12
-
-/* track k's indicator (1.0.2): not an icon of the font (its numerals alias at 12 to 16 px) but the digit 1..4 in
- * Inter Tight on a cushion, a rounded square in the keycap's language, drawn by cv_icon_on: the cushion in the
- * icon's ink (the selected track's: the accent), the digit in what lies under it; rounded in every STYLE, as the
- * keycaps are. (filled: kept for the callers; every cushion is filled) */
-#define ICON_TRK 0xF0u                                /* + k (above ICON_COUNT, below ICON_AUTO) */
-static uint32_t trk_icon(uint32_t k, int filled) { (void)filled; return ICON_TRK + k % NTRK; }
-static int32_t cv_trk(int32_t x, int32_t y, uint32_t size, uint32_t k, uint16_t fill, uint16_t under)
-{
-    const aafont_t *f = size > 16u ? &AF_M : &AF_S;
-    char s[2] = {(char)('1' + k), 0};
-    const aag_t *g = &f->g[glyph(f, (uint8_t)s[0])];
-    int32_t in = size > 16u ? 2 : 0, w = (int32_t)size - 2 * in;
-    int32_t nud = k == 0u ? 1 : 0;   /* the 1's ink centred looks right of centre (its flag): nudged left 1 px (2 looked left) */
-    cv_rrect(x + in, y + in, w, w, -(w / 4), fill, under);
-    GFX_HOOK_ALIGN(x + in - nud, y + in, x + in + w - nud, y + in + w, AL_HV, "track cushion digit");   /* (the 1: measured against its nudge) */
-    cv_text_on(x + in + (w - g->bw) / 2 - g->bx - nud, y + in + (w - g->bh) / 2 - g->by, f, s, under, fill);   /* its ink centred */
-    GFX_HOOK_ITEM(x + in, y + in, x + in + w, y + in + w);
-    return (int32_t)size;
-}
-
-/* icon id's cell number at *size 12, 16 or 24 px (missing at 16 or 24: its 12 px cell, *size 12), -1: none */
-static int32_t icon_cell(uint32_t *size, uint32_t id)
-{
-    const uint8_t *idx = *size == 24u ? AI24_IDX : *size == 16u ? AI16_IDX : AI12_IDX;
-    if (id >= ICON_COUNT)
-        return -1;
-    if (idx[id] == 0xFFu) {
-        if (*size == 12u || AI12_IDX[id] == 0xFFu)
-            return -1;
-        *size = 12u;
-        idx = AI12_IDX;
-    }
-    return idx[id];
-}
-/* the ink box of icon id drawn at (0, 0) in a size px cell: b = x0 y0 x1 y1 (past the ink), from the generator's
- * table (tools/gen_aa_icons.py AI*_INK); a cushion: the cushion; nothing: the cell */
-static void icon_ink(uint32_t size, uint32_t id, int32_t *b)
-{
-    uint32_t sz = size, v, i;
-    int32_t k = id - ICON_TRK < NTRK ? -1 : icon_cell(&sz, id), in = id - ICON_TRK < NTRK && size > 16u ? 2 : 0;
-    if (k < 0) {
-        b[0] = b[1] = in;
-        b[2] = b[3] = (int32_t)size - in;
-        return;
-    }
-    if (sz == 24u) {
-        v = AI24_INK[k];                            /* x0 y0 x1 y1: a byte each */
-    } else {                                        /* 12 16: a nibble each, x1-1 y1-1: as the 24's */
-        v = sz == 16u ? AI16_INK[k] : AI12_INK[k];
-        v = ((v & 15u) | (v & 0xF0u) << 4 | (v & 0xF00u) << 8 | (v & 0xF000u) << 12) + 0x01010000u;
-    }
-    for (i = 0; i < 4u; i++)
-        b[i] = (int32_t)(v >> (8u * i) & 255u);
-}
-
-/* icon id at size 12, 16 or 24 px (24: the header battery and USB, the FX map; one missing: its 12 px cell),
- * fg on bg; returns its width */
-static int32_t cv_icon_on(int32_t x, int32_t y, uint32_t size, uint32_t id, uint16_t fg, uint16_t bg)
-{
-    int32_t k;
-    if (id - ICON_TRK < NTRK)
-        return cv_trk(x, y, size, id - ICON_TRK, fg, bg);
-    if ((k = icon_cell(&size, id)) < 0)
-        return 0;
-    cv_alpha_hc(x, y, size, size, size == 24u ? AI24_DATA + AI24_OFF[k] : size == 16u ? AI16_DATA + AI16_OFF[k] :
-                AI12_DATA + AI12_OFF[k], AI_HC, ramp(fg, bg));
-    GFX_HOOK_ICON(x, y, size, id);
-    GFX_HOOK_TEXT(x, y + cv_oy, x + (int32_t)size, y + cv_oy + (int32_t)size, "icon", 4u);
-    return (int32_t)size;
-}
-/* the same, its ink centred across x .. x + w (w 0: the cell at x) and up and down in y .. y + h (h 0: the cell at y);
- * a pixel left over goes left / up */
-static int32_t cv_icon_in(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t size, uint32_t id, uint16_t fg, uint16_t bg)
-{
-    int32_t b[4];
-    icon_ink(size, id, b);
-    if (w)
-        x += HALF_UP(w - (b[2] - b[0])) - b[0];
-    if (h)
-        y += HALF_UP(h - (b[3] - b[1])) - b[1];
-    return cv_icon_on(x, y, size, id, fg, bg);
-}
-/* the same, its ink centred on the line cy (between rows cy - 1 and cy: the middle of rows 0 .. 2 cy - 1, the odd row
- * left over going up; header icons: each glyph sits differently in its cell) */
-static int32_t cv_icon_mid(int32_t x, int32_t cy, uint32_t size, uint32_t id, uint16_t fg, uint16_t bg)
-{
-    GFX_HOOK_ALIGN(0, 0, 0, 2 * cy, AL_V | AL_PASS, "header icon on its middle");
-    return cv_icon_in(x, 0, 0, 2 * cy, size, id, fg, bg);
-}
+#if FELUCCA_ICONS && FELUCCA_ICONS_N == 0
+#error "FELUCCA_ICONS=1 but felucca_icons.h has no icons (assets/icons.png missing?)"
+#endif
 #define ICON_NONE 0xFFu                   /* no icon (empty column) */
 #define ICON_AUTO 0xFEu                   /* draw_column: look the label up */
 #define ICON_GAP 2                        /* px between the icon and the label */
@@ -121,7 +33,7 @@ static const icon_map_t ICON_MAP[] = {
     {"MODE", ICON_ARP}, {"OCT", ICON_OCTAVE}, {"GATE", ICON_GATE}, {"SWG", ICON_SWING},
     {"PROB", ICON_PROB}, {"HOLD", ICON_HOLD}, {"ORD", ICON_ORDER}, {"ROOT", ICON_PITCH},
     {"SCL", ICON_SCALE}, {"QNT", ICON_QUANTIZE}, {"TRN", ICON_TRANSPOSE}, {"LEN", ICON_LENGTH},
-    {"DIV", ICON_DIVISION}, {"VOIC", ICON_OCTAVE},   /* (CHRD: below, PHYS's) */
+    {"DIV", ICON_DIVISION},
     /* fx sends, voice */
     {"DST", ICON_DIST}, {"CHO", ICON_CHORUS}, {"DLY", ICON_DELAY}, {"REV", ICON_REVERB},
     {"VCE", ICON_VOICE}, {"GLD", ICON_GLIDE}, {"GLMOD", ICON_GLIDE}, {"PRIO", ICON_ORDER},
@@ -129,10 +41,13 @@ static const icon_map_t ICON_MAP[] = {
     /* global */
     {"BPM", ICON_TEMPO}, {"CLK", ICON_TEMPO}, {"TUNE", ICON_TUNE}, {"TIME", ICON_TIME},
     {"FDBK", ICON_FEEDBACK}, {"COLR", ICON_TONE}, {"MIX", ICON_MIX}, {"SIZE", ICON_SIZE},
-    {"DAMP", ICON_DAMP}, {"TYPE", ICON_REVERB}, {"CRT", ICON_RATE}, {"CDP", ICON_MOD}, {"MIDI", ICON_MIDI},
-    {"SYNC", ICON_TEMPO}, {"ROUT", ICON_MIX}, {"CPU", ICON_CHIP}, {"SLOT", ICON_SAVE},
+    {"DAMP", ICON_DAMP}, {"CRT", ICON_RATE}, {"CDP", ICON_MOD}, {"MIDI", ICON_MIDI},
+    {"SYNC", ICON_TEMPO}, {"ROUT", ICON_MIX}, {"CPU", ICON_CHIP}, {"SLOT", ICON_SAVE}, {"SECT", ICON_SAVE},
     {"LOAD", ICON_LOAD}, {"SAVE", ICON_SAVE}, {"ENG", ICON_WAVE}, {"CLRSQ", ICON_CLEAR},
     {"INIT", ICON_CLEAR}, {"ERASE", ICON_CLEAR}, {"CH", ICON_MIDI}, {"LEVEL", ICON_LEVEL},
+    {"OUT", ICON_MIDI}, {"IN", ICON_MIDI}, {"CH1", ICON_MIDI}, {"CH2", ICON_MIDI}, {"CH3", ICON_MIDI}, {"CH4", ICON_MIDI},   /* (2.6:
+                                                                 * GLO > MIDI, MIDI 2) */
+    {"OTHER", ICON_MIDI}, {"BEND", ICON_TUNE},
     /* engines (eng_*.c edit[] labels) */
     {"DTN", ICON_DETUNE}, {"NOIS", ICON_NOISE}, {"CUT", ICON_CUTOFF}, {"RES", ICON_RESO},
     {"DRV", ICON_DRIVE}, {"KTR", ICON_KEYTRACK}, {"ALG", ICON_ALGORITHM}, {"R2", ICON_RATIO},
@@ -147,23 +62,15 @@ static const icon_map_t ICON_MAP[] = {
     {"CLICK", ICON_ATTACK}, {"ROTR", ICON_VIBRATO},
     {"SRC", ICON_SAMPLE}, {"START", ICON_STEPS}, {"PTCH", ICON_PITCH}, {"DCAY", ICON_DECAY},
     {"POS", ICON_PHASE}, {"DENS", ICON_GRAIN}, {"SPRD", ICON_NOISE},
-    {"MODEL", ICON_PHYS}, {"STRC", ICON_SHAPE}, {"BRIT", ICON_TONE}, {"BOW", ICON_SUSTAIN}, {"EXC", ICON_MIX},   /* PHYS */
-    {"HARM", ICON_RATIO}, {"BEND", ICON_SWEEP}, {"CHRD", ICON_SCALE}, {"SYMP", ICON_MIX}, {"DECY", ICON_DECAY},
-    {"SNAP", ICON_NOISE}, {"KIT", ICON_SAMPLE}, {"KICK", ICON_ATTACK},       /* PHYS: MEMB, SYMP; DRUM */
     {"VOWL", ICON_VOICE}, {"VOWL2", ICON_VOICE}, {"TALK", ICON_SWEEP}, {"SHIFT", ICON_TRANSPOSE},
-    {"BUZZ", ICON_PULSE}, {"RASP", ICON_PULSE}, {"BRTH", ICON_NOISE}, {"Q", ICON_RESO}, {"RAND", ICON_PROB},
-    {"FREQ", ICON_CUTOFF}, {"TRK", ICON_KEYTRACK}, {"DRFT", ICON_SWEEP},   /* NOISE (COLR, DENS, CRSH: above) */
-    {"MLVL", ICON_MOD}, {"MRAT", ICON_RATIO}, {"MEG", ICON_DECAY}, {"VMOD", ICON_ACCENT}, {"DTUN", ICON_DETUNE},
-    {"SLOT", ICON_LOAD},                                                    /* FM6 (ALG, FB: above) */
-    {"CALL", ICON_VOICE}, {"SIZE", ICON_SIZE}, {"SWOOP", ICON_SWEEP}, {"GROWL", ICON_DRIVE}, {"MOUTH", ICON_MOUTH},
-    {"WILD", ICON_PROB},                                                    /* SAURUS (LEN, BRTH: above) */
-    /* fixed columns drawn by ui_draw.c (STEP page, preset browser) */
-    {"NOTE", ICON_PITCH}, {"STEP", ICON_STEPS}, {"FLAG", ICON_ACCENT}, {"ACC", ICON_ACCENT}, {"LANE", ICON_DRUM}, {"HIT", ICON_GATE}, {"SLD", ICON_SLIDE},
+    {"BUZZ", ICON_PULSE}, {"BRTH", ICON_NOISE}, {"Q", ICON_RESO}, {"RAND", ICON_PROB},
+    /* fixed columns drawn by ui_draw.c (STEP page, preset browser, SYSTEM) */
+    {"NOTE", ICON_PITCH}, {"PITCH", ICON_PITCH}, {"FORCE", ICON_ACCENT}, {"STEP", ICON_STEPS}, {"FLAG", ICON_ACCENT}, {"ACC", ICON_ACCENT}, {"SLD", ICON_SLIDE}, {"USB", ICON_MIDI},
     {"TRACK", ICON_MIX},                  /* TRACKS page (LEVEL, LEN, PAN: above) */
     {"SLCR", ICON_SLICE}, {"PAT", ICON_STEPS}, {"DEPTH", ICON_MIX},   /* SLICER page (RATE: param_icon) */
 };
 
-static uint32_t icon_for_label(const char *l)
+UI_SMALL static uint32_t icon_for_label(const char *l)
 {
     uint32_t i;
     if (!l || !l[0] || l[0] == '-')
@@ -182,7 +89,7 @@ static const icon_map_t WAVE_ICON[] = {
     {"RTRP", ICON_W_RTRP},
 };
 
-static uint32_t param_icon(const param_desc_t *d, int32_t v)
+UI_SMALL static uint32_t param_icon(const param_desc_t *d, int32_t v)
 {
     uint32_t i;
     if (!d)
@@ -198,10 +105,6 @@ static uint32_t param_icon(const param_desc_t *d, int32_t v)
         return ICON_DIVISION;                 /* arp / SLICER RATE is a note division, not Hz */
     if (d->names == N_TRIO_MODE)
         return ICON_CUTOFF;                   /* TRIO's MODE is the filter type, not the arp mode */
-    if (d->names == N_NOISE_MODE)
-        return ICON_NOISE;                    /* NOISE's MODE is the source; its CLK the register clock */
-    if (d == &NOISE_CLK)
-        return ICON_RATE;
 #if FELUCCA_SLICE
     if (d->names == N_SLC_DIV)
         return ICON_SLICE;                    /* SLICE: DIV is the slicing, MODE the gate, REV the direction */
@@ -213,45 +116,15 @@ static uint32_t param_icon(const param_desc_t *d, int32_t v)
     return icon_for_label(d->label);
 }
 
-/* the MOD page: the icon of a source, of a destination (an engine parameter: its own) */
-static uint32_t mod_src_icon(int32_t s)
-{
-    static const uint8_t I[MS_N] = {ICON_MOD, ICON_LFO_WAVE, ICON_ENV, ICON_ACCENT, ICON_KEYTRACK, ICON_PROB,
-                                    ICON_MOD, ICON_MIDI, ICON_LEVEL, ICON_W_SH, ICON_GLIDE};
-    return I[clamp(s, 0, MS_N - 1)];
-}
-static uint32_t mod_dst_icon(const track_t *t, int32_t d)
-{
-    static const uint8_t I[MD_E1] = {ICON_MOD, ICON_PITCH, ICON_CUTOFF, ICON_SHAPE, ICON_LEVEL, ICON_PAN, ICON_DIST,
-                                     ICON_CHORUS, ICON_DELAY, ICON_REVERB, ICON_RATE, ICON_VIBRATO};
-    uint32_t id;
-    d = clamp(d, 0, MD_N - 1);
-    if (d == MD_DEPTH)
-        return ICON_LFO_WAVE;
-    if (d < MD_E1)
-        return I[d];
-    id = P_E0 + (uint32_t)(d - MD_E1);
-    return param_icon(track_desc(t, id), t->p[id]);
-}
-
-/* engine name (ENGINES[]->name) -> icon */
-static uint32_t engine_icon(const char *name)
+/* engine name (ENGINES[]->name, or "DRUM") -> icon */
+UI_SMALL static uint32_t engine_icon(const char *name)
 {
     static const icon_map_t M[] = {
-        {"ANALOG", ICON_WAVE},
-#if FELUCCA_FM4
-        {"DIGITAL", ICON_ALGORITHM},
-#endif
-        {"PHASE", ICON_PHASE}, {"LOFI", ICON_BITS},
+        {"ANALOG", ICON_WAVE}, {"DIGITAL", ICON_ALGORITHM}, {"PHASE", ICON_PHASE}, {"LOFI", ICON_BITS},
         {"SAMPLE", ICON_SAMPLE}, {"VOICE", ICON_MOUTH}, {"TRIO", ICON_TRIO}, {"WHEEL", ICON_DRAWBAR},
         {"SLICE", ICON_SLICE},
         {"GRAIN", ICON_GRAIN},
-        {"PHYS", ICON_PHYS},
-        {"SAURUS", ICON_X_SAURUS},            /* DINOBOX: a sauropod (tools/gen_aa_icons.py OWN) */
-        {"ROAR", ICON_X_GURDY},               /* DINOBOX: a T. rex head (tools/gen_aa_icons.py OWN; GHOULBOX: GURDY's) */
         {"DRUM", ICON_DRUM},
-        {"NOISE", ICON_NOISE},
-        {"FM6", ICON_MOD},                    /* (symbol_modular: six operators patched; a glyph of its own wanted) */
     };
     uint32_t i;
     for (i = 0; i < sizeof M / sizeof M[0]; i++)
@@ -260,27 +133,27 @@ static uint32_t engine_icon(const char *name)
     return ICON_GENERIC;
 }
 
-/* MOTION: the knob and its trace; recording into it (REC armed on the selected track, playing): its REC form */
-static uint32_t motion_icon(void) { return rec_on(TSEL) ? ICON_X_MOTION_REC : ICON_X_MOTION; }
-
-/* the icon beside a page's title in the footer (the pages that have one of their own; else ICON_NONE) */
-static uint32_t page_icon(const page_t *pg)
+/* 2-bit icon, ink levels 1..3 = a third .. all of colour c (blended onto black, like cv_text) */
+UI_SMALL static void cv_icon(int32_t x, int32_t y, uint32_t id, uint16_t c)
 {
-    switch (pg->graph) {
-    case GR_TRK: return ICON_X_MIXER;         /* MIXER (HOME): vertical faders */
-    case GR_PATS: return ICON_X_PATTERN;      /* SAVE > PHRASES: the pattern loader */
-    case GR_SONG: return ICON_X_SONG;         /* SONG: the disc */
-    case GR_EVENTS: return motion_icon();     /* AUTOMATION */
-    default: return ICON_NONE;
-    }
+    uint16_t ramp[4];
+    uint32_t a, i, j;
+    const uint8_t *p;
+    if (id >= FELUCCA_ICONS_N)
+        return;
+    for (a = 0; a < 4u; a++)
+        ramp[a] = rgb565_over(c, a, 3u);               /* (2.7: onto the background; on black as before) */
+    p = ICON_DATA[id];
+    for (j = 0; j < ICON_CELL; j++)
+        for (i = 0; i < ICON_CELL; i++) {
+            uint32_t k = j * ICON_CELL + i, v = (p[k >> 2] >> (6u - 2u * (k & 3u))) & 3u;
+            if (v)
+                cv_pset(x + (int32_t)i, y + (int32_t)j, ramp[v]);
+        }
 }
-
 #else
-static uint32_t icon_for_label(const char *l) { (void)l; return ICON_NONE; }
-static uint32_t param_icon(const param_desc_t *d, int32_t v) { (void)d; (void)v; return ICON_NONE; }
-static uint32_t engine_icon(const char *name) { (void)name; return ICON_NONE; }
-static uint32_t mod_src_icon(int32_t s) { (void)s; return ICON_NONE; }
-static uint32_t mod_dst_icon(const track_t *t, int32_t d) { (void)t; (void)d; return ICON_NONE; }
-static uint32_t motion_icon(void) { return ICON_NONE; }
-static uint32_t page_icon(const page_t *pg) { (void)pg; return ICON_NONE; }
+UI_SMALL static uint32_t icon_for_label(const char *l) { (void)l; return ICON_NONE; }
+UI_SMALL static uint32_t param_icon(const param_desc_t *d, int32_t v) { (void)d; (void)v; return ICON_NONE; }
+UI_SMALL static uint32_t engine_icon(const char *name) { (void)name; return ICON_NONE; }
+UI_SMALL static void cv_icon(int32_t x, int32_t y, uint32_t id, uint16_t c) { (void)x; (void)y; (void)id; (void)c; }
 #endif
