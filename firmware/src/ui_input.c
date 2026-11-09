@@ -976,10 +976,11 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
         }
         if (steps <= 0)
             return;
-        if (ui.arm != 0xE0u + slot) {                     /* one detent arms, a second one within ~1.5 s acts */
+        if (ui.arm != 0xE0u + slot) {                     /* one detent arms, a second one within ~3 s acts */
             ui.arm = (uint8_t)(0xE0u + slot);
-            ui.arm_t = 90;
-            ui_say("AGAIN: ", UP_GO[slot - 1u]);
+            ui.arm_t = ARM_FRAMES;
+            ui_say("TURN AGAIN: ", UP_GO[slot - 1u]);
+            ui.msg_t = ARM_FRAMES;                            /* (the message as long as it is armed) */
             return;
         }
         ui.arm = 0;
@@ -989,10 +990,11 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     if (pg->graph == GR_SLOTS && slot == 1u) {           /* 2.6: KNOB 2 ERASE, a GO button (the slot KNOB 1 picks) */
         if (steps <= 0)
             return;
-        if (ui.arm != 0xE8u) {                            /* one detent arms, a second one within ~1.5 s acts */
+        if (ui.arm != 0xE8u) {                            /* one detent arms, a second one within ~3 s acts */
             ui.arm = 0xE8u;
-            ui.arm_t = 90;
-            ui_say("AGAIN: ", "ERASE");
+            ui.arm_t = ARM_FRAMES;
+            ui_say("TURN AGAIN: ", "ERASE");
+            ui.msg_t = ARM_FRAMES;                            /* (the message as long as it is armed) */
             return;
         }
         ui.arm = 0;
@@ -1012,11 +1014,12 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     if (!v)
         return;
     if (pg->scope == SC_GLOBAL && (id == G_LOAD || id == G_SAVE || id == G_CLRSEQ || id == G_INITSND || id == G_NEWPRJ || id == G_DEMO) &&
-        ui.arm != id) {                                   /* one detent arms, a second one within ~1.5 s acts */
+        ui.arm != id) {                                   /* one detent arms, a second one within ~3 s acts */
         *vp = 0;
         ui.arm = (uint8_t)id;
-        ui.arm_t = 90;
-        ui_say("AGAIN: ", d->label);
+        ui.arm_t = ARM_FRAMES;
+        ui_say("TURN AGAIN: ", id == G_DEMO ? "DEMO OVER A-D" : d->label);   /* (the demo replaces A..D) */
+        ui.msg_t = ARM_FRAMES;                            /* (the message as long as it is armed) */
         return;
     }
     ui.arm = 0;

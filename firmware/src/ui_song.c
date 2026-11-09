@@ -72,7 +72,7 @@ UI_SMALL static void song_screen_draw(void)
         cv_blit(0, 52 + 30u * i);
     }
     cv_begin(240, 68, C_BLACK);
-    if (ui.msg_t) {
+    if (ui.msg_t && !ui.msg_v) {                    /* (a knob's value: the header's) */
         cv_rect(0, 4, 240, 30, C_WHITE);
         text_big_c(120, 19, ui.msg, C_BLACK, 234);
     } else {
@@ -135,7 +135,7 @@ UI_SMALL static void song_screen_draw(void)
         cv_blit(0, 42 + 26u * i);
     }
     cv_begin(240, 68, C_BLACK);
-    if (ui.msg_t) {
+    if (ui.msg_t && !ui.msg_v) {                    /* (a knob's value: the header's) */
         cv_rect(0, 4, 240, 30, C_WHITE);
         cv_text((240 - text_w(&FONT_S, ui.msg)) / 2, 11, &FONT_S, ui.msg, C_BLACK);
     } else {

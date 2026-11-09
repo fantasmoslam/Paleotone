@@ -149,7 +149,7 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
 {
     uint32_t k;
     (void)val;
-    sig = studio_hash(sig, ui.msg_t ? ui.msg : "");
+    sig = studio_hash(sig, ui.msg_t && !ui.msg_v ? ui.msg : "");
     for (k = 0; k < 4u; k++) {
         sig = studio_hash(sig * 7u + (uint32_t)ratio[k] + (ui.hot_t && ui.hot_col == k) * 5003u, lab[k]);
     }
@@ -157,7 +157,7 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
         return;
     *cache = sig;
     cv_begin(240, 240u - (uint32_t)y0, C_BLACK);
-    if (ui.msg_t) {                                     /* a message: a white bar */
+    if (ui.msg_t && !ui.msg_v) {                        /* a message: a white bar (a knob's value: the header's) */
         cv_rect(0, 6, 240, 40, C_WHITE);
         text_big_c(120, 26, ui.msg, C_BLACK, 234);       /* (PALEOTONE: as big as it fits) */
         cv_blit(0, (uint32_t)y0);

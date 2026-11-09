@@ -63,6 +63,8 @@ static struct {
     uint32_t menu_sig, home_t0;  /* HOME press time (btn_hold) */
     uint8_t force;               /* full redraw pending */
     uint8_t msg_t;               /* transient message frames */
+    uint8_t msg_v;               /* RAPTOR: the message is a knob's value (MASTER, ENGINE): the header only, never the big
+                                  * bar over the dials (a turn a click would flash it) */
     uint8_t bpm_t;               /* frames the BPM stays highlighted after a SELECT turn */
     uint8_t arm, arm_t;          /* destructive action armed: param id, frames left to confirm */
     uint32_t rec_t0;             /* REC press time (btn_hold) */
@@ -142,6 +144,8 @@ UI_SMALL static uint32_t page_first(uint32_t fam)
     return 0;
 }
 
+#define ARM_FRAMES 180u              /* RAPTOR: a GO knob's second turn within ~3 s (it was ~1.5 s: too short to find) */
+
 /* transient message in the top bar: a + b */
 UI_SMALL static void ui_say(const char *a, const char *b)
 {
@@ -150,6 +154,12 @@ UI_SMALL static void ui_say(const char *a, const char *b)
     n = str_len(ui.msg);
     str_cpy(ui.msg + n, b, sizeof ui.msg - n);
     ui.msg_t = 40;
+    ui.msg_v = 0;
+}
+UI_SMALL static void ui_say_v(const char *a, const char *b)   /* a knob's value: in the header (ui.msg_v) */
+{
+    ui_say(a, b);
+    ui.msg_v = 1;
 }
 
 UI_SMALL static void ui_message(const char *s) { ui_say(s, ""); }
@@ -745,7 +755,7 @@ UI_SMALL static void select_engine(uint32_t e)
     if (is_drum(TSEL))
         return;
     set_engine(e);
-    ui_say("ENGINE ", ENGINES[TSEL->eng_req]->name);
+    ui_say_v("ENGINE ", ENGINES[TSEL->eng_req]->name);
     ui.force = 1;
 }
 

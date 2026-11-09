@@ -1879,13 +1879,16 @@ int main(int argc, char **argv)
         encs[panel.enc[EN_K2]] = -1; frames(2);
         check(erases == e0 && ui.arm != 0xE8u, "PROJECT, KNOB 2 left: nothing");
         encs[panel.enc[EN_K2]] = 1; frames(2);
-        check(erases == e0 && ui.arm == 0xE8u && !strcmp(ui.msg, "AGAIN: ERASE"), "PROJECT, KNOB 2 one detent: AGAIN: ERASE, nothing erased");
+        check(erases == e0 && ui.arm == 0xE8u && !strcmp(ui.msg, "TURN AGAIN: ERASE"), "PROJECT, KNOB 2 one detent: TURN AGAIN: ERASE, nothing erased");
         ui.force = 1; frame(); ppm("page-project-erase");
         encs[panel.enc[EN_K2]] = 1; frames(2);
         check(erases == e0 + 1u && !ui.arm && !strcmp(ui.msg, "ERASED"), "PROJECT, KNOB 2 again: the slot erased");
         encs[panel.enc[EN_K2]] = 1; frames(100);
         encs[panel.enc[EN_K2]] = 1; frames(2);
-        check(erases == e0 + 1u && ui.arm == 0xE8u, "  the arm runs out (~1.5 s): a detent after it arms again");
+        check(erases == e0 + 2u && !ui.arm, "  RAPTOR: still armed after ~1.5 s (~3 s now): the second detent acts");
+        encs[panel.enc[EN_K2]] = 1; frames(ARM_FRAMES + 10u);
+        encs[panel.enc[EN_K2]] = 1; frames(2);
+        check(erases == e0 + 2u && ui.arm == 0xE8u, "  the arm runs out (~3 s): a detent after it arms again");
         ui.arm = 0; song.g[G_SLOT] = 1;
         go_home(); frames(4);
     }

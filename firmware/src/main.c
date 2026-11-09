@@ -402,7 +402,7 @@ UI_SMALL static void fm1_main(void)
                             *q++ = (char)('0' + p / 10u % 10u);
                         *q++ = (char)('0' + p % 10u);
                         *q = '%';
-                        ui_say("MASTER ", d);
+                        ui_say_v("MASTER ", d);     /* (the header only: no bar over the dials) */
                     }
                     shown = a;
                 }

@@ -27,6 +27,10 @@ ENGINES = [("eng_analog.c", "ANALOG_PRESETS", "eng_analog.c", "ANALOG_PRESETS"),
 # -> RAPTOR's (PIANO FLUTE SAX JUNGLE STEPS STONE STORM 0..6, then the user slots: eng_sample.c SMP_NSETS + k)
 SET_MAP = {0: 0, 1: 0, 2: 1, 3: 2, 4: 0, 5: 7, 6: 8, 7: 9, 8: 3, 9: 4, 10: 5, 11: 6}
 MARK = "/* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */"
+OWN = "/* RAPTOR's own"                                  # RAPTOR's presets after Paleotone's (kept by main)
+# RAPTOR's own presets in the PRESETS list (ui.c BANK): (kind, engine, name), after Paleotone's of that engine
+OWN_BANK = [("BK_PAD", "0", "RAPTOR SWARM"), ("BK_PAD", "0", "BLOOD MOON"), ("BK_PAD", "0", "OBSIDIAN"),
+            ("BK_LEAD", "0", "NIGHT STALKER")]
 
 
 def span(s, arr):
@@ -77,6 +81,8 @@ def bank(pal):
                 kind = "BK_ORGAN"
             kind = BY_ENGINE.get(e, kind)
             ents.append((kind, PAL_ENG[e], n))
+        if e == 0:
+            ents += OWN_BANK
         if e == 15:                                      # (SAURUS's CALL KIT: every creature on the keys)
             ents.append(("BK_SAUR", PAL_ENG[e], "CALL KIT"))
         if e == 3:                                       # (after LOFI: SAMPLE, engine 4)
@@ -102,6 +108,8 @@ def main(pal):
         path = ROOT / "firmware/src" / df
         s = path.read_text()
         c, d = span(s, da)
+        own = s.find(OWN, c, d)                         # RAPTOR's own presets: kept, after Paleotone's
+        body += "\n" + s[s.rfind("\n", c, own) + 1:d].rstrip("\n") if own >= 0 else ""
         s = s[:c] + "\n    " + MARK + body + s[d:]
         path.write_text(s)
         print(f"{df}: {len(re.findall(r'^ *\{\"', body, re.M))} presets from Paleotone")
