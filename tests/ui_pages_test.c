@@ -2237,7 +2237,7 @@ int main(int argc, char **argv)
     {   /* PALEOTONE: the demo song (TOOLS > DEMO): every track sounds, soloed, and the mix does not clip
          * (outdir/demo-1..6.wav: section D's tracks soloed; demo-A..D.wav: each section's mix, 27 s: the eight bars at
          * 70 BPM), and TOOLS > DEMO stores the four sections and the song A B C B C D */
-        static const char *const TN[NTRK + 4] = {"LEAD", "PAD", "BASS", "DRONE", "CALLS", "DRUMS",
+        static const char *const TN[NTRK + 4] = {"HORN", "CHOIR", "BASS", "(EMPTY 4)", "(EMPTY 5)", "DRUMS",
                                                  "MIX A", "MIX B", "MIX C", "MIX D"};
         uint32_t tk, f, j, clips = 0;
         char path[512];
@@ -2273,7 +2273,10 @@ int main(int argc, char **argv)
             transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
             e2 = sqrt(e2 / (27.0 * FS));
             printf("ui: DEMO: %-8s RMS %6.0f\n", TN[tk], e2);
-            check(e2 > 150.0, TN[tk]);
+            if (tk >= NTRK || !track_empty(&trk[tk]) || tk == TRK_DRUM)   /* (the demo leaves tracks 4 and 5 empty) */
+                check(e2 > 150.0, TN[tk]);
+            else
+                check(e2 < 50.0, TN[tk]);
         }
         check(clips < 200u, "DEMO: the mix (almost) never clips");
         {
