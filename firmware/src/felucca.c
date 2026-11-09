@@ -105,7 +105,9 @@
 #include "smk_wheel.h"        /* SMK-37: the wheels, their calibration, menu BEND UP / DOWN (main.c smk_wheels) */
 #include "smk_daw.h"          /* SMK-37: DAW mode, the map and its messages (seq.c: keys, pads; ui_daw.c: the rest) */
 #endif
-#define FELUCCA_ARRANGER 1
+#ifndef FELUCCA_ARRANGER
+#define FELUCCA_ARRANGER 1      /* song mode: the arranger and its four project slots */
+#endif
 #include "arranger.c"
 #include "seq.c"
 #include "audio.c"
