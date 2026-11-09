@@ -1,5 +1,5 @@
-# DINOSYNTH (the generative Paleotone branch): builds the FM-1 package, runs the host tests, and puts the package,
-# the logs and the RAM map on the branch dinosynth-fm1-output. No releases from this branch yet.
+# PALEOTONE, generative branch (dinosynth-style, after Nachtfahrt and Aisling): builds the FM-1 package, runs the host
+# tests, and puts the package, the logs and the RAM map on the branch dinosynth-fm1-output. No releases from here yet.
 name: dinosynth-fm1
 
 on:
