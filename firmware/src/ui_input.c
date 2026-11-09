@@ -704,17 +704,17 @@ UI_SMALL static void project_new(void)
 /* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO; the first power-on with no project: its last section as
  * the loop), dino synth as dungeon synth is: black metal's keyboards, cold and low. E Phrygian at 70 BPM over a
  * drone on E that the chords grind against (F over E, the tritone's B flat), a chord a bar, a deep chant and a temple
- * organ, a low brass riff, the bass down in octave 1, war drums, the beasts growling. Four sections of eight bars, in
- * sections A..D and played A B C B C D by the song (48 bars, ~2:45): A the tar pit (the drone, the chant, growls), B
- * the riff (the brass over the organ), C the tyrant (a tremolo lead in 1/16, the bass and the drums pounding in 1/8,
- * the roar), D the riff again, down to E against F, the last roar */
+ * organ, a low brass riff (B2..G3), the bass down in octave 1, war drums, the beasts growling. Four sections of eight
+ * bars, in sections A..D and played A B C B C D by the song (48 bars, ~2:45): A the tar pit (the drone, the chant), B
+ * the riff (the brass over the organ), C the tyrant (no lead: the organ, the bass and the drums pounding in 1/8, the
+ * roar), D the riff again, down to E against F, the last roar */
 #define DM_N(s, l, n) {(uint8_t)(s), (uint8_t)(l), (uint8_t)(n)}
 typedef struct { uint8_t s, l, n; } demo_ev_t;          /* a note: its step, its length (steps), its note */
 enum { DC_EM, DC_F, DC_DM, DC_C, DC_B, DC_BB, DC_EF };
 static const uint8_t DEMO_CH[7][4] = {                  /* the pad's three notes (D3..C4, close), the bass's root */
     {52, 55, 59, 28}, {53, 57, 60, 29}, {50, 53, 57, 26}, {52, 55, 60, 24},
     {51, 54, 59, 35}, {50, 53, 58, 34}, {52, 53, 59, 28}};   /* ... B major, B flat (the tritone), E with F in it */
-static const demo_ev_t DEMO_RIFF[] = {                  /* (B) BRASS, B3 .. G4: the riff, its turn to the B chord */
+static const demo_ev_t DEMO_RIFF[] = {                  /* (B) BRASS (played an octave down): the riff, its turn to the B chord */
     DM_N(0, 3, 64), DM_N(3, 1, 65), DM_N(4, 2, 64), DM_N(6, 2, 59), DM_N(8, 3, 60), DM_N(11, 1, 59), DM_N(12, 4, 57),
     DM_N(16, 3, 64), DM_N(19, 1, 65), DM_N(20, 2, 67), DM_N(22, 2, 65), DM_N(24, 4, 64), DM_N(28, 2, 62), DM_N(30, 2, 57),
     DM_N(32, 3, 64), DM_N(35, 1, 65), DM_N(36, 2, 64), DM_N(38, 2, 59), DM_N(40, 2, 60), DM_N(42, 2, 65), DM_N(44, 2, 64),
@@ -723,8 +723,6 @@ static const demo_ev_t DEMO_END[] = {                   /* (D) the riff, then do
     DM_N(0, 3, 64), DM_N(3, 1, 65), DM_N(4, 2, 64), DM_N(6, 2, 59), DM_N(8, 3, 60), DM_N(11, 1, 59), DM_N(12, 4, 57),
     DM_N(16, 3, 64), DM_N(19, 1, 65), DM_N(20, 2, 67), DM_N(22, 2, 65), DM_N(24, 4, 64), DM_N(28, 2, 62), DM_N(30, 2, 57),
     DM_N(32, 4, 59), DM_N(36, 4, 58), DM_N(40, 4, 57), DM_N(44, 4, 53), DM_N(48, 16, 52)};
-/* (C) the tremolo: 1/16, four bars (the lead's pattern plays twice): a note's eight sixteenths, a bar's two notes */
-static const uint8_t DEMO_TREM[8] = {71, 72, 71, 67, 69, 72, 71, 75};
 /* the CALL KIT: C2 + the creature (eng_saurus.c): 36 BRACHIO, 37 TYRANT ROAR, 38 RAPTOR BARK, 39 RAPTOR CHAT, 40 CREST
  * HOOT, 41 PTERO SHRIEK, 45 DEEP RUMBLE, 46 TITAN APE, 49 MONSTER ROAR, 50 DISTANT HERD, 51 LOW GROWL, 52 BABY REX,
  * 54 HADRO HORN, 55 COMPY PACK: the hunters and the giants only */
@@ -778,7 +776,7 @@ UI_SMALL static void demo_hit(uint32_t s, uint32_t lane, uint32_t lv)
  * switch at once) */
 UI_SMALL static void demo_fill(int boot, uint32_t sec)
 {
-    /* the sounds: an engine and a preset a track (the pad's by the section; the tremolo: SAW LEAD) */
+    /* the sounds: an engine and a preset a track (the pad's by the section) */
     static const uint8_t ENG[NPART] = {0, 5, 0, ENGI_ROAR, ENGI_SAURUS}, SND[NPART] = {9, 8, 7, 7, 20};
     static const uint8_t PAD[2][2] = {{5, 8}, {7, 9}};   /* FORMANT DEEP CHANT, DRAWBAR TEMPLE ORGAN */
     static const uint8_t LVL[NPART] = {100, 96, 92, 96, 92};   /* BRASS, the pad, SUB BASS, TUNDRA, the CALL KIT */
@@ -787,7 +785,7 @@ UI_SMALL static void demo_fill(int boot, uint32_t sec)
     const demo_sec_t *d = &DEMO_SEC[sec & 3u];
     uint32_t b, i;
     for (i = 0; i < NPART; i++) {
-        uint32_t e = i == 1 ? PAD[d->pad][0] : ENG[i], p = i == 1 ? PAD[d->pad][1] : i == 0 && d->war ? 0u : SND[i];
+        uint32_t e = i == 1 ? PAD[d->pad][0] : ENG[i], p = i == 1 ? PAD[d->pad][1] : SND[i];
         if (trk[i].eng_req != e)
             set_engine_of(&trk[i], e);                  /* (IRQ off in it, as project_new) */
         fm1_irq_off();
@@ -806,11 +804,7 @@ UI_SMALL static void demo_fill(int boot, uint32_t sec)
         }
         steps_clear(&trk[i]);
         trk[i].p[P_SLEN] = 64;
-        trk[i].p[P_SDIV] = i == TRK_DRUM || (i == 0 && d->war) ? 2 : 1;   /* eight bars of 1/8; four of 1/16 */
-    }
-    if (d->war) {                                       /* the tremolo: up front, its saw less dark */
-        trk[0].p[P_LEVEL] = 112;
-        trk[0].p[P_TFLT] = -14;
+        trk[i].p[P_SDIV] = i == TRK_DRUM ? 2 : 1;       /* eight bars of 1/8; the beat four bars of 1/16 */
     }
     for (b = 0; b < 8u; b++) {
         const uint8_t *c = DEMO_CH[d->ch[b]];
@@ -824,10 +818,8 @@ UI_SMALL static void demo_fill(int boot, uint32_t sec)
             demo_note(&trk[2], o, 8, c[3]);             /* held roots */
     }
     demo_note(&trk[3], 0, 64, 40);                      /* the drone: E2, the whole section */
-    if (d->war)
-        for (b = 0; b < 64u; b++)                       /* the tremolo: sixteenths */
-            demo_note(&trk[0], b, 1, DEMO_TREM[b / 8u]);
-    demo_events(&trk[0], d->mel, d->nmel);
+    for (i = 0; i < d->nmel; i++)                       /* the brass an octave down: B2 .. G3 */
+        demo_note(&trk[0], d->mel[i].s, d->mel[i].l, d->mel[i].n - 12u);
     demo_events(&trk[4], d->call, d->ncall);
     for (b = 0; b < 4u; b++) {                          /* WAR DRUMS */
         uint32_t o = b * 16u;
