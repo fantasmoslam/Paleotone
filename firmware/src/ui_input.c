@@ -702,59 +702,51 @@ UI_SMALL static void project_new(void)
 }
 
 /* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO; the first power-on with no project: its last section as
- * the loop), in the dino synth way: slow chords a bar each under a simple modal tune, strings and a choir, a harp's
- * arpeggios, a deep bass, war drums, the creatures calling from far off. D minor (the Phrygian E flat, the B flat and E
- * flat majors), 80 BPM. Four sections of eight bars of 1/8, in sections A..D and played A B C B C D by the song (48
- * bars, ~2:25): A the dawn (strings, the harp, a flute calling), B the verse (the flute's tune over a choir), C the
- * giants (a brass theme, the war drums, a roar to end it), D the verse again, into D major at the end */
+ * the loop), dino synth as dungeon synth is: black metal's keyboards, cold and low. E Phrygian at 70 BPM over a
+ * drone on E that the chords grind against (F over E, the tritone's B flat), a chord a bar, a deep chant and a temple
+ * organ, a low brass riff, the bass down in octave 1, war drums, the beasts growling. Four sections of eight bars, in
+ * sections A..D and played A B C B C D by the song (48 bars, ~2:45): A the tar pit (the drone, the chant, growls), B
+ * the riff (the brass over the organ), C the tyrant (a tremolo lead in 1/16, the bass and the drums pounding in 1/8,
+ * the roar), D the riff again, down to E against F, the last roar */
 #define DM_N(s, l, n) {(uint8_t)(s), (uint8_t)(l), (uint8_t)(n)}
 typedef struct { uint8_t s, l, n; } demo_ev_t;          /* a note: its step, its length (steps), its note */
-enum { DC_DM, DC_BB, DC_F, DC_C, DC_GM, DC_A, DC_EB, DC_D, DC_AS };
-static const uint8_t DEMO_CH[9][4] = {                  /* the pad's three notes (A3..F#4), the bass's root */
-    {57, 62, 65, 38}, {58, 62, 65, 34}, {57, 60, 65, 41}, {55, 60, 64, 36}, {55, 58, 62, 43},
-    {57, 61, 64, 33}, {55, 58, 63, 39}, {57, 62, 66, 38}, {57, 62, 64, 33}};
-static const demo_ev_t DEMO_DAWN[] = {                  /* (A) the flute calling, bars 5..8 */
-    DM_N(32, 4, 74), DM_N(36, 4, 69), DM_N(40, 4, 70), DM_N(44, 4, 65), DM_N(48, 4, 67), DM_N(52, 4, 70),
-    DM_N(56, 8, 69)};
-static const demo_ev_t DEMO_VERSE[] = {                 /* (B) FLUTE, D4 .. E flat 5 */
-    DM_N(0, 3, 74), DM_N(3, 1, 72), DM_N(4, 4, 69), DM_N(8, 3, 70), DM_N(11, 1, 69), DM_N(12, 2, 67), DM_N(14, 2, 65),
-    DM_N(16, 2, 67), DM_N(18, 2, 70), DM_N(20, 4, 75), DM_N(24, 6, 74), DM_N(30, 1, 72), DM_N(31, 1, 70),
-    DM_N(32, 3, 67), DM_N(35, 1, 70), DM_N(36, 2, 74), DM_N(38, 2, 72), DM_N(40, 4, 69), DM_N(44, 2, 65), DM_N(46, 2, 69),
-    DM_N(48, 3, 70), DM_N(51, 1, 67), DM_N(52, 4, 63), DM_N(56, 3, 64), DM_N(59, 5, 61)};
-static const demo_ev_t DEMO_GIANTS[] = {                /* (C) TITAN BRASS, the theme */
-    DM_N(0, 3, 62), DM_N(3, 1, 65), DM_N(4, 4, 70), DM_N(8, 4, 69), DM_N(12, 2, 72), DM_N(14, 2, 69),
-    DM_N(16, 4, 67), DM_N(20, 2, 64), DM_N(22, 2, 67), DM_N(24, 6, 69), DM_N(30, 1, 67), DM_N(31, 1, 65),
-    DM_N(32, 3, 62), DM_N(35, 1, 65), DM_N(36, 4, 74), DM_N(40, 4, 72), DM_N(44, 2, 69), DM_N(46, 2, 72),
-    DM_N(48, 4, 74), DM_N(52, 2, 70), DM_N(54, 2, 67), DM_N(56, 8, 69)};
-static const demo_ev_t DEMO_HOME[] = {                  /* (D) the verse, its end up to D */
-    DM_N(0, 3, 74), DM_N(3, 1, 72), DM_N(4, 4, 69), DM_N(8, 3, 70), DM_N(11, 1, 69), DM_N(12, 2, 67), DM_N(14, 2, 65),
-    DM_N(16, 2, 67), DM_N(18, 2, 70), DM_N(20, 4, 75), DM_N(24, 6, 74), DM_N(30, 1, 72), DM_N(31, 1, 70),
-    DM_N(32, 3, 67), DM_N(35, 1, 70), DM_N(36, 2, 74), DM_N(38, 2, 72), DM_N(40, 4, 69), DM_N(44, 2, 65), DM_N(46, 2, 69),
-    DM_N(48, 3, 64), DM_N(51, 1, 67), DM_N(52, 4, 69), DM_N(56, 8, 74)};
+enum { DC_EM, DC_F, DC_DM, DC_C, DC_B, DC_BB, DC_EF };
+static const uint8_t DEMO_CH[7][4] = {                  /* the pad's three notes (D3..C4, close), the bass's root */
+    {52, 55, 59, 28}, {53, 57, 60, 29}, {50, 53, 57, 26}, {52, 55, 60, 24},
+    {51, 54, 59, 35}, {50, 53, 58, 34}, {52, 53, 59, 28}};   /* ... B major, B flat (the tritone), E with F in it */
+static const demo_ev_t DEMO_RIFF[] = {                  /* (B) BRASS, B3 .. G4: the riff, its turn to the B chord */
+    DM_N(0, 3, 64), DM_N(3, 1, 65), DM_N(4, 2, 64), DM_N(6, 2, 59), DM_N(8, 3, 60), DM_N(11, 1, 59), DM_N(12, 4, 57),
+    DM_N(16, 3, 64), DM_N(19, 1, 65), DM_N(20, 2, 67), DM_N(22, 2, 65), DM_N(24, 4, 64), DM_N(28, 2, 62), DM_N(30, 2, 57),
+    DM_N(32, 3, 64), DM_N(35, 1, 65), DM_N(36, 2, 64), DM_N(38, 2, 59), DM_N(40, 2, 60), DM_N(42, 2, 65), DM_N(44, 2, 64),
+    DM_N(46, 2, 60), DM_N(48, 4, 59), DM_N(52, 2, 60), DM_N(54, 2, 59), DM_N(56, 6, 63), DM_N(62, 2, 59)};
+static const demo_ev_t DEMO_END[] = {                   /* (D) the riff, then down: E against F */
+    DM_N(0, 3, 64), DM_N(3, 1, 65), DM_N(4, 2, 64), DM_N(6, 2, 59), DM_N(8, 3, 60), DM_N(11, 1, 59), DM_N(12, 4, 57),
+    DM_N(16, 3, 64), DM_N(19, 1, 65), DM_N(20, 2, 67), DM_N(22, 2, 65), DM_N(24, 4, 64), DM_N(28, 2, 62), DM_N(30, 2, 57),
+    DM_N(32, 4, 59), DM_N(36, 4, 58), DM_N(40, 4, 57), DM_N(44, 4, 53), DM_N(48, 16, 52)};
+/* (C) the tremolo: 1/16, four bars (the lead's pattern plays twice): a note's eight sixteenths, a bar's two notes */
+static const uint8_t DEMO_TREM[8] = {71, 72, 71, 67, 69, 72, 71, 75};
 /* the CALL KIT: C2 + the creature (eng_saurus.c): 36 BRACHIO, 37 TYRANT ROAR, 38 RAPTOR BARK, 39 RAPTOR CHAT, 40 CREST
  * HOOT, 41 PTERO SHRIEK, 45 DEEP RUMBLE, 46 TITAN APE, 49 MONSTER ROAR, 50 DISTANT HERD, 51 LOW GROWL, 52 BABY REX,
- * 54 HADRO HORN, 55 COMPY PACK: few, far off */
-static const demo_ev_t DEMO_CALL_A[] = {DM_N(2, 6, 50), DM_N(20, 6, 36), DM_N(44, 3, 40), DM_N(58, 4, 54)};
-static const demo_ev_t DEMO_CALL_B[] = {DM_N(14, 3, 40), DM_N(46, 6, 36)};
-static const demo_ev_t DEMO_CALL_C[] = {DM_N(6, 2, 41), DM_N(30, 4, 54), DM_N(38, 2, 41), DM_N(59, 5, 37)};
-static const demo_ev_t DEMO_CALL_D[] = {DM_N(14, 3, 40), DM_N(40, 6, 36), DM_N(58, 6, 54)};
+ * 54 HADRO HORN, 55 COMPY PACK: the hunters and the giants only */
+static const demo_ev_t DEMO_CALL_A[] = {DM_N(0, 6, 45), DM_N(20, 4, 51), DM_N(36, 6, 45), DM_N(54, 8, 49)};
+static const demo_ev_t DEMO_CALL_B[] = {DM_N(14, 2, 51), DM_N(30, 1, 38), DM_N(31, 2, 39), DM_N(46, 1, 38),
+                                        DM_N(47, 1, 38), DM_N(58, 6, 45)};
+static const demo_ev_t DEMO_CALL_C[] = {DM_N(0, 6, 37), DM_N(22, 2, 41), DM_N(38, 1, 38), DM_N(39, 1, 38),
+                                        DM_N(56, 8, 49)};
+static const demo_ev_t DEMO_CALL_D[] = {DM_N(10, 4, 51), DM_N(34, 6, 45), DM_N(52, 12, 37)};
 typedef struct {
     const demo_ev_t *mel, *call;
     uint8_t nmel, ncall;
-    uint8_t lead, pad;                                  /* the lead's preset (SAMPLE / PHASE), the pad's (ANALOG / FORMANT) */
-    uint8_t harp, beat;                                 /* harp: 0 eighths, 1 quarters; beat: 0 a boom, 1 the verse's, 2 war */
+    uint8_t pad, war;                                   /* pad: 0 the chant, 1 the organ; war: the tyrant's 1/8 */
     uint8_t ch[8];
 } demo_sec_t;
-enum { DL_FLUTE, DL_BRASS, DP_STRINGS = 0, DP_CHOIR };
 static const demo_sec_t DEMO_SEC[4] = {
-    {DEMO_DAWN, DEMO_CALL_A, NELEM(DEMO_DAWN), NELEM(DEMO_CALL_A), DL_FLUTE, DP_STRINGS, 0, 0,
-     {DC_DM, DC_BB, DC_F, DC_C, DC_DM, DC_BB, DC_GM, DC_A}},
-    {DEMO_VERSE, DEMO_CALL_B, NELEM(DEMO_VERSE), NELEM(DEMO_CALL_B), DL_FLUTE, DP_CHOIR, 1, 1,
-     {DC_DM, DC_BB, DC_EB, DC_BB, DC_GM, DC_DM, DC_EB, DC_A}},
-    {DEMO_GIANTS, DEMO_CALL_C, NELEM(DEMO_GIANTS), NELEM(DEMO_CALL_C), DL_BRASS, DP_STRINGS, 0, 2,
-     {DC_BB, DC_F, DC_C, DC_DM, DC_BB, DC_F, DC_GM, DC_A}},
-    {DEMO_HOME, DEMO_CALL_D, NELEM(DEMO_HOME), NELEM(DEMO_CALL_D), DL_FLUTE, DP_CHOIR, 1, 1,
-     {DC_DM, DC_BB, DC_EB, DC_BB, DC_GM, DC_DM, DC_AS, DC_D}}};
+    {0, DEMO_CALL_A, 0, NELEM(DEMO_CALL_A), 0, 0, {DC_EM, DC_EF, DC_F, DC_EF, DC_EM, DC_EF, DC_BB, DC_EF}},
+    {DEMO_RIFF, DEMO_CALL_B, NELEM(DEMO_RIFF), NELEM(DEMO_CALL_B), 1, 0,
+     {DC_EM, DC_F, DC_EM, DC_BB, DC_EM, DC_F, DC_C, DC_B}},
+    {0, DEMO_CALL_C, 0, NELEM(DEMO_CALL_C), 1, 1, {DC_EM, DC_F, DC_BB, DC_B, DC_EM, DC_F, DC_BB, DC_B}},
+    {DEMO_END, DEMO_CALL_D, NELEM(DEMO_END), NELEM(DEMO_CALL_D), 0, 0,
+     {DC_EM, DC_F, DC_EM, DC_DM, DC_EM, DC_BB, DC_EF, DC_EF}}};
 static const uint8_t DEMO_ORDER[6] = {0, 1, 2, 1, 2, 3}; /* the song: A B C B C D, eight bars each */
 UI_SMALL static void demo_note(track_t *t, uint32_t s, uint32_t l, uint32_t note)
 {
@@ -786,18 +778,16 @@ UI_SMALL static void demo_hit(uint32_t s, uint32_t lane, uint32_t lv)
  * switch at once) */
 UI_SMALL static void demo_fill(int boot, uint32_t sec)
 {
-    /* the sounds: an engine and a preset a track (the lead's and the pad's by the section) */
-    static const uint8_t ENG[NPART] = {4, 0, 0, ENGI_PHYS, ENGI_SAURUS}, SND[NPART] = {1, 13, 7, 8, 20};
-    static const uint8_t LEAD[2][2] = {{4, 1}, {2, 6}};  /* SAMPLE FLUTE, PHASE TITAN BRASS */
-    static const uint8_t PAD[2][2] = {{0, 13}, {5, 5}};  /* ANALOG EPIC STRINGS, FORMANT EPIC CHOIR */
-    static const uint8_t LVL[NPART] = {108, 84, 88, 112, 80};   /* FLUTE, the pad, SUB BASS, HARP, the CALL KIT */
-    static const uint8_t REV[NPART] = {70, 80, 0, 90, 100};    /* the hall (at least) */
-    static const uint8_t HARP[8] = {0, 1, 2, 3, 4, 5, 4, 2};   /* the chord up two octaves and back */
+    /* the sounds: an engine and a preset a track (the pad's by the section; the tremolo: SAW LEAD) */
+    static const uint8_t ENG[NPART] = {0, 5, 0, ENGI_ROAR, ENGI_SAURUS}, SND[NPART] = {9, 8, 7, 7, 20};
+    static const uint8_t PAD[2][2] = {{5, 8}, {7, 9}};   /* FORMANT DEEP CHANT, DRAWBAR TEMPLE ORGAN */
+    static const uint8_t LVL[NPART] = {100, 96, 92, 96, 92};   /* BRASS, the pad, SUB BASS, TUNDRA, the CALL KIT */
+    static const uint8_t REV[NPART] = {60, 70, 0, 60, 90};     /* the hall (at least) */
+    static const int8_t FLT[NPART] = {-22, -12, 0, -18, -8};   /* dark: each track's low-pass */
     const demo_sec_t *d = &DEMO_SEC[sec & 3u];
     uint32_t b, i;
     for (i = 0; i < NPART; i++) {
-        uint32_t e = i == 0 ? LEAD[d->lead][0] : i == 1 ? PAD[d->pad][0] : ENG[i];
-        uint32_t p = i == 0 ? LEAD[d->lead][1] : i == 1 ? PAD[d->pad][1] : SND[i];
+        uint32_t e = i == 1 ? PAD[d->pad][0] : ENG[i], p = i == 1 ? PAD[d->pad][1] : i == 0 && d->war ? 0u : SND[i];
         if (trk[i].eng_req != e)
             set_engine_of(&trk[i], e);                  /* (IRQ off in it, as project_new) */
         fm1_irq_off();
@@ -810,56 +800,58 @@ UI_SMALL static void demo_fill(int boot, uint32_t sec)
     for (i = 0; i < NTRK; i++) {
         if (i < NPART) {
             trk[i].p[P_LEVEL] = LVL[i];
+            trk[i].p[P_TFLT] = FLT[i];
             if (trk[i].p[P_REV] < REV[i])
                 trk[i].p[P_REV] = REV[i];
         }
         steps_clear(&trk[i]);
         trk[i].p[P_SLEN] = 64;
-        trk[i].p[P_SDIV] = i == TRK_DRUM ? 2 : 1;       /* eight bars of 1/8; the beat four bars of 1/16 */
+        trk[i].p[P_SDIV] = i == TRK_DRUM || (i == 0 && d->war) ? 2 : 1;   /* eight bars of 1/8; four of 1/16 */
+    }
+    if (d->war) {                                       /* the tremolo: up front, its saw less dark */
+        trk[0].p[P_LEVEL] = 112;
+        trk[0].p[P_TFLT] = -14;
     }
     for (b = 0; b < 8u; b++) {
         const uint8_t *c = DEMO_CH[d->ch[b]];
         uint32_t o = b * 8u, k;
         for (i = 0; i < 3u; i++)
             demo_note(&trk[1], o, 8, c[i]);             /* a chord a bar, legato */
-        if (d->beat == 2u) {
-            demo_note(&trk[2], o, 4, c[3]);             /* the giants: the bass on the beat, an octave up */
-            demo_note(&trk[2], o + 4u, 2, c[3]);
-            demo_note(&trk[2], o + 6u, 2, c[3] + 12u);
-        } else {
+        if (d->war)
+            for (k = 0; k < 8u; k++)                    /* the tyrant: the bass pounding, an octave up on the 4 */
+                demo_note(&trk[2], o + k, 1, c[3] + (k == 6u ? 12u : 0u));
+        else
             demo_note(&trk[2], o, 8, c[3]);             /* held roots */
-        }
-        for (k = 0; k < 8u; k += 1u + d->harp) {        /* the harp: the chord's notes, an octave up and back */
-            uint32_t h = HARP[k];
-            demo_note(&trk[3], o + k, 2, (uint32_t)c[h % 3u] + 12u * (h / 3u));
-        }
     }
-    if (sec == 3u)                                      /* (D: the last chord held, no harp at the end) */
-        for (i = 59; i < 64u; i++)
-            trk[3].step[i].time = ST_REST;
+    demo_note(&trk[3], 0, 64, 40);                      /* the drone: E2, the whole section */
+    if (d->war)
+        for (b = 0; b < 64u; b++)                       /* the tremolo: sixteenths */
+            demo_note(&trk[0], b, 1, DEMO_TREM[b / 8u]);
     demo_events(&trk[0], d->mel, d->nmel);
     demo_events(&trk[4], d->call, d->ncall);
-    for (b = 0; b < 4u; b++) {                          /* WAR DRUMS: a boom a bar; the giants: the war beat */
+    for (b = 0; b < 4u; b++) {                          /* WAR DRUMS */
         uint32_t o = b * 16u;
-        demo_hit(o, 0, d->beat ? LV_NORM : (b & 1u) ? LV_GHOST : LV_SOFT);
-        if (!d->beat)
-            continue;
-        demo_hit(o + 10u, 0, LV_GHOST);
-        if (d->beat == 2u) {
+        if (d->war) {                                   /* the tyrant: eighths, the toms answering */
+            for (i = 0; i < 16u; i += 2u)
+                demo_hit(o + i, 0, i == 0u || i == 8u ? LV_HARD : i == 4u || i == 12u ? LV_NORM : LV_SOFT);
+            demo_hit(o + 4u, 9, LV_NORM);
+            demo_hit(o + 12u, 9, LV_NORM);
+            demo_hit(o + 14u, 10, LV_SOFT);
+        } else if (d->mel) {                            /* the riff: a slow march */
+            demo_hit(o, 0, LV_HARD);
             demo_hit(o + 6u, 0, LV_SOFT);
             demo_hit(o + 8u, 0, LV_NORM);
             demo_hit(o + 12u, 9, LV_SOFT);
-            demo_hit(o + 14u, 10, LV_GHOST);
+        } else if (!(b & 1u)) {
+            demo_hit(o, 0, LV_NORM);                    /* the tar pit: a boom every other bar */
         }
     }
-    if (d->beat)
-        demo_hit(60, 9, LV_SOFT), demo_hit(62, 9, LV_NORM);   /* low toms into the next phrase */
-    if (d->beat == 2u)
-        demo_hit(0, 11, LV_SOFT);                       /* (a cymbal swell as the giants come) */
+    if (d->mel || d->war)
+        demo_hit(59, 9, LV_SOFT), demo_hit(61, 9, LV_NORM), demo_hit(63, 9, LV_HARD);   /* the toms into the next */
     TDRUM->p[P_E0] = 2;                                 /* WAR DRUMS */
-    song.g[G_BPM] = 80;
+    song.g[G_BPM] = 70;
     song.g[G_SWING] = 0;
-    song.g[G_DRLVL] = 84;
+    song.g[G_DRLVL] = 96;
     song.sel = 0;
     fm1_irq_on();
     sync_reload = 1;
