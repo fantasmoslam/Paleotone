@@ -45,7 +45,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out
-          bash build.sh --product FM-1_988 2>&1 | tee out/build-fm1.log | tail -15   # PALEOTONE's own identity
+          bash build.sh --product FM-1_942 2>&1 | tee out/build-fm1.log | tail -15   # T-WRECKS: its own identity (no other firmware uses 942)
           cp build/felucca.fwsc out/dinosynth-fm1.fwsc
           cp build/felucca.dis out/ 2>/dev/null || true
           # the RAM map: every object of 256 bytes or more in .pool, .bss, .lowram, .noinit, biggest first

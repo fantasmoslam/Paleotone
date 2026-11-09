@@ -364,6 +364,19 @@ KITS = [
         RIDE=S(None, 320, src="cym", nlev=90, ndec=2400, filt=("bp", 6500, .35), hpf=3500, click=16),
         TOMLO=S("sine", 110, 3, 30, 6, 400, 106, 1.5, 40, 20, "white", 16, 0, 40, ("lp", 2000, .1)),
         TOMHI=S("sine", 160, 3, 30, 6, 340, 104, 1.5, 40, 20, "white", 16, 0, 40, ("lp", 2500, .1)))),
+    # -- T-WRECKS: ROAR's skin drum (eng_gurdy.c DINOBOX) without its hurdy-gurdy: a sine kicked from 2.5x its note,
+    # falling to it in ~40 ms, a slap of noise at the start. The conductor (twr_play.c) plays its strokes: 35 soft
+    # low, 36 loud low, 48 the fifth up, 63 the talking drum, 37 the slap; 43 the deep one, 49 a far thunder
+    ("STAMPEDE", "SKIN DRUMS", 0, kit(K808,
+        KICK=S("sine", 55, 16, 40, 6, 520, 124, click=18, src="white", nlev=70, ndec=5, filt=("lp", 2500, .1)),
+        KICK2=S("sine", 55, 16, 40, 4, 380, 104, click=8, src="white", nlev=40, ndec=4, filt=("lp", 2000, .1)),
+        TOMHI=S("sine", 82, 16, 40, 6, 420, 118, click=14, src="white", nlev=60, ndec=5, filt=("lp", 3000, .1)),
+        TOMLO=S("sine", 41, 14, 60, 20, 900, 124, click=10, src="white", nlev=50, ndec=6, filt=("lp", 1800, .1)),
+        CONGA=S("sine", 65, 7, 150, 10, 460, 116, click=12, src="white", nlev=50, ndec=5, filt=("lp", 2500, .1)),
+        RIM=S(None, src="white", nlev=110, nhold=2, ndec=30, filt=("bp", 1800, .3)),
+        SNARE=S("sine", 110, 8, 30, 0, 260, 96, 1.5, 40, 20, "white", 80, 0, 120, ("bp", 1400, .2)),
+        CRASH=S("sine", 36, 6, 300, 60, 2500, 110, src="white", nlev=60, nhold=40, ndec=2200, filt=("lp", 400, .2)),
+        SHAKER=S(None, src="white", nlev=84, nhold=10, ndec=70, filt=("bp", 3500, .3)))),
 ]
 
 

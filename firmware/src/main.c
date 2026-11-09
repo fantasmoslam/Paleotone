@@ -248,9 +248,11 @@ UI_SMALL static void felucca_init(void)
     TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;        /* the 808 kit */
     song.sel = 0;
     song.master_q12 = 2048;
+#if !TWRECKS                                  /* (T-WRECKS: a preset, never Paleotone's project: twr_boot below) */
     autosave_resume();                        /* the project as it was left (project.c) */
     if (!autosave_hash)                       /* PALEOTONE: none (a first power-on): the demo song */
         demo_fill(1, 3);                      /* (its last section as the loop; TOOLS > DEMO: the song) */
+#endif
     song.g[G_SYNC] = (int16_t)lights_sync;    /* a setting of the FM-1 (panel.c) */
     song.g[G_MIDI] = (int16_t)lights_mout;
     song.g[G_ROUTE] = (int16_t)lights_min;
@@ -263,6 +265,9 @@ UI_SMALL static void felucca_init(void)
     song.g[G_FXFADE] = fxfade;                        /* (2.7.2) GLO > MASTER 2: the punch-in FX fade */                    /* (2.7) GLO > MIDI 3: FX CH */   /* settings of the FM-1) */
     layers_init();                            /* the panel's layer buttons for the keys (ui_layers.c) */
     go_home();
+#if TWRECKS
+    twr_boot();                               /* T-WRECKS: the first preset, its screen (twr_ui.c) */
+#endif
     ui.force = 1;
 }
 
@@ -462,7 +467,9 @@ UI_SMALL static void fm1_main(void)
 #endif
         ui_draw();
         felucca_dbg.stage = 8;
+#if !TWRECKS                                            /* (T-WRECKS saves nothing yet: Paleotone's autosave stays as it was) */
         autosave_tick();                                /* the working project into flash, when quiet */
+#endif
 #if FELUCCA_ARRANGER
         sections_flush();                               /* live sections / the recorded song, when quiet */
 #endif

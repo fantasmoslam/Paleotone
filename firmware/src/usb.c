@@ -286,8 +286,8 @@ static const uint8_t STR2[] = {30, 3, 'F', 0, 'e', 0, 'l', 0, 'u', 0, 'c', 0, 'c
 /* RAPTOR: the port name; "SMK" keeps it in the installers' and the editor's PORT_RE */
 static const uint8_t STR2[] = {22, 3, 'R', 0, 'A', 0, 'P', 0, 'T', 0, 'O', 0, 'R', 0, ' ', 0, 'S', 0, 'M', 0, 'K', 0};
 #else
-/* PALEOTONE: the port name; "FM-1" keeps it in the installers' and the editor's PORT_RE */
-static const uint8_t STR2[] = {30, 3, 'P', 0, 'A', 0, 'L', 0, 'E', 0, 'O', 0, 'T', 0, 'O', 0, 'N', 0, 'E', 0, ' ', 0, 'F', 0, 'M', 0, '-', 0, '1', 0};
+/* T-WRECKS: the port name; "FM-1" keeps it in the installers' and the editor's PORT_RE */
+static const uint8_t STR2[] = {28, 3, 'T', 0, '-', 0, 'W', 0, 'R', 0, 'E', 0, 'C', 0, 'K', 0, 'S', 0, ' ', 0, 'F', 0, 'M', 0, '-', 0, '1', 0};
 #endif
 
 #if FELUCCA_UAC_48K

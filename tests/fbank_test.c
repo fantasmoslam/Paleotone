@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* SMK-37 Pro FADER BANK screen (firmware/src/ui_fbank.c) on the UI harness: banks wrap, what each fader sets,
  * closes by itself; renders DIR/fbank-a.ppm, fbank-a-drums.ppm, fbank-b.ppm (RAPTOR: A ENV, no LEVEL bank). */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define UI_PAGES_HARNESS_ONLY 1
 #include "ui_pages_test.c"
 static uint8_t smk_fbank, smk_fbank_new;           /* (ui_input.c, SMK build) */

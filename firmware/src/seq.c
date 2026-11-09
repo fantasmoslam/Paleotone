@@ -3633,6 +3633,9 @@ static void clkout_block(uint32_t n)
 
 /* everything that happens between two rendered blocks: transport, input, the steps of every
  * track at the clock, the click, the rolls and the arps; then the clock moves on by n samples */
+#if TWRECKS
+#include "twr_play.c"           /* T-WRECKS: the conductor (twr_block below) */
+#endif
 static void events_block(uint32_t n)
 {
     uint32_t i, pr, adv;
@@ -3925,6 +3928,9 @@ static void events_block(uint32_t n)
     roll_block(adv);
     for (i = 0; i < NPART; i++)
         arp_tick(&trk[i], adv);
+#if TWRECKS
+    twr_block(n);                                     /* T-WRECKS: the conductor, at the clock as this block plays */
+#endif
     if (song.playing) {
         song.tick++;
         clk_pos += adv;

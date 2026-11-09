@@ -788,6 +788,80 @@ static int tracks_test(const char *dir)
     return fail;
 }
 
+#if TWRECKS
+/* T-WRECKS: TWR=n renders preset n (twr_play.c) for SECS (default 120) as the firmware loads it (twr_ui.c twr_load):
+ * the five sounds, the STAMPEDE kit, the key, the tempo, the atmosphere; PLAY, nobody at the keys (KEYS=1: a few
+ * white keys on the lead now and then). Prints the notes each layer played, the voices at most, the peak, clips */
+static int twr_demo(uint32_t pn, const char *out)
+{
+    const twr_preset_t *p = &TWR_PRESETS[pn % TWR_NPRESETS];
+    uint32_t frames = FS * (getenv("SECS") ? (uint32_t)atoi(getenv("SECS")) : 120u), f, i, e, k, bmax = 0, clips = 0;
+    uint32_t keys = getenv("KEYS") != 0, fail = 0;
+    int32_t peak = 0;
+    FILE *w = fopen(out, "wb");
+    if (!w)
+        return 1;
+    host_tracks_init();
+    for (i = 0; i < TW_LAYERS; i++) {
+        if (twr_find(p->snd[i], &e, &k)) {
+            printf("twr: %s: no sound \"%s\" FAIL\n", p->name, p->snd[i]);
+            fail++;
+            continue;
+        }
+        host_preset(&trk[i], e, k);
+        trk[i].p[P_ROOT] = p->root;
+        trk[i].p[P_SCALE] = p->scale;
+        trk[i].p[P_LEVEL] = TW_LEVEL[i];
+    }
+    song.g[G_DRLVL] = TW_DRUM_LEVEL;
+    trk[TW_LEAD].p[P_QUANT] = 2;                    /* WHITE */
+    TDRUM->p[P_E0] = (int16_t)twr_kit();
+    song.g[G_BPM] = p->bpm;
+    song.g[G_AMB] = p->amb;
+    song.g[G_CRKL] = p->crkl;
+    song.g[G_RTYPE] = GP[G_RTYPE].def;
+    song.sel = TW_LEAD;
+    if (getenv("SOLO")) {                           /* SOLO=k: track k alone (6: the atmosphere) */
+        uint32_t so = (uint32_t)atoi(getenv("SOLO"));
+        for (i = 0; i < NPART; i++)
+            if (i != so)
+                trk[i].p[P_LEVEL] = 0;
+        if (so != TRK_DRUM)
+            song.g[G_DRLVL] = 0;
+        if (so != 6u)
+            song.g[G_AMB] = 0;
+    }
+    twr.req = (uint8_t)(pn % TWR_NPRESETS + 1u);
+    transport_req = 1;
+    wav_hdr(w, frames);
+    for (f = 0; f < frames; f += CTL) {
+        int32_t o[2 * CTL];
+        if (keys) {                                 /* a few white keys, a phrase every 8 s */
+            uint32_t t = f % (8u * FS);
+            static const uint8_t KEY[4] = {12, 14, 16, 19};   /* (kb bits: white keys above C4) */
+            fm1_in.notes = t < 3u * FS ? 1u << KEY[(t / (FS * 3u / 4u)) % 4u] : 0u;
+        }
+        mix_block(o, CTL);
+        if (busy_now() > bmax)
+            bmax = busy_now();
+        for (i = 0; i < CTL; i++) {
+            int32_t l = o[2 * i], r = o[2 * i + 1];
+            if (l >= 32700 || l <= -32700 || r >= 32700 || r <= -32700)
+                clips++;
+            if (l > peak) peak = l;
+            if (-l > peak) peak = -l;
+            wav_put(w, l, r);
+        }
+    }
+    fclose(w);
+    printf("twr: %s, %u s: notes drone %u ost %u bass %u lead %u calls %u drums %u; voices at most %u; peak %d; "
+           "clips %u; arc at %s bar %u\n", p->name, frames / FS, twr_cnt[0], twr_cnt[1], twr_cnt[2], twr_cnt[3],
+           twr_cnt[4], twr_cnt[5], bmax, peak, clips, TW_SEC_NAME[twr.sec % TW_SECTIONS], twr.sbar + 1u);
+    fail += !twr_cnt[0] || !twr_cnt[1] || !twr_cnt[2] || !twr_cnt[5] || bmax > NVOICE;
+    return (int)fail;
+}
+#endif
+
 int main(int argc, char **argv)
 {
     int eng = argc > 1 ? atoi(argv[1]) : 0, preset = argc > 2 ? atoi(argv[2]) : 4;
@@ -795,7 +869,12 @@ int main(int argc, char **argv)
     const char *out = argc > 4 ? argv[4] : "out.wav";
     uint32_t i, frames = FS * (getenv("SWEEP") ? 4 : 2), f, nk = 0;
     clock_t c0;
-    FILE *w = fopen(out, "wb");
+    FILE *w;
+#if TWRECKS
+    if (getenv("TWR"))
+        return twr_demo((uint32_t)atoi(getenv("TWR")), out);
+#endif
+    w = fopen(out, "wb");
     if (getenv("SECS"))
         frames = FS * (uint32_t)atoi(getenv("SECS"));
     if (getenv("CHORD"))

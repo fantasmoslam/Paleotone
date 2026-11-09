@@ -2,6 +2,9 @@
 /* The user guide's screens (not a test): the UI test's harness, the demo song as a new FM-1 has it, driven by the
  * panel as a player would, each screen written as a 240x240 PPM into DIR/<name>.ppm (web/site/guide_shots.py turns
  * them into the guide's PNGs).   guide_shots DIR */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define UI_PAGES_HARNESS_ONLY 1
 #include "ui_pages_test.c"
 static void shot(const char *name)

@@ -5,6 +5,9 @@
  * HOME, the REC READY screen over each page, the synth and the drum track. What a turn changed: the global and track
  * parameters, the steps, the REC screen's MODE / LENGTH / START / QUANT, the track, the page.
  *   cc -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal tests/knob_walk_test.c -lm */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define UI_PAGES_HARNESS_ONLY 1
 #define UI_PANEL_SMK 1
 #define FM1_NBTN 18u

@@ -5,6 +5,9 @@
  * rate of a fader, the map editor (pick a control, TYPE / NUMBER / CHANNEL, the USER map), the menu (PLAY, MIDI, DAW: rows
  * and knobs, MODE / CHANNEL / LOCAL / CC MAP / KNOBS / RESET MAP), the lights. Renders DIR/daw-*.ppm. Build with
  * -DSMK_MIX=1 (the menu's LIMITER). */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define UI_PAGES_HARNESS_ONLY 1
 #define UI_MENU_SMK "daw_ui_host.h"
 #include "ui_pages_test.c"

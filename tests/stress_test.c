@@ -16,6 +16,9 @@
  *           TRACKS screen; FONT_L text drawn from S against a stored 2x copy
  * Run it under -fsanitize=address,undefined too: any read or write out of bounds stops it.
  *   stress_test [FRAMES [SEED]]   (default 40000: about 11 minutes of use) */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define UI_PAGES_HARNESS_ONLY 1
 #define PALEO_TERMINUS_L   /* PALEOTONE: the L checks below are of the Terminus L (the FM-1 draws Clayborn) */
 #include "ui_pages_test.c"

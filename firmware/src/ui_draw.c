@@ -1255,6 +1255,19 @@ UI_SMALL static void ui_draw(void)
         ui.force = 0;
         return;
     }
+#if TWRECKS
+    if (twr_scr) {                                      /* T-WRECKS: its screen (twr_ui.c) */
+        twr_draw();
+        ui_timers();
+        ui.force = 0;
+        return;
+    }
+    if (twr_shown_scr) {                                /* back from it: Paleotone's page */
+        twr_shown_scr = 0;
+        lcd_fill(0, 0, 240, 240, C_BLACK);
+        ui.force = 1;
+    }
+#endif
     if (vis_shown()) {                                  /* the visualiser over the TRACKS screen */
         vis_draw();
         ui_timers();

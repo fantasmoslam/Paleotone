@@ -3,6 +3,9 @@
  * editor_live.c) with the real storage.c / upreset.c / project.c (fm6_bank.c, arranger_scene.c) on a RAM image
  * of the 1 MiB NOR, the real usb.c SysEx assembly (FELUCCA_OTA), the real UI (as tests/ui_pages_test.c) and the
  * audio (mix_block) between frames. Included by tests/editor_fuzz.c. Same include order as felucca.c. */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

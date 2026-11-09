@@ -3,7 +3,13 @@
 /* Felucca user interface. Four columns map to KNOB 1..4. Rendering is lazy:
  * every element remembers what it last drew and is redrawn only on change. */
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "PALEOTONE 2.8.4"  /* PALEOTONE on the FM-1 (RAPTOR, SLOOP 2.8.4, Felucca; the editor reads the digits) */
+#define FELUCCA_VERSION "T-WRECKS 0.1"  /* T-WRECKS on the FM-1 (Paleotone 2.8.4 on RAPTOR, SLOOP, Felucca) */
+#endif
+#if TWRECKS
+static uint8_t twr_scr = 1;                    /* T-WRECKS: its screen is up (twr_ui.c) */
+static uint8_t twr_shown_scr;                  /* (it was drawn last frame: the screen is cleared as it comes or goes) */
+static void twr_draw(void);
+static int twr_input(uint32_t *pressed, uint32_t home);
 #endif
 static void project_save(uint32_t slot);
 static void arrangement_save(void);

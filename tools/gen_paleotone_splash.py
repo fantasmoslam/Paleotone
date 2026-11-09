@@ -19,7 +19,7 @@ W = H = 240
 FLOOR = 60                                        # a pixel whose brightest channel is under this: black
 # the title and the line under it in Clayborn (the screens' typeface: gen_font.py), over the art's own lettering
 CLAYBORN = Path(__file__).resolve().parent.parent / "assets" / "fonts" / "Clayborn.ttf"
-TEXT = [("PALEOTONE", 42, 116, (65, 234, 115)), ("PREHISTORIC SYNTH", 18, 166, (139, 178, 148))]
+TEXT = [("T-WRECKS", 42, 116, (65, 234, 115)), ("DINOSYNTH", 18, 166, (139, 178, 148))]   # T-WRECKS (placeholder name)
 
 
 def lettering(im):

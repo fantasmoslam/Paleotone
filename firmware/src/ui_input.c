@@ -1673,6 +1673,10 @@ UI_SMALL static void ui_input(void)
     ml_poll();                                          /* MIDI LEARN: a CC came for the picked parameter (2.6) */
     page_fix();                                         /* (a page the track does not have: its neighbour, 2.6) */
     midi_entry();                                       /* (the STEP page's MIDI notes: read every frame, 2.6) */
+#if TWRECKS
+    if (twr_input(&pressed, home))                      /* T-WRECKS: its screen (twr_ui.c) */
+        return;
+#endif
     if (home == BT_HOLD) {                              /* HOME held: open the menu, or leave it */
         if (ui.menu) {
             menu_close();

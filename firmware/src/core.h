@@ -6,6 +6,9 @@
  * pattern and the pattern parameters of its track_t). The parts share one budget of
  * NVOICE sounding voices (voice.c). */
 #include <stdint.h>
+#ifndef TWRECKS
+#define TWRECKS 1                /* T-WRECKS: Paleotone's sounds played by a conductor you play over (twr_play.c, twr_ui.c) */
+#endif
 #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
 #define NPOLY 8
 #define NPART 5                  /* synth parts: tracks 1..5 (RAPTOR: SLOOP's three, then SFX and CALLS) */

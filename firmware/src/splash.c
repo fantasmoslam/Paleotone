@@ -68,9 +68,11 @@ UI_SMALL static void sloop_splash(void)
         const char *pv = FELUCCA_VERSION;
         if (pv[0] == 'P' && pv[1] == 'A' && pv[9] == ' ')
             pv += 10;                                   /* "PALEOTONE 2.8.4" -> "2.8.4" */
+        if (pv[0] == 'T' && pv[1] == '-' && pv[8] == ' ')
+            pv += 9;                                    /* "T-WRECKS 0.1" -> "0.1" (the name is in the art) */
         cv_begin(240, 36, C_BLACK);
         cv_text(120 - text_w(&FONT_S, pv) / 2, 0, &FONT_S, pv, C_AMB);
-        cv_text(120 - text_w(&FONT_S, "on sloop + felucca") / 2, 18, &FONT_S, "on sloop + felucca", C_GRAY);
+        cv_text(120 - text_w(&FONT_S, "paleotone + sloop + felucca") / 2, 18, &FONT_S, "paleotone + sloop + felucca", C_GRAY);
         cv_blit(0, 198);
     }
     return;

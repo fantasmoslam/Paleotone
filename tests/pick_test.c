@@ -2,6 +2,9 @@
 /* SMK-37 Pro pad sound picker (firmware/src/ui_pick.c) on the UI harness: the pages by kind, 16 a page, the
  * current sound's page, a cell loads its sound, < > wrap, the short names, the drum kits; renders
  * DIR/pick-synth.ppm, pick-drums.ppm. */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define UI_PAGES_HARNESS_ONLY 1
 #include "ui_pages_test.c"
 #include "../firmware/src/ui_pick.c"

@@ -30,12 +30,12 @@
 #define BRAND_BASED "PALEOTONE + SLOOP + FELUCCA"   /* RAPTOR: the sound, the sequencer, the base */
 #define BRAND_CLAWS 1            /* RAPTOR: the ABOUT page's claw slashes (ui_menu.c) for the sail */
 #define VIS_LAST_NAMES "RAPTOR"
-#else                            /* PALEOTONE: the FM-1 Paleotone, on RAPTOR's SLOOP base */
-#define BRAND_NAME "PALEOTONE"
-#define BRAND_SAIL_X 148         /* (FONT_L: 16 px a letter, "PALEOTONE" ends at 144) */
-#define BRAND_RESCUE "PALEOTONE USB RESCUE"
+#else                            /* T-WRECKS: Paleotone's generative branch on the FM-1, on RAPTOR's SLOOP base */
+#define BRAND_NAME "T-WRECKS"
+#define BRAND_SAIL_X 132         /* (FONT_L: 16 px a letter, "T-WRECKS" ends at 128) */
+#define BRAND_RESCUE "T-WRECKS USB RESCUE"
 #define BRAND_URL "GITHUB.COM/FANTASMOSLAM"
-#define BRAND_BASED "ON SLOOP + FELUCCA"
+#define BRAND_BASED "PALEOTONE + SLOOP + FELUCCA"
 #define BRAND_PROMPT 1           /* PALEOTONE: the ABOUT page's terminal prompt (ui_menu.c) for the sail */
 #define VIS_LAST_NAMES "PALEO"
 #endif
@@ -131,6 +131,9 @@
 #include "ui_padgrid.c"       /* SMK-37 Pro: steps and tiles in reading order */
 #endif
 #include "ui_input.c"
+#if TWRECKS
+#include "twr_ui.c"           /* T-WRECKS: its screen and controls */
+#endif
 #if BOARD_SMK37
 #include "ui_fbank.c"         /* SMK-37 Pro: the FADER BANK screen */
 #include "ui_daw.c"           /* SMK-37: DAW mode: its input, screens, lights and map editor */

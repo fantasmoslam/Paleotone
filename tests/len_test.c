@@ -18,6 +18,9 @@
  *           section taps: a chain, "chain A B" on the sub line)
  *   DRUMS   the grid: sound / step / hit / level knobs, GRID <-> KIT
  * then 20000 frames of random use: every draw stays on the screen. */
+#ifndef TWRECKS
+#define TWRECKS 0      /* (Paleotone's pages as they are: T-WRECKS's screen is tests/twr_ui_test.c) */
+#endif
 #define FELUCCA_ARRANGER 1
 #define main hostsim_main
 #include "hostsim.c"
