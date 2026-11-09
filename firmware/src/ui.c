@@ -29,10 +29,10 @@ static uint32_t up_gen;                      /* bumped on every user bank change
 static uint8_t sync_reload;                  /* engine / preset / project / user preset loaded: editor RELOAD push */
 
 #define ACC C_HI                   /* amber everywhere; white is the only accent */
-#define VAL(c) ((c) == ui.hot_col && ui.hot_t ? C_WHITE : TE_COL[(c) & 3u])   /* LIVE: one colour per knob */
+#define VAL(c) ((c) == ui.hot_col && ui.hot_t ? C_WHITE : KN_COL[(c) & 3u])   /* LIVE: one colour per knob */
 #define RATIO(d, v) ((d)->max > (d)->min ? ((int32_t)(v) - (d)->min) * 1000 / ((d)->max - (d)->min) : -1)
 /* layout: four 60 px columns, 4 px inset */
-/* Terminus 8x16 (S) and 16x32 (L) */
+/* Clayborn (gfx.c PALEO_CLAYBORN): S 16 px rows, L 32 */
 #define Y_HEAD 0
 #define H_HEAD 20
 #define H_TOP 28                      /* RAPTOR: the pages' header, its text twice as big (the menu keeps H_HEAD) */
@@ -63,6 +63,8 @@ static struct {
     uint32_t menu_sig, home_t0;  /* HOME press time (btn_hold) */
     uint8_t force;               /* full redraw pending */
     uint8_t msg_t;               /* transient message frames */
+    uint8_t msg_v;               /* RAPTOR: the message is a knob's value (MASTER, ENGINE): the header only, never the big
+                                  * bar over the dials (a turn a click would flash it) */
     uint8_t bpm_t;               /* frames the BPM stays highlighted after a SELECT turn */
     uint8_t arm, arm_t;          /* destructive action armed: param id, frames left to confirm */
     uint32_t rec_t0;             /* REC press time (btn_hold) */
@@ -142,6 +144,8 @@ UI_SMALL static uint32_t page_first(uint32_t fam)
     return 0;
 }
 
+#define ARM_FRAMES 180u              /* RAPTOR: a GO knob's second turn within ~3 s (it was ~1.5 s: too short to find) */
+
 /* transient message in the top bar: a + b */
 UI_SMALL static void ui_say(const char *a, const char *b)
 {
@@ -150,6 +154,12 @@ UI_SMALL static void ui_say(const char *a, const char *b)
     n = str_len(ui.msg);
     str_cpy(ui.msg + n, b, sizeof ui.msg - n);
     ui.msg_t = 40;
+    ui.msg_v = 0;
+}
+UI_SMALL static void ui_say_v(const char *a, const char *b)   /* a knob's value: in the header (ui.msg_v) */
+{
+    ui_say(a, b);
+    ui.msg_v = 1;
 }
 
 UI_SMALL static void ui_message(const char *s) { ui_say(s, ""); }
@@ -613,8 +623,9 @@ UI_SMALL static void go_home(void)
  * writes the sequencer: every pattern is the one the player records or enters. */
 
 /* the parts' sounds at power-on (engine, preset): bass, pad, lead */
-static const uint8_t TRK_DEF[NPART][2] = {{ENGI_PHYS, 9}, {0, 12}, {4, 3}, {ENGI_SFX, 0}, {ENGI_SAURUS, 0}};
-/* RAPTOR: Paleotone's JUNGLE scene (PHYS, ANALOG, SAMPLE JUNGLE NIGHT), SFX DINO WORLD, SAURUS's first call */
+static const uint8_t TRK_DEF[NPART][2] = {{ENGI_PHYS, 9}, {0, 12}, {4, 3}, {ENGI_SFX, 0}, {ENGI_SAURUS, 20}};
+/* RAPTOR: Paleotone's JUNGLE scene (PHYS, ANALOG, SAMPLE JUNGLE NIGHT), SFX DINO WORLD; PALEOTONE: CALLS the CALL KIT
+ * (SAURUS_PRESETS[20]: every creature on the keys) */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
 UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }
@@ -684,6 +695,8 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
             t->p[i] = TP[i].def;                     /* sounds the same after any edit (not the pattern, not the mix) */
     for (i = 0; i < 8u; i++)
         t->p[P_E0 + i] = (int16_t)e->presets[pi].e[i];
+    if (t->eng_req % NENGINES == ENGI_ROAR)           /* PALEOTONE: RING (P_FTYPE on ROAR) as the preset rings */
+        t->p[P_FTYPE] = (int16_t)(pi < 32u && ((GURDY_RING >> pi) & 1u));
     t->p[P_ATK] = e->presets[pi].env[0];
     t->p[P_DEC] = e->presets[pi].env[1];
     t->p[P_SUS] = e->presets[pi].env[2];
@@ -742,15 +755,17 @@ UI_SMALL static void select_engine(uint32_t e)
     if (is_drum(TSEL))
         return;
     set_engine(e);
-    ui_say("ENGINE ", ENGINES[TSEL->eng_req]->name);
+    ui_say_v("ENGINE ", ENGINES[TSEL->eng_req]->name);
     ui.force = 1;
 }
 
 /* the factory presets as one list by kind (basses, keys, organs, pads, leads, plucks and bells, stabs,
  * the rest), then the used user presets: the PRESETS knob and the PRESETS page browse it. By name: an
  * engine's preset table may change order; tests/ui_pages_test.c checks every preset is here once */
-enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_DRUM, BK_FX };
-static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX"};
+/* PALEOTONE: SAUR (every SAURUS creature, the CALL KIT) and ROAR (every ROAR sound) their own kinds, listed after
+ * the drums, before the effects (numbered after FX: the kinds before keep their numbers) */
+enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_DRUM, BK_FX, BK_SAUR, BK_ROAR };
+static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "DRUM", "FX", "SAUR", "ROAR"};
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
 #include "ui_bank.h"   /* RAPTOR: Paleotone's sounds (tools/paleotone_sounds.py) */
     /* SFX (the dino groovebox) */

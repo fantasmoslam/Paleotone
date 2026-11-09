@@ -87,7 +87,8 @@ itself a fork of GHOULBOX by Jason Persinger on Felucca by Leo Kuroshita, Hügel
 These are listed with their licences in [LICENSING.md](LICENSING.md):
 
 - **Samples:** Versilian Studios VSCO-2 CE and VCSL, and Sonic Pi, all CC0.
-- **Fonts:** Terminus (SIL OFL 1.1) and the Fukiai icon font (MIT, Hügelton Instruments).
+- **Fonts:** Clayborn by Frank Baranowski (SIL OFL 1.1, the screen's typeface, as PALEOTONE's), Terminus (SIL OFL 1.1,
+  for the few characters Clayborn has no glyph for) and the Fukiai icon font (MIT, Hügelton Instruments).
 - **Engines:** CrispyZebra (the PHASE engine); klattsch by Tony Gies (the reference for the VOICE engine); msfa
   from Dexed by Google Inc. and Pascal Gauthier (FM6, Apache-2.0); DaisySP and Rings by Electrosmith and
   Emilie Gillet (PHYS, MIT).

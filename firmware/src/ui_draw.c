@@ -38,9 +38,20 @@ UI_SMALL static int32_t batt_shown(void)
 
 /* top bar: transport, BPM, octave | USB, battery, CPU; messages replace it */
 /* FONT_S drawn k times as big (whole pixels, no blend: Terminus is 1-bit); returns the end x */
+#ifdef PALEO_CLAYBORN
+/* PALEOTONE: k = 2..4 in Clayborn's own cuts (gfx.c), else Terminus k times */
+static const felucca_font_t *font_k(uint32_t k)
+{
+    return k == 2u ? &FONT_C2 : k == 3u ? &FONT_C3 : k == 4u ? &FONT_C4 : &FONT_S;
+}
+#endif
 UI_SMALL static int32_t text_k(int32_t x, int32_t y, const char *s, uint16_t c, uint32_t k)
 {
     const felucca_font_t *f = &FONT_S;
+#ifdef PALEO_CLAYBORN
+    if (k >= 2u && k <= 4u)
+        return cv_text(x, y, font_k(k), s, c);
+#endif
     uint8_t ci = (uint8_t)cv_ci(c);
     for (; *s; s++) {
         uint32_t gi = glyph(f, (uint8_t)*s), w = f->bw[gi], gx, gy, a, b;
@@ -73,8 +84,12 @@ UI_SMALL static void draw_head(void)
     cv_begin(240, H_TOP, C_BLACK);
     /* RAPTOR (the owner: everything larger): the header's text twice as big, in H_TOP rows */
     if (ui.msg_t) {                                   /* a message: 2x if it fits, else as before */
-        if (text_w(&FONT_S, ui.msg) * 2 <= 232)
+        if (text_w(&FONT_L, ui.msg) <= 232)          /* (FONT_L: the 2x font, Clayborn on the FM-1) */
             text_k(4, -2, ui.msg, C_HI, 2u);
+#ifdef PALEO_CLAYBORN
+        else if (text_w(&FONT_M, ui.msg) <= 232)
+            cv_text(4, 1, &FONT_M, ui.msg, C_HI);
+#endif
         else
             cv_text(4, 6, &FONT_S, ui.msg, C_HI);
         cv_blit(0, Y_HEAD);
@@ -160,7 +175,7 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         key[n + 3] = 0;
     }
     if (c < 4u) {                                       /* (the big values: their own fit) */
-        str_cpy(ui.big_l[c], l, 8);
+        fit(ui.big_l[c], label, &FONT_L, 112);         /* (its own fit: the cell, not the small column) */
         fit(ui.big_v[c], val, &FONT_L, 112 - (unit[0] ? 4 : 0));   /* (graph_big scales it to its cell) */
         str_cpy(ui.big_u[c], unit, 8);
         ui.big_c[c] = vc;
@@ -180,9 +195,16 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         return;
     str_cpy(ui.col[c], key, sizeof ui.col[c]);
     cv_begin(55, Y_SEP_END - Y_LABEL, C_BLACK);         /* x 4..58: the rule at 59 stays */
+#ifdef PALEO_CLAYBORN
+    if (label[0] && text_w(&FONT_M, label) <= 55)       /* PALEOTONE: the label in M (no icon) where it fits */
+        cv_text(0, -3, &FONT_M, label, C_GRAY);
+    else
+#endif
+    {
     if (FELUCCA_ICONS && icon != ICON_NONE && l[0])
-        cv_icon(0, 1, icon, TE_COL[c & 3u]);            /* icon rows 1..10 = the label's cap height */
+        cv_icon(0, 1, icon, KN_COL[c & 3u]);            /* icon rows 1..10 = the label's cap height */
     cv_text(l[0] ? LABEL_X : 0, 0, &FONT_S, l, C_GRAY);
+    }
     if (text_w(&FONT_L, v) <= 54) {                     /* RAPTOR: the value large when it fits the column (the unit
                                                          * small beside it, if there is room) */
         x = cv_text(0, 12, &FONT_L, v, vc);
@@ -196,7 +218,7 @@ UI_SMALL static void draw_column(uint32_t c, const char *label, const char *val,
         int32_t gy = Y_GAUGE - Y_LABEL;
         fx = ratio * gw / 1000;
         cv_rect(0, gy + 1, gw, 1, C_LINE);
-        cv_rect(0, gy, fx, 3, vc == C_DIM ? C_DIM : TE_DIM[c & 3u]);
+        cv_rect(0, gy, fx, 3, vc == C_DIM ? C_DIM : KN_DIM[c & 3u]);
         cv_rect(fx, gy - 1, 1, 5, vc == C_DIM ? C_HI : vc);
     }
     cv_blit(c * 60u + 4u, Y_LABEL);
@@ -748,7 +770,11 @@ UI_SMALL static void graph_scope(uint16_t c)
  * FONT_L, its unit, and a thick gauge */
 #define Y_BIG (H_TOP + 2)
 #define H_BIG (Y_FOOT - 4 - Y_BIG)
+#ifdef PALEO_CLAYBORN
+#define TEXT_KW(s, k) ((k) >= 2 && (k) <= 4 ? text_w(font_k((uint32_t)(k)), (s)) : text_w(&FONT_S, (s)) * (int32_t)(k))
+#else
 #define TEXT_KW(s, k) (text_w(&FONT_S, (s)) * (int32_t)(k))
+#endif
 
 /* RAPTOR: a page's four values large, a 2 x 2 grid from under the header to the footer (the owner: as big as the
  * screen takes). A cell: the label (2x, the knob's colour), the value (3x where it fits with its unit, else 2x, else
@@ -766,7 +792,7 @@ UI_SMALL static void graph_big(void)
         const int32_t CW = 110;                         /* a cell's width for text */
         int32_t x0 = c & 1u ? 126 : 4, y0 = c & 2u ? (int32_t)H_BIG / 2 + 2 : 0, x, r = ui.big_r[c];
         int32_t uw = ui.big_u[c][0] ? text_w(&FONT_S, ui.big_u[c]) + 3 : 0, lk, vk, vh;
-        uint16_t vc = ui.big_c[c] == C_DIM ? C_DIM : C_WHITE, kc = TE_COL[c & 3u];
+        uint16_t vc = ui.big_c[c] == C_DIM ? C_DIM : C_BIGV, kc = KN_COL[c & 3u];
         const char *v = ui.big_v[c];
         if (!ui.big_l[c][0])
             continue;
@@ -774,6 +800,10 @@ UI_SMALL static void graph_big(void)
             for (vk = 4; vk > 1 && TEXT_KW(v, vk) + uw > 228; vk--)
                 ;
             lk = TEXT_KW(ui.big_l[c], 2) <= 228 ? 2 : 1;
+#ifdef PALEO_CLAYBORN
+            if (TEXT_KW(ui.big_l[c], 3) <= 228)
+                lk = 3;                                 /* PALEOTONE: the label bigger too */
+#endif
             x0 = (240 - TEXT_KW(ui.big_l[c], lk)) / 2;
             text_k(x0, (int32_t)H_BIG / 2 - 16 * vk / 2 - 16 * lk - 2, ui.big_l[c], kc, (uint32_t)lk);
             x0 = (240 - TEXT_KW(v, vk) - uw) / 2;
@@ -787,12 +817,23 @@ UI_SMALL static void graph_big(void)
             }
             continue;
         }
+#ifdef PALEO_CLAYBORN
+        /* PALEOTONE (bigger): the label at 3x where it fits, the value at 4x; Clayborn's capitals sit on row 12k of
+         * the 16k cell, 9k tall: the label's from row 2 of the cell, the value's ending on row 70, over the gauge */
+        lk = TEXT_KW(ui.big_l[c], 3) <= CW ? 3 : TEXT_KW(ui.big_l[c], 2) <= CW ? 2 : 1;
+        text_k(x0, y0 + 2 - 3 * lk, ui.big_l[c], kc, (uint32_t)lk);
+        for (vk = 4; vk > 1 && TEXT_KW(v, vk) + uw > CW; vk--)
+            ;
+        (void)vh;
+        x = text_k(x0, y0 + 70 - 12 * vk, v, vc, (uint32_t)vk);
+#else
         lk = TEXT_KW(ui.big_l[c], 2) <= CW ? 2 : 1;
         text_k(x0, y0 + (lk == 2 ? -3 : 4), ui.big_l[c], kc, (uint32_t)lk);   /* (the capitals' top rows: 2..) */
         for (vk = 3; vk > 1 && TEXT_KW(v, vk) + uw > CW; vk--)
             ;
         vh = 16 * vk;                                   /* the value's cell: its capitals end ~3/4 down */
         x = text_k(x0, y0 + 70 - 2 - vh * 13 / 16, v, vc, (uint32_t)vk);
+#endif
         if (uw && x + uw <= x0 + CW + 4)
             cv_text(x + 3, y0 + 70 - 2 - 13, &FONT_S, ui.big_u[c], C_GRAY);
         if (r >= 0) {                                   /* the gauge: 12 px, the knob's colour */
@@ -969,7 +1010,7 @@ UI_SMALL static void draw_foot(void)
     {
         char pf[16];
         str_cpy(pf, pn[0] ? pn : ename, sizeof pf);
-        while (pf[0] && text_w(&FONT_S, pf) * 2 > 232)
+        while (pf[0] && text_w(&FONT_L, pf) > 232)     /* (FONT_L: the 2x font, Clayborn on the FM-1) */
             pf[str_len(pf) - 1u] = 0;
         text_k(4, 9, pf, C_AMB, 2u);
     }

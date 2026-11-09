@@ -707,6 +707,173 @@ UI_SMALL static void project_new(void)
     ui.force = 1;
 }
 
+/* PALEOTONE: the demo song, "VALLEY OF GIANTS" (TOOLS > DEMO; the first power-on with no project: its last section as
+ * the loop). D minor with the Phrygian E flat, 72 BPM. Four sections of eight bars of 1/8, in sections A..D and played
+ * A B C B C D by the song (48 bars, ~2:40): A the valley wakes (the pad, the bass, far calls), B the verse (a low horn
+ * lead (1) over a dark pad (2) and a sub bass (3), a quiet low beat (6): four bars of 1/16), C the hunt (a new phrase,
+ * raptors and compys, footsteps, a monster's roar), D the verse again, the giant coming closer (4) and the tyrant's
+ * roar to end it. The creatures (the CALL KIT, 5) call in every bar */
+#define DM_N(s, l, n) {(uint8_t)(s), (uint8_t)(l), (uint8_t)(n)}
+typedef struct { uint8_t s, l, n; } demo_ev_t;          /* a note: its step, its length (steps), its note */
+enum { DC_DM, DC_EB, DC_C, DC_BB, DC_A };
+static const uint8_t DEMO_CH[5][4] = {{50, 53, 57, 38}, {51, 55, 58, 39}, {48, 52, 55, 36}, {46, 50, 53, 34},
+                                      {45, 49, 52, 33}};   /* the pad's three notes, the bass's root */
+static const demo_ev_t DEMO_VERSE[] = {                 /* CANYON HORN, 1/8, D3 .. F4 (B, D) */
+    DM_N(0, 4, 62), DM_N(4, 2, 57), DM_N(6, 2, 60), DM_N(8, 4, 63), DM_N(12, 2, 62), DM_N(14, 2, 58),
+    DM_N(16, 6, 57), DM_N(22, 2, 53), DM_N(24, 2, 55), DM_N(26, 2, 52),
+    DM_N(32, 3, 62), DM_N(35, 1, 65), DM_N(36, 2, 63), DM_N(38, 2, 62), DM_N(40, 4, 58), DM_N(44, 4, 55),
+    DM_N(48, 4, 53), DM_N(52, 2, 50), DM_N(54, 2, 53), DM_N(56, 2, 57)};
+static const demo_ev_t DEMO_HUNT[] = {                  /* (C) */
+    DM_N(0, 2, 53), DM_N(2, 2, 58), DM_N(4, 4, 62), DM_N(8, 4, 60), DM_N(12, 4, 55),
+    DM_N(16, 2, 57), DM_N(18, 2, 62), DM_N(20, 4, 65), DM_N(24, 4, 63), DM_N(28, 2, 62), DM_N(30, 2, 58),
+    DM_N(32, 2, 53), DM_N(34, 2, 58), DM_N(36, 4, 62), DM_N(40, 2, 64), DM_N(42, 2, 62), DM_N(44, 4, 60),
+    DM_N(48, 4, 61), DM_N(52, 4, 64), DM_N(56, 8, 57)};
+/* the CALL KIT: C2 + the creature (eng_saurus.c): 36 BRACHIO, 37 TYRANT ROAR, 38 RAPTOR BARK, 39 RAPTOR CHAT, 40 CREST
+ * HOOT, 41 PTERO SHRIEK, 45 DEEP RUMBLE, 46 TITAN APE, 49 MONSTER ROAR, 50 DISTANT HERD, 51 LOW GROWL, 52 BABY REX,
+ * 54 HADRO HORN, 55 COMPY PACK */
+static const demo_ev_t DEMO_CALL_A[] = {
+    DM_N(0, 3, 45), DM_N(12, 6, 50), DM_N(28, 3, 40), DM_N(40, 6, 36), DM_N(54, 4, 54)};
+static const demo_ev_t DEMO_CALL_B[] = {
+    DM_N(0, 3, 45), DM_N(6, 6, 50), DM_N(12, 3, 40), DM_N(20, 6, 36), DM_N(28, 1, 38), DM_N(29, 2, 39), DM_N(31, 1, 38),
+    DM_N(36, 2, 41), DM_N(42, 5, 51), DM_N(46, 4, 54), DM_N(58, 6, 50)};
+static const demo_ev_t DEMO_CALL_C[] = {
+    DM_N(4, 1, 38), DM_N(5, 2, 39), DM_N(14, 3, 55), DM_N(22, 2, 41), DM_N(30, 3, 52), DM_N(38, 4, 51),
+    DM_N(44, 1, 38), DM_N(46, 1, 38), DM_N(50, 4, 46), DM_N(58, 5, 49)};
+static const demo_ev_t DEMO_CALL_D[] = {
+    DM_N(0, 3, 45), DM_N(6, 6, 50), DM_N(12, 3, 40), DM_N(20, 6, 36), DM_N(28, 1, 38), DM_N(29, 2, 39), DM_N(31, 1, 38),
+    DM_N(36, 2, 41), DM_N(42, 5, 51), DM_N(46, 4, 54), DM_N(58, 6, 37)};
+/* SFX KEYS (eng_sfx.c): 36 thunder, 43 a footstep */
+static const demo_ev_t DEMO_SFX_A[] = {DM_N(0, 6, 36), DM_N(32, 6, 36)};
+static const demo_ev_t DEMO_SFX_C[] = {DM_N(36, 1, 43), DM_N(44, 1, 43), DM_N(52, 1, 43)};
+static const demo_ev_t DEMO_SFX_D[] = {DM_N(0, 6, 36), DM_N(49, 1, 43), DM_N(52, 1, 43), DM_N(55, 1, 43)};
+typedef struct {
+    const demo_ev_t *mel, *call, *sfx;
+    uint8_t nmel, ncall, nsfx, beat;                   /* beat: 0 a kick a bar, 1 the verse's, 2 the hunt's */
+    uint8_t ch[8];
+} demo_sec_t;
+static const demo_sec_t DEMO_SEC[4] = {
+    {0, DEMO_CALL_A, DEMO_SFX_A, 0, NELEM(DEMO_CALL_A), NELEM(DEMO_SFX_A), 0,
+     {DC_DM, DC_DM, DC_EB, DC_DM, DC_DM, DC_DM, DC_EB, DC_C}},
+    {DEMO_VERSE, DEMO_CALL_B, 0, NELEM(DEMO_VERSE), NELEM(DEMO_CALL_B), 0, 1,
+     {DC_DM, DC_EB, DC_DM, DC_C, DC_DM, DC_EB, DC_BB, DC_A}},
+    {DEMO_HUNT, DEMO_CALL_C, DEMO_SFX_C, NELEM(DEMO_HUNT), NELEM(DEMO_CALL_C), NELEM(DEMO_SFX_C), 2,
+     {DC_BB, DC_C, DC_DM, DC_EB, DC_BB, DC_C, DC_A, DC_A}},
+    {DEMO_VERSE, DEMO_CALL_D, DEMO_SFX_D, NELEM(DEMO_VERSE), NELEM(DEMO_CALL_D), NELEM(DEMO_SFX_D), 1,
+     {DC_DM, DC_EB, DC_DM, DC_C, DC_DM, DC_EB, DC_BB, DC_A}}};
+static const uint8_t DEMO_ORDER[6] = {0, 1, 2, 1, 2, 3}; /* the song: A B C B C D, eight bars each */
+UI_SMALL static void demo_note(track_t *t, uint32_t s, uint32_t l, uint32_t note)
+{
+    step_t *st = &t->step[s % NSTEP];
+    uint32_t k;
+    if (st->time != ST_NOTE || st->n >= 4u) {
+        memset(st, 0, sizeof *st);
+        st->time = ST_NOTE;
+    }
+    st->note[st->n++] = (uint8_t)note;
+    st->vel = 96;
+    for (k = 1; k < l && s + k < NSTEP; k++)
+        if (t->step[s + k].time == ST_REST)
+            t->step[s + k].time = ST_TIE;
+}
+UI_SMALL static void demo_events(track_t *t, const demo_ev_t *e, uint32_t n)
+{
+    uint32_t i;
+    for (i = 0; i < n && e; i++)
+        demo_note(t, e[i].s, e[i].l, e[i].n);
+}
+UI_SMALL static void demo_hit(uint32_t s, uint32_t lane, uint32_t lv)
+{
+    dstep_t *d = &TDRUM->dstep[s % NSTEP];
+    d->on[lane >> 3] |= (uint8_t)(1u << (lane & 7u));
+    d->lvl[lane >> 2] = (uint8_t)((d->lvl[lane >> 2] & ~(3u << ((lane & 3u) * 2u))) | lv << ((lane & 3u) * 2u));
+}
+/* section sec (0..3: A..D) of the demo into the working project; boot: at power-on (nothing sounds: the engines
+ * switch at once) */
+UI_SMALL static void demo_fill(int boot, uint32_t sec)
+{
+    static const uint8_t SND[NPART] = {14, 20, 7, 0, 20};   /* CANYON HORN, ICE AGE PAD, SUB BASS, DINO WORLD, CALL KIT */
+    static const uint8_t LVL[NPART] = {92, 108, 84, 84, 96};   /* the roar up front */
+    const demo_sec_t *d = &DEMO_SEC[sec & 3u];
+    uint32_t b, i;
+    set_engine_of(&trk[0], 0);                          /* tracks 1 and 3 on ANALOG: the horn, the bass (as */
+    set_engine_of(&trk[2], 0);                          /* project_new: IRQ off in it) */
+    for (i = 0; i < NPART; i++) {
+        fm1_irq_off();
+        apply_preset_to(&trk[i], SND[i]);
+        if (boot)
+            trk[i].engine = trk[i].eng_req;             /* (nothing sounds yet: no fade) */
+        fm1_irq_on();
+    }
+    fm1_irq_off();
+    for (i = 0; i < NTRK; i++) {
+        if (i < NPART)
+            trk[i].p[P_LEVEL] = LVL[i];
+        steps_clear(&trk[i]);
+        trk[i].p[P_SLEN] = 64;
+        trk[i].p[P_SDIV] = i == TRK_DRUM ? 2 : 1;       /* eight bars of 1/8; the beat four bars of 1/16 */
+    }
+    for (b = 0; b < 8u; b++) {
+        const uint8_t *c = DEMO_CH[d->ch[b]];
+        uint32_t o = b * 8u;
+        for (i = 0; i < 3u; i++)
+            demo_note(&trk[1], o, 7, c[i]);
+        if (d->beat) {
+            demo_note(&trk[2], o, 5, c[3]);
+            demo_note(&trk[2], o + 6u, 2, c[3] + 12u);
+        } else {
+            demo_note(&trk[2], o, 7, c[3]);             /* (the intro: held roots) */
+        }
+    }
+    demo_events(&trk[0], d->mel, d->nmel);
+    demo_events(&trk[3], d->sfx, d->nsfx);
+    demo_events(&trk[4], d->call, d->ncall);
+    for (b = 0; b < 4u; b++) {                          /* a low, slow beat: kick, a soft rim, a conga */
+        uint32_t o = b * 16u;
+        demo_hit(o, 0, d->beat ? LV_NORM : LV_SOFT);
+        if (!d->beat)
+            continue;
+        demo_hit(o + 10u, 0, LV_SOFT);
+        demo_hit(o + 8u, 7, LV_SOFT);
+        demo_hit(o + 6u, 14, LV_GHOST);
+        demo_hit(o + 14u, 14, LV_GHOST);
+        if (d->beat == 2u) {                            /* the hunt: more kick, the toms */
+            demo_hit(o + 3u, 0, LV_GHOST);
+            demo_hit(o + 12u, 10, LV_SOFT);
+            demo_hit(o + 13u, 9, LV_GHOST);
+        }
+    }
+    if (d->beat)
+        demo_hit(60, 9, LV_SOFT), demo_hit(62, 9, LV_NORM);   /* low toms into the next phrase */
+    song.g[G_BPM] = 72;
+    song.g[G_SWING] = 0;
+    song.g[G_DRLVL] = 84;
+    song.sel = 0;
+    fm1_irq_on();
+    sync_reload = 1;
+    ui.force = 1;
+}
+/* TOOLS > DEMO: the four sections into A..D (flash), the song A B C B C D, song mode on; the loop: D */
+UI_SMALL static void demo_song(void)
+{
+    uint32_t k;
+    for (k = 0; k < 4u; k++) {
+        project_new();
+        demo_fill(0, k);
+        transport_req = 0;                              /* (stopped: project_new's stop has nothing to stop) */
+        project_save(k);
+    }
+#if FELUCCA_ARRANGER
+    arrangement.count = (uint8_t)NELEM(DEMO_ORDER);
+    arrangement.loop = 0;
+    for (k = 0; k < NELEM(DEMO_ORDER); k++) {
+        arrangement.entry[k].scene = DEMO_ORDER[k];
+        arrangement.entry[k].bars = 8;
+    }
+    arrangement_save();
+    arrangement_enabled = 1;                            /* PLAY plays the song */
+#endif
+}
+
 static uint8_t kb_down, kb_used;                          /* RAPTOR: KNOB BANK held; a knob assigned meanwhile */
 /* RAPTOR: KNOB BANK held, knob `slot` turned on a page: its parameter becomes that macro of the selected track */
 #if BOARD_SMK37
@@ -809,10 +976,11 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
         }
         if (steps <= 0)
             return;
-        if (ui.arm != 0xE0u + slot) {                     /* one detent arms, a second one within ~1.5 s acts */
+        if (ui.arm != 0xE0u + slot) {                     /* one detent arms, a second one within ~3 s acts */
             ui.arm = (uint8_t)(0xE0u + slot);
-            ui.arm_t = 90;
-            ui_say("AGAIN: ", UP_GO[slot - 1u]);
+            ui.arm_t = ARM_FRAMES;
+            ui_say("TURN AGAIN: ", UP_GO[slot - 1u]);
+            ui.msg_t = ARM_FRAMES;                            /* (the message as long as it is armed) */
             return;
         }
         ui.arm = 0;
@@ -822,10 +990,11 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     if (pg->graph == GR_SLOTS && slot == 1u) {           /* 2.6: KNOB 2 ERASE, a GO button (the slot KNOB 1 picks) */
         if (steps <= 0)
             return;
-        if (ui.arm != 0xE8u) {                            /* one detent arms, a second one within ~1.5 s acts */
+        if (ui.arm != 0xE8u) {                            /* one detent arms, a second one within ~3 s acts */
             ui.arm = 0xE8u;
-            ui.arm_t = 90;
-            ui_say("AGAIN: ", "ERASE");
+            ui.arm_t = ARM_FRAMES;
+            ui_say("TURN AGAIN: ", "ERASE");
+            ui.msg_t = ARM_FRAMES;                            /* (the message as long as it is armed) */
             return;
         }
         ui.arm = 0;
@@ -844,12 +1013,13 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
         ml_knob(TSEL, id);                                /* MIDI LEARN: this parameter (2.6) */
     if (!v)
         return;
-    if (pg->scope == SC_GLOBAL && (id == G_LOAD || id == G_SAVE || id == G_CLRSEQ || id == G_INITSND || id == G_NEWPRJ) &&
-        ui.arm != id) {                                   /* one detent arms, a second one within ~1.5 s acts */
+    if (pg->scope == SC_GLOBAL && (id == G_LOAD || id == G_SAVE || id == G_CLRSEQ || id == G_INITSND || id == G_NEWPRJ || id == G_DEMO) &&
+        ui.arm != id) {                                   /* one detent arms, a second one within ~3 s acts */
         *vp = 0;
         ui.arm = (uint8_t)id;
-        ui.arm_t = 90;
-        ui_say("AGAIN: ", d->label);
+        ui.arm_t = ARM_FRAMES;
+        ui_say("TURN AGAIN: ", id == G_DEMO ? "DEMO OVER A-D" : d->label);   /* (the demo replaces A..D) */
+        ui.msg_t = ARM_FRAMES;                            /* (the message as long as it is armed) */
         return;
     }
     ui.arm = 0;
@@ -888,6 +1058,21 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
 #endif
         project_new();
         ui_message("NEW LOOP, A-D KEPT");
+        break;
+    case G_DEMO:                                        /* PALEOTONE: the demo song (into A-D) */
+        *vp = 0;
+#if FELUCCA_ARRANGER
+        if (song.playing && arrangement_enabled) {
+            ui_message("STOP THE SONG FIRST");
+            break;
+        }
+#endif
+        if (song.playing) {                             /* (A..D are written: stopped only) */
+            ui_message("STOP FIRST");
+            break;
+        }
+        demo_song();
+        ui_message("DEMO SONG: PRESS PLAY");
         break;
     default:
         break;
@@ -1668,8 +1853,19 @@ UI_SMALL static void ui_input(void)
         uint32_t total, cur = preset_pos(&total);
         if (is_drum(TSEL))
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
-        else if (total)
-            preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
+        else if (total) {
+            uint32_t n = (uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total), k, e;
+            char kb[8], nm[13];
+            preset_go(n);
+            e = preset_at(n, &k);                       /* PALEOTONE: the header says the sound and its kind */
+            str_cpy(kb, preset_kind(n), 5);
+            str_cpy(kb + str_len(kb), " ", 2);
+            if (e == NENGINES)
+                up_name(k, nm);
+            else
+                str_cpy(nm, ENGINES[e]->presets[k].name, sizeof nm);
+            ui_say(kb, nm);
+        }
 #if BOARD_SMK37
         pick_open_tmp();                                /* the pad picker, a few seconds, at this sound's page */
 #endif

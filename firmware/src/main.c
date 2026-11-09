@@ -274,6 +274,8 @@ UI_SMALL static void felucca_init(void)
     song.sel = 0;
     song.master_q12 = 2048;
     autosave_resume();                        /* the project as it was left (project.c) */
+    if (!autosave_hash)                       /* PALEOTONE: none (a first power-on): the demo song */
+        demo_fill(1, 3);                      /* (its last section as the loop; TOOLS > DEMO: the song) */
     song.g[G_SYNC] = (int16_t)lights_sync;    /* a setting of the FM-1 (panel.c) */
     song.g[G_MIDI] = (int16_t)lights_mout;
     song.g[G_ROUTE] = (int16_t)lights_min;
@@ -400,7 +402,7 @@ UI_SMALL static void fm1_main(void)
                             *q++ = (char)('0' + p / 10u % 10u);
                         *q++ = (char)('0' + p % 10u);
                         *q = '%';
-                        ui_say("MASTER ", d);
+                        ui_say_v("MASTER ", d);     /* (the header only: no bar over the dials) */
                     }
                     shown = a;
                 }

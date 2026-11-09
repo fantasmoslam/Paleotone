@@ -1,10 +1,11 @@
 # The dino groovebox (a fork of SLOOP Pro 2.8.4, SLOOP on the SMK-37): builds the SMK-37 Elite and FM-1 packages,
-# runs the host tests, and puts the packages and the logs on the branch dino-groovebox-output.
+# runs the host tests, and puts the packages and the logs on the branch dino-groovebox-output (a build of the
+# restyle's work branch: raptor-preview-output).
 name: dino
 
 on:
   push:
-    branches: [dino-groovebox]
+    branches: [dino-groovebox, claude/project-thread-1gloxr]   # (the restyle's branch: its packages on raptor-preview-output)
   workflow_dispatch:
 
 permissions:
@@ -77,6 +78,8 @@ jobs:
         run: |
           mkdir -p /tmp/o && cp -r out/. /tmp/o/ 2>/dev/null || true
           echo "${{ github.sha }} ${{ job.status }}" > /tmp/o/RESULT
-          cd /tmp/o && git init -q -b dino-groovebox-output && git add -A
-          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }}"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" dino-groovebox-output
+          OUT=dino-groovebox-output
+          [ "${{ github.ref_name }}" = dino-groovebox ] || OUT=raptor-preview-output   # a work branch never replaces RAPTOR's own
+          cd /tmp/o && git init -q -b "$OUT" && git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }} (${{ github.ref_name }})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" "$OUT"

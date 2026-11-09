@@ -132,6 +132,7 @@ enum {                          /* global parameters */
                                  * the slot of G_SYNC (a setting of the FM-1), 0x100 | the model (project.c) */
     G_TAPE, G_CRSH,             /* RAPTOR: Paleotone's TAPE / CRSH on the mix (tape.c); in a project G_MIDI's slot */
     G_AMB, G_CRKL,              /* .. and its ambience, level and crackle (ambience.c); in a project G_ROUTE's slot */
+    G_DEMO,                     /* PALEOTONE: TOOLS > DEMO, the demo song (GO; ui_input.c demo_fill; not in a project) */
     G_COUNT
 };
 
@@ -154,6 +155,8 @@ typedef struct {
     uint32_t age;
     uint8_t ring;                /* RAPTOR (Paleotone's GHOULBOX 2.3, ROAR's RING): the melody string's level while the
                                   * drones ring on, 255 full (eng_gurdy.c) */
+    uint8_t kit;                 /* PALEOTONE: SAURUS's CALL = KEYS, this note's creature + 1 (0: the track's own call;
+                                  * eng_saurus.c). In the padding: voice_t keeps its size */
 } voice_t;
 
 typedef struct {                 /* per-voice control-rate modulation, computed in voice.c */

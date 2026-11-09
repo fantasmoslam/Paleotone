@@ -1879,13 +1879,16 @@ int main(int argc, char **argv)
         encs[panel.enc[EN_K2]] = -1; frames(2);
         check(erases == e0 && ui.arm != 0xE8u, "PROJECT, KNOB 2 left: nothing");
         encs[panel.enc[EN_K2]] = 1; frames(2);
-        check(erases == e0 && ui.arm == 0xE8u && !strcmp(ui.msg, "AGAIN: ERASE"), "PROJECT, KNOB 2 one detent: AGAIN: ERASE, nothing erased");
+        check(erases == e0 && ui.arm == 0xE8u && !strcmp(ui.msg, "TURN AGAIN: ERASE"), "PROJECT, KNOB 2 one detent: TURN AGAIN: ERASE, nothing erased");
         ui.force = 1; frame(); ppm("page-project-erase");
         encs[panel.enc[EN_K2]] = 1; frames(2);
         check(erases == e0 + 1u && !ui.arm && !strcmp(ui.msg, "ERASED"), "PROJECT, KNOB 2 again: the slot erased");
         encs[panel.enc[EN_K2]] = 1; frames(100);
         encs[panel.enc[EN_K2]] = 1; frames(2);
-        check(erases == e0 + 1u && ui.arm == 0xE8u, "  the arm runs out (~1.5 s): a detent after it arms again");
+        check(erases == e0 + 2u && !ui.arm, "  RAPTOR: still armed after ~1.5 s (~3 s now): the second detent acts");
+        encs[panel.enc[EN_K2]] = 1; frames(ARM_FRAMES + 10u);
+        encs[panel.enc[EN_K2]] = 1; frames(2);
+        check(erases == e0 + 2u && ui.arm == 0xE8u, "  the arm runs out (~3 s): a detent after it arms again");
         ui.arm = 0; song.g[G_SLOT] = 1;
         go_home(); frames(4);
     }
@@ -2233,6 +2236,58 @@ int main(int argc, char **argv)
         set_engine_of(&trk[0], 0); apply_preset_to(&trk[0], 0); trk[0].engine = 0;
         go_home(); frames(4);
         check(!mac_on, "MACROS: off on a page button / HOME");
+    }
+    {   /* PALEOTONE: the demo song (TOOLS > DEMO): every track sounds, soloed, and the mix does not clip
+         * (outdir/demo-1..6.wav: section D's tracks soloed; demo-A..D.wav: each section's mix, 28 s: the eight bars at
+         * 72 BPM), and TOOLS > DEMO stores the four sections and the song A B C B C D */
+        static const char *const TN[NTRK + 4] = {"LEAD", "PAD", "BASS", "SFX", "CALLS", "DRUMS",
+                                                 "MIX A", "MIX B", "MIX C", "MIX D"};
+        uint32_t tk, f, j, clips = 0;
+        char path[512];
+        FILE *w;
+        transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
+        for (tk = 0; tk < NTRK + 4u; tk++) {
+            double e2 = 0;
+            project_new();
+            demo_fill(1, tk < NTRK ? 3u : tk - NTRK);
+            song.solo = (uint8_t)(tk < NTRK ? 1u << tk : 0u);
+            transport_req = 1;
+            w = 0;
+            {
+                if (tk < NTRK)
+                    snprintf(path, sizeof path, "%s/demo-%u.wav", outdir, tk + 1u);
+                else
+                    snprintf(path, sizeof path, "%s/demo-%c.wav", outdir, (char)('A' + tk - NTRK));
+                if ((w = fopen(path, "wb")))
+                    wav_hdr(w, 28u * FS);
+            }
+            for (f = 0; f < 28u * FS; f += CTL) {
+                int32_t o[2 * CTL];
+                mix_block(o, CTL);
+                for (j = 0; j < CTL; j++) {
+                    e2 += (double)o[2 * j] * o[2 * j];
+                    clips += tk >= NTRK && (o[2 * j] >= 32700 || o[2 * j] <= -32700);
+                    if (w)
+                        wav_put(w, o[2 * j], o[2 * j + 1]);
+                }
+            }
+            if (w)
+                fclose(w);
+            transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
+            e2 = sqrt(e2 / (28.0 * FS));
+            printf("ui: DEMO: %-8s RMS %6.0f\n", TN[tk], e2);
+            check(e2 > 150.0, TN[tk]);
+        }
+        check(clips < 200u, "DEMO: the mix (almost) never clips");
+        {
+            uint32_t s0 = saves;
+            demo_song();
+            check(saves == s0 + 4u && arrangement.count == 6u && arrangement.entry[2].scene == 2u &&
+                  arrangement.entry[5].scene == 3u && arrangement.entry[5].bars == 8u && arrangement_enabled,
+                  "DEMO: TOOLS > DEMO stores A..D and the song A B C B C D, song mode on");
+            arrangement_enabled = 0;
+        }
+        song.solo = 0;
     }
     printf("ui: %s\n", fails ? "FAILED" : "pages, layers (punch, steps, erase, roll, key, mix), layer lock, song layer, REC hold, drums, REC, 20000-frame fuzz PASS");
     return fails;

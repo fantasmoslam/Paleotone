@@ -772,7 +772,7 @@ static void scramble_light(void)
         case 6: a[0] = (uint8_t)t; a[1] = (uint8_t)rn(NSTEP); a[2] = (uint8_t)rn(4); cmdv(ED_FILL_SET, a, 3); break;
         case 7: a[0] = (uint8_t)rn(NENGINES); a[1] = (uint8_t)rn(32); cmdv(ED_PRESET, a, 2); break;
         case 8: a[0] = (uint8_t)t; cmdv(ED_TRACK, a, 1); break;
-        case 9: a[0] = 1; a[1] = (uint8_t)rn(G_COUNT); if (a[1] == G_SAVE || a[1] == G_LOAD || a[1] == G_NEWPRJ || a[1] == G_CLRSEQ || a[1] == G_INITSND) a[1] = G_BPM; v14(a + 2, rval()); cmdv(ED_SET, a, 4); break;
+        case 9: a[0] = 1; a[1] = (uint8_t)rn(G_COUNT); if (a[1] == G_SAVE || a[1] == G_LOAD || a[1] == G_NEWPRJ || a[1] == G_DEMO || a[1] == G_CLRSEQ || a[1] == G_INITSND) a[1] = G_BPM; v14(a + 2, rval()); cmdv(ED_SET, a, 4); break;
         case 10: a[0] = 12; a[1] = (uint8_t)rn(16); a[2] = (uint8_t)rn(16); a[3] = (uint8_t)rn(8); cmdv(ED_LIVE, a, 4); break;
         default: midi_rand(); aud(1); break;
         }

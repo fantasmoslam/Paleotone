@@ -596,6 +596,13 @@ UI_SMALL static void tiles_draw(const tile_t *tl, uint32_t *cache)
     if (!ui.force && sig == *cache)
         return;
     *cache = sig;
+    {
+    int32_t mw = 56;                                    /* PALEOTONE: the labels in M when all 16 fit (one size) */
+#ifdef PALEO_CLAYBORN
+    for (r = 0; r < 16u; r++)
+        if (text_w(&FONT_M, tl[r].lab) > 56)
+            mw = 0;
+#endif
     for (r = 0; r < 4u; r++) {
         cv_begin(240, 36, C_BLACK);
         for (c = 0; c < 4u; c++) {
@@ -605,7 +612,7 @@ UI_SMALL static void tiles_draw(const tile_t *tl, uint32_t *cache)
             cv_rect(x, 2, 56, 32, t->bg);
             if (t->top)
                 cv_rect(x, 2, 56, 3, t->top);
-            te_text_c(x + 28, 9, t->lab, t->fg);
+            te_text_cw(x + 28, 9, t->lab, t->fg, mw);
             for (m = 0; m < t->marks; m++)
                 cv_rect(x + 22 + (int32_t)m * 5, 27, 3, 3, t->fg);
             if (t->tag)
@@ -623,6 +630,7 @@ UI_SMALL static void tiles_draw(const tile_t *tl, uint32_t *cache)
             }
         }
         cv_blit(0, 40 + r * 36);
+    }
     }
 }
 
@@ -674,6 +682,11 @@ UI_SMALL static void layer_title(const char *name, const char *sub, uint16_t col
     *cache = sig;
     cv_begin(240, 40, C_BLACK);
     cv_text(4, 2, &FONT_L, name, col);
+#ifdef PALEO_CLAYBORN
+    if (text_w(&FONT_M, ui.msg_t ? ui.msg : sub) <= 226 - text_w(&FONT_L, name) - (locked ? 40 : 0))
+        cv_text(4 + text_w(&FONT_L, name) + 10, 8, &FONT_M, ui.msg_t ? ui.msg : sub, ui.msg_t ? C_WHITE : TE_G3);
+    else
+#endif
     cv_text(4 + text_w(&FONT_L, name) + 10, 18, &FONT_S, ui.msg_t ? ui.msg : sub, ui.msg_t ? C_WHITE : TE_G3);
     if (locked) {                                         /* locked open (HOME): any button lets it go */
         int32_t w = (int32_t)text_w(&FONT_S, "LOCK") + 8;
@@ -905,7 +918,7 @@ UI_SMALL static void layer_screen_draw(void)
                 str_cpy(sub + str_len(sub), "--", 3);
             }
         } else {
-            lab[1] = "div", lab[2] = "swing", lab[3] = "steps";
+            lab[1] = "div", lab[2] = PALEO_SWING_LAB, lab[3] = "steps";
             str_cpy(v[1], N_SDIV[t->p[P_SDIV] % NDIV_STEP], 8);
             swing_str(v[2], t->p[P_SSWING]);
             fmt_int(v[3], t->p[P_SLEN]);
@@ -961,12 +974,22 @@ UI_SMALL static void layer_screen_draw(void)
         str_cpy(sub, "mute  solo  fill  tap", sizeof sub);
         for (i = 0; i < NTRK; i++) {
             int m = trk[i].p[P_MUTE] != 0, so = (song.solo >> i) & 1u;
+#ifdef PALEO_CLAYBORN
+            str_cpy(tl[i].lab, "m 1", 8);               /* PALEOTONE: short, so it shows big */
+            tl[i].lab[2] = (char)('1' + i);
+#else
             str_cpy(tl[i].lab, "mute 1", 8);
             tl[i].lab[5] = (char)('1' + i);
+#endif
             tl[i].bg = m ? TE_G2 : TE_COL[TSLOT(i)];
             tl[i].fg = m ? TE_G3 : C_BLACK;
+#ifdef PALEO_CLAYBORN
+            str_cpy(tl[NTRK + i].lab, "s 1", 8);
+            tl[NTRK + i].lab[2] = (char)('1' + i);
+#else
             str_cpy(tl[NTRK + i].lab, "solo 1", 8);
             tl[NTRK + i].lab[5] = (char)('1' + i);
+#endif
             tl[NTRK + i].bg = so ? C_WHITE : TE_G1;
             tl[NTRK + i].fg = so ? C_BLACK : TE_G3;
             tl[NTRK + i].top = TE_DIM[TSLOT(i)];
@@ -1090,7 +1113,7 @@ UI_SMALL static void hold_screen_draw(void)
         str_cpy(b, "section A", sizeof b);
         b[8] = (char)('A' - 1 + clamp(song.g[G_SLOT], 1, 4));
     }
-    te_text_c(120, 4, b, TE_G4);
-    te_text_c(120, 30, "keep holding", TE_G3);
+    te_text_cw(120, 6, b, TE_G4, 236);
+    te_text_cw(120, 34, "keep holding", TE_G3, 236);
     cv_blit(0, 160);
 }

@@ -95,6 +95,20 @@ UI_SMALL static void te_text_c(int32_t cx, int32_t y, const char *s, uint16_t c)
 {
     cv_text(cx - text_w(&FONT_S, s) / 2, y, &FONT_S, s, c);
 }
+/* PALEOTONE (bigger text): centred on cx in Clayborn M where it is w wide or less (4 rows up: the capitals' middle
+ * where Terminus's is), else as te_text_c */
+UI_SMALL static void te_text_cw(int32_t cx, int32_t y, const char *s, uint16_t c, int32_t w)
+{
+#ifdef PALEO_CLAYBORN
+    int32_t mw = text_w(&FONT_M, s);
+    if (mw <= w) {
+        cv_text(cx - mw / 2, y - 4, &FONT_M, s, c);
+        return;
+    }
+#endif
+    (void)w;
+    te_text_c(cx, y, s, c);
+}
 
 /* RAPTOR (the owner): a knob as a pie, a full disc at the top of its range that loses a wedge from the top, both
  * sides at once (a Pac-Man dying), down to nothing at the bottom; a dim ring shows its size. ratio 0..1000, -1 = a
@@ -135,7 +149,7 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
 {
     uint32_t k;
     (void)val;
-    sig = studio_hash(sig, ui.msg_t ? ui.msg : "");
+    sig = studio_hash(sig, ui.msg_t && !ui.msg_v ? ui.msg : "");
     for (k = 0; k < 4u; k++) {
         sig = studio_hash(sig * 7u + (uint32_t)ratio[k] + (ui.hot_t && ui.hot_col == k) * 5003u, lab[k]);
     }
@@ -143,18 +157,26 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
         return;
     *cache = sig;
     cv_begin(240, 240u - (uint32_t)y0, C_BLACK);
-    if (ui.msg_t) {                                     /* a message: a white bar */
-        cv_rect(0, 10, 240, 32, C_WHITE);
-        cv_text((240 - text_w(&FONT_S, ui.msg)) / 2, 18, &FONT_S, ui.msg, C_BLACK);
+    if (ui.msg_t && !ui.msg_v) {                        /* a message: a white bar (a knob's value: the header's) */
+        cv_rect(0, 6, 240, 40, C_WHITE);
+        text_big_c(120, 26, ui.msg, C_BLACK, 234);       /* (PALEOTONE: as big as it fits) */
         cv_blit(0, (uint32_t)y0);
         return;
     }
-    for (k = 0; k < 4u; k++) {
-        int32_t cx = 30 + 60 * (int32_t)k;
-        if (!lab[k][0])
-            continue;
-        te_pie(cx, 19, 18, ratio[k], TE_COL[k], TE_G3);
-        te_text_c(cx, 39, lab[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4);   /* (white while turned) */
+    {   /* PALEOTONE: the labels in M when all four fit their column (one size across the row), else Terminus */
+        int32_t mw = 58;
+#ifdef PALEO_CLAYBORN
+        for (k = 0; k < 4u; k++)
+            if (text_w(&FONT_M, lab[k]) > 58)
+                mw = 0;
+#endif
+        for (k = 0; k < 4u; k++) {
+            int32_t cx = 30 + 60 * (int32_t)k;
+            if (!lab[k][0])
+                continue;
+            te_pie(cx, 19, 18, ratio[k], KN_COL[k], TE_G3);
+            te_text_cw(cx, 39, lab[k], ui.hot_t && ui.hot_col == k ? C_WHITE : TE_G4, mw);   /* (white while turned) */
+        }
     }
     cv_blit(0, (uint32_t)y0);
 }
@@ -333,7 +355,11 @@ UI_SMALL static void studio_tracks_draw(void)
     {   /* KNOB 1 swing (the global groove), 2 level, 3 steps, 4 pan of the selected track */
         track_t *t = TSEL;
         static char v[4][8];
+#ifdef PALEO_CLAYBORN
+        static const char *const lab[4] = {"swng", "level", "steps", "pan"};   /* (short: the row in M) */
+#else
         static const char *const lab[4] = {"swing", "level", "steps", "pan"};
+#endif
         const char *val[4] = {v[0], v[1], v[2], v[3]};
         int32_t ratio[4];
         uint32_t lvl = is_drum(t) ? song.g[G_DRLVL] : t->p[P_LEVEL];
@@ -418,12 +444,12 @@ UI_SMALL static void drum_screen_draw(void)
         cv_begin(240, 44, C_BLACK);
         cv_rect(2, 4, 34, 34, TE_DRUM);
         fmt_int(b, (int32_t)kit + 1);
-        cv_text(19 - text_w(&FONT_S, b) / 2, 13, &FONT_S, b, C_BLACK);
+        cv_text(19 - text_w(&FONT_L, b) / 2, 4, &FONT_L, b, C_BLACK);   /* (PALEOTONE: large) */
         cv_text(44, 6, &FONT_L, DRUM_KIT_NAMES[kit], C_WHITE);
-        cv_text(194, 1, &FONT_S, "grid", drum_page == 0 ? C_WHITE : TE_G3);
-        cv_text(194, 15, &FONT_S, "kit", drum_page == 1 ? C_WHITE : TE_G3);
-        cv_text(194, 29, &FONT_S, "sound", drum_page == 2 ? C_WHITE : TE_G3);
-        cv_rect(188, 5 + (int32_t)drum_page * 14, 3, 9, TE_DRUM);
+        cv_text(190, 1, &FONT_S, "grid", drum_page == 0 ? C_WHITE : TE_G3);
+        cv_text(190, 15, &FONT_S, "kit", drum_page == 1 ? C_WHITE : TE_G3);
+        cv_text(190, 29, &FONT_S, "sound", drum_page == 2 ? C_WHITE : TE_G3);
+        cv_rect(184, 5 + (int32_t)drum_page * 14, 3, 9, TE_DRUM);
         cv_blit(0, 40);
     }
     sig = drum_page + drum_lane * 7u + drum_cursor * 101u + song.playing * 71u + len * 3u + ui.sheet * 7919u +
@@ -487,7 +513,7 @@ UI_SMALL static void drum_screen_draw(void)
                 }
                 if (drum_page == 2u && (drum_tune[i] || drum_dec[i]))
                     cv_rect(x + 3, y + 3, 4, 4, TE_DRUM);
-                te_text_c(x + 28, y + 4, LANE_SHORT[i], pad_lit[i] ? C_BLACK : i == drum_lane ? C_WHITE : TE_G3);
+                te_text_cw(x + 28, y + 4, LANE_SHORT[i], pad_lit[i] ? C_BLACK : i == drum_lane ? C_WHITE : TE_G3, 56);
             }
         }
         cv_blit(0, 84);
