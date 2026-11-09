@@ -2235,9 +2235,9 @@ int main(int argc, char **argv)
         check(!mac_on, "MACROS: off on a page button / HOME");
     }
     {   /* PALEOTONE: the demo song (TOOLS > DEMO): every track sounds, soloed, and the mix does not clip
-         * (outdir/demo-1..6.wav: section D's tracks soloed; demo-A..D.wav: each section's mix, 28 s: the eight bars at
-         * 72 BPM), and TOOLS > DEMO stores the four sections and the song A B C B C D */
-        static const char *const TN[NTRK + 4] = {"LEAD", "PAD", "BASS", "SFX", "CALLS", "DRUMS",
+         * (outdir/demo-1..6.wav: section D's tracks soloed; demo-A..D.wav: each section's mix, 24 s: the eight bars at
+         * 80 BPM), and TOOLS > DEMO stores the four sections and the song A B C B C D */
+        static const char *const TN[NTRK + 4] = {"LEAD", "PAD", "BASS", "HARP", "CALLS", "DRUMS",
                                                  "MIX A", "MIX B", "MIX C", "MIX D"};
         uint32_t tk, f, j, clips = 0;
         char path[512];
@@ -2256,9 +2256,9 @@ int main(int argc, char **argv)
                 else
                     snprintf(path, sizeof path, "%s/demo-%c.wav", outdir, (char)('A' + tk - NTRK));
                 if ((w = fopen(path, "wb")))
-                    wav_hdr(w, 28u * FS);
+                    wav_hdr(w, 24u * FS);
             }
-            for (f = 0; f < 28u * FS; f += CTL) {
+            for (f = 0; f < 24u * FS; f += CTL) {
                 int32_t o[2 * CTL];
                 mix_block(o, CTL);
                 for (j = 0; j < CTL; j++) {
@@ -2271,7 +2271,7 @@ int main(int argc, char **argv)
             if (w)
                 fclose(w);
             transport_req = 2; for (j = 0; j < 40u; j++) { int32_t o[2 * CTL]; mix_block(o, CTL); }
-            e2 = sqrt(e2 / (28.0 * FS));
+            e2 = sqrt(e2 / (24.0 * FS));
             printf("ui: DEMO: %-8s RMS %6.0f\n", TN[tk], e2);
             check(e2 > 150.0, TN[tk]);
         }
