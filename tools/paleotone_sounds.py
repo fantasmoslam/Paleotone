@@ -29,7 +29,7 @@ SET_MAP = {0: 0, 1: 0, 2: 1, 3: 2, 4: 0, 5: 7, 6: 8, 7: 9, 8: 3, 9: 4, 10: 5, 11
 MARK = "/* Paleotone's presets (tools/paleotone_sounds.py: do not edit here) */"
 OWN = "/* RAPTOR's own"                                  # RAPTOR's presets after Paleotone's (kept by main)
 # RAPTOR's own presets in the PRESETS list (ui.c BANK): (kind, engine, name), after Paleotone's of that engine
-OWN_BANK = [("BK_PAD", "0", "RAPTOR SWARM"), ("BK_PAD", "0", "BLOOD MOON"), ("BK_PAD", "0", "OBSIDIAN"),
+OWN_BANK = [("BK_PAD", "0", "BLOOD MOON"), ("BK_PAD", "0", "RAPTOR SWARM"), ("BK_PAD", "0", "OBSIDIAN"),
             ("BK_LEAD", "0", "NIGHT STALKER")]
 
 

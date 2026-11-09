@@ -299,15 +299,17 @@ static const preset_t ANALOG_PRESETS[] = {
     {"STAR SKY", {2, 40, 90, 0, 70, 15, 0, 70}, {95, 100, 120, 120}, 0, 0, FX(0, 110, 40, 127), PAT(5)},
     {"ICE AGE PAD", {4, 50, 70, 30, 38, 25, 8, 50}, {120, 100, 124, 120}, -10, 0, FX(0, 100, 20, 127), PAT(17)},
     /* DINOBOX's end */
-    /* RAPTOR's own (tools/paleotone_sounds.py keeps them, after Paleotone's): fat, dark pads that can lead */
-    {"RAPTOR SWARM", {0, 24, 92, 4, 50, 30, 34, 64}, {28, 90, 112, 78}, 26, 0, FX(12, 60, 20, 70), PAT(5),
-     XP(P_LD_FLT + 1, 8, P_LRATE + 1, 26)},
-    {"BLOOD MOON", {4, 16, 84, 6, 40, 46, 56, 60}, {40, 95, 116, 84}, 30, 0, FX(24, 40, 24, 80), PAT(5),
-     XP(P_LD_FLT + 1, 14, P_LRATE + 1, 18)},
-    {"OBSIDIAN", {5, 34, 70, 0, 46, 52, 48, 80}, {18, 85, 104, 70}, 34, 0, FX(20, 30, 30, 66), PAT(5),
-     XP(P_LD_FLT + 1, 20, P_LRATE + 1, 22)},
-    {"NIGHT STALKER", {0, 18, 80, 8, 38, 60, 70, 90}, {6, 78, 100, 52}, 40, 1, FX(24, 12, 40, 50), PAT(4),
-     XP(P_VOICE + 1, V_UNISON, P_DETUNE + 1, 40, P_GLIDE + 1, 22)},
+    /* RAPTOR's own (tools/paleotone_sounds.py keeps them, after Paleotone's): big, slow analog pads in the
+     * CS-80 manner (two oscillators a few cents apart, a slow swell that opens the filter as it rises, a vibrato
+     * that fades in, wide chorus and a long hall), dark enough to lead with */
+    {"BLOOD MOON", {0, 10, 64, 0, 28, 26, 8, 50}, {104, 100, 112, 108}, 50, 0, FX(0, 85, 26, 116), PAT(5),
+     XP(P_LD_PIT + 1, 3, P_LRATE + 1, 89, P_LFADE + 1, 90)},
+    {"RAPTOR SWARM", {4, 22, 72, 0, 64, 10, 0, 40}, {100, 100, 118, 112}, 12, 0, FX(0, 120, 22, 124), PAT(5),
+     XP(P_LD_SHP + 1, 34, P_LRATE + 1, 30)},
+    {"OBSIDIAN", {6, 10, 84, 0, 18, 50, 34, 70}, {112, 100, 120, 120}, 30, 0, FX(10, 60, 20, 127), PAT(5),
+     XP(P_LD_FLT + 1, 20, P_LRATE + 1, 14)},
+    {"NIGHT STALKER", {5, 40, 70, 0, 54, 40, 60, 80}, {4, 80, 100, 60}, 36, 1, FX(24, 12, 44, 60), PAT(4),
+     XP(P_VOICE + 1, V_UNISON, P_DETUNE + 1, 30, P_GLIDE + 1, 20, P_LD_PIT + 1, 2)},
 };
 
 /* (after Clipper 1.2) UNISON (voice.c unison_spread): both oscillators moved by r (Q32) of a turn of the note,
