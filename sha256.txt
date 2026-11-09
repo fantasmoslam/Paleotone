@@ -1,0 +1,2 @@
+2f1a97d69d6508823db938054bd77d9b7eeb7e77014d00dfb9b1180f72373fa6  out/felucca.fwsc
+ecb78580461aae4e3934cda273dc5bd48fdce336ff05c6c55301f932a9f80bc4  out/sloop-pro-elite.fwsc
