@@ -79,7 +79,7 @@ jobs:
           mkdir -p /tmp/o && cp -r out/. /tmp/o/ 2>/dev/null || true
           echo "${{ github.sha }} ${{ job.status }}" > /tmp/o/RESULT
           OUT=dino-groovebox-output
-          [ "${{ github.ref_name }}" = dino-groovebox ] || OUT=raptor-preview-output   # a work branch never replaces RAPTOR's own
+          [ "${{ github.ref_name }}" = dino-groovebox ] || OUT=raptor-look-output   # (the look only, for a bisect)
           cd /tmp/o && git init -q -b "$OUT" && git add -A
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }} (${{ github.ref_name }})"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" "$OUT"
