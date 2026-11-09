@@ -1,0 +1,26 @@
+loader: image 8360 B at 0x1c0a800, bss end 0x1c0f480
+loader: ota.bin 7108 B
+font S: ter-u16b.bdf 16px h 16, digit adv 8, 5376 B
+font L: ter-u16b.bdf 16px h 32, digit adv 16, the S bitmaps at 2x (0 B)
+font Clayborn 24px: Terminus for 3 characters
+font C2: Clayborn 24px h 32, digit adv 14, 5092 B
+font Clayborn 36px: Terminus for 3 characters
+font C3: Clayborn 36px h 48, digit adv 20, 11310 B
+font Clayborn 20px: Terminus for 3 characters
+font M: Clayborn 20px h 24, digit adv 11, 2655 B
+font Clayborn 16px: Terminus for 56 characters
+font CS: Clayborn 16px h 16, digit adv 9, 5546 B
+icons: 86 of 86 (192x72 L), 3096 B
+tables: /__w/Paleotone/Paleotone/build/gen/felucca_tables.h
+generated waves into /__w/Paleotone/Paleotone/build/genwav
+samples: 7 sets, 25 zones, 204748 B ADPCM, SLICE BREAK 44100 samples
+drum kits: 32 synthesised -> /__w/Paleotone/Paleotone/build/gen/felucca_drumkits.h
+fm6 patches: 15 -> /__w/Paleotone/Paleotone/build/gen/felucca_fm6.h
+logo: RAPTOR splash 240x240, 14235 B RLE -> /__w/Paleotone/Paleotone/build/gen/sloop_logo.h
+  ok    .ram_text: 947 insns, no calls
+  ok    .c1_text: 160 B, the second core's loop in RAM
+  ok    image 581536 B; RAM .data+.bss 91148 B of 98304; lowram 26832 B of 29320; pool 278868 B of 344064
+  ok    register access: hal/ only (src/, loader/ clean)
+app      /__w/Paleotone/Paleotone/build/felucca.bin  581536 B
+loader   /__w/Paleotone/Paleotone/build/loader/ota.bin  7108 B
+package  /__w/Paleotone/Paleotone/build/sloop-pro-elite.fwsc  651224 B, identity SMK-37 Elite_900, board smk37
