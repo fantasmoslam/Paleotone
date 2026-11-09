@@ -228,6 +228,10 @@ static void pick_draw(void)
             int32_t x = (int32_t)(w & 7u) * 30, sel = pg.first + w == cur;
             pick_name(pg.first + w, nm);
             pick_abbr(nm, l1, l2);
+            while (l1[0] && text_w(&FONT_S, l1) > 26)   /* RAPTOR in Clayborn: a wide M or W, two letters (WOW, MAM) */
+                l1[str_len(l1) - 1u] = 0;
+            while (l2[0] && text_w(&FONT_S, l2) > 26)
+                l2[str_len(l2) - 1u] = 0;
             cv_rect(x + 1, y0, 28, 78, sel ? C_WHITE : kc);   /* filled like a button: the kind's colour, the current one white */
             cv_text(x + 15 - text_w(&FONT_S, l1) / 2, y0 + 20, &FONT_S, l1, C_BLACK);
             cv_text(x + 15 - text_w(&FONT_S, l2) / 2, y0 + 42, &FONT_S, l2, C_BLACK);

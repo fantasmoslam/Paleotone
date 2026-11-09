@@ -1,5 +1,6 @@
 # The dino groovebox (a fork of SLOOP Pro 2.8.4, SLOOP on the SMK-37): builds the SMK-37 Elite and FM-1 packages,
-# runs the host tests, and puts the packages and the logs on the branch dino-groovebox-output.
+# runs the host tests, and puts the packages and the logs on the branch dino-groovebox-output (a build of the
+# restyle's work branch: raptor-preview-output).
 name: dino
 
 on:

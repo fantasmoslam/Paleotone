@@ -32,7 +32,7 @@ static uint8_t sync_reload;                  /* engine / preset / project / user
 #define VAL(c) ((c) == ui.hot_col && ui.hot_t ? C_WHITE : KN_COL[(c) & 3u])   /* LIVE: one colour per knob */
 #define RATIO(d, v) ((d)->max > (d)->min ? ((int32_t)(v) - (d)->min) * 1000 / ((d)->max - (d)->min) : -1)
 /* layout: four 60 px columns, 4 px inset */
-/* Terminus 8x16 (S) and 16x32 (L) */
+/* Clayborn (gfx.c PALEO_CLAYBORN): S 16 px rows, L 32 */
 #define Y_HEAD 0
 #define H_HEAD 20
 #define H_TOP 28                      /* RAPTOR: the pages' header, its text twice as big (the menu keeps H_HEAD) */
