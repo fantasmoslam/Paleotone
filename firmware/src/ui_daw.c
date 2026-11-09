@@ -531,7 +531,7 @@ static void daw_head(const char *tag, uint16_t tc)
     fmt_int(b + 3, daw_ch);
     cv_text(x + 10, 3, &FONT_S, b, C_WHITE);
     cv_text(236 - text_w(&FONT_S, daw_local ? "LOCAL ON" : "LOCAL OFF"), 3, &FONT_S, daw_local ? "LOCAL ON" : "LOCAL OFF",
-            daw_local ? TE_COL[2] : TE_G3);
+            daw_local ? KN_COL[0] : TE_G3);
     cv_rect(0, 22, 240, 1, TE_G2);
 }
 
@@ -565,7 +565,7 @@ static void daw_main_draw(void)
                 daw_val_text(i, v, &e, msg, val, &vl);
                 cv_text(4, 28, &FONT_S, nm, TE_G4);
                 cv_text(236 - text_w(&FONT_S, vl), 28, &FONT_S, vl, TE_G3);
-                cv_text(4, 46, &FONT_L, msg, C_WHITE);
+                cv_text(4, 46, &FONT_L, msg, C_BIGV);
                 if (i < DAW_N && e.type != DT_OFF && e.type != DT_MMC) {
                     daw_chan_text(b, e.ch);
                     cv_text(4, 80, &FONT_S, i == DAW_KEYS ? "" : b, TE_G3);
@@ -574,7 +574,7 @@ static void daw_main_draw(void)
                     daw_chan_text(b, 0);
                     cv_text(4, 80, &FONT_S, b, TE_G3);
                 }
-                cv_text(236 - text_w(&FONT_L, val), 46, &FONT_L, val, TE_COL[2]);
+                cv_text(236 - text_w(&FONT_L, val), 46, &FONT_L, val, KN_COL[0]);
                 {                                 /* the value as a bar (a bend: from the middle) */
                     int32_t w = 0, x0 = 4;
                     if (i == DAW_KEYS) {
@@ -588,7 +588,7 @@ static void daw_main_draw(void)
                     }
                     cv_rect(4, 98, 232, 4, TE_G1);
                     if (w)
-                        cv_rect(x0, 98, w, 4, TE_COL[2]);
+                        cv_rect(x0, 98, w, 4, KN_COL[0]);
                 }
             } else {
                 cv_text(4, 34, &FONT_L, "TOUCH A", C_WHITE);
@@ -615,12 +615,12 @@ static void daw_main_draw(void)
                 daw_ent_t e = daw_ent(DAW_KNOB0 + k);
                 int32_t x = (int32_t)p * 30;
                 char l[4] = {'K', (char)('1' + p), 0, 0};
-                cv_text(x + 15 - text_w(&FONT_S, l) / 2, 40, &FONT_S, l, TE_COL[p & 3u]);
+                cv_text(x + 15 - text_w(&FONT_S, l) / 2, 40, &FONT_S, l, KN_COL[p & 3u]);
                 cv_rect(x + 9, 58, 12, 42, TE_G1);
                 if (e.type == DT_CC && !daw_rel) {
                     h = daw_kval[k] * 42u / 127u;
                     if (h)
-                        cv_rect(x + 9, 100 - (int32_t)h, 12, (int32_t)h, TE_COL[p & 3u]);
+                        cv_rect(x + 9, 100 - (int32_t)h, 12, (int32_t)h, KN_COL[p & 3u]);
                 }
                 if (e.type == DT_CC)
                     fmt_int(b, e.num);
@@ -647,7 +647,7 @@ static void daw_edit_draw(void)
         cv_begin(240, 120, C_BLACK);
         if (!half) {
             char b[24];
-            daw_head("EDIT MAP", TE_COL[2]);
+            daw_head("EDIT MAP", KN_COL[0]);
             if (daw_edit == 1u) {
                 cv_text(4, 34, &FONT_L, "TOUCH A", C_WHITE);
                 cv_text(4, 66, &FONT_L, "CONTROL", C_WHITE);
@@ -665,7 +665,7 @@ static void daw_edit_draw(void)
                         str_cpy(msg + str_len(msg), "  ", 3);
                         str_cpy(msg + str_len(msg), b, sizeof msg - str_len(msg));
                     }
-                    cv_text(4, 90, &FONT_S, msg, TE_COL[2]);
+                    cv_text(4, 90, &FONT_S, msg, KN_COL[0]);
                 }
             }
         } else {
@@ -674,7 +674,7 @@ static void daw_edit_draw(void)
                 for (r = 0; r < 3u; r++) {        /* KNOB 1..3: TYPE, NUMBER, CHANNEL */
                     char k[4] = {'K', knob_digit(EN_K1 + r), 0, 0}, v[20];
                     int32_t y = (int32_t)r * 30, xv;
-                    xv = cv_text(4, y + 8, &FONT_S, k, TE_COL[r & 3u]);
+                    xv = cv_text(4, y + 8, &FONT_S, k, KN_COL[r & 3u]);
                     cv_text(xv + 6, y + 8, &FONT_S, RN[r], TE_G4);
                     if (r == 0u)
                         str_cpy(v, DT_NAME[e->type % DT_N], sizeof v);
@@ -693,9 +693,9 @@ static void daw_edit_draw(void)
                     if ((r == 1u && (e->type == DT_OFF || e->type == DT_BEND)) || (r == 2u && e->type == DT_OFF))
                         str_cpy(v, "-", sizeof v);
                     if (text_w(&FONT_L, v) <= 150)
-                        cv_text(236 - text_w(&FONT_L, v), y, &FONT_L, v, C_WHITE);
+                        cv_text(236 - text_w(&FONT_L, v), y, &FONT_L, v, C_BIGV);
                     else
-                        cv_text(236 - text_w(&FONT_S, v), y + 8, &FONT_S, v, C_WHITE);
+                        cv_text(236 - text_w(&FONT_S, v), y + 8, &FONT_S, v, C_BIGV);
                 }
                 cv_text(4, 100, &FONT_S, "OCT+ NEXT  OCT- DONE", TE_G3);
             } else {

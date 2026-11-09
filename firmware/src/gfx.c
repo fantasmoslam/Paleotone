@@ -28,10 +28,10 @@ typedef struct {               /* proportional, see tools/gen_font.py */
                                 * bit first, each glyph from a whole byte); 0 = 2 pixels a byte, alpha 0..15 */
 } felucca_font_t;
 #include "felucca_font.h"
-/* PALEOTONE (FM-1): one typeface, Clayborn (tools/gen_font.py), condensed: FONT_S its 16 px cut, FONT_M 20 px,
- * FONT_L 24 px, text_k's k = 3 and 4 its 36 px cut and the 24 px one at 2x (Terminus only for what Clayborn has no
- * glyph for). (PALEO_TERMINUS_L: the font tests' Terminus S and L) */
-#if !(defined(BOARD_SMK37) && BOARD_SMK37) && !defined(PALEO_TERMINUS_L)
+/* RAPTOR (SMK-37), as PALEOTONE (FM-1): one typeface, Clayborn (tools/gen_font.py), condensed: FONT_S its 16 px
+ * cut, FONT_M 20 px, FONT_L 24 px, text_k's k = 3 and 4 its 36 px cut and the 24 px one at 2x (Terminus only for what
+ * Clayborn has no glyph for). (PALEO_TERMINUS_L: the font tests' Terminus S and L) */
+#if !defined(PALEO_TERMINUS_L)
 #define PALEO_CLAYBORN 1
 #define FONT_L FONT_C2
 #define FONT_S FONT_CS                      /* PALEOTONE: one typeface: the small text in Clayborn too (16 px) */
@@ -66,13 +66,14 @@ static uint16_t pal_hi = 0xFFFFu;        /* the accent: white unless a theme say
 typedef struct {
     const char *name;
     uint16_t c[5];
+    uint16_t kn;               /* RAPTOR, as PALEOTONE's THEME: the knobs' one colour (labels, gauges, pies) */
 } palette_t;
 static const palette_t PALETTES[] = {       /* RAPTOR: bone, jungle, lava, ice, tar (the number stays: 0..4) */
-    {"BONE", {RGB(58, 46, 34), RGB(104, 86, 64), RGB(156, 136, 108), RGB(204, 188, 156), RGB(240, 230, 204)}},
-    {"JUNGLE", {RGB(20, 44, 18), RGB(40, 82, 30), RGB(78, 128, 46), RGB(130, 180, 70), RGB(196, 228, 120)}},
-    {"LAVA", {RGB(60, 16, 4), RGB(112, 32, 6), RGB(176, 60, 10), RGB(236, 104, 20), RGB(255, 170, 70)}},
-    {"ICE AGE", {RGB(18, 36, 50), RGB(36, 70, 92), RGB(70, 118, 146), RGB(128, 178, 204), RGB(210, 236, 248)}},
-    {"TAR", {RGB(38, 36, 34), RGB(76, 72, 68), RGB(124, 118, 110), RGB(180, 172, 160), RGB(222, 216, 204)}},
+    {"BONE", {RGB(58, 46, 34), RGB(104, 86, 64), RGB(156, 136, 108), RGB(204, 188, 156), RGB(240, 230, 204)}, RGB(244, 122, 36)},
+    {"JUNGLE", {RGB(20, 44, 18), RGB(40, 82, 30), RGB(78, 128, 46), RGB(130, 180, 70), RGB(196, 228, 120)}, RGB(240, 184, 48)},
+    {"LAVA", {RGB(60, 16, 4), RGB(112, 32, 6), RGB(176, 60, 10), RGB(236, 104, 20), RGB(255, 170, 70)}, RGB(255, 224, 120)},
+    {"ICE AGE", {RGB(18, 36, 50), RGB(36, 70, 92), RGB(70, 118, 146), RGB(128, 178, 204), RGB(210, 236, 248)}, RGB(96, 214, 255)},
+    {"TAR", {RGB(38, 36, 34), RGB(76, 72, 68), RGB(124, 118, 110), RGB(180, 172, 160), RGB(222, 216, 204)}, RGB(244, 122, 36)},
 };
 #define NPALETTES (sizeof(PALETTES) / sizeof(PALETTES[0]))
 static uint16_t pal[5];
@@ -117,8 +118,8 @@ static uint16_t TE_MID[6] = {RGB(80, 126, 40), RGB(26, 112, 126), RGB(160, 116, 
                              RGB(106, 72, 160), RGB(160, 80, 126)};
 static uint16_t TE_DIM[6] = {RGB(40, 62, 20), RGB(14, 56, 62), RGB(80, 58, 14), RGB(86, 28, 8),
                              RGB(52, 36, 80), RGB(80, 40, 62)};
-/* RAPTOR, as PALEOTONE: the four knobs' colours (labels, gauges, pies) and their one third: the palette's brightest
- * step, one colour for the four, as Paleotone's phosphor screens (the track colours stay the tracks') */
+/* RAPTOR, as PALEOTONE: the four knobs' colours (labels, gauges, pies) and their one third: the palette's knob colour
+ * (palette_t kn: BONE's lava), one colour for the four, as Paleotone's phosphor screens (the track colours stay the tracks') */
 static uint16_t KN_COL[4], KN_DIM[4];
 #define C_BIGV C_AMB                 /* the big values of a page: the palette's text step, the accent for the touched */
 static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
@@ -218,7 +219,7 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
     te_g[2] = rgb565_scale(pal[2], 5u, 6u);
     te_g[3] = rgb565_scale(pal[3], 9u, 10u);
     for (k = 0; k < 4u; k++) {
-        KN_COL[k] = pal[4];
+        KN_COL[k] = cu ? pal[4] : PALETTES[i % NPALETTES].kn;   /* (a theme: its brightest step) */
         KN_DIM[k] = rgb565_scale(KN_COL[k], 1u, 3u);
     }
 }
