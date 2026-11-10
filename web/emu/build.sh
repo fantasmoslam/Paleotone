@@ -14,7 +14,7 @@ python3 tools/gen_words.py firmware/words.tsv web/words build/gen/ann_words.h >/
 emcc -O2 -ffp-contract=off -std=gnu99 -Wall -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable \
     -DEN_HOST -DEN_WEB "-DEN_VERSION=\"$(printf %s "${EN_VERSION:-DEV}" | tr a-z A-Z)\"" -Ifirmware/src -Ifirmware/src/dsp -Ibuild/gen \
     --no-entry -sSTANDALONE_WASM -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=33554432 -sFILESYSTEM=0 \
-    -o build/emu/amb.wasm web/emu/amb_web.c firmware/src/dsp/amb.c
+    -o build/emu/amb.wasm web/emu/amb_web.c firmware/src/dsp/amb.c firmware/src/pt/pt.c
 cp web/emu/index.html web/emu/worklet.js build/emu/
 READER="${FM1_READER:-../fm1-reader/web}"
 rm -rf build/emu/reader

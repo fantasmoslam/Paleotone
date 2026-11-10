@@ -42,6 +42,8 @@ CFLAGS = ["-Os", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-fu
 FPU = ["-mcpu=r3", "-mfprev1", "-ffp-contract=off"]
 # the instrument: a separate unit at -O2
 O2_UNITS = ["dsp/amb.c"]
+# (T-WRECKS) Paleotone's sounds: a unit of its own at -Os, as Paleotone builds them
+OS_UNITS = ["pt/pt.c"]
 LINE = re.compile(r"^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2} )+)\s*\t(.*)$")
 
 # SDK files of AC79NN_SDK_V1.2.1_2023-12-13 (the tested version)
@@ -220,6 +222,10 @@ def build_app():
     for u in O2_UNITS:
         o = OUT / "o2" / (u.replace("/", "_")[:-2] + ".o")
         units.append(("cc", *o2, "-c", FW / "src" / u, "-o", o))
+        objs.append(o)
+    for u in OS_UNITS:
+        o = OUT / "o2" / (u.replace("/", "_")[:-2] + ".o")
+        units.append(("cc", *flags, "-c", FW / "src" / u, "-o", o))
         objs.append(o)
     tc_all(*units)
     elf = OUT / "amb.elf"

@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "amb.h"
+#include "../../firmware/src/pt/pt.h"          /* (T-WRECKS: Paleotone's sounds after each layer's own voices) */
 
 static int fails;
 #define CHECK(c, ...)                                                                                              \
@@ -949,7 +950,7 @@ static void test_fm_seq(void)
     static const int8_t RUN[16] = {0, 2, 4, 7, 9, 7, 4, 2, 0, 4, 7, 11, 7, 4, 2, 0};
     char t[16];
     int k, i;
-    CHECK(en_param_info(P_SVOICE)->hi == 16 && en_param_info(P_S2VOICE)->hi == 17, "test_fm_seq_listed: hi %d %d",
+    CHECK(en_param_info(P_SVOICE)->hi == 16 + PT_NSEQ && en_param_info(P_S2VOICE)->hi == 17 + PT_NSEQ2, "test_fm_seq_listed: hi %d %d",
           en_param_info(P_SVOICE)->hi, en_param_info(P_S2VOICE)->hi);
     for (k = 0; k < 11; k++) {
         en_param_text(P_SVOICE, 6 + k, t);
@@ -1114,7 +1115,7 @@ static void ch_solo(int v, int col)
 static void test_fm_drone_none(void)
 {
     char t[16];
-    CHECK(en_param_info(P_CVOICE)->hi == 5, "test_fm_drone_none: hi %d", en_param_info(P_CVOICE)->hi);
+    CHECK(en_param_info(P_CVOICE)->hi == 5 + PT_NDRONE, "test_fm_drone_none: hi %d", en_param_info(P_CVOICE)->hi);
     en_param_text(P_CVOICE, 5, t);
     CHECK(!strcmp(t, "Choir"), "test_fm_drone_none: drone voice 5 %s", t);
 }
@@ -1130,7 +1131,7 @@ static void test_fm_lead(void)
                                 P_LDREV, P_LDIN, P_LDENS, P_VIB};
     char t[16];
     int k, i;
-    CHECK(en_param_info(P_LVOICE)->hi == 9, "test_fm_lead_listed: hi %d (the FM voices 5..7, Choir 8, Piano 9)",
+    CHECK(en_param_info(P_LVOICE)->hi == 9 + PT_NLEAD, "test_fm_lead_listed: hi %d (the FM voices 5..7, Choir 8, Piano 9)",
           en_param_info(P_LVOICE)->hi);
     for (k = 0; k < 3; k++) {
         en_param_text(P_LVOICE, 5 + k, t);

@@ -8,7 +8,9 @@ CC="${CC:-cc} -D_GNU_SOURCE"          # (Linux hides clock_gettime and friends u
 mkdir -p build/gen build/host
 [ -f build/gen/felucca_font.h ] || python3 tools/gen_font.py build/gen/felucca_font.h >/dev/null
 python3 tools/gen_words.py firmware/words.tsv web/words build/gen/ann_words.h >/dev/null
+# (T-WRECKS) Paleotone's sounds (firmware/src/pt/pt.c): Paleotone's code, its own unit, its own warnings
+$CC -O2 -ffp-contract=off -std=c99 -w -DEN_HOST -c -o build/host/pt.o firmware/src/pt/pt.c
 $CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wno-unused-function -Wno-unused-parameter \
     -DEN_HOST -Ifirmware/src -Ifirmware/src/dsp -Ibuild/gen -o build/host/amb_host host/amb_host.c \
-    firmware/src/dsp/amb.c -lm
+    firmware/src/dsp/amb.c build/host/pt.o -lm
 echo "host: build/host/amb_host"

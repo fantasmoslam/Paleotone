@@ -3,6 +3,29 @@
 #include "amb.h"
 #include "fastmath.h"
 #include "seq.c"
+#include "../pt/pt.h"                          /* (T-WRECKS) Paleotone's sounds as the layers' voices (pt.c) */
+
+/* (T-WRECKS) a layer's voice knob: its own voices, then Paleotone's (pt.h PT_N[]: value - its own count). PT_OF: the
+ * Paleotone sound a value is, -1 one of its own */
+#define EN_NCV_ALL (EN_NCV + PT_NDRONE)
+#define EN_NSV_ALL (EN_NSV + PT_NSEQ)
+#define EN_NBV_ALL (EN_NBV + PT_NLEAD)
+#define EN_NS2V_ALL (EN_NS2V + PT_NSEQ2)
+#define PT_OF(v, own) ((v) >= (own) ? (v) - (own) : -1)
+static int pt_layer_of(int p)                  /* the pt.h layer a voice parameter is, -1 none */
+{
+    return p == P_CVOICE ? PT_DRONE : p == P_SVOICE ? PT_SEQ : p == P_LVOICE ? PT_LEAD : p == P_S2VOICE ? PT_SEQ2 : -1;
+}
+/* (T-WRECKS) Paleotone's sounds against the layers' own voices: the gain on pt_render's output (a full Paleotone voice
+ * about 1.0) that puts a typical one of the layer's list level with its own (tests/host/amb_test.c: by RMS) */
+#define PT_G_DRONE 3.6f
+#define PT_G_SEQ 0.73f
+#define PT_G_LEAD 3.7f
+static float pt_buf[256];                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
+static int pt_own_n(int p)                     /* its own voices' count */
+{
+    return p == P_CVOICE ? EN_NCV : p == P_SVOICE ? EN_NSV : p == P_LVOICE ? EN_NBV : EN_NS2V;
+}
 
 /* (BERLIN: DUB-1's stabs, bass, pings, drums, phrase plan and section machine are gone, and with them the draws
  * its dead parts made on the shared dice: the arc (the arc's sections, the filter motion) is the only movement) */
@@ -33,12 +56,12 @@ static const en_param_t PARAMS[P_NPARAMS] = {
     {"Echo", 0, 100, 55},     {"Echo time", 0, 5, 3},   {"Reverb", 0, 100, 35},   {"Feedback", 0, 100, 60},
     {"Cutoff", 0, 100, 45},   {"Decay", 0, 100, 35},    {"Sweep", 0, 100, 50}, {"Motion", 0, 100, 50},
     {"Tune", -50, 50, 0},     {"MIDI out", 0, 1, 1},    {"Tempo", 60, 160, 96},  {"Root", 0, 11, 5},
-    {"Mode", 0, EN_NMODES - 1, MODE_DORIAN}, {"Seq oct", -2, 2, 0}, {"Chord voice", 0, EN_NCV - 1, 0},
+    {"Mode", 0, EN_NMODES - 1, MODE_DORIAN}, {"Seq oct", -2, 2, 0}, {"Chord voice", 0, EN_NCV_ALL - 1, 0},
     {"Seq2 oct", -2, 1, -1},   {"Grid", 0, 1, 0},      {"Transpose", 0, 2, 0},
     {"Repeat A time", 0, 5, 1},    {"Repeat B", 0, 100, 0},
     {"Length", 3, 16, 8},    {"Atmosphere", 0, 100, 25},  {"Repeat B time", 0, 5, 2},     {"Size", 0, 100, 55},
     {"Cloud", 0, 100, 30},
-    {"Seq voice", 0, EN_NSV - 1, 0}, {"Lead voice", 0, EN_NBV - 1, 0}, {"Seq2 voice", 0, EN_NS2V - 1, 1},
+    {"Seq voice", 0, EN_NSV_ALL - 1, 0}, {"Lead voice", 0, EN_NBV_ALL - 1, 0}, {"Seq2 voice", 0, EN_NS2V_ALL - 1, 1},
     {"Attack", 0, 100, 40},   {"Colour", -50, 50, 0},   {"Resonance", -50, 50, 0}, {"Release", 0, 100, 50},
     {"Pedal", 0, 100, 70},    {"Seq reverb", 0, 100, 50}, {"Seq echo", 0, 100, 50}, {"Lead reverb", 0, 100, 90},
     {"Lead oct", -2, 1, 0},   {"Vibrato", 0, 100, 40},  {"Lead echo", 0, 100, 90}, {"Glide", 0, 100, 25},
@@ -79,6 +102,7 @@ int en_voice_shake_n(int p)
     case P_SVOICE: return EN_SV_FM;
     case P_S2VOICE: return EN_S2V_FM;
     case P_LVOICE: return EN_BV_FM;
+    case P_CVOICE: return EN_NCV;                /* (T-WRECKS: its own, not Paleotone's) */
     default: return en_param_info(p)->hi - en_param_info(p)->lo + 1;
     }
 }
@@ -290,7 +314,9 @@ void en_param_text(int i, int v, char *b)
 {
     static const char *const ONOFF[2] = {"Off", "On"};
     const char *s = 0;
-    if (i == P_ETIME)
+    if (pt_layer_of(i) >= 0 && v >= pt_own_n(i))   /* (T-WRECKS) a Paleotone sound: its name */
+        s = pt_name(pt_layer_of(i), v - pt_own_n(i));
+    else if (i == P_ETIME)
         s = ETIME_NAME[(unsigned)v < 6u ? v : 0];
     else if (i == P_MIDI)
         s = ONOFF[v ? 1 : 0];
@@ -809,8 +835,11 @@ static void drone_off(int b)                     /* a bank dies away: its notes 
         return;
     dr_on[b] = 0;
     dr_midi_off(b);
+    if (!dr_on[b ^ 1])
+        pt_notes_off(PT_DRONE);                  /* (T-WRECKS: a Paleotone sound's notes let go: its release rings) */
 }
 
+static void pt_drone_on(void);
 static void drone_chord(void)                    /* the chord as voiced (stab[].note), swelling in on the other bank */
 {
     static const float PAN[NDR] = {-0.45f, 0.4f, -0.15f, 0.2f, 0.0f};
@@ -836,6 +865,19 @@ static void drone_chord(void)                    /* the chord as voiced (stab[].
     dr_on[nb] = 1;
     dr_midi[nb] = (uint8_t)dr_heard();
     dr_bank = (uint8_t)nb;
+    if (pt_is(PT_DRONE))
+        pt_drone_on();
+}
+
+/* (T-WRECKS) the chord on the Drone's Paleotone sound: its four notes (stab[]), or its root alone on a mono sound (a
+ * ROAR drone: its own fifth and drone under it); the chord before let go, its release under the new one */
+static void pt_drone_on(void)
+{
+    const int k = pt_is(PT_DRONE) - 1, n = pt_mono(PT_DRONE, k) ? 1 : EN_NPAD;
+    int i;
+    pt_notes_off(PT_DRONE);
+    for (i = 0; i < n; i++)
+        pt_note_on(PT_DRONE, stab[i].note, 80, 0);
 }
 
 static void voice_chord(void)
@@ -1606,6 +1648,60 @@ static void ks_strike(pluck_t *v, int16_t *line)
 #endif
 }
 
+/* (T-WRECKS) a sequence on a Paleotone sound: its notes go there, each let go after the length Decay gives a pluck
+ * (its T60), its MIDI note-off then; NPTG at once a sequence (the oldest let go for a new one) */
+#define NPTG 6
+static uint8_t ptg_note[2][NPTG];
+static uint32_t ptg_left[2][NPTG];
+static void ptg_end(int l, int i)
+{
+    ptg_left[l][i] = 0;
+    pt_note_off(l ? PT_SEQ2 : PT_SEQ, ptg_note[l][i]);
+    midi(l ? 0x83u : 0x81u, ptg_note[l][i], 0);
+}
+static void ptg_all(int l)                       /* every note of the sequence's let go */
+{
+    int i;
+    for (i = 0; i < NPTG; i++)
+        if (ptg_left[l][i])
+            ptg_end(l, i);
+}
+static void ptg_run(int l, uint32_t n)
+{
+    int i;
+    for (i = 0; i < NPTG; i++)
+        if (ptg_left[l][i]) {
+            if (ptg_left[l][i] > n)
+                ptg_left[l][i] -= n;
+            else
+                ptg_end(l, i);
+        }
+}
+static void pt_pluck(int l, int n, int vel, int rep)
+{
+    const float adec = l ? sq2_adec : sq_adec;
+    int i, f = 0;
+    for (i = 0; i < NPTG; i++)                   /* (the same note again, or a free place, or the oldest) */
+        if (ptg_left[l][i] && ptg_note[l][i] == n) {
+            ptg_end(l, i);
+            f = i;
+            break;
+        } else if (!ptg_left[l][i] || ptg_left[l][i] < ptg_left[l][f])
+            f = i;
+    if (ptg_left[l][f])
+        ptg_end(l, f);
+    pt_note_on(l ? PT_SEQ2 : PT_SEQ, n, vel, 0);
+    ptg_note[l][f] = (uint8_t)n;
+    ptg_left[l][f] = (uint32_t)(6.9f / fm_maxf(1.0f - adec, 1e-5f)) + 1u;
+    en_loop_glow[l] = 1.0f;
+    hit(1, (float)vel * (1.0f / 127.0f));
+    if (rep)
+        en_seq_reps[l]++;
+    else
+        en_seq_hits[l]++;
+    midi(l ? 0x93u : 0x91u, (uint32_t)n, (uint32_t)vel);
+}
+
 static void pluck_voice(int l, int n, int vel, int rep)   /* rep: a repeat, panned across from the note */
 {
     int i, best = 0;
@@ -1613,6 +1709,10 @@ static void pluck_voice(int l, int n, int vel, int rep)   /* rep: a repeat, pann
     pluck_t *v;
     if (!sq_audible(l) || vel <= 0)
         return;
+    if (pt_is(l ? PT_SEQ2 : PT_SEQ)) {
+        pt_pluck(l, n, vel, rep);
+        return;
+    }
     for (i = 0; i < NPLUCK; i++) {               /* a free voice, or the quietest */
         float a = pluck[i].on ? pluck[i].amp : -1.0f;
         if (a < lo)
@@ -2036,11 +2136,15 @@ int en_lead_idea(int8_t *off, uint8_t *dur)
 
 static int ld_audible(void) { return lead_vol > 0.0f && !(mutes & EN_M_BASS); }
 
+static uint8_t pt_ld_keep;                       /* (T-WRECKS) 1: lead_off from lead_note, the Paleotone note let go
+                                                  * once the next has begun (a mono sound glides there) */
 static void lead_off(void)                       /* the note let go */
 {
     if (lead.on) {
         lead.on = 0;
         midi(0x82, lead.note, 0);
+        if (!pt_ld_keep)
+            pt_note_off(PT_LEAD, lead.note);
     }
     en_lead_deg = -1;
 }
@@ -3101,10 +3205,15 @@ static void ld_seed(void)
 
 static void lead_note(int n)                     /* the next note: legato (it glides there), or from silence */
 {
-    const int legato = lead.on;
+    const int legato = lead.on, prev = lead.note;
+    pt_ld_keep = 1;
     lead_off();
-    if (!ld_audible())
+    pt_ld_keep = 0;
+    if (!ld_audible()) {
+        if (legato)
+            pt_note_off(PT_LEAD, prev);
         return;
+    }
     if (!legato && lead.env < 0.05f)
         lead.cur = (float)n;                     /* (from silence: no glide) */
     if ((unsigned)par[P_LVOICE] < BV_CHOIR && par[P_LVOICE] >= BV_FM0) {   /* (an FM voice: its recipe from the top;
@@ -3118,6 +3227,11 @@ static void lead_note(int n)                     /* the next note: legato (it gl
         pn_note(n, 1.0f);                        /* (a piano's note: its own voice, ringing on; not legato) */
     lead.note = (uint8_t)n;
     lead.on = 1;
+    if (pt_is(PT_LEAD)) {                        /* (T-WRECKS) a Paleotone sound: the note, then the last let go */
+        pt_note_on(PT_LEAD, n, 100, 0);
+        if (legato && prev != n)
+            pt_note_off(PT_LEAD, prev);
+    }
     lead.vt = 0.0f;
     lead.fenv = 1.0f;
     hit(2, 0.8f);
@@ -3915,6 +4029,17 @@ static void apply(int p, int v)
         break;
     default: break;
     }
+    if (pt_layer_of(p) >= 0) {                   /* (T-WRECKS) the layer's Paleotone sound, or none */
+        const int l = pt_layer_of(p), k = PT_OF(par[p], pt_own_n(p));
+        if (k != pt_is(l) - 1) {
+            if (l == PT_SEQ || l == PT_SEQ2)
+                ptg_all(l == PT_SEQ2);           /* (its notes' MIDI let go) */
+            pt_quiet(l);                         /* (what it played stops: the layer's own voice, or the new sound) */
+            pt_sound(l, k);
+            if (l == PT_DRONE && k >= 0 && en_playing && dr_on[dr_bank])
+                pt_drone_on();                   /* (the chord as it sounds, on the new sound) */
+        }
+    }
 }
 
 static int deg_dim(int d)                       /* the scale's chord on degree d has a diminished fifth */
@@ -4004,6 +4129,9 @@ static void quiet(void)
             pluck[i].on = 0;
             midi(pluck[i].layer ? 0x83u : 0x81u, pluck[i].note, 0);
         }
+    ptg_all(0), ptg_all(1);                      /* (T-WRECKS) Paleotone's sounds quiet too */
+    for (i = 0; i < PT_NLAYER; i++)
+        pt_quiet(i);
     notes_off();
 }
 
@@ -4011,6 +4139,7 @@ static void ch_gt_init(void);
 void en_init(void)
 {
     int i;
+    pt_init();                                   /* (T-WRECKS) Paleotone's sounds: no layer on one yet */
     for (i = 0; i <= SN; i++)
         sint[i] = fm_sinf((float)i * (FM_TWO_PI / (float)SN));
     for (i = 0; i <= SN; i++)
@@ -5666,6 +5795,21 @@ static void render_plucks(uint32_t n)           /* (and Pluck's strings: render_
             midi(v->layer ? 0x83u : 0x81u, v->note, 0);
         }
     }
+    for (i = 0; i < 2; i++) {                    /* (T-WRECKS) the sequences on Paleotone's sounds */
+        const float g = (i ? g1 : g0) * PT_G_SEQ, es = 1.2f * (sq_echo[i] + fx_rep * (2.5f - sq_echo[i])),
+                    pl = i ? 0.7071f : 0.8526f, pr = i ? 0.7071f : 0.5225f;   /* (the Sequence a little left, as its notes) */
+        uint32_t j;
+        ptg_run(i, n);
+        if (!pt_render(i ? PT_SEQ2 : PT_SEQ, pt_buf, n))
+            continue;
+        for (j = 0; j < n; j++) {
+            const float x = pt_buf[j] * g;
+            mixl[j] += x * pl;
+            mixr[j] += x * pr;
+            rsend[j] += x * 0.35f * sq_rev[i];
+            esend[j] += x * es;
+        }
+    }
 }
 
 /* (BERLIN) the Drone's sound: its two banks, each voice low-passed (Colour), into a bus; Strings through the
@@ -5888,6 +6032,14 @@ static void render_drone(uint32_t n)
     float c[4], cf1[4], cf2[4];
     uint32_t j;
     int b, i;
+    if (pt_is(PT_DRONE)) {                       /* (T-WRECKS) a Paleotone sound: it, through the phaser and the sends */
+        ch_live = 0;
+        if (!pt_render(PT_DRONE, drl, n))
+            return;
+        for (j = 0; j < n; j++)
+            drr[j] = drl[j] *= g * PT_G_DRONE;
+        goto bus;
+    }
     if (!dr_on[0] && !dr_on[1] && dr_lvl[0] <= 0.0f && dr_lvl[1] <= 0.0f) {
         ch_live = 0;                             /* (Choir from rest when it next sounds) */
         return;
@@ -5958,6 +6110,7 @@ static void render_drone(uint32_t n)
                 ens_ph2 -= 1.0f;
         }
     }
+bus:
     if (ph_depth > 0.005f) {                     /* the phaser */
         int ch;
         for (ch = 0; ch < 2; ch++) {
@@ -6046,6 +6199,19 @@ static void render_lead(uint32_t n)
                 tone = ld_tone * fo_mul(FO_LEAD);   /* (Tone, moved by the filter motion) */
     uint32_t j;
     float dt = 0.0f;
+    if (pt_is(PT_LEAD)) {                        /* (T-WRECKS) a Paleotone sound: it alone, at the Lead's place and sends */
+        const int any = pt_render(PT_LEAD, pt_buf, n);
+        for (j = 0; j < n; j++) {
+            const float a = any ? pt_buf[j] * g * PT_G_LEAD : 0.0f;
+            lead.env += ((lead.on ? 1.0f : 0.0f) - lead.env) * (lead.on ? ld_att : 0.00008f);   /* (the meter's) */
+            mixl[j] += a * gl;
+            mixr[j] += a * gr;
+            rsend[j] += 0.45f * ld_rev * a;
+            esend[j] += 0.6f * ld_echo * a;
+        }
+        en_bass_level = lead.env;
+        return;
+    }
     if (pn_render(n)) {                          /* (the Piano's notes ringing, whichever voice the Lead is on now) */
         const float a_lp = fm_clampf(tone, 0.08f, 1.0f);
         float pk = 0.0f;
