@@ -4,7 +4,9 @@
  * The files in this folder are Paleotone's synth: its engines, voices, parameters and presets, from
  * github.com/fantasmoslam/paleotone at 6f027f0 (on SLOOP and Felucca, by Leo Kuroshita and the others named in each
  * file), as they are there, but for:
- *   core.h        NSTEP may be set before it (here 16: no patterns are played, ~6 KB of RAM less)
+ *   core.h        NSTEP may be set before it (here 16: no patterns are played, ~6 KB of RAM less); the parts (trk)
+ *                 may go in a section of the includer's (here the pool)
+ *   engines.c     the big engines' state (eng_arena) for the first ENG_ARENAS parts (here the four layers')
  *   eng_sample.c  a stub: the SAMPLE engine's recordings (205 KB) are not built; engine 4 keeps its number, silent
  *   eng_grain.c   a stub: GRAIN reads those recordings; engine 8 keeps its number, silent
  *   felucca_*.h   the tables Paleotone's build generates (tools/gen_tables.py, gen_fm6_patches.py, gen_drumkits.py)
@@ -20,6 +22,12 @@
 #define bootguard pt_bootguard       /* (core.h's; the firmware's is its own) */
 #ifndef NSTEP
 #define NSTEP 16
+#endif
+#define ENG_ARENAS PT_NLAYER         /* (engines.c: the big engines' state, the four layers' parts only) */
+#ifdef EN_HOST
+#define TRK_SECTION
+#else
+#define TRK_SECTION __attribute__((section(".pool")))   /* (core.h's parts: RAM's .bss is full) */
 #endif
 #include "felucca_tables.h"
 #include "libc.c"

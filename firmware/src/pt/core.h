@@ -372,7 +372,10 @@ typedef struct {
     int32_t batt_raw;            /* smoothed ADC ch3 (battery divider), 0 = not read yet */
 } song_t;
 
-static track_t trk[NTRK];        /* the instrument: three parts and the drum track */
+#ifndef TRK_SECTION                /* (T-WRECKS: pt.c puts it in the pool, RAM's .bss being full) */
+#define TRK_SECTION
+#endif
+static track_t trk[NTRK] TRK_SECTION;   /* the instrument: three parts and the drum track */
 static song_t song;
 
 /* The transport clock (seq.c runs it). One unit = one sample at 1 BPM: a beat is BEAT_U units at any

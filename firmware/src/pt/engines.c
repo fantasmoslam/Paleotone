@@ -51,7 +51,11 @@ typedef union {
     struct sfx_part sfx;                 /* eng_sfx.c: each voice's envelope, sweep, LFO and thump */
     drum_lane_t drum[DV_NLANE];          /* eng_drum.c: Paleotone's DRUM, its eight lanes */
 } eng_arena_t;
-static eng_arena_t eng_arena[NPART] __attribute__((section(".pool")));
+#ifndef ENG_ARENAS                 /* (T-WRECKS: pt.c sets 4, its four layers; the parts after them have none: an engine
+                                    * that needs one is not offered there) */
+#define ENG_ARENAS NPART
+#endif
+static eng_arena_t eng_arena[ENG_ARENAS] __attribute__((section(".pool")));
 static uint8_t eng_arena_own[NPART];            /* the engine + 1 whose state is in it, 0 = none */
 #ifdef ARENA_STATS
 static uint32_t eng_arena_claims, eng_arena_bad;   /* host tests: claims, accesses by an engine the part does not play */
@@ -59,7 +63,7 @@ static uint32_t eng_arena_claims, eng_arena_bad;   /* host tests: claims, access
 static void *eng_arena_of(const track_t *t, uint32_t eng)
 {
     uint32_t p = (uint32_t)(t - trk);
-    if (p >= NPART)
+    if (p >= ENG_ARENAS)
         return 0;
 #ifdef ARENA_STATS
     if (t->engine != eng)
@@ -82,8 +86,8 @@ static int phys_render_draws(const track_t *t, int32_t model)   /* model: the MO
 {
     uint32_t p = (uint32_t)(t - trk), md = (uint32_t)model % PM_COUNT, big = md == PM_SYMP, i;
     uint32_t sz = big ? PHYS_SLOT_BIG : PHYS_SLOT_SMALL;
-    const uint8_t *a = (const uint8_t *)&eng_arena[p % NPART];
-    if (p >= NPART)
+    const uint8_t *a = (const uint8_t *)&eng_arena[p % ENG_ARENAS];
+    if (p >= ENG_ARENAS)
         return 0;
     if (eng_arena_own[p] != ENGI_PHYS + 1u || phys_lay[p] != big + 1u)
         return 1;

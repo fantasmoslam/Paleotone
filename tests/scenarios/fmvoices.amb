@@ -53,8 +53,8 @@ said VOICE Piano
 expect par33 16
 turn ALGO 1
 wait 300
-said VOICE 2600
-expect par33 0
+said VOICE Kalimba
+expect par33 17
 # Sequence 2: from Moog (1), six on to the first FM voice, then its last
 tap SEQ
 wait 300
@@ -70,7 +70,7 @@ expect par35 16
 spin ALGO -9
 wait 300
 expect par35 7
-# the Drone: none (the user, 2026-10-30): Choir its last, one turn on from it Organ again
+# the Drone: none (the user, 2026-10-30): Choir its last own voice, one turn on Paleotone's first (T-WRECKS)
 tap ENV
 wait 300
 turn ALGO 5
@@ -79,8 +79,8 @@ said VOICE Choir
 expect par22 5
 turn ALGO 1
 wait 300
-said VOICE Organ
-expect par22 0
+said VOICE Tundra
+expect par22 6
 # the Lead: from Odyssey, five on
 tap LFO
 wait 300
@@ -108,5 +108,5 @@ said VOICE Piano
 expect par34 9
 turn ALGO 1
 wait 300
-said VOICE Odyssey
-expect par34 0
+said VOICE Mammoth
+expect par34 10
