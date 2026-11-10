@@ -6,6 +6,8 @@ wait 300
 turn PRESET 5
 wait 500
 expect piece 5
+tap HOME
+wait 300
 spin K3 55
 wait 300
 expect par15 100
@@ -57,6 +59,8 @@ expect litbtn13 0
 # (~196 s: from home, so it may roll at once) shifted again; Motion to 0 (HOME's KNOB 3): home at once
 wait 30000
 expect s2shift !=0
+tap HOME
+wait 300
 tap HOME
 wait 300
 spin K3 -100

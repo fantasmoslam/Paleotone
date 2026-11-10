@@ -6,6 +6,8 @@ wait 300
 expect par20 5
 tap HOME
 wait 200
+tap HOME
+wait 200
 expect view 18
 spin K2 -12
 expect par19 0

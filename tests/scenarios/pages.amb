@@ -4,6 +4,10 @@
 wait 200
 listen
 wait 300
+expect view 7
+said Mix page: Drone 60, Seq 70, Lead 40, Seq 2 60
+tap HOME
+wait 300
 expect view 0
 said Nachtfahrt page: Filter Off, Evolve 40, Motion 45, Drift
 tap HOME

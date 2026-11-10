@@ -65,7 +65,7 @@ said WALK Home: stays near home
 expect par88 0
 tap HOME
 wait 300
-expect view 0
+expect view 7
 # the next chord (EDIT held): all up a slot; slot 1 is the gap now (the Fm9 holds), the walk wrote slot 8
 press EDIT
 wait 700

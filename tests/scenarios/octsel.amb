@@ -48,6 +48,9 @@ expect par29 6
 # now: homesel.amb) and the Key page (no tempo), HOME held (no tempo any more), Space, PERFORM (it stays)
 tap HOME
 wait 300
+expect view 7
+tap HOME
+wait 300
 expect view 0
 spin SELECT 4
 wait 200

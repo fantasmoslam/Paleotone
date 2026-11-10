@@ -3,6 +3,9 @@
 # play the Lead meanwhile; PERFORM's Energy knob shows the same value. Timewind (the tempo 96, the levels 60 70 40 60)
 wait 300
 listen
+expect view 7
+tap HOME
+wait 300
 expect view 0
 peakreset
 key w2 down

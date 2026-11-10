@@ -60,7 +60,7 @@ static int next_page(int v)                      /* (BERLIN) a layer's button ag
 static int atm_view(int v) { return v == V_NSND || v == V_NSND2 || v == V_AMOVE; }   /* (the Atmosphere's pages) */
 static int page_of(int v)                        /* a sound page: its layer's; the Echo page: Space's */
 {
-    return v == V_KEY ? V_DUB : v == V_ESND ? V_SPACE : v == V_NSND2 || v == V_AMOVE ? V_NSND : v == V_ARC ? V_SETUP
+    return v == V_KEY || v == V_MIX ? V_DUB : v == V_ESND ? V_SPACE : v == V_NSND2 || v == V_AMOVE ? V_NSND : v == V_ARC ? V_SETUP
          : parent_of(v) >= 0 ? parent_of(v) : v;
 }
 /* the header's dots, as the buttons sit on the panel: FX ENV LFO GLO, then HOME SAVE ARP SEQ (SELECT's round once) */
@@ -841,9 +841,10 @@ static void perf_key(uint32_t key, int down)
 static void set_view(int v);
 static void perf_set(int on)                     /* on: the mixer on the knobs; off: back to the page */
 {
+    const int was = ui.perf;
     ui.perf = (uint8_t)on;
     if (on) {
-        if (ui.view != V_MIX && ui.view != V_PERF)
+        if (!was)                                /* (T-WRECKS: the Mix page is HOME's too, so where it came from) */
             ui.perf_from = ui.view;
         set_view(V_PERF);
     } else {
@@ -1044,7 +1045,7 @@ static void button(int b)
                     b == B_SAVE || b == B_EDIT)) {   /* (1.3.0) a page's button leaves PERFORM: the keys the scale
                                                       * again, the page its first (SEL brings PERFORM back) */
         perf_set(0);
-        set_view(V_DUB);
+        set_view(b == B_HOME ? V_MIX : V_DUB);
         if (b == B_HOME)
             return;
     }
@@ -1066,8 +1067,10 @@ static void button(int b)
         set_view(ui.view == V_SETUP ? V_ARC : V_SETUP);
         return;
     }
-    if (b == B_HOME && ui.view == V_DUB) {       /* HOME again: the Key page (the key and the tempo); again: back */
-        set_view(V_KEY);
+    if (b == B_HOME) {                           /* (T-WRECKS, the user: "I don't want to menu dive" for the levels)
+                                                  * HOME: the Mix page, the four layers' levels on the knobs (SELECT the
+                                                  * Atmosphere's); again: the Nachtfahrt page; again: the Key page */
+        set_view(ui.view == V_MIX ? V_DUB : ui.view == V_DUB ? V_KEY : V_MIX);
         return;
     }
     for (v = 0; v < NPAGES; v++)                 /* a page's button: its page */
@@ -1147,7 +1150,8 @@ static void oct_show(int l)                      /* the ring up (from where it w
 }
 static int oct_ring_on(uint32_t now)             /* the ring's layer + 1, while it shows on this page (else 0) */
 {
-    if (!ui.oct_ring || now >= ui.oct_until + OCT_FADE || oct_layer(ui.view) != ui.oct_ring - 1)
+    if (!ui.oct_ring || now >= ui.oct_until + OCT_FADE ||
+        (oct_layer(ui.view) != ui.oct_ring - 1 && !(ui.view == V_MIX && ui.oct_ring - 1 == NLAYER - 1)))
         return 0;
     return ui.oct_ring;
 }
@@ -1487,6 +1491,8 @@ static void input(void)
                                                   * elsewhere nothing (no pages, no tempo: one knob, one job) */
         if (oct_layer(ui.view) >= 0)
             level_turn(oct_layer(ui.view), e);
+        else if (ui.view == V_MIX)               /* (T-WRECKS) the Mix page: the Atmosphere's level */
+            level_turn(NLAYER - 1, e);
         else if (ui.view == V_DUB)               /* (HOME: Energy, the user's: to play the keys and push it at once) */
             energy_turn(e);
         ui.turn_t = plat_ms();
@@ -3125,6 +3131,7 @@ void ui_init(void)
 {
     memset(&ui, 0, sizeof ui);
     ui.touched = -1;
+    ui.view = V_MIX;                             /* (T-WRECKS) it starts on the Mix page: the levels at hand */
     oct_home_take();
     lcd_fill(0, 0, 240, 240, K_BG);
     if (!en_playing)
