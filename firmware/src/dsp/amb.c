@@ -18,7 +18,8 @@ static int pt_layer_of(int p)                  /* the pt.h layer a voice paramet
 }
 /* (T-WRECKS) Paleotone's sounds against the layers' own voices: the gain on pt_render's output (a full Paleotone voice
  * about 1.0) that puts a typical one of the layer's list level with its own (tests/host/amb_test.c: by RMS) */
-#define PT_G_DRONE 3.6f
+#define PT_G_DRONE 1.8f                          /* (the user: the drones "overpower everything": 6 dB under the
+                                                  * Drone's own, so a full pad sits under the plucks and the Lead) */
 #define PT_G_SEQ 0.73f
 #define PT_G_LEAD 3.7f
 static float pt_buf[256];                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
@@ -816,6 +817,9 @@ static uint8_t ch_live;                          /* (Choir, below) 0: from rest 
                                                   * should be) */
 static float dr_lvl[2], dr_up = 0.0001f, dr_down = 0.00005f, ph_depth, ph_lfo, phz[2][6], ph_last[2];
 static uint32_t dr_rng = 0x6A09E667u;
+static float pt_dlvl, pt_dfs[2];               /* (T-WRECKS) a Paleotone drone's own swell (Attack, Release) and its
+                                                  * low-pass (Colour, Reso, the filter motion) */
+static uint8_t pt_dheld;                         /* (its notes still held while it dies away: let go at silence) */
 static float dr_pedal = 0.7f, dr_rev = 1.0f, dr_echo = 1.0f;   /* (the pedal's level; the sends, x1 at 50) */          /* (its own: the voices' phases leave the music's draws alone) */
 
 static uint8_t dr_midi[2];                        /* the banks whose notes went out on MIDI: their note-offs owed */
@@ -835,8 +839,7 @@ static void drone_off(int b)                     /* a bank dies away: its notes 
         return;
     dr_on[b] = 0;
     dr_midi_off(b);
-    if (!dr_on[b ^ 1])
-        pt_notes_off(PT_DRONE);                  /* (T-WRECKS: a Paleotone sound's notes let go: its release rings) */
+    /* (T-WRECKS: a Paleotone sound's notes are let go once Release has faded it out, in render_drone) */
 }
 
 static void pt_drone_on(void);
@@ -878,6 +881,7 @@ static void pt_drone_on(void)
     pt_notes_off(PT_DRONE);
     for (i = 0; i < n; i++)
         pt_note_on(PT_DRONE, stab[i].note, 80, 0);
+    pt_dheld = 1;
 }
 
 static void voice_chord(void)
@@ -4117,6 +4121,7 @@ static void quiet(void)
     int i;
     drone_off(0), drone_off(1);
     dr_lvl[0] = dr_lvl[1] = 0.0f;
+    pt_dlvl = 0.0f, pt_dfs[0] = pt_dfs[1] = 0.0f;
     lead_off();
     lead.env = 0.0f;
     ld_key = -1;                                 /* (BERLIN) a key held on the Lead let go too: its phrases again */
@@ -6032,12 +6037,27 @@ static void render_drone(uint32_t n)
     float c[4], cf1[4], cf2[4];
     uint32_t j;
     int b, i;
-    if (pt_is(PT_DRONE)) {                       /* (T-WRECKS) a Paleotone sound: it, through the phaser and the sends */
+    if (pt_is(PT_DRONE)) {                       /* (T-WRECKS) a Paleotone sound: its swell (Attack, Release, as the
+                                                  * Drone's own), its low-pass (Colour an octave brighter than the
+                                                  * Drone's own: the pads' air; Reso; the filter motion), then the
+                                                  * phaser and the sends */
+        const float to = dr_on[0] || dr_on[1] ? 1.0f : 0.0f, gg = g * PT_G_DRONE;
+        float lvl = pt_dlvl, bp;
         ch_live = 0;
-        if (!pt_render(PT_DRONE, drl, n))
+        if (!pt_render(PT_DRONE, drl, n)) {
+            pt_dlvl = to > 0.0f ? pt_dlvl : 0.0f;
             return;
-        for (j = 0; j < n; j++)
-            drr[j] = drl[j] *= g * PT_G_DRONE;
+        }
+        svf_coefs(c, 2.0f * fc, k);
+        for (j = 0; j < n; j++) {
+            lvl = to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
+            drr[j] = drl[j] = svf_lp(c, pt_dfs, drl[j], &bp) * lvl * lvl * gg;
+        }
+        pt_dlvl = lvl;
+        if (to <= 0.0f && lvl <= 0.0f && pt_dheld) {   /* (faded out: its notes let go, the voices free) */
+            pt_dheld = 0;
+            pt_notes_off(PT_DRONE);
+        }
         goto bus;
     }
     if (!dr_on[0] && !dr_on[1] && dr_lvl[0] <= 0.0f && dr_lvl[1] <= 0.0f) {
