@@ -5,15 +5,20 @@
  * layer's channel, SYSTEM > OUT = SEQ: everything the conductor plays to MIDI OUT). HOME tapped on Paleotone's pages:
  * back here; tapped here: Paleotone's TRACKS screen (the mix).
  *
- *   PRESETS   the preset (loads at once; playing, the arc starts again)
+ *   ALGORITHM what PRESETS changes: PRESET (the first place), or a layer (DRONE .. DRUMS), whose sound it swaps;
+ *             the keys and the sound pages play that layer (the LEAD on PRESET)
+ *   PRESETS   on PRESET: the preset (loads at once; playing, the arc starts again); on a layer: its sound, through
+ *             all of Paleotone's (the PRESETS list); on DRUMS the kit. The swaps last until another preset loads
+ *   REC       SHUFFLE: every layer a new sound of the same kind (a pad for a pad, a bass for a bass)
  *   SELECT    the tempo
- *   ALGORITHM the layer the keys and the sound pages play (the LEAD as a preset loads)
  *   KNOB 1..4 DENSITY (the figures' notes), DRUMS (0: none), CALLS (how often), AMB (the atmosphere)
  *   PLAY      start / stop
  *   OCT- OCT+ the keys' octave
  *   keys      the LEAD, white keys in the mode from C4 = the root (MIDI in: GLO > MIDI's channels) */
 
 static uint8_t twr_cur;                             /* the preset loaded */
+static uint8_t twr_focus;                           /* 0: PRESETS picks the preset; 1 + i: it swaps layer i's sound */
+static uint8_t twr_sndgen;                          /* (a sound swapped: the screen redraws) */
 static uint32_t twr_seen[NTRK], twr_lit[NTRK];      /* the layers' lights: the notes seen, the frame of the last */
 
 static const char *const TW_LAYER_NAME[NTRK] = {"DRONE", "OST", "BASS", "LEAD", "CALLS", "DRUMS"};
@@ -46,6 +51,71 @@ UI_SMALL static void twr_load(uint32_t n)
         track_select(TW_LEAD);
     sync_reload = 1;
     twr.req = (uint8_t)(twr_cur + 1u);               /* the conductor takes it at its next block */
+    ui.force = 1;
+}
+
+/* the preset's key, mode and mix on layer i again (a sound loaded resets them) */
+UI_SMALL static void twr_fit(uint32_t i)
+{
+    const twr_preset_t *p = &TWR_PRESETS[twr_cur % TWR_NPRESETS];
+    track_t *t = &trk[i % TW_LAYERS];
+    t->p[P_ROOT] = p->root;
+    t->p[P_SCALE] = p->scale;
+    t->p[P_LEVEL] = TW_LEVEL[i % TW_LAYERS];
+    t->p[P_AMODE] = 0;
+    if (i == TW_LEAD)
+        t->p[P_QUANT] = 2;
+}
+
+UI_SMALL static uint32_t twr_bank_of(const track_t *t)   /* the PRESETS list's place of t's sound (NBANK: none) */
+{
+    uint32_t n;
+    if (!bank_ready)
+        bank_resolve();
+    for (n = 0; n < NBANK; n++)
+        if (BANK[n].e == t->eng_req && bank_pi[n] == t->preset)
+            return n;
+    return NBANK;
+}
+
+UI_SMALL static void twr_swap(uint32_t i, int32_t s)      /* PRESETS on a layer: its next / previous sound */
+{
+    if (i == TRK_DRUM) {
+        TDRUM->p[P_E0] = (int16_t)(((int32_t)TDRUM->p[P_E0] + s % (int32_t)DRUM_KITS + (int32_t)DRUM_KITS) % (int32_t)DRUM_KITS);
+        sync_reload = 1;
+    } else if (i < TW_LAYERS) {
+        uint32_t n = twr_bank_of(&trk[i]);
+        if (n >= NBANK)
+            n = 0;
+        n = (uint32_t)(((int32_t)n + s % (int32_t)NBANK + (int32_t)NBANK) % (int32_t)NBANK);
+        if (!preset_go_to(&trk[i], n))
+            twr_fit(i);
+    }
+    twr_sndgen++;
+    ui.force = 1;
+}
+
+UI_SMALL static void twr_shuffle(void)              /* REC: every layer another sound of its kind */
+{
+    uint32_t i, n, c, cnt, pick, seed = fm1_ms * 2654435761u;
+    for (i = 0; i < TW_LAYERS; i++) {
+        uint32_t cur = twr_bank_of(&trk[i]), kind;
+        if (cur >= NBANK)
+            continue;
+        kind = BANK[cur].kind;
+        for (cnt = 0, n = 0; n < NBANK; n++)
+            cnt += BANK[n].kind == kind && n != cur && bank_pi[n] != 0xFFu;
+        if (!cnt)
+            continue;
+        pick = gurdy_hash(seed + i * 0x9E37u) % cnt;
+        for (c = 0, n = 0; n < NBANK; n++)
+            if (BANK[n].kind == kind && n != cur && bank_pi[n] != 0xFFu && c++ == pick)
+                break;
+        if (n < NBANK && !preset_go_to(&trk[i], n))
+            twr_fit(i);
+    }
+    twr_sndgen++;
+    ui_message("SHUFFLED");
     ui.force = 1;
 }
 
@@ -90,9 +160,11 @@ UI_SMALL static int twr_input(uint32_t *pressed, uint32_t home)
             song.octave += b == B_OCTDN ? (song.octave > -3 ? -1 : 0) : (song.octave < 3 ? 1 : 0);
             ui.force = 1;
             break;
+        case B_REC:
+            twr_shuffle();
+            break;
         case B_HOME:
         case B_SAVE:
-        case B_REC:
             break;
         default:                                    /* a sound's page: Paleotone's, for the selected layer */
             twr_scr = 0;
@@ -101,7 +173,9 @@ UI_SMALL static int twr_input(uint32_t *pressed, uint32_t home)
         }
     }
     *pressed = 0;
-    if ((s = panel_enc(EN_PRESET)) != 0) {
+    if ((s = panel_enc(EN_PRESET)) != 0 && twr_focus) {
+        twr_swap(twr_focus - 1u, s);
+    } else if (s) {
         twr_load((uint32_t)(((int32_t)twr_cur + s % (int32_t)TWR_NPRESETS + (int32_t)TWR_NPRESETS) % (int32_t)TWR_NPRESETS));
         if (song.playing)
             twr.was_playing = 0;                    /* (the arc from the top, at the next block) */
@@ -110,8 +184,11 @@ UI_SMALL static int twr_input(uint32_t *pressed, uint32_t home)
         song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, s, 200), GP[G_BPM].min, GP[G_BPM].max);
         ui.force = 1;
     }
-    if ((s = panel_enc(EN_ALGO)) != 0)
-        track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, NTRK - 1));
+    if ((s = panel_enc(EN_ALGO)) != 0) {                /* PRESET, then the layers */
+        twr_focus = (uint8_t)clamp((int32_t)twr_focus + s, 0, NTRK);
+        track_select(twr_focus ? twr_focus - 1u : TW_LEAD);
+        ui.force = 1;
+    }
     for (k = 0; k < 4u; k++) {
         if ((s = panel_enc(EN_K1 + k)) == 0)
             continue;
@@ -150,6 +227,8 @@ UI_SMALL static void twr_draw(void)
     }
     sig = (uint32_t)twr_cur | (uint32_t)song.playing << 5 | (uint32_t)twr.sec << 6 | (uint32_t)twr.sbar << 8 |
           lights << 14 | (uint32_t)song.sel << 20 | (uint32_t)twr.pat << 23 | (uint32_t)(song.octave + 3) << 26;
+    sig ^= ((uint32_t)twr_focus << 29) ^ ((uint32_t)twr_sndgen * 0x9E3779B9u) ^ (ui.msg_t ? 0x5A5A5A5Au : 0u) ^
+           (uint32_t)TDRUM->p[P_E0] << 16;
     if (sig == sig_was && !ui.force)
         return;
     sig_was = sig;
@@ -162,15 +241,30 @@ UI_SMALL static void twr_draw(void)
     str_cpy(b + str_len(b), " BPM", sizeof b - str_len(b));
     cv_text(234 - text_w(&FONT_S, b), 4, &FONT_S, b, C_AMB);
     cv_rect(0, 24, 240, 1, C_LINE);
-    twr_text_c(34, &FONT_L, p->name, C_WHITE);
-    str_cpy(b, N_NOTE[p->root % 12u], sizeof b);
-    str_cpy(b + str_len(b), " ", sizeof b - str_len(b));
-    str_cpy(b + str_len(b), N_SCALE[p->scale % NSCALES], sizeof b - str_len(b));
-    str_cpy(b + str_len(b), "   ", sizeof b - str_len(b));
-    fmt_int(b + str_len(b), twr_cur + 1);
-    str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
-    fmt_int(b + str_len(b), (int32_t)TWR_NPRESETS);
-    twr_text_c(72, &FONT_S, b, C_AMB);
+    twr_text_c(34, &FONT_L, p->name, twr_focus ? C_GRAY : C_WHITE);
+    if (ui.msg_t) {                                 /* (SHUFFLED, ...) */
+        twr_text_c(72, &FONT_S, ui.msg, C_WHITE);
+    } else if (twr_focus) {                         /* the layer PRESETS swaps, and its sound */
+        uint32_t li = twr_focus - 1u;
+        str_cpy(b, TW_LAYER_NAME[li], sizeof b);
+        str_cpy(b + str_len(b), ": ", sizeof b - str_len(b));
+        if (li == TRK_DRUM)
+            str_cpy(b + str_len(b), DRUM_KIT_NAMES[drum_kit()], sizeof b - str_len(b));
+        else
+            str_cpy(b + str_len(b), ENGINES[trk[li].eng_req % NENGINES]->presets[trk[li].preset %
+                    (ENGINES[trk[li].eng_req % NENGINES]->npresets ? ENGINES[trk[li].eng_req % NENGINES]->npresets : 1u)].name,
+                    sizeof b - str_len(b));
+        twr_text_c(72, &FONT_S, b, C_WHITE);
+    } else {
+        str_cpy(b, N_NOTE[p->root % 12u], sizeof b);
+        str_cpy(b + str_len(b), " ", sizeof b - str_len(b));
+        str_cpy(b + str_len(b), N_SCALE[p->scale % NSCALES], sizeof b - str_len(b));
+        str_cpy(b + str_len(b), "   ", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), twr_cur + 1);
+        str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), (int32_t)TWR_NPRESETS);
+        twr_text_c(72, &FONT_S, b, C_AMB);
+    }
     cv_blit(0, 0);
 
     /* the arc: its four sections, the bar in the section */

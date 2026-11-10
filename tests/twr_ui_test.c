@@ -36,6 +36,16 @@ int main(int argc, char **argv)
             }
     check(ok, "every preset's five sounds are Paleotone's");
     ppm("twr-stopped");
+    {   /* the keys, stopped: the LEAD sounds */
+        uint32_t v, on = 0;
+        fm1_in.notes |= 1u << 12;
+        frames(10);
+        for (v = 0; v < NVOICE; v++)
+            on += trk[TW_LEAD].v[v].active;
+        fm1_in.notes &= ~(1u << 12);
+        frames(10);
+        check(on > 0, "a white key, stopped: the LEAD sounds");
+    }
     tap(B_PLAY);
     frames(300);                                    /* ~5 s */
     check(song.playing && twr_cnt[TW_DRONE] > 0, "PLAY: the conductor plays (the drone)");
@@ -54,6 +64,41 @@ int main(int argc, char **argv)
     check(twr.k[1] < d0, "KNOB 2: DRUMS down");
     turn(EN_K1 + 3, 10);
     check(song.g[G_AMB] == twr.k[3], "KNOB 4: the atmosphere (AMB)");
+    {   /* ALGORITHM: a layer; PRESETS swaps its sound; REC shuffles */
+        uint32_t c0 = twr_cur, b0, kind, ok2 = 1, l;
+        turn(EN_ALGO, 2);                           /* PRESET -> DRONE -> OST */
+        check(twr_focus == 2u && song.sel == TW_OST, "ALGORITHM: the OST layer, the keys on it");
+        b0 = twr_bank_of(&trk[TW_OST]);
+        turn(EN_PRESET, 1);
+        check(twr_cur == c0 && twr_bank_of(&trk[TW_OST]) == (b0 + 1u) % NBANK && trk[TW_OST].p[P_ROOT] == TWR_PRESETS[c0].root,
+              "PRESETS on a layer: its next sound, the preset and its key stay");
+        ppm("twr-swap");
+        turn(EN_ALGO, 4);
+        check(twr_focus == 6u && song.sel == TRK_DRUM, "ALGORITHM to DRUMS");
+        b0 = (uint32_t)TDRUM->p[P_E0];
+        turn(EN_PRESET, 1);
+        check((uint32_t)TDRUM->p[P_E0] == (b0 + 1u) % DRUM_KITS, "PRESETS on DRUMS: the next kit");
+        turn(EN_ALGO, -9);
+        check(twr_focus == 0u && song.sel == TW_LEAD, "ALGORITHM back to PRESET: the keys on the LEAD");
+        {
+            uint32_t was[TW_LAYERS];
+            for (l = 0; l < TW_LAYERS; l++)
+                was[l] = twr_bank_of(&trk[l]);
+            tap(B_REC);
+            frames(3);
+            for (l = 0; l < TW_LAYERS; l++) {
+                uint32_t now = twr_bank_of(&trk[l]);
+                kind = was[l] < NBANK ? BANK[was[l]].kind : 99u;
+                if (now >= NBANK || BANK[now].kind != kind || trk[l].p[P_SCALE] != TWR_PRESETS[twr_cur].scale) {
+                    printf("ui: shuffle: layer %u: %s -> %s\n", l, was[l] < NBANK ? BANK[was[l]].name : "?",
+                           now < NBANK ? BANK[now].name : "?");
+                    ok2 = 0;
+                }
+            }
+            check(ok2, "REC: SHUFFLE, every layer a sound of the same kind, in the preset's mode");
+            ppm("twr-shuffled");
+        }
+    }
     tap(B_HOME);
     frames(30);
     check(!twr_scr, "HOME tapped: Paleotone's pages");

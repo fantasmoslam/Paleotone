@@ -7,14 +7,17 @@ front screen is replaced by T-WRECKS's own.
 Package identity **FM-1_942**, version string `T-WRECKS 0.1`, USB name `T-WRECKS FM-1`. Built by
 `.github/workflows/dinosynth-fm1.yml` on the `dinosynth` branch; the package lands on `dinosynth-fm1-output`.
 
-## Step 1 (this build): the shell
+## Step 1: the shell (step 2 adds the varied arc, the sound swaps and SHUFFLE)
 
 - **The screen**: the preset, its key and mode, the arc (EMERGE, WALK, HUNT, BRIDGE), a light for each layer as it
   plays, the four knobs.
-- **PRESETS** picks the preset (three rough ones so far: EXTINCTION, STAMPEDE, RAPTOR NIGHT). **SELECT** sets the
-  tempo. **PLAY** starts and stops. **OCT- / OCT+** move the keys' octave.
-- **The keys** play the LEAD, white keys walking the preset's mode from C4 (the root). **ALGORITHM** moves the keys
-  to another layer.
+- **ALGORITHM** picks what PRESETS changes: PRESET (the first place), or a layer (DRONE, OST, BASS, LEAD, CALLS,
+  DRUMS). The keys play that layer (the LEAD on PRESET).
+- **PRESETS** on PRESET picks the preset (three rough ones so far: EXTINCTION, STAMPEDE, RAPTOR NIGHT); on a layer it
+  swaps that layer's sound through all of Paleotone's (on DRUMS: the kit). Swaps last until another preset loads.
+- **REC**: SHUFFLE, every layer a new sound of the same kind (a pad for a pad, a bass for a bass).
+- **SELECT** sets the tempo. **PLAY** starts and stops. **OCT- / OCT+** move the keys' octave.
+- **The keys** play the LEAD, white keys walking the preset's mode from C4 (the root).
 - **KNOB 1..4**: DENSITY (how many of the figures' notes play), DRUMS (0 = none), CALLS (how often a creature
   calls), AMB (the cave wind and crackle).
 - **HOME** tapped: Paleotone's TRACKS screen (the mix); tapped again: back. **ENV, LFO, FX, EDIT ...** open
@@ -41,8 +44,18 @@ Package identity **FM-1_942**, version string `T-WRECKS 0.1`, USB name `T-WRECKS
 layer alone) and drives the screen (`tests/twr_ui_test.c`, screenshots `build/host/twr-*.ppm`). Paleotone's own UI
 tests run with `TWRECKS 0`, so its pages stay tested as they are.
 
+## Step 2: plays itself
+
+- The arc varies: WALK 12 or 16 bars, HUNT 16 or 24 (once it has been heard), BRIDGE 4 or 8, now and then skipped,
+  half the time hollow (the drone alone, or nothing). A section begins on the deep drum and a far thunder.
+- The HUNT builds (more notes as it goes, ghost strokes in its second half, its end now and then an octave up).
+- The drums: INTRO the low drum's loud strokes; A the high drum only in the WALK's second half, no talking drum; B
+  the talking drum and the ghosts; FILL every fourth bar; BREAK soft and far.
+- The chords: now and then a substitute a third up, the last chord hanging on, or the drone on a fourth.
+- Each pass the figures change a little more (one step, up to four).
+- `TRACE=1 TWR=n build/host/hostsim 0 0 1 out.wav` prints each section as it begins.
+
 ## Next
 
-2. Plays itself: the arc and the five drum patterns tuned by ear, more variation.
 3. Follows you: the LEAD answers your phrases; the CALLS answer too.
 4. All 20 presets, the other pages, saving.

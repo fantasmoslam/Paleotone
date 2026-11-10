@@ -12,9 +12,13 @@
  *   drums             five patterns from the preset's rhythms: INTRO, A, B, FILL, BREAK
  *   atmosphere        ambience.c (AMB, CRKL): wind and crackle under everything, no voice
  *
- * The arc, in bars: EMERGE 8 (the drone, the drums late and sparse), WALK 16 (the ostinato, the bass in its second
- * half, drums A), HUNT 16 (everything, drums B, the calls), BRIDGE 8 (the ostinato thin, the drums a BREAK), then
- * WALK again; each pass the figures change a little (a step or two), never all at once.
+ * The arc, in bars: EMERGE 8 (the drone, the drums late and sparse), WALK 12 or 16 (the ostinato, the bass in its
+ * second half, drums A: the high drum in its second half), HUNT 16 or 24 (everything, drums B with the talking drum,
+ * ghost strokes and more notes as it builds, the calls; its end now and then an octave up), BRIDGE 4 or 8 (the
+ * ostinato thin, the drums a BREAK; half the time hollow: the drone alone, or nothing), now and then skipped; then WALK
+ * again. A section begins on the deep drum and a far thunder. Each pass the figures change a little more (one step,
+ * up to four), and the chords too: now and then a substitute a third up, the last chord hanging on, or the drone on a
+ * fourth (suspended).
  *
  * Every note the conductor plays goes to MIDI OUT as the sequencer's do (GLO > SYSTEM > OUT = SEQ), on each
  * track's channel (GLO > MIDI): seq_out_on / seq_out_off. Included by seq.c before events_block, which calls
@@ -62,7 +66,12 @@ static struct {
     volatile uint8_t req;              /* the UI: preset req - 1 from the next block (0 none) */
     volatile uint8_t k[4];             /* the UI's knobs: DENSITY, DRUMS, CALLS (AMB is the song's) */
     volatile uint8_t sec, sbar;        /* where the arc is (the screen reads it) */
-    volatile uint8_t chord;            /* the chord's degree now */
+    volatile uint8_t chord;            /* the chord's place in the PROG now */
+    int8_t cdeg;                       /* .. the degree it plays (a substitute now and then) */
+    uint8_t sus;                       /* the drone's upper note a fourth, not a fifth: the chord hangs */
+    volatile uint8_t slen;             /* the section's length this time, in bars */
+    uint8_t hollow;                    /* this BRIDGE thins out to the drone alone */
+    uint8_t thunder;                   /* a section just began: the deep drums on its downbeat */
     volatile uint8_t pat;              /* the drum pattern now (TD_*), 5 = the fill */
     uint8_t mask_cnt, mask[12];        /* the mode's notes, from the root */
     int8_t ost[2][TW_OMAX];            /* the figures: a chord tone index 0..5 (+ 8: accent), -1 a rest */
@@ -74,7 +83,7 @@ static struct {
     uint32_t seed;
     uint8_t was_playing;
     struct { uint8_t t, note; uint32_t left; } off[TW_NOFF];
-} twr = {0, 0, {64, 100, 64, 0}, 0, 0, 0, 0, 0, {0}, {{0}}, {0}, 0, 0, 0, 0, 0, 0x5EED, 0, {{0, 0, 0}}};
+} twr = {.k = {64, 100, 64, 0}, .seed = 0x5EED};
 
 static uint32_t tw_rand(uint32_t salt) { return gurdy_hash(twr.seed ^ (twr.s16 * 2654435761u) ^ salt); }
 
@@ -185,6 +194,15 @@ static void tw_mutate(uint32_t f)
     twr.ost[f][s] = v < 0 ? (int8_t)((h >> 12) % 4u) : (h >> 16) & 1u ? -1 : (int8_t)((v & 7) == 2 ? 3 : 2);
 }
 
+static void tw_mutates(uint32_t f, uint32_t n)   /* n steps change (the later passes more) */
+{
+    while (n--) {
+        twr.s16 += 7u;                              /* (another hash each) */
+        tw_mutate(f);
+        twr.s16 -= 7u;
+    }
+}
+
 static void tw_start_preset(uint32_t i)
 {
     uint32_t k, m;
@@ -203,28 +221,42 @@ static void tw_start_preset(uint32_t i)
     twr.pass = 0;
     twr.sec = TW_EMERGE;
     twr.sbar = 0;
+    twr.slen = TW_SEC_BARS[TW_EMERGE];
     twr.chord = 0;
+    twr.cdeg = twr.p->prog[0];
+    twr.sus = 0;
 }
 
 /* the chord's tone k (tw_figure) at octave base */
 static uint32_t tw_tone(uint32_t k, int32_t base)
 {
     static const int8_t DEG[6] = {0, 2, 4, 7, 9, 1};
-    return tw_degree((int32_t)(int8_t)twr.p->prog[twr.chord % 4u] + DEG[k % 6u], base);
+    return tw_degree((int32_t)twr.cdeg + DEG[k % 6u], base);
 }
 
 static void tw_chord(void)                         /* the bar's chord: the drone follows */
 {
     track_t *t = &trk[TW_DRONE];
-    uint32_t c = (twr.bar / 4u) % 4u, r, f;
+    uint32_t c = (twr.bar / 4u) % 4u, r, f, h;
     if (twr.drone_n && c == twr.chord)
         return;
     twr.chord = (uint8_t)c;
+    h = tw_rand(0xC0u + c);
+    twr.cdeg = twr.p->prog[c];
+    twr.sus = 0;
+    if (twr.pass && c && (h & 7u) == 0u)
+        twr.cdeg = (int8_t)(twr.cdeg + 2);          /* now and then a substitute: the chord a third up (shares two notes) */
+    else if (twr.pass && (h & 7u) == 1u)
+        twr.cdeg = twr.p->prog[(c + 3u) % 4u];      /* .. or the last chord hangs on */
+    if (twr.sec != TW_HUNT && ((h >> 8) & 7u) == 0u)
+        twr.sus = 1;                                /* .. or it hangs on a fourth, unresolved */
     tw_drone_off();
+    if (twr.sec == TW_BRIDGE && twr.hollow && (h >> 12) & 1u)
+        return;                                     /* (a hollow BRIDGE: sometimes not even the drone) */
     r = tw_tone(0, 36);
     if (r < 43u)
         r += 12u;                                   /* (G2 .. F#3: low, not mud) */
-    f = tw_tone(2, 36);                             /* the fifth, just above */
+    f = twr.sus ? tw_degree((int32_t)twr.cdeg + 3, 36) : tw_tone(2, 36);   /* the fifth (the fourth), just above */
     while (f <= r)
         f += 12u;
     while (f > r + 12u)
@@ -240,28 +272,44 @@ static void tw_chord(void)                         /* the bar's chord: the drone
     }
 }
 
+/* a section's length this time: EMERGE 8; WALK 12 or 16; HUNT 16, sometimes 24 once it has been heard; BRIDGE 4 or 8 */
+static uint32_t tw_sec_len(uint32_t k)
+{
+    uint32_t h = tw_rand(0xA4Cu + k);
+    switch (k) {
+    case TW_EMERGE: return 8u;
+    case TW_WALK: return (h & 1u) ? 12u : 16u;
+    case TW_HUNT: return twr.pass >= 2u && (h & 3u) == 0u ? 24u : 16u;
+    default: return (h & 1u) ? 4u : 8u;
+    }
+}
+
 static void tw_bar(void)                           /* a new bar: the arc */
 {
-    uint32_t b = twr.bar, cyc, k;
-    if (b < TW_SEC_BARS[TW_EMERGE]) {
+    if (twr.bar == 0u) {
         twr.sec = TW_EMERGE;
-        twr.sbar = (uint8_t)b;
-    } else {
-        cyc = 40u;                                  /* WALK HUNT BRIDGE */
-        b = (b - TW_SEC_BARS[TW_EMERGE]) % cyc;
-        for (k = TW_WALK; k < TW_SECTIONS && b >= TW_SEC_BARS[k]; k++)
-            b -= TW_SEC_BARS[k];
-        if (k == TW_WALK && b == 0u && twr.bar > TW_SEC_BARS[TW_EMERGE]) {   /* a new pass: the figures change */
-            twr.pass++;
-            tw_mutate(0);
-            if (twr.pass & 1u)
-                tw_mutate(1);
+        twr.sbar = 0;
+        twr.slen = (uint8_t)tw_sec_len(TW_EMERGE);
+        twr.hollow = 0;
+        twr.thunder = 0;
+    } else if (++twr.sbar >= twr.slen) {            /* the next section */
+        uint32_t k = twr.sec == TW_BRIDGE || twr.sec == TW_EMERGE ? TW_WALK : twr.sec + 1u, h = tw_rand(0xB1u);
+        if (k == TW_BRIDGE && twr.pass >= 1u && (h & 3u) == 0u)
+            k = TW_WALK;                            /* (now and then no BRIDGE: the HUNT turns straight back) */
+        if (k == TW_WALK) {                         /* a new pass: the figures change, the later ones more */
+            if (twr.sec != TW_EMERGE)
+                twr.pass++;
+            tw_mutates(0, 1u + (twr.pass < 3u ? twr.pass : 3u));
+            tw_mutates(1, (twr.pass + 1u) / 2u < 2u ? (twr.pass + 1u) / 2u : 2u);
         }
-        if (k == TW_HUNT && b == 8u)
-            tw_mutate(0);
+        twr.hollow = (uint8_t)(k == TW_BRIDGE && ((h >> 8) & 1u));
+        twr.thunder = (uint8_t)(k == TW_HUNT || k == TW_WALK);
         twr.sec = (uint8_t)k;
-        twr.sbar = (uint8_t)b;
+        twr.sbar = 0;
+        twr.slen = (uint8_t)tw_sec_len(k);
     }
+    if (twr.sec == TW_HUNT && twr.sbar == twr.slen / 2u)
+        tw_mutate(0);                               /* (the HUNT's second half: the figure turns) */
     tw_chord();
 }
 
@@ -283,6 +331,11 @@ static void tw_drums(uint32_t s)
     }
     fill = pat >= TD_A && (twr.sbar & 3u) == 3u && bar16 >= 12u;
     twr.pat = (uint8_t)(fill ? 5u : pat);
+    if (twr.thunder && bar16 == 0u) {               /* a section begins: the deep drum and the far thunder */
+        twr.thunder = 0;
+        tw_on(TRK_DRUM, 43, (uint32_t)clamp(118 * (int32_t)lvl / 100, 1, 127), tw_s16_len() * 8u);
+        tw_on(TRK_DRUM, 49, (uint32_t)clamp(96 * (int32_t)lvl / 100, 1, 127), tw_s16_len() * 16u);
+    }
     if (pat == TD_NONE)
         return;
     r = fill ? twr.p->rhy[2] : pat == TD_B ? twr.p->rhy[1] : twr.p->rhy[0];
@@ -298,6 +351,12 @@ static void tw_drums(uint32_t s)
             return;
         v = 1u;
     }
+    if (pat == TD_A && v == 3u && twr.sbar < twr.slen / 2u)
+        v = 1u;                                      /* A: the high drum only in the WALK's second half */
+    if (pat == TD_A && v == 4u)
+        v = 2u;                                      /* .. the talking drum is the HUNT's */
+    if (pat == TD_B && !v && twr.sbar >= twr.slen / 2u && ((h >> 4) & 3u) == 0u)
+        v = 1u;                                      /* B, its second half: ghost strokes between (the build) */
     if (fill && !v && (h & 3u) == 0u)
         v = 3u;                                      /* (a fill fills) */
     if (!v || v > 4u)
@@ -308,6 +367,8 @@ static void tw_drums(uint32_t s)
             vel += 10;                               /* the downbeat */
         if (pat == TD_INTRO || pat == TD_BREAK)
             vel -= 24;
+        if (pat == TD_B && v == 1u && !GURDY_RHY[r].v[pos])
+            vel -= 22;                               /* (the ghosts: soft) */
         vel = vel * (int32_t)lvl / 100;
         tw_on(TRK_DRUM, NOTE[v], (uint32_t)clamp(vel, 1, 127), tw_s16_len());
         if (v == 2u && pat == TD_B && bar16 == 0u && (twr.sbar & 1u) == 0u)
@@ -318,13 +379,20 @@ static void tw_drums(uint32_t s)
 static void tw_step(void)                          /* one sixteenth */
 {
     uint32_t s = twr.s16, q = tw_s16_len(), dens = twr.k[0], h;
+    int32_t obase = 60;
     if (s % 16u == 0u) {
         twr.bar = s / 16u;
         tw_bar();
     }
     tw_drums(s);
+    if (twr.sec == TW_HUNT)
+        dens += twr.sbar * 48u / (twr.slen ? twr.slen : 16u);   /* the HUNT builds */
+    if (twr.sec == TW_HUNT && twr.sbar >= twr.slen - twr.slen / 4u && (twr.pass & 1u))
+        obase = 72;                                  /* .. its last quarter, every other pass, an octave up */
+    else if (twr.sec == TW_BRIDGE && (twr.pass & 2u))
+        obase = 48;                                  /* (a BRIDGE now and then low) */
     /* the ostinato: WALK, HUNT; the BRIDGE every other note; EMERGE's last two bars come in soft */
-    if (twr.sec != TW_EMERGE || twr.sbar >= 6u) {
+    if ((twr.sec != TW_EMERGE || twr.sbar >= 6u) && !(twr.sec == TW_BRIDGE && twr.hollow)) {
         int8_t v = twr.ost[0][s % twr.p->olen[0]];
         h = tw_rand(0x05u);
         if (v >= 0 && (h & 127u) < dens + 40u && !(twr.sec == TW_BRIDGE && (s & 1u)) &&
@@ -332,7 +400,7 @@ static void tw_step(void)                          /* one sixteenth */
             uint32_t vel = (v & 8) ? 96u : 72u;
             if (twr.sec == TW_EMERGE || twr.sec == TW_BRIDGE)
                 vel -= 20u;
-            tw_on(TW_OST, tw_tone((uint32_t)v & 7u, 60), vel + ((h >> 8) & 7u), q * 3u / 2u);
+            tw_on(TW_OST, tw_tone((uint32_t)v & 7u, obase), vel + ((h >> 8) & 7u), q * 3u / 2u);
         }
     }
     /* the bass: the WALK's second half, the HUNT */

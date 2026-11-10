@@ -842,6 +842,14 @@ static int twr_demo(uint32_t pn, const char *out)
             fm1_in.notes = t < 3u * FS ? 1u << KEY[(t / (FS * 3u / 4u)) % 4u] : 0u;
         }
         mix_block(o, CTL);
+        if (getenv("TRACE")) {                      /* TRACE=1: each section as it begins */
+            static int32_t last = -1;
+            if ((int32_t)(twr.sec * 256u + twr.pass) != last && twr.sbar == 0u) {
+                last = (int32_t)(twr.sec * 256u + twr.pass);
+                printf("twr: %5.1f s bar %3u: %-6s %2u bars (pass %u%s)\n", (double)f / FS, twr.bar + 1u,
+                       TW_SEC_NAME[twr.sec % TW_SECTIONS], twr.slen, twr.pass, twr.hollow ? ", hollow" : "");
+            }
+        }
         if (busy_now() > bmax)
             bmax = busy_now();
         for (i = 0; i < CTL; i++) {
