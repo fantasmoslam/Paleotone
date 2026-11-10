@@ -51,7 +51,7 @@ SDK_SHA256 = {
     "cfg/eq_cfg_hw.bin": "41167491bffed4651750719c973d2758adeb9021a5670d02d6a53c85ed80ea7d",
 }
 
-PRODUCT = "FM-1_197000000"          # package identity; release builds are FM-1_197XXYYZZ (see main)
+PRODUCT = "FM-1_942"                # T-WRECKS: package identity (no other firmware uses 942); --release is not used yet
 VERSION = None                      # FELUCCA_VERSION for release builds (default: firmware/src/ui.c)
 
 

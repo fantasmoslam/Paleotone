@@ -2264,7 +2264,7 @@ static void draw_card(uint32_t now)
     text_c(CX, y + 28, &FONT_XS, ui.card_text, tc);
 }
 
-#define BERLIN_BY "CRANKY MAN"                   /* (the user's name, on the main screen and the launch screen) */
+#define BERLIN_BY "T-WRECKS"                     /* (T-WRECKS: its name over the main page) */
 static void draw_main(void)
 {
     uint32_t now = plat_ms(), h = hash(2166136261u, (uint32_t)en_frozen << 16 | proj.piece << 24 | (uint32_t)en_playing << 17), i;
@@ -3171,9 +3171,9 @@ static void splash_band(int f, int32_t oy)
     for (k = 0; k < 14; k++)
         cv_rect(SX[k], SY[k] - oy, 1, 1, mix(K_BG, K_DIM, 3 + (k & 3)));
     if (f >= 1)
-        text_c(120, 92 - oy, &FONT_L, "NACHTFAHRT", mix(K_BG, K_TEXT, f >= 8 ? 16 : 2 * f));
+        text_c(120, 92 - oy, &FONT_L, "T-WRECKS", mix(K_BG, K_TEXT, f >= 8 ? 16 : 2 * f));
     if (f >= 8)
-        text_c(120, 132 - oy, &FONT_S, "by " BERLIN_BY, mix(K_BG, K_BELL, f >= 16 ? 16 : 2 * (f - 7)));
+        text_c(120, 132 - oy, &FONT_S, "after NACHTFAHRT", mix(K_BG, K_BELL, f >= 16 ? 16 : 2 * (f - 7)));
     if (f >= 16)
         text_c(120, 224 - oy, &FONT_XS, EN_VERSION, K_DIM);
     cv_blit(0, (uint32_t)oy);
