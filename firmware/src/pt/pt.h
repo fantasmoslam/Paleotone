@@ -16,6 +16,7 @@ enum { PT_CALLS = PT_NLAYER, PT_NPART };
 extern const uint8_t PT_N[PT_NPART];
 
 void pt_init(void);
+void pt_clean_organ(int on); /* clean Temple support in the approved taiko scene */
 const char *pt_name(int layer, int k);          /* its name as the screen shows it (9 characters at most) */
 int pt_mono(int layer, int k);                  /* 1: a mono sound (one note at a time) */
 void pt_sound(int layer, int k);                /* the layer plays sound k of its list; k < 0: none (its own voice) */

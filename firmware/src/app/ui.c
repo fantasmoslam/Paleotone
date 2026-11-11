@@ -159,7 +159,7 @@ static const char *const KNOB_LABEL[NVIEWS][4] = {
     {"Width", "Time", "Rate", "Intro"},
     {"Width", "Time", "Rate", "Intro"},
     {"Width", "Time", "Rate", "Intro"},
-    {"Level", "Tone", "Chance", "Decay"},
+    {"Level", "Tone", "Ghosts", "Decay"},
     {"Level", "Filter", "Chance", "Voice"},
 };
 /* what each knob does, a line: on the rule above the knobs while it's being turned (in capitals; each fits the
@@ -273,7 +273,7 @@ static char sp_buf[ANN_MAX + 1];                 /* (the screen reader's text, b
 static uint32_t sp_n;
 static const char *track_label(int col)
 {
-    return ui.track>=NLAYER && col==2 ? "Chance" : TRACK_LABEL[col];
+    return col==2 && ui.track==5 ? "Ghosts" : ui.track>=NLAYER && col==2 ? "Chance" : TRACK_LABEL[col];
 }
 static int control_knob(int view, int col)
 {
@@ -1578,7 +1578,12 @@ static void input(void)
     }
     if ((e = plat_enc(EN_ALGO)) != 0) {         /* a layer's page: its voice; the Chords page: the walk */
         int vp = ui.view==V_MIX && !ui.perf ? home_voice() : view_voice(ui.view);
-        if ((ui.view==V_MIX && ui.track==6) || ui.view==V_CALLS) {
+        if (!ui.perf && ((ui.view==V_MIX && ui.track==5) || ui.view==V_SKIN)) {
+            project_drum_pattern_set(project_drum_pattern()+(int)e);
+            en_drum_pattern(project_drum_pattern());
+            say("BEAT",en_beat_name(project_drum_pattern()));
+            mark_dirty();
+        } else if ((ui.view==V_MIX && ui.track==6) || ui.view==V_CALLS) {
             int voice=(proj.par[P_CLVOICE]+(int)(e%PT_NCALL)+PT_NCALL)%PT_NCALL;
             knob_set(P_CLVOICE,voice);
             say("CALL",pt_name(PT_CALLS,voice));
@@ -3058,6 +3063,7 @@ static void draw_controls(void)
     if (ui.view == V_SETUP) h = hash(hash(h, plat_cpu_pct()), plat_cpu_peak());
     for (r=0; r<n; r++) for (c=0; c<4; c++)
         h = hash(h, (uint32_t)knob_get(home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c]));
+    if ((home && ui.track==5) || ui.view==V_SKIN) h=hash(h,(uint32_t)project_drum_pattern());
     if (view_voice(ui.view) >= 0) h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
     if (home && home_voice()>=0) h=hash(h,(uint32_t)proj.par[home_voice()]);
     if (calls_context()) h=hash(hash(h,(uint32_t)proj.par[P_CLVOICE]),en_call_auto);
@@ -3068,7 +3074,7 @@ static void draw_controls(void)
     if (home) {
         const int voice=home_voice();
         if (voice>=0) en_param_text(voice,proj.par[voice],b);
-        else { const char *s="TRIBE SKIN"; int j=0; while ((b[j]=s[j])!=0) j++; }
+        else { const char *s=en_beat_name(project_drum_pattern()); int j=0; while ((b[j]=s[j])!=0) j++; }
         control_text(4,2,180,&FONT_B,b,K_TEXT);
     } else control_text(4, 2, 180, &FONT_B, VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_B, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
@@ -3076,7 +3082,9 @@ static void draw_controls(void)
         for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, track_label(c), CONTROL_COL[c]);
     } else {
         const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
-        if (voice >= 0) {
+        if(ui.view==V_SKIN) {
+            control_text(4,28,232,&FONT_B,en_beat_name(project_drum_pattern()),K_ACC);
+        } else if (voice >= 0) {
             en_param_text(voice, proj.par[voice], b);
             control_text(4, 28, 232, &FONT_B, b, K_ACC);
         } else if (atm_view(ui.view)) {

@@ -21,7 +21,10 @@ int main(void){
     CHECK(!strcmp(en_piece_name(0),"EXTINCTION"));CHECK(NPIECES==20);
     proj.par[P_CHORD]=55;proj.slot[3].par[P_SEQLEN]=12;
     for(i=1;i<NPIECES;i++)proj.slot[i].par[P_SKLEVEL]=(int16_t)(i*3%101);
+    for(i=0;i<NPIECES;i++){proj.piece=(uint8_t)i;project_drum_pattern_set(i%EN_NBEAT);}proj.piece=0;
     CHECK(project_save()==0);memset(&proj,0,sizeof proj);CHECK(project_load()==0);
+    for(i=0;i<NPIECES;i++){proj.piece=(uint8_t)i;CHECK(project_drum_pattern()==i%EN_NBEAT);}proj.piece=0;
+    {int n=lens[OBJ_PROJ];lens[OBJ_PROJ]=sizeof(project_head_t);CHECK(project_load()==0);CHECK(proj.par[P_CHORD]==55);for(i=0;i<NPIECES;i++){proj.piece=(uint8_t)i;CHECK(project_drum_pattern()==0);}lens[OBJ_PROJ]=n;CHECK(project_load()==0);}
     CHECK(proj.par[P_CHORD]==55);CHECK(proj.slot[3].par[P_SEQLEN]==12);
     for(i=1;i<NPIECES;i++)CHECK(proj.slot[i].par[P_SKLEVEL]==i*3%101);
     lens[OBJ_BANK0+1]=0;CHECK(project_load()==0);

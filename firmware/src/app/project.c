@@ -19,6 +19,11 @@ static void recipe(int i, slot_t *s)
 
 typedef struct { uint32_t magic, format; uint8_t piece, leds; int16_t tune, midi; } project_head_t;
 typedef struct { uint32_t magic, format; slot_t slot[10]; } saved_bank_t;
+/* Extended globals retain the original zero-padded header as a full prefix.
+ * The ten packed rhythm bytes use project_t.rsv, leaving preset layouts intact. */
+typedef struct { project_head_t head; uint8_t beats[10]; } saved_head_t;
+int project_drum_pattern(void){unsigned p=proj.piece,v=proj.rsv[p/2u]>>((p&1u)*4u)&15u;return v<EN_NBEAT?(int)v:0;}
+void project_drum_pattern_set(int i){unsigned p=proj.piece,s=(p&1u)*4u;int v=(i%EN_NBEAT+EN_NBEAT)%EN_NBEAT;proj.rsv[p/2u]=(uint8_t)((proj.rsv[p/2u]&~(15u<<s))|((unsigned)v<<s));}
 _Static_assert(sizeof(saved_bank_t) <= 3840u, "ten presets fit an A/B sector pair");
 _Static_assert(NPIECES <= 20, "reserved preset object map");
 
@@ -107,11 +112,15 @@ static int project_valid(void)                  /* (not: the recipes again) */
 int project_load(void)
 {
     project_head_t head;
+    saved_head_t ext;
     saved_bank_t saved;
     int n, i, bank;
     project_defaults();
-    n=plat_store_load(OBJ_PROJ, &head, sizeof head);
-    if (n==(int)sizeof head && head.magic==PROJ_MAGIC && head.format==PROJ_FORMAT) {
+    memset(&ext,0,sizeof ext);
+    n=plat_store_load(OBJ_PROJ, &ext, sizeof ext);
+    head=ext.head;
+    if ((n==(int)sizeof head || n==(int)sizeof ext) && head.magic==PROJ_MAGIC && head.format==PROJ_FORMAT) {
+        if(n==(int)sizeof ext) memcpy(proj.rsv,ext.beats,sizeof ext.beats);
         for (bank=0;bank<2;bank++) {
             n=plat_store_load(OBJ_BANK0+(uint32_t)bank,&saved,sizeof saved);
             if(n!=(int)sizeof saved || saved.magic!=PROJ_MAGIC || saved.format!=PROJ_FORMAT) continue;
@@ -135,6 +144,7 @@ int project_save(void)
 {
     saved_bank_t saved, prior;
     project_head_t head;
+    saved_head_t ext;
     int i, bank, rc, n;
     keep();
     for (bank=0;bank<2;bank++) {
@@ -150,7 +160,8 @@ int project_save(void)
     head.magic=PROJ_MAGIC; head.format=PROJ_FORMAT;
     head.piece=proj.piece; head.leds=proj.leds;
     head.tune=proj.par[P_TUNE]; head.midi=proj.par[P_MIDI];
-    return plat_store_save(OBJ_PROJ,&head,sizeof head);
+    memset(&ext,0,sizeof ext);ext.head=head;memcpy(ext.beats,proj.rsv,sizeof ext.beats);
+    return plat_store_save(OBJ_PROJ,&ext,sizeof ext);
 }
 
 void project_piece(int i)
@@ -164,6 +175,7 @@ void project_piece_reset(void)
 {
     slot_t s;
     recipe(proj.piece, &s);
+    project_drum_pattern_set(0);
     s.screen = proj.screen;                      /* (the view stays as it is) */
     take(&s);
     proj.slot[proj.piece].pings_ok = 0;          /* (its loops grown afresh too) */
@@ -176,6 +188,7 @@ void project_apply(void)                         /* (then en_regrow keeps the pi
     for (i = 0; i < P_NPARAMS; i++)
         en_set(i, proj.par[i]);
     en_pool(proj.pool);
+    en_drum_pattern(project_drum_pattern());
 #ifndef EN_LEGACY_TEST_BANK
     en_piece_theme(proj.piece);               /* scene-specific drum profile */
 #endif

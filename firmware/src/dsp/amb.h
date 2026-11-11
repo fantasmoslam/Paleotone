@@ -398,6 +398,10 @@ void en_piece_theme(int i);                    /* the piece playing, for en_regr
 /* Calls are manual at boot; mode is a live performance choice, never saved. */
 void en_call(int voice);                     /* 0..7: one shot, negative: stop */
 void en_calls_auto(int on);
+#define EN_NBEAT 11
+void en_drum_pattern(int i);
+const char *en_beat_name(int i);
+extern volatile uint8_t en_beat;
 extern volatile uint8_t en_call_auto;
 
 #ifdef EN_HOST

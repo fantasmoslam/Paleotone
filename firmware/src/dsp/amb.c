@@ -1,8 +1,17 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* The instrument (amb.h). One compilation unit, -O2. */
 #include "amb.h"
+#ifdef EN_LEGACY_TEST_BANK
+#define TWR_MIN_TEMPO 60
+#else
+#define TWR_MIN_TEMPO 40
+#endif
 #include "fastmath.h"
 #include "seq.c"
+#include "taiko_rhythm.h"
+#ifndef EN_LEGACY_TEST_BANK
+#include "taiko.c"
+#endif
 #include "../pt/pt.h"                          /* (T-WRECKS) Paleotone's sounds as the layers' voices (pt.c) */
 
 /* (T-WRECKS) a layer's voice knob: its own voices, then Paleotone's (pt.h PT_N[]: value - its own count). PT_OF: the
@@ -22,7 +31,22 @@ static int pt_layer_of(int p)                  /* the pt.h layer a voice paramet
                                                   * Drone's own, so a full pad sits under the plucks and the Lead) */
 #define PT_G_SEQ 0.73f
 #define PT_G_LEAD 3.7f
-static float pt_buf[256];                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
+static int8_t theme_pc = -1;
+static int heavy_profile(void) {
+#ifdef EN_LEGACY_TEST_BANK
+ return 0;
+#else
+ return theme_pc==1;
+#endif
+}
+static int heavy_offset(void);
+static float heavy_hp;
+static float pt_buf[256];
+#ifndef EN_LEGACY_TEST_BANK
+static float taiko_rbuf[256];
+#endif
+volatile uint8_t en_beat;
+const char *en_beat_name(int i){static const char *const names[11]={"GALOP","TRES","WAR","RAIN","QUAKE","WAR2","TALK","SEVEN","PENTA","SPIRAL","CHAOS"};return names[(unsigned)i<11u?i:0];}                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
 static int pt_own_n(int p)                     /* its own voices' count */
 {
     return p == P_CVOICE ? EN_NCV : p == P_SVOICE ? EN_NSV : p == P_LVOICE ? EN_NBV : EN_NS2V;
@@ -56,7 +80,7 @@ static const en_param_t PARAMS[P_NPARAMS] = {
     {"Density", 0, 100, 60},  {"Evolve", 0, 100, 40},   {"Drift", 0, 6, 4},       {"Repeat A", 0, 100, 100},
     {"Echo", 0, 100, 55},     {"Echo time", 0, 5, 3},   {"Reverb", 0, 100, 35},   {"Feedback", 0, 100, 60},
     {"Cutoff", 0, 100, 45},   {"Decay", 0, 100, 35},    {"Sweep", 0, 100, 50}, {"Motion", 0, 100, 50},
-    {"Tune", -50, 50, 0},     {"MIDI out", 0, 1, 1},    {"Tempo", 60, 160, 96},  {"Root", 0, 11, 5},
+    {"Tune", -50, 50, 0},     {"MIDI out", 0, 1, 1},    {"Tempo", TWR_MIN_TEMPO, 160, 96},  {"Root", 0, 11, 5},
     {"Mode", 0, EN_NMODES - 1, MODE_DORIAN}, {"Seq oct", -2, 2, 0}, {"Chord voice", 0, EN_NCV_ALL - 1, 0},
     {"Seq2 oct", -2, 1, -1},   {"Grid", 0, 1, 0},      {"Transpose", 0, 2, 0},
     {"Repeat A time", 0, 5, 1},    {"Repeat B", 0, 100, 0},
@@ -92,7 +116,7 @@ static const en_param_t PARAMS[P_NPARAMS] = {
     {"Noise width", 0, 100, 50}, {"Noise plate", 0, 100, 50}, {"Noise echo", 0, 100, 50}, {"Atmos width", 0, 100, 20},
     {"Noise LFO", 0, 100, 0}, {"Arc", 0, 100, 0},
     {"Atmos rate", 0, 100, 30}, {"Atmos intro", 0, 64, 0}, {"Bridge", 0, 100, 40}, {"Memory", 0, 100, 50},
-    {"Skin level", 0, 100, 0}, {"Skin chance", 0, 100, 35}, {"Skin tone", 0, 100, 45},
+    {"Skin level", 0, 100, 0}, {"Drum ghosts", 0, 100, 35}, {"Skin tone", 0, 100, 45},
     {"Skin decay", 0, 100, 45}, {"Skin reverb", 0, 100, 30},
     {"Call level", 0, 100, 0}, {"Call chance", 0, 100, 30}, {"Creature", 0, PT_NCALL-1, 0},
     {"Call tone", 0, 100, 40}, {"Call reverb", 0, 100, 70},
@@ -208,6 +232,15 @@ void en_piece(int i, int16_t *par, uint16_t *pool)
         { static const uint8_t levelpar[6]={P_CHORD,P_SEQ,P_LEAD,P_SEQ2,P_SKLEVEL,P_CLLEVEL};
           int n;for(n=0;n<6;n++){int v=par[levelpar[n]]*(int)balance[i]/100;par[levelpar[n]]=(int16_t)(v>100?100:v);} }
         par[P_CLVOICE]=d->call; par[P_CLCHANCE]=i==2 ? 45 : 25; par[P_CLTONE]=40;
+        if(i==1) {
+            par[P_TEMPO]=54;par[P_MODE]=MODE_PHRYGIAN;par[P_CVOICE]=EN_NCV+25;par[P_S2VOICE]=EN_NS2V+2;par[P_LVOICE]=EN_NBV+10;
+            par[P_CHORD]=42;par[P_SEQ]=0;par[P_SEQ2]=84;par[P_SEQ2OCT]=-2;par[P_SEQ2LEN]=16;par[P_LEAD]=35;par[P_LDENS]=0;par[P_SCH1]=100;
+            par[P_CATT]=0;par[P_CCOL]=0;par[P_CRES]=0;par[P_DREL]=0;par[P_PHASER]=0;par[P_DRIFT]=0;
+            par[P_SKLEVEL]=90;par[P_SKTONE]=80;par[P_SKDECAY]=100;par[P_SKDENS]=35;par[P_SKVERB]=40;
+            par[P_ECHO]=0;par[P_REVERB]=50;par[P_SIZE]=30;par[P_MOTION]=0;par[P_EVOLVE]=0;
+            par[P_DRREV]=20;par[P_S2ECHO]=0;par[P_DRECHO]=0;par[P_LATT]=20;par[P_VIB]=0;par[P_GLIDE]=0;
+        }
+
     }
     #endif
     *pool=EN_MODE_POOL[par[P_MODE]];
@@ -470,7 +503,7 @@ const char *en_chord_name(const int *pcs, int n, char *buf)
 }
 
 /* ------------------------------------------------------------ commands --- */
-enum { C_SET, C_POOL, C_PLAY, C_NEXT, C_FREEZE, C_SEED, C_PANIC, C_CLOCK, C_REGROW, C_MUTE, C_PERF, C_FX, C_SEQ, C_MACRO, C_PROT, C_REWALK, C_LOCK, C_SEQSET, C_LKEY, C_MOVE, C_LFORGET, C_THEME, C_LMIDI, C_CALL, C_CALLAUTO };
+enum { C_SET, C_POOL, C_PLAY, C_NEXT, C_FREEZE, C_SEED, C_PANIC, C_CLOCK, C_REGROW, C_MUTE, C_PERF, C_FX, C_SEQ, C_MACRO, C_PROT, C_REWALK, C_LOCK, C_SEQSET, C_LKEY, C_MOVE, C_LFORGET, C_THEME, C_LMIDI, C_CALL, C_CALLAUTO, C_BEAT };
 #define QN 512u                                 /* (a piece is every parameter at once: room for twice over and more) */
 _Static_assert(QN >= 2u * (P_NPARAMS + 8), "the command queue can't hold a piece's parameters twice over");
 static uint32_t q[QN];
@@ -493,6 +526,7 @@ void en_seed(uint32_t s) { post(C_SEED, 0, (int)(s & 0xFFFFu)); }
 void en_panic(void) { post(C_PANIC, 0, 0); }
 void en_call(int voice) { post(C_CALL, voice < 0 ? 255 : voice, 0); }
 void en_calls_auto(int on) { post(C_CALLAUTO, !!on, 0); }
+void en_drum_pattern(int i) { post(C_BEAT, (i%11+11)%11, 0); }
 void en_clock(int msg) { post(C_CLOCK, msg, 0); }
 void en_regrow(void) { post(C_REGROW, 0, 0); }
 void en_piece_theme(int i) { post(C_THEME, i, 0); }
@@ -732,7 +766,8 @@ static float tape_lpc = 0.55f, tape_hpc = 0.08f; /* the echo's feedback band-pas
 static float crackle_vol, cloud_amt;
 
 /* ------------------------------------------------------- the arrangement --- */
-static uint32_t sixteenth, bar, chord_bars;    /* bars since the start, since the chord moved */
+static uint32_t sixteenth, bar, chord_bars;
+static int heavy_offset(void) {static const uint8_t root[16]={0,0,0,0,1,1,1,1,0,0,0,0,1,1,0,0};return root[(sixteenth>>4)&15u];}    /* bars since the start, since the chord moved */
 static int pulse;                                /* (the MIDI clock's pulse in the sixteenth, 0..5: 0 the tick's) */
 static uint8_t lock;                             /* (PERFORM's Lock: the sequences' and the noise's groove kept) */
 static void noise_pattern(void);
@@ -826,17 +861,24 @@ static void drone_chord(void)                    /* the chord as voiced (stab[].
  * ROAR drone: its own fifth and drone under it); the chord before let go, its release under the new one */
 static void pt_drone_on(void)
 {
-    const int k = pt_is(PT_DRONE) - 1, n = pt_mono(PT_DRONE, k) ? 1 : EN_NPAD;
+    const int k = pt_is(PT_DRONE) - 1, n = pt_mono(PT_DRONE, k) ? 1 : heavy_profile()?2:EN_NPAD;
     int i;
     pt_notes_off(PT_DRONE);
     for (i = 0; i < n; i++)
-        pt_note_on(PT_DRONE, stab[i].note, 80, 0);
+        pt_note_on(PT_DRONE, stab[i].note, heavy_profile()?60:80, 0);
     pt_dheld = 1;
 }
 
 static void voice_chord(void)
 {
     int iv[4], i, pc, n;
+    if(heavy_profile() && !(par[P_PMODE]&EN_PLOOP)) {
+        n=36+par[P_ROOT]+heavy_offset();
+        for(i=0;i<EN_NPAD;i++){stab[i].note=(uint8_t)(n+(i&1?7:0)+12*(i/2));en_chord[i]=stab[i].note;chord_pcs[i]=stab[i].note%12;}
+        root_note=n;en_chord_root=(uint8_t)(n%12);chord_nt=2;en_chord_n=2;chord_slot=-1;en_chord_slot=-1;
+        if(en_playing)drone_chord();
+        return;
+    }
     if (chord_slot >= 0 && par[P_CQ0 + chord_slot]) {   /* a slot's chord, as written */
         int r = par[P_CR0 + chord_slot];
         en_chord_iv(par[P_CQ0 + chord_slot], par[P_CX0 + chord_slot], iv);
@@ -1867,6 +1909,16 @@ static void seq_tick(void)                       /* a sixteenth: the sequences' 
             }
     for (l = 0; l < 2; l++) {
         int played = -1, vel = 0, n, v;
+        if(l==1 && heavy_profile() && !par[P_SMODE]) {
+            const unsigned phase=(sixteenth>>4)&15u;
+            if(!(sixteenth&15u) && !en_frozen && (phase==0||phase==4||phase==8||phase==10||phase==12||phase==14) && sq_audible(1) && (par[P_SCH1]>=100 || irand(100)<par[P_SCH1])) {
+                const unsigned section=phase<8?4u:2u,requested=(unsigned)(par[P_SEQ2LEN]+3)/4u,bars=requested<section?requested:section;
+                const int note=48+par[P_ROOT]+12*par[P_SEQ2OCT]+heavy_offset();
+                if(pt_is(PT_SEQ2)){pt_notes_off(PT_SEQ2);pt_note_on(PT_SEQ2,note<12?12:note>96?96:note,82,(uint32_t)((float)(bars*16u-2u)*step_len));}
+                else pluck_voice(1,note,82,0);
+            }
+            continue;
+        }
         if (on_grid) {
             seq_t q = sq[l];                     /* (Pattern: the lanes' steps, octaves, skips, accents, its length) */
             const int pat = par[P_SMODE] != 0, ch = par[l ? P_SCH1 : P_SCH0];
@@ -3138,7 +3190,6 @@ static int ld_take(void)
  * at 0, 1, 5, 6, 8 and 11 of 16, 0.3 s each) taken as the keys' theme is (ld_take: slot 0, LD_PLAYED, so its
  * offspring follow it as its kinship falls), but not played as a call at once: the first block is the theme, when
  * the Lead comes in. Over the chord now, degrees from its root */
-static int8_t theme_pc = -1;
 static const int8_t UM_DEG[6] = {3, 5, 3, 7, 3, 5};
 static const uint8_t UM_DUR[6] = {1, 4, 1, 2, 3, 5};
 static void ld_seed(void)
@@ -3324,7 +3375,10 @@ static void bar_start(void)
         cr_dbars--;
     if (pb == 0 && bar > 0 && !lock)             /* (Lock: the noise's groove kept) */
         noise_pattern();                         /* (the noise's groove: new, or the last one again) */
-    if (!en_frozen && (change_pending || (db && bar > 0 && chord_bars >= (uint32_t)db))) {
+    if(!en_frozen && heavy_profile() && !(par[P_PMODE]&EN_PLOOP)) {
+        if(change_pending || en_chord_root!=(par[P_ROOT]+heavy_offset())%12){voice_chord();chord_bars=0;}
+        change_pending=0;
+    } else if (!en_frozen && (change_pending || (db && bar > 0 && chord_bars >= (uint32_t)db))) {
         change_pending = 0;
         chord_change();
     }
@@ -3334,9 +3388,9 @@ static void bar_start(void)
 }
 
 
-/* T-WRECKS: sparse percussion and calls have their own dice and never draw
- * from the melody/harmony streams. Three possible drum strikes per bar;
- * a creature at most once per four bars, with no overlapping call gates. */
+/* Taiko event logic is independent of melodic dice. Gurdy rhythms preserve their
+ * core grids and fills; the third drum control varies ghost notes. Calls keep
+ * their separate cooldown and mono voice budget. */
 volatile uint8_t en_call_auto;
 static uint32_t wild_rng=0xA54FF53Au, call_wait;
 static float call_lp;
@@ -3358,6 +3412,19 @@ static void wild_tick(int st)
 {
     if (st == 0 && call_wait) call_wait--;
     if (en_frozen || (mutes & EN_M_WILD)) return;
+#ifndef EN_LEGACY_TEST_BANK
+    if (par[P_SKLEVEL]) {
+        const unsigned kind=taiko_rhythm_hit(en_beat,sixteenth,par[P_SKDENS]*127/100,0);
+        const unsigned core=TAIKO_RHY[en_beat].v[sixteenth%TAIKO_RHY[en_beat].len];
+        if(kind && (en_load<=75u || core)) {
+            const int vel=kind==2u?113:kind==3u?97:kind==4u?88:76;
+            taiko_hit(kind,vel,par[P_SKDECAY]);
+#ifdef EN_HOST
+            en_skin_hits++;
+#endif
+        }
+    }
+#else
     if (par[P_SKLEVEL] && par[P_SKDENS]) {
         int lane=-1, chance=par[P_SKDENS];
         if (st==0) lane=0;
@@ -3380,6 +3447,7 @@ static void wild_tick(int st)
 #endif
         }
     }
+#endif
     if (en_load<=75u && en_call_auto && st==0 && !call_wait && par[P_CLLEVEL] && par[P_CLCHANCE] &&
         seq_rand(&wild_rng)%100u < (uint32_t)par[P_CLCHANCE]) {
         const int note=36+par[P_ROOT]+(int)(seq_rand(&wild_rng)%2u)*12;
@@ -3931,7 +3999,11 @@ static void apply(int p, int v)
     par[p] = (int16_t)v;
     v = pe(p);                                   /* (as the master actions move it) */
     switch (p) {
-    case P_SKLEVEL: if (!v) pt_skin_quiet(); break;
+    case P_SKLEVEL: if (!v) { pt_skin_quiet();
+#ifndef EN_LEGACY_TEST_BANK
+    taiko_quiet();
+#endif
+    } break;
     case P_CLLEVEL: if (!v) pt_quiet(PT_CALLS); break;
     case P_CLVOICE: pt_sound(PT_CALLS, v); break;
     case P_CHORD:
@@ -4056,6 +4128,7 @@ static void apply(int p, int v)
                 ptg_all(l == PT_SEQ2);           /* (its notes' MIDI let go) */
             pt_quiet(l);                         /* (what it played stops: the layer's own voice, or the new sound) */
             pt_sound(l, k);
+            if(l==PT_DRONE)pt_clean_organ(heavy_profile());
             if (l == PT_DRONE && k >= 0 && en_playing && dr_on[dr_bank])
                 pt_drone_on();                   /* (the chord as it sounds, on the new sound) */
         }
@@ -4154,6 +4227,9 @@ static void quiet(void)
     for (i = 0; i < PT_NPART; i++)
         pt_quiet(i);
     pt_skin_quiet();
+#ifndef EN_LEGACY_TEST_BANK
+    taiko_quiet();
+#endif
     call_lp = 0.0f;
     notes_off();
 }
@@ -4164,7 +4240,10 @@ void en_init(void)
     int i;
     pt_init();
     pt_skin_quiet();
-    wild_rng=0xA54FF53Au; call_wait=0; call_lp=0.0f; en_call_auto=0;
+#ifndef EN_LEGACY_TEST_BANK
+    taiko_quiet();
+#endif
+    wild_rng=0xA54FF53Au; call_wait=0; call_lp=0.0f; en_call_auto=0; en_beat=0; heavy_hp=0.0f;
 #ifdef EN_HOST
     en_skin_hits=en_call_hits=0;
 #endif                                   /* (T-WRECKS) Paleotone's sounds: no layer on one yet */
@@ -4428,7 +4507,11 @@ static void drain(void)
             seq_hist_clear(&sq_hist[a & 1]);
             break;
         case C_REGROW:
-            pt_quiet(PT_CALLS); pt_skin_quiet(); call_wait=0; call_lp=0.0f;
+            pt_quiet(PT_CALLS); pt_skin_quiet();
+#ifndef EN_LEGACY_TEST_BANK
+    taiko_quiet();
+#endif
+            call_wait=0; call_lp=0.0f;
             for (a = 0; a < EN_NMAC; a++)        /* (the user, 2026-10-28) a piece from the master actions at 0: none
                                                   * of the last one's push carried over */
                 macro(a, 0);
@@ -4444,8 +4527,12 @@ static void drain(void)
             ld_seed();                           /* (a written theme, if the piece has one) */
             lead_off();
             break;
+        case C_BEAT: en_beat=(uint8_t)(a%11); break;
         case C_THEME:
             theme_pc = (int8_t)a;
+            pt_clean_organ(heavy_profile());
+            heavy_hp=0.0f;
+            if(heavy_profile())voice_chord();
             break;
         case C_SEQ:
             seq_have = (uint8_t)a;
@@ -6085,7 +6172,8 @@ static void render_drone(uint32_t n)
         svf_coefs(c, 2.0f * fc, k);
         for (j = 0; j < n; j++) {
             lvl = to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
-            drr[j] = drl[j] = svf_lp(c, pt_dfs, drl[j], &bp) * lvl * lvl * gg;
+            {float x=svf_lp(c,pt_dfs,drl[j],&bp);if(heavy_profile()){heavy_hp+=.01975f*(x-heavy_hp);x-=heavy_hp;}
+            drr[j]=drl[j]=x*lvl*lvl*gg;}
         }
         pt_dlvl = lvl;
         if (to <= 0.0f && lvl <= 0.0f && pt_dheld) {   /* (faded out: its notes let go, the voices free) */
@@ -6396,6 +6484,12 @@ static void render_wild(uint32_t n)
 {
     uint32_t j;
     const float audible=(mutes & EN_M_WILD) ? 0.0f : 1.0f;
+#ifndef EN_LEGACY_TEST_BANK
+    if(par[P_SKLEVEL] && taiko_render(pt_buf,taiko_rbuf,n,par[P_SKTONE])) {
+        const float v=(float)par[P_SKLEVEL]*.01f,g=v*v*audible,send=(float)par[P_SKVERB]*.01f;
+        for(j=0;j<n;j++){float l=pt_buf[j]*g,r=taiko_rbuf[j]*g;mixl[j]+=l;mixr[j]+=r;rsend[j]+=(l+r)*.5f*send;}
+    }
+#else
     if (par[P_SKLEVEL] && pt_skin_render(pt_buf,n)) {
         const float v=(float)par[P_SKLEVEL]*0.01f, g=0.65f*v*v*audible;
         const float send=(float)par[P_SKVERB]*0.01f;
@@ -6404,6 +6498,7 @@ static void render_wild(uint32_t n)
             mixl[j]+=y; mixr[j]+=y; rsend[j]+=y*send;
         }
     }
+#endif
     if (par[P_CLLEVEL] && pt_render(PT_CALLS,pt_buf,n)) {
         const float v=(float)par[P_CLLEVEL]*0.01f, g=0.8f*v*v*audible;
         const float send=(float)par[P_CLVERB]*0.01f;

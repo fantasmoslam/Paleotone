@@ -41,7 +41,7 @@ int main(void) {
     en_calls_auto(1);en_play(1);
     render_seconds(64);
     printf("scheduler: %u skins, %u calls in %u sixteenths\n",en_skin_hits,en_call_hits,en_bars);
-    CHECK(en_skin_hits>20 && en_skin_hits<80);CHECK(en_call_hits>2 && en_call_hits<10);CHECK(pt_voices()<=8);
+    CHECK(en_skin_hits>350 && en_skin_hits<520);CHECK(en_call_hits>2 && en_call_hits<10);CHECK(pt_voices()<=8);
     {uint32_t h=en_skin_hits,c=en_call_hits;en_freeze(1);render_seconds(8);CHECK(h==en_skin_hits && c==en_call_hits);}
     en_freeze(0);en_set(P_SKLEVEL,0);en_set(P_CLLEVEL,0);
     {uint32_t h=en_skin_hits,c=en_call_hits;render_seconds(8);CHECK(h==en_skin_hits && c==en_call_hits);}
@@ -60,7 +60,7 @@ int main(void) {
     for(k=0;k<EN_NPIECES;k++) {
         int16_t p[P_NPARAMS];uint16_t pool;double energy=0,pk=0;int frames=30*44100/256;
         en_init();en_piece(k,p,&pool);
-        for(j=0;j<P_NPARAMS;j++){CHECK(p[j]>=en_param_info(j)->lo && p[j]<=en_param_info(j)->hi);en_set(j,p[j]);}
+        for(j=0;j<P_NPARAMS;j++){if(p[j]<en_param_info(j)->lo || p[j]>en_param_info(j)->hi)printf("preset %d invalid parameter %d (%s): %d\n",k,j,en_param_info(j)->name,p[j]);CHECK(p[j]>=en_param_info(j)->lo && p[j]<=en_param_info(j)->hi);en_set(j,p[j]);}
         en_pool(pool);en_piece_theme(k);en_regrow();en_play(1);
         for(b=0;b<frames;b++){
             en_render(pcm,256,2048);
@@ -69,7 +69,7 @@ int main(void) {
         energy=sqrt(energy/(frames*512.0));
         printf("preset %-16s rms %.4f peak %.3f\n",en_piece_name(k),energy,pk);
         CHECK(energy>0.01 && pk<0.95);CHECK(pt_voices()<=8);
-        if(k==1) {printf("stampede: %u drum hits in %u sixteenths\n",en_skin_hits,en_bars);CHECK(en_skin_hits>=45 && en_skin_hits<90);}
+        if(k==1) {printf("stampede: %u drum hits in %u sixteenths\n",en_skin_hits,en_bars);CHECK(en_skin_hits>=60 && en_skin_hits<140);}
     }
     printf("wild: %s\n",fail?"FAIL":"all passed");return fail!=0;
 }

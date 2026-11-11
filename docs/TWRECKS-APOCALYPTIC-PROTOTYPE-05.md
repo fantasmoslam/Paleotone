@@ -19,3 +19,7 @@ Taiko samples: Subaqueous; SCC Taiko Drums by S. Christian Collins; Floe-compati
 Run tools/research/mix_apocalyptic_prototype_05.py OUTPUT_DIRECTORY tools/research/taiko-bank-05 PATH_TO_VERSION_03_STEMS.wav with the same Python dependencies as the earlier audition tools. It decodes the checked-in compact bank, not the larger original FLAC recordings. Source hashes and transformations are recorded with the bank.
 
 This remains a desktop sound/arrangement audition. The installed firmware has not changed. The 40,312-byte audio bank alone is smaller than the previously measured roughly 50.5 KB of free application image space. A linked build must still prove decoder/mixer/code alignment space; memory, real-time flash access and device CPU with bass, drums, effects and live lead remain unmeasured. No external sample storage has been overwritten. Acceptance of the recorded drum sound should precede the firmware playback port.
+
+## Acceptance and native integration
+
+Dylan explicitly approved this sound and direction, then requested all compatible Paleotone/Gurdy beats. The native candidate now has all eleven rhythm families and a six-voice ADPCM taiko player. Desktop approval does not establish FM-1 CPU stability or acceptance of the native mix; those remain device listening checks.

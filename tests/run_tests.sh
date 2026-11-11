@@ -31,6 +31,7 @@ run twr-voices sh -c "$CC -DEN_LEGACY_TEST_BANK -O2 -ffp-contract=off -std=c99 -
     -o $OUT/twr_voice_test tests/host/twr_voice_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/twr_voice_test 8"
 run project sh -c "$CC -O2 -std=c99 -Wall -Wextra -Werror -DEN_HOST -Ifirmware/src/dsp \
     -o $OUT/project_test tests/host/project_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/project_test"
+run taiko sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror tests/host/taiko_test.c -lm -o $OUT/taiko_test && $OUT/taiko_test $OUT"
 run wild sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
     -o $OUT/wild_test tests/host/wild_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/wild_test"
 run amb sh -c "$CC -DEN_LEGACY_TEST_BANK -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
@@ -64,7 +65,7 @@ for s in tests/scenarios/*.amb; do
     n=$(basename "$s" .amb)
     mkdir -p "build/scenarios/$n"
     host=build/host/amb_host_legacy
-    case "$n" in twrecks-bank|twrecks-live) host=build/host/amb_host ;; esac
+    case "$n" in twrecks-bank|twrecks-live|twrecks-beats) host=build/host/amb_host ;; esac
     run "scenario-$n" "$host" "$s" "build/scenarios/$n"
 done
 [ $FAIL -eq 0 ] && echo "all tests passed" || echo "TESTS FAILED"

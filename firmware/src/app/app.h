@@ -35,6 +35,8 @@ typedef struct {
 
 extern project_t proj;
 
+int project_drum_pattern(void);
+void project_drum_pattern_set(int i);
 void project_defaults(void);
 int project_load(void);                  /* 0 = loaded; else defaults are in place */
 int project_save(void);                  /* 0 = saved and verified */

@@ -551,6 +551,8 @@ static int expect(const char *what, const char *val)
         got = last_note[(atoi(what + 11) + 15) % 16];
     else if (!strncmp(what, "act", 3) && what[3] >= '0' && what[3] <= '4')   /* (BERLIN) actN: layer N's activity x100 */
         got = (int)(en_layer_act[what[3] - '0'] * 100.0f);
+    else if (!strcmp(what, "beat")) got=project_drum_pattern();
+    else if (!strcmp(what, "enginebeat")) got=en_beat;
     else if (!strcmp(what, "skins")) got=(int)en_skin_hits;
     else if (!strcmp(what, "calls")) got=(int)en_call_hits;
     else if (!strcmp(what, "callauto")) got=en_call_auto;

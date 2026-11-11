@@ -216,6 +216,12 @@ void pt_sound(int layer, int k)
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
     lay[layer].snd = (uint8_t)(k + 1);
 }
+void pt_clean_organ(int on)
+{
+    track_t *t=&trk[PT_DRONE];
+    if(lay[PT_DRONE].snd!=26u)return;
+    t->p[P_E1]=on?-8:6;t->p[P_E3]=on?-1:2;t->p[P_E5]=on?0:8;t->p[P_E6]=on?0:10;t->p[P_E7]=on?0:1;
+}
 int pt_is(int layer) { return (unsigned)layer < PT_NPART ? lay[layer].snd : 0; }
 
 void pt_note_on(int layer, int note, int vel, uint32_t gate)

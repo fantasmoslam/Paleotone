@@ -1,0 +1,37 @@
+# All extracted rhythm families are directly selectable and saved per preset.
+wait 300
+spin SELECT 5
+wait 200
+expect beat 0
+turn ALGO 10
+wait 200
+expect beat 10
+expect enginebeat 10
+shot beat-home.png
+tap SAVE
+wait 200
+expect view 26
+turn ALGO 1
+wait 200
+expect beat 0
+turn ALGO -1
+wait 200
+expect beat 10
+turn PRESET 1
+wait 200
+expect beat 0
+turn ALGO 5
+wait 200
+expect beat 5
+press GLO
+wait 700
+release GLO
+wait 300
+reboot
+wait 300
+expect piece 1
+expect beat 5
+expect enginebeat 5
+turn PRESET -1
+wait 300
+expect beat 10

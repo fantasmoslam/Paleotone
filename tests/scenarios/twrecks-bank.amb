@@ -15,15 +15,15 @@ expect par138 1
 turn PRESET 1
 wait 250
 expect piece 1
-expect par131 84
-expect par18 96
+expect par131 90
+expect par18 54
 wait 6000
 expect skins >8
 spin SELECT -1
 wait 250
 spin K1 -10
 wait 250
-expect par131 74
+expect par131 80
 shot skin-home.png
 tap SAVE
 wait 250
@@ -51,7 +51,7 @@ expect par136 44
 expect par138 1
 turn PRESET 1
 wait 300
-expect par131 74
+expect par131 80
 turn PRESET 19
 wait 300
 expect piece 0
