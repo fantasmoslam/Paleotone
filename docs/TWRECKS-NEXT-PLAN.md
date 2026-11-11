@@ -26,6 +26,10 @@ Saved format-11 edits remain readable. To hear the new STAMPEDE factory recipe, 
 
 ## Authorized western scene replacement
 
-Dylan clarified that six named scene presets should be replaced with western scenes. BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER replace six specified slots; the other fourteen, including RAPTOR NIGHT, retain their settings. The three new independent patterns TRAIL, OUTRIDER and HUNT supplement the eleven imported beats. See [scene mapping and update behavior](TWRECKS-WESTERN-SCENES.md). These new scenes still need listening acceptance.
+Dylan clarified that six named scene presets should be replaced with western scenes. BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER replace six specified slots; the other fourteen, including RAPTOR NIGHT, retain their settings. The three new independent patterns TRAIL, OUTRIDER and HUNT supplement the eleven imported beats. See [scene mapping and update behavior](TWRECKS-WESTERN-SCENES.md). Dylan explicitly approved all six new western scenes after the installed-device audition: “These are really good, awesome.” Preserve their current musical defaults alongside RAPTOR NIGHT.
 
-Western candidate 43703d8 is installed and reboot-verified. The observed saved RAPTOR NIGHT settings (130 BPM, F Phrygian and Drone controls) survived unchanged. Next boundary: user listening to the six western scenes and device CPU/dropout checks with live Lead and creature calls.
+Western candidate 43703d8 is installed and reboot-verified. The observed saved RAPTOR NIGHT settings (130 BPM, F Phrygian and Drone controls) survived unchanged. The six-scene listening boundary is passed. Remaining hardware checks are peak CPU/dropouts with live Lead and creature calls; these are independent of musical approval.
+
+## Completion pass
+
+The six western scenes are musically approved. The full CI audit passed all control scenarios, including the long orphan check; its only failure was a legitimate FM bell release tail outlasting the test’s six-second deadline. The bounded release check now passes with up to ten seconds, with no audio-code change. See [completion checklist](TWRECKS-COMPLETION-CHECKLIST.md) for remaining device acceptance and the approved package hash.

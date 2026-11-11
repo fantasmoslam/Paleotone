@@ -40,3 +40,7 @@ The final package passed OTA entry, loader boundary/recovery and installer proto
 ## Verified device installation
 
 The installer completed its write and restart verification on 2026-11-11. An independent identity query confirmed FM-1_942 running. Read-only screen-reader snapshots immediately before and after installation both showed RAPTOR NIGHT, F Phrygian, 130 BPM, Drone Level 59 / Filter -18 / LFO 20 / Reverb 50, with no unsaved-edit indication. This confirms those observed settings survived the update; the all-fourteen-slot byte comparison is a host migration test. New-scene sound and worst-case device CPU remain listening/performance checks.
+
+## Musical acceptance
+
+After the installed-device audition Dylan explicitly approved the six western scenes: “These are really good, awesome.” Preserve these and RAPTOR NIGHT as the musical reference. This accepts the scene direction and sounds; it does not replace worst-case CPU/dropout checks.
