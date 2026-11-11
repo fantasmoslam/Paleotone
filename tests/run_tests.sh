@@ -22,6 +22,7 @@ run() {
 }
 run fastmath sh -c "$CC -O2 -ffp-contract=off -Wall -Wextra -Werror -o $OUT/fastmath_test tests/host/fastmath_test.c -lm && $OUT/fastmath_test"
 run encoder sh -c "$CC -O2 -w -Ifirmware/hal -o $OUT/encoder_test tests/host/encoder_test.c && $OUT/encoder_test"
+run knob-response sh -c "$CC -O2 -std=c99 -Wall -Wextra -Werror -o $OUT/knob_response_test tests/host/knob_response_test.c && $OUT/knob_response_test"
 run uac sh -c "$CC -O2 -w -Ifirmware/src -Ifirmware/hal -o $OUT/uac_test tests/host/uac_test.c -lm && $OUT/uac_test"
 run trs sh -c "$CC -O2 -w -Ifirmware/src -Ifirmware/hal -o $OUT/trs_test tests/host/trs_test.c && $OUT/trs_test"
 # (T-WRECKS) Paleotone's sounds: its unit (Paleotone's code, its own warnings), every sound of the lists
@@ -67,7 +68,7 @@ for s in tests/scenarios/*.amb; do
     n=$(basename "$s" .amb)
     mkdir -p "build/scenarios/$n"
     host=build/host/amb_host_legacy
-    case "$n" in twrecks-bank|twrecks-live|twrecks-beats|twrecks-instruments|twrecks-western) host=build/host/amb_host ;; esac
+    case "$n" in twrecks-bank|twrecks-live|twrecks-beats|twrecks-instruments|twrecks-western|twrecks-knobs) host=build/host/amb_host ;; esac
     run "scenario-$n" "$host" "$s" "build/scenarios/$n"
 done
 [ $FAIL -eq 0 ] && echo "all tests passed" || echo "TESTS FAILED"

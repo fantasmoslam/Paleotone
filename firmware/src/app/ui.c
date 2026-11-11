@@ -19,6 +19,7 @@
  *                  held on 1.5 s: the piece back to its recipe */
 #include "../dsp/fastmath.h"
 #include "../pt/pt.h"
+#include "knob_response.h"
 
 /* the pages, one a layer (a button each, NPAGES; the Noise page, V_NSND, SAVE's); the header's dots show them in the
  * panel's order, PAGE_ORDER below (the view numbers stay as they were: the tests use them) */
@@ -251,8 +252,7 @@ static struct {
     uint8_t lane;                      /* the Pattern page: the lane edited */
     uint8_t grid_said;
     uint32_t btn, keys, btn_used;
-    uint32_t enc_t[NE];
-    uint8_t enc_run[NE];               /* detents in the current quick run, per knob (accel) */
+    knob_response_t enc_response[NE];
     uint32_t down_t[NB];               /* when each button went down */
     uint32_t turn_t;                   /* the last knob turn */
     uint8_t reset_done;                /* SAVE held: the piece went back to its recipe this hold */
@@ -595,25 +595,11 @@ static void knob_set(int k, int v)
     mark_dirty();
 }
 
-/* knob acceleration by speed (X0X's): a few clicks are one step each however quick, so small
- * corrections stay exact; a longer quick turn speeds up to 8 a detent, so half a turn sweeps 0-100.
- * Small ranges never accelerate. */
-static uint8_t accel_off;              /* the host simulator's "spin": exact steps */
-static int32_t accel(int role, int32_t s, int range)
+/* The host's exact-step commands bypass only response scaling. */
+static uint8_t accel_off;
+static int32_t accel(int role, int k, int32_t steps, int range)
 {
-    uint32_t now = plat_ms(), dt = now - ui.enc_t[role], a = (uint32_t)(s < 0 ? -s : s), m;
-    ui.enc_t[role] = now;
-    if (!a)
-        return s;
-    if (a > 1)
-        dt /= a;                                      /* per detent */
-    ui.enc_run[role] = (uint8_t)(dt < 60u ? (ui.enc_run[role] + a > 255u ? 255u : ui.enc_run[role] + a) : a);
-    if (range <= 24 || accel_off || ui.enc_run[role] < 4u)
-        return s;
-    m = dt < 12u ? 8u : dt < 25u ? 5u : dt < 45u ? 3u : 1u;
-    if (range < 100 && m > 3u)
-        m = 3u;
-    return s * (int32_t)m;
+    return accel_off ? steps : knob_response(&ui.enc_response[role], plat_ms(), k, range, steps);
 }
 
 static void turn(int role, int k, int32_t e)
@@ -626,28 +612,12 @@ static void turn(int role, int k, int32_t e)
         return;
     }
     knob_range(k, &lo, &hi);
-    if (lo < 0 && hi > 0 && hi - lo >= 10) {     /* (1.3.0) a centred knob: a notch at 0, three clicks to leave it */
-#define NOTCH 2                                  /* (the clicks out of 0 held back) */
-        static int8_t held[16];
-        static uint32_t held_t[16];
-        int v = knob_get(k), n, r = role & 15;
-        if (v == 0) {                            /* (clicks out of 0 held back, NOTCH of them, one way, close together) */
-            int32_t a = e > 0 ? e : -e, dir = e > 0 ? 1 : -1;
-            if (plat_ms() - held_t[r] > 700u || (held[r] > 0) != (dir > 0))
-                held[r] = 0;
-            held_t[r] = plat_ms();
-            while (a > 0 && (held[r] > 0 ? held[r] : -held[r]) < NOTCH)
-                held[r] = (int8_t)(held[r] + dir), a--;
-            if (!a)
-                return;
-            e = dir * a;
-            held[r] = 0;
-        }
-        n = v + accel(role, e, hi - lo);
-        knob_set(k, (v > 0 && n < 0) || (v < 0 && n > 0) ? 0 : n);   /* (and it stops at 0 on the way through) */
-        return;
+    {
+        int v = knob_get(k), n = v + accel(role, k, e, hi - lo);
+        /* Stop at the meaningful centre when crossing it; the next click
+         * moves immediately, without the old three-click dead zone. */
+        knob_set(k, lo < 0 && hi > 0 && ((v > 0 && n < 0) || (v < 0 && n > 0)) ? 0 : n);
     }
-    knob_set(k, knob_get(k) + accel(role, e, hi - lo));
 }
 
 /* ------------------------------------------------------------- the pool --- */
@@ -1208,19 +1178,18 @@ static int oct_ring_on(uint32_t now)             /* the ring's layer + 1, while 
         return 0;
     return ui.oct_ring;
 }
-static void level_turn(int l, int32_t e)         /* SELECT on a layer's page: its level, 1 a detent */
+static void level_turn(int l, int32_t e)         /* SELECT on a layer's page: same response as its Level knob */
 {
     char t[8];
-    knob_set(LAYER_LEVEL[l], proj.par[LAYER_LEVEL[l]] + (int)e);
+    turn(EN_SELECT, LAYER_LEVEL[l], e);
     itoa_u((uint32_t)proj.par[LAYER_LEVEL[l]], t);
     say(LAYER_NAME[l], t);
     oct_show(l);
 }
-static void energy_turn(int32_t e)               /* (the user, 2026-10-28) SELECT on HOME: Energy, PERFORM's, 1 a
-                                                  * detent (the keys still the Lead's); held as a turn of its knob */
+static void energy_turn(int32_t e)               /* SELECT on HOME: Energy, with the same response as its knob. */
 {
     char t[8];
-    knob_set(K_ENERGY, knob_get(K_ENERGY) + (int)e);
+    turn(EN_SELECT, K_ENERGY, e);
     knob_text(K_ENERGY, t);
     say("ENERGY", t);
     ui.sel_until = plat_ms() + 1200u;

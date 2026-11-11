@@ -48,3 +48,7 @@ The physical SAVE button opens sound pages; it is not the save-edits shortcut. S
 Setup shows CPU average/peak and a **!** count if audio dropouts occurred. The screen-reader diagnostic also identifies two-core operation. The tested HIGH FRONTIER live-Lead performance now plays cleanly at about 65% average and 91% peak; other combinations can differ.
 
 PLAY rests/resumes the music. A short REC tap toggles Hold. SEL enters Performance; a page button returns to ordinary editing. Instrument choices, beat and mix edits save with each scene.
+
+## Knob response
+
+Turn slowly for one-unit corrections. Faster continuous turns broaden the sweep progressively, up to four units per detent. Reversing direction starts with a fine step immediately. Centered controls stop at zero when crossing it, and the next click moves away. Track, instrument, beat and scene selection remain one item per detent.
