@@ -2,7 +2,7 @@
 
 ## Current development direction
 
-The new candidate adds Home instrument voice selection, manual dinosaur calls and a heavier STAMPEDE prototype. The [dinosynth research](docs/TWRECKS-DINOSYNTH-RESEARCH.md) informs the [completion plan](docs/TWRECKS-NEXT-PLAN.md). Dylan clarified that the heavy scene needs the weight and drive of a march, without requiring a literal march. Musical acceptance and device CPU measurements remain outstanding.
+The controls/manual-call candidate is installed, but its musical direction was rejected: hollow bass and upbeat/noir character do not meet Dylan's **apocalyptic, consequential** target. The [audio study](docs/TWRECKS-APOCALYPTIC-AUDIO-STUDY.md) measures eleven reference streams and candidate diagnostics, alongside a source audit. The [completion plan](docs/TWRECKS-NEXT-PLAN.md) now prioritizes one desktop musical prototype before further flashing or broad preset revision. The documentation below describes the existing candidate, not an accepted final sound.
 
 A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contains only the twenty dinosynth presets below. Fresh startup is EXTINCTION. Previous project formats reset to the new bank, as requested; no old-preset migration or original factory pieces are included in device firmware.
 

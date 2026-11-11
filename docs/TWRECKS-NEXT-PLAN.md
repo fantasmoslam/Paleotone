@@ -1,6 +1,8 @@
 # T-WRECKS — completion plan
 
-Status: implementing the authorized control and heavy-scene prototype. The documentary [dinosynth research](TWRECKS-DINOSYNTH-RESEARCH.md) is complete; external reference close listening was not performed. Dylan authorized proceeding and clarified that the heavy scene needs a stomping, driving feel, without a literal march or elaborate march-specific structure.
+Status: controls and manual calls are implemented, but the musical candidate was rejected. Dylan describes hollow/insufficiently deep bass, upbeat/noir tonality and unsuitable instruments. **“Apocalyptic” and “consequential” are the current musical acceptance criteria.** The [audio study](TWRECKS-APOCALYPTIC-AUDIO-STUDY.md) examines 48 minutes of reference streams plus candidate diagnostics and identifies register, harmonic grammar, orchestration and balance problems. Computational analysis is complete; it is not a claim of human critical listening or a verified reference transcription.
+
+Next: one short desktop audio prototype using a foundational low bass, substantial brass/organ/string body, deliberate harmony and slower perceptual movement. Get listening acceptance before a wider bank rewrite or another hardware flash. A literal march is not required.
 
 ## Requirements retained
 

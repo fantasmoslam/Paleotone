@@ -1,3 +1,5 @@
+> Follow-up: the current candidate was rejected on musical grounds. Read [the audio study](TWRECKS-APOCALYPTIC-AUDIO-STUDY.md) for reference-stream measurements, the bass/register/harmony audit, and the apocalyptic/consequential brief. This earlier report is documentary background.
+
 # Dinosynth research for T-WRECKS
 
 Research checkpoint: 10 November 2026, reviewing candidate 464e9c7. The audit below describes that earlier candidate. Subsequent user guidance asks for the weight and drive of a march, without requiring a literal march or elaborate march-specific structure. The [completion plan](TWRECKS-NEXT-PLAN.md) records the current implementation and remaining listening work.
