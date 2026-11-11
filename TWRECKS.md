@@ -1,5 +1,9 @@
 # T-WRECKS
 
+## Current development direction
+
+The installed candidate is working, but Dylan wants stronger dinosynth identity, explicit instrument voice selection and on-demand dinosaur calls, plus an aggressive bass-and-marching-drums scene. Implementation is paused for the [dinosynth research](docs/TWRECKS-DINOSYNTH-RESEARCH.md) and [revised completion plan](docs/TWRECKS-NEXT-PLAN.md). The descriptions below document the installed candidate, rather than the final musical target.
+
 A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contains only the twenty dinosynth presets below. Fresh startup is EXTINCTION. Previous project formats reset to the new bank, as requested; no old-preset migration or original factory pieces are included in device firmware.
 
 ## Controls
