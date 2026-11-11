@@ -27,3 +27,5 @@ Saved format-11 edits remain readable. To hear the new STAMPEDE factory recipe, 
 ## Authorized western scene replacement
 
 Dylan clarified that six named scene presets should be replaced with western scenes. BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER replace six specified slots; the other fourteen, including RAPTOR NIGHT, retain their settings. The three new independent patterns TRAIL, OUTRIDER and HUNT supplement the eleven imported beats. See [scene mapping and update behavior](TWRECKS-WESTERN-SCENES.md). These new scenes still need listening acceptance.
+
+Western candidate 43703d8 is installed and reboot-verified. The observed saved RAPTOR NIGHT settings (130 BPM, F Phrygian and Drone controls) survived unchanged. Next boundary: user listening to the six western scenes and device CPU/dropout checks with live Lead and creature calls.

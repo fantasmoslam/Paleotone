@@ -33,6 +33,10 @@ Exactly six factory recipe rows changed. The other fourteen saved slot objects a
 
 Thirty-two unaffected control scenarios passed before the selector-limit correction; the five affected production scenarios then passed with the final selector, including western defaults, saved beat selection, new instrument choices and manual calls. The long orphan scenario was not rerun.
 
-Final image is 578,684 / 581,564 bytes; static RAM 91,972 / 98,304; pool 333,448 / 344,064. The new candidate still needs installation and listening: the FM-1 was no longer detected at the final connection check.
+Final image is 578,684 / 581,564 bytes; static RAM 91,972 / 98,304; pool 333,448 / 344,064. Candidate 43703d8 is now installed; listening acceptance of the new scenes is pending.
 
-The final package passed OTA entry, loader boundary/recovery and installer protocol checks. A second connection query still found only LUME 0; the western candidate is not installed.
+The final package passed OTA entry, loader boundary/recovery and installer protocol checks. The FM-1 subsequently reconnected and candidate 43703d8 was installed successfully.
+
+## Verified device installation
+
+The installer completed its write and restart verification on 2026-11-11. An independent identity query confirmed FM-1_942 running. Read-only screen-reader snapshots immediately before and after installation both showed RAPTOR NIGHT, F Phrygian, 130 BPM, Drone Level 59 / Filter -18 / LFO 20 / Reverb 50, with no unsaved-edit indication. This confirms those observed settings survived the update; the all-fourteen-slot byte comparison is a host migration test. New-scene sound and worst-case device CPU remain listening/performance checks.
