@@ -1189,7 +1189,7 @@ static void level_turn(int l, int32_t e)         /* SELECT on a layer's page: sa
 static void energy_turn(int32_t e)               /* SELECT on HOME: Energy, with the same response as its knob. */
 {
     char t[8];
-    turn(EN_SELECT, K_ENERGY, e);
+    knob_set(K_ENERGY, knob_get(K_ENERGY) + accel(EN_SELECT, K_ENERGY, e, 100));
     knob_text(K_ENERGY, t);
     say("ENERGY", t);
     ui.sel_until = plat_ms() + 1200u;

@@ -1,6 +1,6 @@
 # NightClaw completion checkpoint
 
-Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current installed NightClaw candidate: 3cf8a1a, retaining all twenty approved audio hashes.
+Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current installed NightClaw candidate: f92fe8c, retaining all twenty approved audio hashes.
 
 | Item | Evidence / status |
 |---|---|
@@ -13,7 +13,7 @@ Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current inst
 | Storage | Beat/instrument save and reboot checks, interrupted replacement write/retry and old-header compatibility pass |
 | Audio regression | Twenty production baselines repeat; RAPTOR NIGHT baseline preserved; ten legacy fixture baselines unchanged |
 | Device installation | Write/restart verified; RAPTOR NIGHT observed at the same 130 BPM, F Phrygian and Drone controls before/after |
-| Resource fit | Current NightClaw image 581,532 / 581,564 bytes; RAM 95,692 / 98,304; pool 334,472 / 344,064 |
+| Resource fit | Current NightClaw image 581,484 / 581,564 bytes; RAM 95,644 / 98,304; pool 334,472 / 344,064 |
 | Updater | Entry, loader bounds/recovery and installer protocol checks pass |
 | Full CI audit | Guarded-worker source 0f889bf passed the complete CI run, including concurrent/fallback audio checks and the long orphan scenario |
 | Corrected release check | The two voices were released FM bells and died naturally within one additional second; a bounded ten-second window passes, without changing audio code |
@@ -41,3 +41,7 @@ The installer completed and the device reconnected as NightClaw FM-1, answered t
 ## Extended playback
 
 A [72-minute simulated playback pass](NIGHTCLAW-ENDURANCE.md) across all twenty scenes and the four appended Lead instruments passed all 24 selection/output-peak checks. This extends host coverage; long physical-device sessions remain separate.
+
+## Knob response accepted
+
+Installed source f92fe8c replaces abrupt acceleration and centre dead clicks with a progressive response. Dylan reports “Feels much better.” Focused unit and full-UI checks pass; the remaining broad regression checks are being completed. See [response and installation record](NIGHTCLAW-KNOB-RESPONSE.md).
