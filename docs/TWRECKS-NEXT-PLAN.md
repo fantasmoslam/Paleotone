@@ -4,9 +4,15 @@ Prototype 05 was explicitly approved as the target drum sound and apocalyptic di
 
 STAMPEDE is the representative native arrangement: 54 BPM, deep sustained bass, clean supporting fifths, GALOP and playable lead space. Prototype 05 approval is not final approval of native effects, mix, CPU stability or the other nineteen arrangements.
 
+## Signature direction: RAPTOR NIGHT
+
+Dylan identifies RAPTOR NIGHT on the installed native candidate as the strongest drum track and the signature sound, especially accompanied by theremin (interpreting the typed “therein”). His reference is Ennio Morricone / spaghetti western: tribal western drum grooves, fat low-register bass synth leads, sharp concert cello and eerie theremin. Preserve the current RAPTOR NIGHT factory recipe as a reference; do not overwrite it while developing related scenes. The device may contain live edits: their exact values and selected rhythm have not been read back, so do not infer that the factory defaults capture every detail of the heard performance.
+
+Develop additional spaghetti western / tribal grooves from the feel of RAPTOR NIGHT, retaining resonant low percussion, clear instrument separation and room for a performed lead. Vary related arrangements rather than making every scene identical. Earlier apocalyptic weight and Prototype 05 drum approval remain relevant; RAPTOR NIGHT now provides the strongest native musical reference. Avoid excessive distortion, mud, high-pitched percussion and busy backing melodies.
+
 ## Remaining acceptance
 
-Install the verified native candidate, reset STAMPEDE to its factory recipe, audition all eleven beats with live lead and manual creature calls, and measure average/peak Setup CPU. Refine balance from listening. Then evaluate a melodic/majestic scene and audit all twenty arrangements for distinct roles, variation and useful contrast. Retain successful quiet scenes. A literal march is not required.
+The native candidate is installed and RAPTOR NIGHT has received explicit musical praise. Next, inspect its actual recipe and drum behavior, preserve that reference, and develop related western/tribal arrangements with contrasting theremin, bass synth and cello roles. Evaluate changes through listening before spreading them across the bank. Audition manual creature calls and measure average/peak Setup CPU; musical approval does not establish CPU headroom. Audit all twenty arrangements for distinct roles, variation and useful contrast while retaining successful quiet scenes. A literal march is not required.
 
 ## Retained requirements
 
