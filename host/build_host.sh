@@ -12,7 +12,7 @@ if [ "${EN_LEGACY_TEST_BANK:-0}" = 1 ]; then
     HOSTOUT=build/host/amb_host_legacy
 fi
 mkdir -p build/gen build/host
-[ -f build/gen/felucca_font.h ] || python3 tools/gen_font.py build/gen/felucca_font.h >/dev/null
+python3 tools/gen_font.py build/gen/felucca_font.h >/dev/null
 python3 tools/gen_words.py firmware/words.tsv web/words build/gen/ann_words.h >/dev/null
 # (T-WRECKS) Paleotone's sounds (firmware/src/pt/pt.c): Paleotone's code, its own unit, its own warnings
 $CC -O2 -ffp-contract=off -std=c99 -w -DEN_HOST -c -o build/host/pt.o firmware/src/pt/pt.c

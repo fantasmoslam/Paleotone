@@ -2954,11 +2954,15 @@ static void control_text(int x, int y, int width, const felucca_font_t *font,
                          const char *value, uint16_t color)
 {
     char b[48];
-    int n = 0;
-    while (value[n] && n < (int)sizeof(b) - 1) { b[n] = value[n]; n++; }
+    int n = 0, height = font->h;
+    if (font == &FONT_UL && text_w(font, value) > width) font = &FONT_UM;
+    if (font == &FONT_UM && text_w(font, value) > width) font = &FONT_US;
+    if (text_w(font, value) > width) font = &FONT_B;
+    if (text_w(font, value) > width) font = &FONT_XS;
+    while (value[n] && n < (int)sizeof(b) - 1) { b[n] = value[n]>='a' && value[n]<='z' ? (char)(value[n]-32) : value[n]; n++; }
     b[n] = 0;
     while (n && text_w(font, b) > width) b[--n] = 0;
-    cv_text(x, y, font, b, color);
+    cv_text(x, y + (height-font->h)/2, font, b, color);
 }
 static int control_rows(uint8_t *rows)
 {
@@ -2978,6 +2982,8 @@ static int control_rows(uint8_t *rows)
 static const char *control_label(int view, int col)
 {
     const char *s = KNOB_LABEL[view][col];
+    if (str_begins(s, "Phrases")) return "Phrase";
+    if (str_begins(s, "Vibrato")) return "Vib";
     if (str_begins(s, "Repeat A")) return "Rpt A";
     if (str_begins(s, "Repeat B")) return "Rpt B";
     if (str_begins(s, "Feedback")) return "Feedbk";
@@ -3024,6 +3030,11 @@ static void draw_controls(void)
     uint8_t rows[4];
     const int home = ui.view == V_MIX && !ui.perf;
     const int n = home ? 4 : control_rows(rows);
+    const int header = home ? 40 : 48;
+    const int fixed = ui.view==V_CALLS || ui.view==V_PERF;
+    const int row_h = home ? 46 : fixed ? 44 : n > 1 ? 176/n : 88;
+    const int slots = home || fixed ? 4 : n;
+    const int radius = row_h > 70 ? 26 : row_h > 50 ? 18 : row_h >= 46 ? 12 : 11;
     const int first = home && ui.track >= 4 ? (int)ui.track - 3 : 0;
     uint32_t h = hash(0x54575243u, ui.view | (uint32_t)ui.track << 8);
     int r, c;
@@ -3041,56 +3052,57 @@ static void draw_controls(void)
     if (atm_view(ui.view)) h = hash(h, (uint32_t)proj.par[P_NCHAR]);
     if (h == ui.sig[0]) return;
     ui.sig[0] = h;
-    cv_begin(240, 48, K_BG);
+    cv_begin(240, header, K_BG);
     if (home) {
         const int voice=home_voice();
         if (voice>=0) en_param_text(voice,proj.par[voice],b);
         else { const char *s=en_beat_name(project_drum_pattern()); int j=0; while ((b[j]=s[j])!=0) j++; }
-        control_text(4,2,180,&FONT_B,b,K_TEXT);
-    } else control_text(4, 2, 180, &FONT_B, VIEW_NAME[ui.view], K_TEXT);
-    control_text(188, 2, 50, &FONT_B, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
+        control_text(4,-4,180,&FONT_UL,b,K_TEXT);
+    } else control_text(4, -4, 180, &FONT_UL, VIEW_NAME[ui.view], K_TEXT);
+    control_text(188, 2, 50, &FONT_UM, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
     if (home) {
-        for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, track_label(c), CONTROL_COL[c]);
+        for (c=0; c<4; c++) control_text(c*60+3, 20, 56, &FONT_UM, track_label(c), CONTROL_COL[c]);
     } else {
         const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
         if(ui.view==V_SKIN) {
-            control_text(4,28,232,&FONT_B,en_beat_name(project_drum_pattern()),K_ACC);
+            control_text(4,28,232,&FONT_UM,en_beat_name(project_drum_pattern()),K_ACC);
         } else if (voice >= 0) {
             en_param_text(voice, proj.par[voice], b);
-            control_text(4, 28, 232, &FONT_B, b, K_ACC);
+            control_text(4, 28, 232, &FONT_UM, b, K_ACC);
         } else if (atm_view(ui.view)) {
-            control_text(4, 28, 232, &FONT_B, EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR], K_ACC);
+            control_text(4, 28, 232, &FONT_UM, EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR], K_ACC);
         } else {
-            control_text(4, 28, 232, &FONT_S, piece_name(proj.piece), K_ACC);
+            control_text(4, 28, 232, &FONT_UM, piece_name(proj.piece), K_ACC);
         }
     }
     cv_blit(0, 0);
-    for (r=0; r<4; r++) {
+    for (r=0; r<slots; r++) {
+        const int height = !fixed && !home && r==n-1 ? 224-header-r*row_h : row_h;
         const int active = r<n && (home ? first+r == ui.track : rows[r] == ui.view);
-        cv_begin(240, 44, active ? K_PANEL : K_BG);
+        cv_begin(240, height, active ? K_PANEL : K_BG);
         if (r<n) {
             if (home) {
-                control_text(4, 0, 140, &FONT_B, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
+                control_text(4, 0, 140, &FONT_UM, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
                 if (first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r])
-                    control_text(176, 0, 60, &FONT_B, "MUTED", K_TEXT);
+                    control_text(176, 0, 60, &FONT_UM, "MUTED", K_TEXT);
             }
             for (c=0; c<4; c++) {
                 const int k = home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
-                if (!home) control_text(c*60+4, 0, 56, &FONT_S, control_label(rows[r], c), CONTROL_COL[c]);
-                control_indicator(c*60+30, 29, 12, control_ratio(k), CONTROL_COL[c]);
+                if (!home) control_text(c*60+3, 0, 56, &FONT_UM, control_label(rows[r], c), CONTROL_COL[c]);
+                control_indicator(c*60+30, (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
             }
-            if (active) cv_rect(0, 0, 2, 43, K_ACC);
-            cv_line(0, 43, 239, 43, K_LINE);
+            if (active) cv_rect(0, 0, 3, height-1, K_ACC);
+            cv_line(0, height-1, 239, height-1, K_LINE);
         }
-        cv_blit(0, 48+r*44);
+        cv_blit(0, header+r*row_h);
     }
     if (ui.view==V_CALLS) {
         cv_begin(240,88,K_BG);
         for (r=0; r<4; r++) for (c=0; c<2; c++) {
             const int creature=r+c*4;
             char key[4]={'W',(char)('1'+creature),' ',0};
-            control_text(c*120+4,r*21,24,&FONT_B,key,CONTROL_COL[c]);
-            control_text(c*120+30,r*21,88,&FONT_B,pt_name(PT_CALLS,creature),K_TEXT);
+            control_text(c*120+4,r*21,24,&FONT_UM,key,CONTROL_COL[c]);
+            control_text(c*120+30,r*21,88,&FONT_UM,pt_name(PT_CALLS,creature),K_TEXT);
         }
         cv_blit(0,136);
     }
@@ -3099,19 +3111,19 @@ static void draw_controls(void)
         for (r=0; r<NLAYER; r++) {
             char key[4] = {'W', (char)('1'+r), ' ', 0};
             const int muted = (ui.mutes & LAYER_MUTE[r]) == LAYER_MUTE[r];
-            control_text(4, r*24, 24, &FONT_B, key, K_ACC);
-            control_text(32, r*24, 72, &FONT_B, LAYER_NAME[r], K_TEXT);
-            control_text(108, r*24, 40, &FONT_B, muted ? "OFF" : "ON", K_TEXT);
+            control_text(4, r*24, 24, &FONT_UM, key, K_ACC);
+            control_text(32, r*24, 72, &FONT_UM, LAYER_NAME[r], K_TEXT);
+            control_text(108, r*24, 40, &FONT_UM, muted ? "OFF" : "ON", K_TEXT);
             key[0]='B';
-            control_text(152, r*24, 24, &FONT_B, key, K_ACC);
-            control_text(180, r*24, 56, &FONT_B, ui.solo & LAYER_MUTE[r] ? "SOLO*" : "SOLO", K_TEXT);
+            control_text(152, r*24, 24, &FONT_UM, key, K_ACC);
+            control_text(180, r*24, 56, &FONT_UM, ui.solo & LAYER_MUTE[r] ? "SOLO*" : "SOLO", K_TEXT);
         }
         cv_blit(0, 92);
     }
     cv_begin(240, 16, K_BG);
     if (plat_ms() < ui.msg_until) {
         msg_text(ui.msg[0], ui.msg[1], b);
-        control_text(4, 0, 232, &FONT_B, b, K_ACC);
+        control_text(4, 0, 232, &FONT_US, b, K_ACC);
     } else if (calls_context()) {
         control_text(4,0,232,&FONT_S,en_call_auto ? "AUTO  B1: mode B2: stop" : "MANUAL B1: auto B2: stop",K_TEXT);
     } else if (ui.view == V_SETUP) {
@@ -3123,9 +3135,9 @@ static void draw_controls(void)
         s="% PEAK "; while (*s) *out++=*s++;
         itoa_u(plat_cpu_peak(), a); s=a; while (*s) *out++=*s++;
         *out++='%'; *out=0;
-        control_text(4, 0, 232, &FONT_B, b, K_TEXT);
+        control_text(4, 0, 232, &FONT_US, b, K_TEXT);
     } else {
-        control_text(4, 0, 232, &FONT_S, home ? "SELECT: track ALGO: voice" : ui.view == V_PERF ? "W6: mix  W7-11: moves" : "Lit row: K1-4   Button: row", K_TEXT);
+        control_text(4, 0, 232, &FONT_US, home ? piece_name(proj.piece) : ui.view == V_PERF ? "W6: mix  W7-11: moves" : "Lit row: K1-4   Button: row", K_TEXT);
     }
     cv_blit(0, 224);
 }

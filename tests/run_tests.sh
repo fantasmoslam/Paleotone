@@ -59,6 +59,7 @@ else
     echo "  skip update-path tests (no build/amb.fwsc: run ./build.sh)"
 fi
 run host-build sh host/build_host.sh
+run font-render sh -c "$CC -O2 -std=c99 -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Ibuild/gen -o $OUT/font_render_test tests/host/font_render_test.c && $OUT/font_render_test"
 run legacy-host-build env EN_LEGACY_TEST_BANK=1 sh host/build_host.sh
 if command -v emcc >/dev/null 2>&1; then
     run emu sh -c "sh web/emu/build.sh >/dev/null && node tests/host/emu_test.mjs build/emu/amb.wasm"
