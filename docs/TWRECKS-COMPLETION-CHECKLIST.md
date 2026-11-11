@@ -1,6 +1,6 @@
 # T-WRECKS completion checkpoint
 
-Approved and installed firmware source: 43703d8. Later acceptance/test updates do not change that firmware's sound or require another flash.
+Musically approved source: 43703d8. Installed performance candidate: 0f889bf, with all twenty audio hashes unchanged by the guarded taiko worker.
 
 | Item | Evidence / status |
 |---|---|
@@ -15,15 +15,15 @@ Approved and installed firmware source: 43703d8. Later acceptance/test updates d
 | Device installation | Write/restart verified; RAPTOR NIGHT observed at the same 130 BPM, F Phrygian and Drone controls before/after |
 | Resource fit | Image 578,684 / 581,564 bytes; RAM 91,972 / 98,304; pool 333,448 / 344,064 |
 | Updater | Entry, loader bounds/recovery and installer protocol checks pass |
-| Full CI audit | Original full run passed every check except a six-second FM bell release deadline; all control scenarios, including orphans, passed |
+| Full CI audit | Corrected checkpoint 6f85262 passed the complete CI run, including the long orphan scenario; guarded-worker CI is running |
 | Corrected release check | The two voices were released FM bells and died naturally within one additional second; a bounded ten-second window passes, without changing audio code |
 
-## Remaining device acceptance
+## Hardware overload follow-up
 
-- Play the western scenes with live Lead, creature calls and control changes; check average/peak CPU and dropout count on Setup (tap GLO briefly).
-- Compare any speaker crackle through headphones before classifying it as a firmware fault. Cause is not confirmed.
-- Preserve unsaved performance edits: the latest read-only snapshot showed HIGH FRONTIER with unsaved Lead edits. No reboot/flash is needed for this checkpoint.
+Lead over HIGH FRONTIER reproduced pops and 70–101% CPU. Candidate 0f889bf adapts Paleotone's guarded second-core worker for independent taiko playback. It installed successfully and reports two active cores. Dylan repeated the test and reported clean playback with about 65% average / 91% peak. Three read-only snapshots showed 63–68% average / 81–90% peak and zero reported dropouts or worker fallback after restart.
 
-The reported 55–75% CPU and a prior 60% average / 83% peak, zero-dropout snapshot establish only those observed conditions, not a worst-case test. No further musical rewrite is planned for the approved reference scenes.
+All twenty production audio hashes match under serial, concurrent and injected partial-worker-failure execution. Resource fit is now image 580,492 / 581,564, RAM 95,708 / 98,304 and pool 334,472 / 344,064. See [source review and measured result](TWRECKS-AUDIO-HEADROOM.md).
 
-Package SHA-256: 79bf9e572016c11554acba3a462c3321da166df4fe41ea446bcb7b937da007b1
+Long-session and wider instrument combinations remain broader release coverage. The original overload reproduction now plays cleanly; further musical rewrites of approved scenes are not planned.
+
+Installed worker package SHA-256: 4d6336a0e7657f9943986694a7e40964fc5b83600cb4a237777af65dd9feb015

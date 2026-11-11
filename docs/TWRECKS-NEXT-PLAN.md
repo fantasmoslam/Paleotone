@@ -33,3 +33,7 @@ Western candidate 43703d8 is installed and reboot-verified. The observed saved R
 ## Completion pass
 
 The six western scenes are musically approved. The full CI audit passed all control scenarios, including the long orphan check; its only failure was a legitimate FM bell release tail outlasting the test’s six-second deadline. The bounded release check now passes with up to ten seconds, with no audio-code change. See [completion checklist](TWRECKS-COMPLETION-CHECKLIST.md) for remaining device acceptance and the approved package hash.
+
+## Audio deadline correction
+
+The live Lead test exposed 70–101% CPU and pops. A guarded taiko worker adapted from Paleotone is now installed as 0f889bf. All twenty approved audio hashes remain identical. Dylan repeated the test and reported clean playback at about 65% average / 91% peak; remote snapshots confirm two active cores and zero reported dropouts after restart. See [audio headroom findings](TWRECKS-AUDIO-HEADROOM.md).

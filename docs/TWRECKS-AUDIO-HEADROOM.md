@@ -21,6 +21,12 @@ The waiting loop has its own .c1_text section. Packaging and boot-copy checks pr
 
 ## Validation so far
 
-All twenty approved production audio hashes match in serial, synchronous-worker, real threaded-worker and partially-executed-failure modes. The synchronous and threaded modes each complete 174,406 jobs; the injected partial failure falls back once and retains all twenty hashes. Storage/migration checks and updater/loader/installer checks pass. Native build fits: image 580,492 / 581,564 bytes; RAM 95,708 / 98,304; pool 334,472 / 344,064. Hardware CPU improvement is not yet measured.
+All twenty approved production audio hashes match in serial, synchronous-worker, real threaded-worker and partially-executed-failure modes. The synchronous and threaded modes each complete 174,406 jobs; the injected partial failure falls back once and retains all twenty hashes. Storage/migration checks and updater/loader/installer checks pass. Native build fits: image 580,492 / 581,564 bytes; RAM 95,708 / 98,304; pool 334,472 / 344,064. Device measurements and user listening after installation are recorded below.
 
-Current HIGH FRONTIER edits were saved before preparing the install. Musical defaults and the approved audio baselines are unchanged. Installation and an actual before/after device load test are the next boundary; successful host timing does not establish hardware performance.
+Current HIGH FRONTIER edits were saved before preparing the install. Musical defaults and the approved audio baselines are unchanged. The candidate is now installed; host timing is not used as device CPU evidence.
+
+## Installed-device result
+
+Candidate 0f889bf installed and reboot-verified. HIGH FRONTIER returned saved at 116 BPM, F Dorian. The worker passed its hardware self-test: three read-only Setup snapshots reported “2 cores” with CPU 63% / peak 90%, 68% / peak 81%, and 65% / peak 86%. None reported any dropouts or worker fallback after restart. Dylan repeated the Lead-over-HIGH-FRONTIER test and reported clean playback, then approximately 65% average and 91% peak.
+
+Compared with the reported 70–101% and pops on the prior build, this demonstrates useful headroom for the tested performance. These are conversational play tests and snapshots, not identical captured input or a timed worst-case benchmark. Broader long-session coverage remains a release consideration, not a claim that the original overload was imaginary.
