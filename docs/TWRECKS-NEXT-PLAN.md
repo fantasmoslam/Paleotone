@@ -1,39 +1,34 @@
 # T-WRECKS completion plan
 
-Prototype 05 was explicitly approved as the target drum sound and apocalyptic direction. Dylan requests all compatible Paleotone/Gurdy beats with that sound. All eleven families are now imported independently of Gurdy and selectable with ALGORITHM on Skin; selection saves per preset. A six-voice native ADPCM player fits four credited recorded taiko samples inside the firmware image. Source event comparisons: 22,528, zero differences. Decoder output matches all four reference sample hashes.
+## Approved reference
 
-STAMPEDE is the representative native arrangement: 54 BPM, deep sustained bass, clean supporting fifths, GALOP and playable lead space. Prototype 05 approval is not final approval of native effects, mix, CPU stability or the other nineteen arrangements.
+Installed candidate 0f889bf retains the twenty approved audio baselines and runs independent taiko playback on a guarded second core. RAPTOR NIGHT with user-selected Theremin Lead is the signature reference. Dylan also explicitly approved BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER after installation. Preserve these sounds and the independence of beat and instrument choices.
 
-## Signature beat reference: RAPTOR NIGHT
+## Completed
 
-RAPTOR NIGHT's drum beat is the signature reference. Dylan specifically praises how it works when he chooses the synth's existing Theremin instrument for Lead. Theremin remains an independently selected instrument. This feedback does not request adding melodies to drum patterns or composing new fixed arrangements.
+- Large readable labels, four-column track controls and colored Pac-Man fill indicators; existing Performance controls retained.
+- Twenty dinosynth scenes, with six authorized western replacements and fourteen retained saved slots. The original non-dinosynth preset bank is excluded from device builds.
+- Eleven original Paleotone/Gurdy rhythms plus TRAIL, OUTRIDER and HUNT, independently selectable and saved per scene.
+- Selectable Cello, Cello Low, Sub Pad and Fat Pad voices; existing Theremin and all prior instrument IDs retained.
+- Eight manual creature calls; optional automatic mode; manual mode at boot.
+- Saved instrument/beat choices, old format-11 header compatibility, scoped replacement revision and interrupted-save recovery tests.
+- Native memory bounds, update-loader/recovery checks, twenty repeatable production audio hashes and ten legacy fixture hashes.
+- Full CI checkpoint 6f85262 passed, including the long orphan scenario. Worker-mode tests prove all twenty hashes in serial, concurrent and partial-failure fallback execution.
+- The live HIGH FRONTIER Lead test originally produced pops at 70–101% CPU. The installed two-core candidate repeats that performance cleanly at about 65% average / 91% peak, with zero reported dropouts or worker fallback after restart. Dylan confirmed it plays well.
 
-Preserve RAPTOR NIGHT's beat. Use its feel to guide additional spaghetti western / tribal drum patterns, keeping drums independent of selected melodic instruments. The device may contain live edits; their exact values and selected rhythm have not been read back, so do not assume factory defaults capture every detail of the heard performance.
+## Current closeout
 
-## Instrument additions
+The full guarded-worker CI run passed: build, all audio-worker modes, storage/updater checks and all control scenarios including orphans. Published package SHA-256 matches the installed candidate exactly. PR #41 is ready for review. The repository front page and [quick-start guide](TWRECKS-QUICKSTART.md) now describe T-WRECKS controls and its own candidate output; the upstream README is retained separately.
 
-Implemented in the new candidate: selectable Cello, Cello Low, Sub Pad and Fat Pad voices on each melodic track. See [instrument details and verification](TWRECKS-INSTRUMENT-ADDITIONS.md). These are instruments the player chooses, not prescribed roles in rewritten arrangements. Keep existing Theremin selection working. Retain clear separation and restrained distortion without changing RAPTOR NIGHT to impose a fixed melody or instrument combination.
+Verified source is 0f889bf; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
 
-## Remaining work and acceptance
+## References
 
-The native candidate is installed and RAPTOR NIGHT's beat with user-selected Theremin Lead has received explicit praise. The four new instruments pass host checks and candidate 54fa451 is now installed and reboot-verified on the FM-1. Next, audition them, preserving independent beat and instrument selection. Any further drum patterns should follow the approved beat's feel. Manual creature-call testing and average/peak Setup CPU measurements remain hardware checks; musical praise does not establish CPU headroom. Broader rewrites remain outside scope; the later six-scene replacement authorization is recorded below.
+- [Completion checklist](TWRECKS-COMPLETION-CHECKLIST.md)
+- [Paleotone source review, worker adaptation and measured result](TWRECKS-AUDIO-HEADROOM.md)
+- [Western scene mapping and migration](TWRECKS-WESTERN-SCENES.md)
+- [Instrument additions](TWRECKS-INSTRUMENT-ADDITIONS.md)
 
-## Retained requirements
+## User requirements retained
 
-Readable large type, four-column control tables and colored Pac-Man indicators; direct saved instrument voices; manual dinosaur calls with optional automatic mode; twenty dinosynth presets; existing performance controls. No original preset bank or migration.
-
-Saved format-11 edits remain readable. To hear the new STAMPEDE factory recipe, select it and hold GLO until RESET (about 1.5 seconds). Select Skin on Home and turn ALGORITHM to browse all beats, then save normally.
-
-## Authorized western scene replacement
-
-Dylan clarified that six named scene presets should be replaced with western scenes. BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER replace six specified slots; the other fourteen, including RAPTOR NIGHT, retain their settings. The three new independent patterns TRAIL, OUTRIDER and HUNT supplement the eleven imported beats. See [scene mapping and update behavior](TWRECKS-WESTERN-SCENES.md). Dylan explicitly approved all six new western scenes after the installed-device audition: “These are really good, awesome.” Preserve their current musical defaults alongside RAPTOR NIGHT.
-
-Western candidate 43703d8 is installed and reboot-verified. The observed saved RAPTOR NIGHT settings (130 BPM, F Phrygian and Drone controls) survived unchanged. The six-scene listening boundary is passed. Remaining hardware checks are peak CPU/dropouts with live Lead and creature calls; these are independent of musical approval.
-
-## Completion pass
-
-The six western scenes are musically approved. The full CI audit passed all control scenarios, including the long orphan check; its only failure was a legitimate FM bell release tail outlasting the test’s six-second deadline. The bounded release check now passes with up to ten seconds, with no audio-code change. See [completion checklist](TWRECKS-COMPLETION-CHECKLIST.md) for remaining device acceptance and the approved package hash.
-
-## Audio deadline correction
-
-The live Lead test exposed 70–101% CPU and pops. A guarded taiko worker adapted from Paleotone is now installed as 0f889bf. All twenty approved audio hashes remain identical. Dylan repeated the test and reported clean playback at about 65% average / 91% peak; remote snapshots confirm two active cores and zero reported dropouts after restart. See [audio headroom findings](TWRECKS-AUDIO-HEADROOM.md).
+Physical knobs do the editing; indicators show settings without simulated on-screen knobs or numeric parameter clutter. Direct saved instrument choices and dinosaur triggering remain accessible. Beats stay independent of melodic instruments. The sound target remains deep, consequential and apocalyptic, with grandiose low percussion, clear voices, restrained distortion and room for live Lead. A literal march is not required.

@@ -13,9 +13,9 @@ Musically approved source: 43703d8. Installed performance candidate: 0f889bf, wi
 | Storage | Beat/instrument save and reboot checks, interrupted replacement write/retry and old-header compatibility pass |
 | Audio regression | Twenty production baselines repeat; RAPTOR NIGHT baseline preserved; ten legacy fixture baselines unchanged |
 | Device installation | Write/restart verified; RAPTOR NIGHT observed at the same 130 BPM, F Phrygian and Drone controls before/after |
-| Resource fit | Image 578,684 / 581,564 bytes; RAM 91,972 / 98,304; pool 333,448 / 344,064 |
+| Resource fit | Image 580,492 / 581,564 bytes; RAM 95,708 / 98,304; pool 334,472 / 344,064 |
 | Updater | Entry, loader bounds/recovery and installer protocol checks pass |
-| Full CI audit | Corrected checkpoint 6f85262 passed the complete CI run, including the long orphan scenario; guarded-worker CI is running |
+| Full CI audit | Guarded-worker source 0f889bf passed the complete CI run, including concurrent/fallback audio checks and the long orphan scenario |
 | Corrected release check | The two voices were released FM bells and died naturally within one additional second; a bounded ten-second window passes, without changing audio code |
 
 ## Hardware overload follow-up
@@ -27,3 +27,7 @@ All twenty production audio hashes match under serial, concurrent and injected p
 Long-session and wider instrument combinations remain broader release coverage. The original overload reproduction now plays cleanly; further musical rewrites of approved scenes are not planned.
 
 Installed worker package SHA-256: 4d6336a0e7657f9943986694a7e40964fc5b83600cb4a237777af65dd9feb015
+
+## Verified CI publication
+
+[Worker CI run 43076204934](https://github.com/fantasmoslam/Paleotone/actions/runs/43076204934) completed successfully. Published output commit 249b5f999308d8e0f5388132d696cf9b07afc8fa identifies source 0f889bf99dde15656d211f0064fe7ffa43a3cffd with success. Its package SHA-256 exactly matches the locally installed worker package above. The output log reports audio-worker and scenario-orphans passed, all tests passed, exit 0.

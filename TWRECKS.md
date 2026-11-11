@@ -2,7 +2,7 @@
 
 ## Current development direction
 
-The taiko beat bank, selectable cello/bass pad instruments and manual creature calls are implemented. RAPTOR NIGHT with user-selected Theremin Lead is the signature reference. The current candidate adds [six western scene replacements](docs/TWRECKS-WESTERN-SCENES.md); final listening and hardware stress acceptance remain separate from engineering checks. See the [completion plan](docs/TWRECKS-NEXT-PLAN.md).
+The taiko beat bank, selectable cello/bass pad instruments, manual creature calls and guarded two-core playback are implemented and installed. RAPTOR NIGHT with user-selected Theremin Lead and all [six western scenes](docs/TWRECKS-WESTERN-SCENES.md) are musically approved. The previously overloading live-Lead test now plays cleanly at about 65% CPU average / 91% peak, with zero reported dropouts after restart. See the [quick start](docs/TWRECKS-QUICKSTART.md), [audio headroom record](docs/TWRECKS-AUDIO-HEADROOM.md) and [completion checklist](docs/TWRECKS-COMPLETION-CHECKLIST.md).
 
 A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contains only the twenty dinosynth presets below. Fresh startup is EXTINCTION. Previous project formats reset to the new bank, as requested; no old-preset migration or original factory pieces are included in device firmware.
 
