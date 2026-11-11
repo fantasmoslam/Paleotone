@@ -17,3 +17,13 @@ Source f92fe8c installed successfully on 2026-11-11; the installer completed the
 ## Broad-check correction
 
 The broader homesel scenario caught an unintended zero stop introduced when SELECT Energy was routed through the generic centered-control path. SELECT Energy now uses the same progressive response directly, preserving its existing uninterrupted sweep through zero. The unchanged homesel scenario and the new knob scenario both pass after the correction. The right-side control response Dylan accepted is unchanged.
+
+The corrected source 653ff79 installed successfully and resumed HIGH FRONTIER at 116 BPM. Its package SHA-256 is 47ca4112f28425021c9f23bf9bb11558d240b7d71409d80e2a2abcfd865137ea. Native image: 581,516 / 581,564 bytes; RAM: 95,644 / 98,304; pool: 334,472 / 344,064.
+
+## Host audit portability
+
+The local orphan-control audit exposed a host-only header-order problem: suppressing __attribute__ before including unistd.h stripped libc inline attributes on this toolchain, emitting a strong read() symbol that recursed into itself. System headers now load before device-attribute suppression. The rebuilt simulator imports libc read instead of defining it. Native device code is unaffected.
+
+## Completed local verification
+
+All 38 regular control scenarios pass on the corrected simulator, including the unchanged Home Energy scenario and the new knob-response scenario. The separate exhaustive audit passes with 91 knobs checked. Production and legacy audio baselines, serial/concurrent/partial-failure worker comparisons, storage recovery, updater entry/loader and installer checks all pass. These results were collected in successive targeted runs: the initial Energy failure was corrected and rerun; the hung host audit was repaired and rerun. They are not a claim that the interrupted original aggregate run exited successfully. GitHub CI remains a separate pending check.

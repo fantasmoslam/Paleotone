@@ -46,6 +46,12 @@
 #include <stdint.h>
 #include <math.h>
 #include <time.h>
+#ifndef EN_WEB
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
+/* Load system headers before suppressing device-only section attributes.
+ * Stripping libc inline attributes can emit a recursive fortified read(). */
 #define __attribute__(x)
 
 /* ------------------------------------------------------------ screen --- */
@@ -209,8 +215,6 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
  * chord every 2 bars, Sequence 2 on): the energy and the high energy (first differences: brighter, higher) in eight
  * stretches, and the MIDI out as a hash */
 #ifndef EN_WEB
-#include <unistd.h>
-#include <sys/wait.h>
 #define ORPH_B (40 * 44100 / 256)
 static void orph_run(int p, int v, float *e, uint32_t *mh)
 {
