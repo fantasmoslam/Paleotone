@@ -16,9 +16,9 @@ The twenty-scene bank includes BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HI
 
 ## Candidate installation and build
 
-The installed NightClaw candidate is source 3cf8a1a, product identity FM-1_942, including the [jungle title screen with a three-second minimum hold](docs/NIGHTCLAW-BRANDING.md). It retains the twenty approved audio baselines and guarded two-core worker. This is a development candidate; [the audio headroom record](docs/TWRECKS-AUDIO-HEADROOM.md) distinguishes measurements from wider release coverage.
+The installed NightClaw candidate is source f92fe8c, product identity FM-1_942, with [revised knob response](docs/NIGHTCLAW-KNOB-RESPONSE.md) and the [jungle title screen with a three-second minimum hold](docs/NIGHTCLAW-BRANDING.md). It retains the twenty approved audio baselines and guarded two-core worker. This is a development candidate; [the audio headroom record](docs/TWRECKS-AUDIO-HEADROOM.md) distinguishes measurements from wider release coverage.
 
-The [NightClaw package](https://github.com/fantasmoslam/Paleotone/blob/77f1b86224ea55fd076eb4df496e70d455b234c9/nightclaw-FM-1_942.fwsc) passed [full CI](https://github.com/fantasmoslam/Paleotone/actions/runs/43092611149). The local installed package SHA-256 is beb6ce14e4b50ef44270442c312e750abb8d6aa49f02ed1c6a72cdb59671586e.
+The [NightClaw package](https://github.com/fantasmoslam/Paleotone/blob/77f1b86224ea55fd076eb4df496e70d455b234c9/nightclaw-FM-1_942.fwsc) passed [full CI](https://github.com/fantasmoslam/Paleotone/actions/runs/43092611149). That published package matches the previously installed 3cf8a1a build. The f92fe8c control revision is installed and passes focused tests; its full regression result is pending.
 
 CI publishes this branch's package and logs to [twrecks-completion-output](https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion-output). Use its RESULT file to identify the built source and successful check status. Install its nightclaw-FM-1_942.fwsc with the project's trusted fm1_install.py USB-MIDI installer. The checksum is published beside the package. [BUILDING.md](BUILDING.md) describes the compiler and SDK setup.
 

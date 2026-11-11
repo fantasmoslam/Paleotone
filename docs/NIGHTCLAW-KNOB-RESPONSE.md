@@ -9,3 +9,7 @@ Centered controls still stop at zero when crossing it; the next detent moves imm
 Tests cover slow and fast movement, reversal, pauses, target changes, independent encoders, narrow ranges, batched movement, zero input and tick rollover. A full UI scenario checks a 0–100 sweep, one-unit reverse corrections, immediately leaving zero and unaccelerated voice/scene selection. Native image is 581,484 / 581,564 bytes; RAM is 95,644 / 98,304; pool is 334,472 / 344,064.
 
 Hardware feel remains to be confirmed by Dylan after installation. Audio synthesis, saved-preset format and approved scene recipes are unchanged.
+
+## Installation checkpoint
+
+Source f92fe8c installed successfully on 2026-11-11; the installer completed the restart and NightClaw answered its status handshake with HIGH FRONTIER playing at 116 BPM. Package SHA-256: 4e381e114e91943739f8a4ef1adef920ccbc91a1d56a03f922a93c18d3cec168. Focused response unit tests, the full UI knob scenario and native resource checks pass. The broad local regression suite and full CI are still running at this checkpoint; physical knob feel awaits user feedback.
