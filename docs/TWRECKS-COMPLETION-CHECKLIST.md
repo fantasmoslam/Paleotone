@@ -1,6 +1,6 @@
 # NightClaw completion checkpoint
 
-Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current installed NightClaw candidate: 653ff79, retaining all twenty approved audio hashes.
+Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current installed NightClaw candidate: 0cb944a, retaining all twenty approved audio hashes.
 
 | Item | Evidence / status |
 |---|---|
@@ -13,7 +13,7 @@ Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current inst
 | Storage | Beat/instrument save and reboot checks, interrupted replacement write/retry and old-header compatibility pass |
 | Audio regression | Twenty production baselines repeat; RAPTOR NIGHT baseline preserved; ten legacy fixture baselines unchanged |
 | Device installation | Write/restart verified; RAPTOR NIGHT observed at the same 130 BPM, F Phrygian and Drone controls before/after |
-| Resource fit | Current NightClaw image 581,516 / 581,564 bytes; RAM 95,644 / 98,304; pool 334,472 / 344,064 |
+| Resource fit | Current NightClaw image 543,932 / 581,564 bytes; RAM 95,644 / 98,304; pool 334,472 / 344,064 |
 | Updater | Entry, loader bounds/recovery and installer protocol checks pass |
 | Full CI audit | Guarded-worker source 0f889bf passed the complete CI run, including concurrent/fallback audio checks and the long orphan scenario |
 | Corrected release check | The two voices were released FM bells and died naturally within one additional second; a bounded ten-second window passes, without changing audio code |

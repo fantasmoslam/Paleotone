@@ -12,7 +12,7 @@ The original RGB565 strip renderer and audio memory allocation are retained. Scr
 
 ## Validation
 
-Native image: 543,932 / 581,564 bytes (37,632 bytes free), compared with 581,516 bytes before this pass. RAM remains 95,644 / 98,304 and the pool remains 334,472 / 344,064. All 39 control scenarios, the new per-glyph packed/alpha renderer comparison, and package/updater/installer checks pass locally. Default font bitmap data is 27,464 bytes for nine cuts, compared with approximately 76,510 bytes for the former six cuts. Full CI is separate and pending.
+Native image: 543,932 / 581,564 bytes (37,632 bytes free), compared with 581,516 bytes before this pass. RAM remains 95,644 / 98,304 and the pool remains 334,472 / 344,064. All 39 control scenarios, the new per-glyph packed/alpha renderer comparison, and package/updater/installer checks pass locally. Default font bitmap data is 26,902 bytes for nine cuts, compared with 74,948 bytes for the former six cuts. Full CI is separate and pending.
 
 Actual 240 x 240 simulator captures:
 
@@ -21,3 +21,7 @@ Actual 240 x 240 simulator captures:
 ![Lead](assets/nightclaw-visibility/lead.png)
 ![Calls](assets/nightclaw-visibility/calls.png)
 ![Performance](assets/nightclaw-visibility/perform.png)
+
+## Installation
+
+Source 0cb944a installed successfully. The device reconnected as NightClaw, answered the screen-reader handshake and resumed HIGH FRONTIER at 116 BPM. Installed package SHA-256: ba68402ec886919313ab19c9e03fc5d03c89f82defa035775d05b73d6ca54a46. Physical readability and UI response while turning controls await user feedback.
