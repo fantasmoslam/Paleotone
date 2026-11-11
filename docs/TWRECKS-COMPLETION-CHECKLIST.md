@@ -1,6 +1,6 @@
 # NightClaw completion checkpoint
 
-Musically approved source: 43703d8. Installed performance candidate: 0f889bf, with all twenty audio hashes unchanged by the guarded taiko worker.
+Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current installed NightClaw candidate: 3cf8a1a, retaining all twenty approved audio hashes.
 
 | Item | Evidence / status |
 |---|---|
@@ -13,7 +13,7 @@ Musically approved source: 43703d8. Installed performance candidate: 0f889bf, wi
 | Storage | Beat/instrument save and reboot checks, interrupted replacement write/retry and old-header compatibility pass |
 | Audio regression | Twenty production baselines repeat; RAPTOR NIGHT baseline preserved; ten legacy fixture baselines unchanged |
 | Device installation | Write/restart verified; RAPTOR NIGHT observed at the same 130 BPM, F Phrygian and Drone controls before/after |
-| Resource fit | Image 580,492 / 581,564 bytes; RAM 95,708 / 98,304; pool 334,472 / 344,064 |
+| Resource fit | Current NightClaw image 581,532 / 581,564 bytes; RAM 95,692 / 98,304; pool 334,472 / 344,064 |
 | Updater | Entry, loader bounds/recovery and installer protocol checks pass |
 | Full CI audit | Guarded-worker source 0f889bf passed the complete CI run, including concurrent/fallback audio checks and the long orphan scenario |
 | Corrected release check | The two voices were released FM bells and died naturally within one additional second; a bounded ten-second window passes, without changing audio code |
@@ -31,3 +31,13 @@ Installed worker package SHA-256: 4d6336a0e7657f9943986694a7e40964fc5b83600cb4a2
 ## Verified CI publication
 
 [Worker CI run 43076204934](https://github.com/fantasmoslam/Paleotone/actions/runs/43076204934) completed successfully. Published output commit 249b5f999308d8e0f5388132d696cf9b07afc8fa identifies source 0f889bf99dde15656d211f0064fe7ffa43a3cffd with success. Its package SHA-256 exactly matches the locally installed worker package above. The output log reports audio-worker and scenario-orphans passed, all tests passed, exit 0.
+
+## Installed NightClaw publication
+
+[Full CI run 43092611149](https://github.com/fantasmoslam/Paleotone/actions/runs/43092611149) passed for source 3cf8a1a4c9e8feedfc14ceebdf7578fb4481ef34. Fixed output commit 77f1b86224ea55fd076eb4df496e70d455b234c9 identifies that source as successful. Its nightclaw-FM-1_942.fwsc SHA-256 matches the installed package exactly: beb6ce14e4b50ef44270442c312e750abb8d6aa49f02ed1c6a72cdb59671586e.
+
+The installer completed and the device reconnected as NightClaw FM-1, answered the screen-reader handshake as NightClaw DEV, and resumed HIGH FRONTIER at 116 BPM. Dylan reports that it is good so far. The title hold is at least three seconds after the completed LCD transfer; audio and USB servicing continue.
+
+## Extended playback
+
+A [72-minute simulated playback pass](NIGHTCLAW-ENDURANCE.md) across all twenty scenes and the four appended Lead instruments passed all 24 selection/output-peak checks. This extends host coverage; long physical-device sessions remain separate.

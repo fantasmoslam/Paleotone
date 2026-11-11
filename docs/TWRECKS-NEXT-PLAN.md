@@ -1,10 +1,10 @@
 # NightClaw completion plan
 
-The NightClaw rename, landscape artwork and minimum three-second static title screen are prepared for the next update. Installation is deferred because Dylan will save current RED MESA edits later. The installed audio-approved worker candidate remains running. See [branding and timing details](NIGHTCLAW-BRANDING.md).
+NightClaw source 3cf8a1a is installed with landscape artwork and a minimum three-second static title screen. The device reconnected under its new name and resumed playback; Dylan reports that it is good so far. Full CI run 43092611149 passed. See [branding and timing details](NIGHTCLAW-BRANDING.md).
 
 ## Approved reference
 
-Installed candidate 0f889bf retains the twenty approved audio baselines and runs independent taiko playback on a guarded second core. RAPTOR NIGHT with user-selected Theremin Lead is the signature reference. Dylan also explicitly approved BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER after installation. Preserve these sounds and the independence of beat and instrument choices.
+The audio baseline 0f889bf retains the twenty approved audio baselines and runs independent taiko playback on a guarded second core. RAPTOR NIGHT with user-selected Theremin Lead is the signature reference. Dylan also explicitly approved BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER after installation. Preserve these sounds and the independence of beat and instrument choices.
 
 ## Completed
 
@@ -22,7 +22,11 @@ Installed candidate 0f889bf retains the twenty approved audio baselines and runs
 
 The full guarded-worker CI run passed: build, all audio-worker modes, storage/updater checks and all control scenarios including orphans. Published package SHA-256 matches the installed candidate exactly. PR #41 is ready for review. The repository front page and [quick-start guide](TWRECKS-QUICKSTART.md) now describe NightClaw controls and its own candidate output; the upstream README is retained separately.
 
-Verified source is 0f889bf; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
+Current verified source is 3cf8a1a; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
+
+## Remaining coverage
+
+The [72-minute host endurance pass](NIGHTCLAW-ENDURANCE.md) now covers all twenty production scenes and all four appended Lead voices. Its 24 selection and output-peak checks pass. Longer physical-device sessions and wider instrument combinations remain the next release-confidence work; no additional firmware installation is needed for these checks.
 
 ## References
 
