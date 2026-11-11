@@ -14,3 +14,7 @@ Select Skin on Home, then turn ALGORITHM. Save normally to retain each preset's 
 - OTA, loader and installer checks passed, including loader write bounds and recovery cases.
 
 Device CPU/dropouts and native musical balance still require hardware listening. The other nineteen arrangements have not received final musical acceptance.
+
+## Device installation
+
+Candidate ec9c868 was installed successfully through the known FM-1 installer on 2026-11-11. The installer completed its write/restart verification; an independent --info call then reported FM-1_942 running on T-WRECKS FM-1 1. This verifies installation and reboot, not audio quality or CPU headroom.
