@@ -1,4 +1,6 @@
-# T-WRECKS quick start
+# NightClaw quick start
+
+The static jungle title screen stays visible for at least three seconds at startup.
 
 ## Choose a scene and play
 

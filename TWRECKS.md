@@ -1,4 +1,4 @@
-# T-WRECKS
+# NightClaw
 
 ## Current development direction
 
@@ -16,7 +16,7 @@ HOME cycles the track overview, generative controls and key/tempo. The layer but
 
 Paleotone provides the existing curated voices and eight SAURUS creatures: Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. Calls are mono, share the melodic eight-voice budget, use a three-second gate and level trims measured from renders. Calls start in Manual mode at each boot. Select Calls on Home, or open Creature calls with SAVE: the first eight white keys trigger Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. The first black key toggles Manual/Auto; the second stops the current call. Auto considers a call at bar lines, with four to eight bars between possible calls; Chance zero disables automatic calls. Manual triggers bypass that cooldown and work with music stopped or held. Level zero or an auxiliary mute silences them. Mode is a live choice, not a saved preset parameter. Leaving call mode releases held instrument-key ownership.
 
-Skin uses four recorded taiko samples with six overlapping playback voices. All eleven original Paleotone/Gurdy rhythm families are independent of the Gurdy instrument: GALOP, TRES, WAR, RAIN, QUAKE, WAR2, TALK, SEVEN, PENTA, SPIRAL and CHAOS. Select Skin on Home (or open its page) and turn ALGORITHM to choose a beat; the choice saves per preset. Ghosts adjusts optional accents while retaining the core beat. Three additional T-WRECKS patterns—TRAIL, OUTRIDER and HUNT—extend the selector to fourteen beats. Original timing, ghost and fill logic passed 22,528 comparisons against Gurdy. This is an event-logic extraction, not separation of a mixed recording.
+Skin uses four recorded taiko samples with six overlapping playback voices. All eleven original Paleotone/Gurdy rhythm families are independent of the Gurdy instrument: GALOP, TRES, WAR, RAIN, QUAKE, WAR2, TALK, SEVEN, PENTA, SPIRAL and CHAOS. Select Skin on Home (or open its page) and turn ALGORITHM to choose a beat; the choice saves per preset. Ghosts adjusts optional accents while retaining the core beat. Three additional NightClaw patterns—TRAIL, OUTRIDER and HUNT—extend the selector to fourteen beats. Original timing, ghost and fill logic passed 22,528 comparisons against Gurdy. This is an event-logic extraction, not separation of a mixed recording.
 
 STAMPEDE defaults to 54 BPM, GALOP, resonant taiko, sustained deep sub bass and clean supporting organ fifths. Automatic lead notes are off, with the keyboard lead ready to play. The recorded drum direction was approved in desktop Prototype 05; native playback and device CPU still need listening validation. Above 75% reported audio load, optional ghost accents and automatic calls are suppressed; core drum hits remain. Level zero clears the sampler. Sample credits and CC BY-SA 4.0 terms are in [the attribution notice](tools/research/taiko-bank-05/ATTRIBUTION.md).
 

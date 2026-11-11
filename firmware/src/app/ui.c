@@ -2358,7 +2358,7 @@ static void draw_card(uint32_t now)
     text_c(CX, y + 28, &FONT_XS, ui.card_text, tc);
 }
 
-#define BERLIN_BY "T-WRECKS"                     /* (T-WRECKS: its name over the main page) */
+#define BERLIN_BY "NIGHTCLAW"                     /* (T-WRECKS: its name over the main page) */
 static void draw_main(void)
 {
     uint32_t now = plat_ms(), h = hash(2166136261u, (uint32_t)en_frozen << 16 | proj.piece << 24 | (uint32_t)en_playing << 17), i;
@@ -3204,30 +3204,40 @@ void ui_frame(void)
 
 void ui_input_only(void) { input(); }
 
-/* (BERLIN) the launch screen, the user's: NACHTFAHRT large (BERLIN's new name, the user's), "by CRANKY MAN" under
- * it, on black among a few stars, fading in; the version small at the foot. Frame f of UI_SPLASH_N, drawn whole (two
- * bands of 240 x 120) */
-static void splash_band(int f, int32_t oy)
+/* Static landscape splash: packed monochrome pixels, no audio-time animation. */
+#include "nightclaw_splash.inc"
+static void nightclaw_splash_band(int oy)
 {
-    static const uint8_t SX[14] = {18, 51, 77, 103, 139, 171, 205, 226, 33, 66, 121, 158, 190, 214},
-                         SY[14] = {22, 61, 15, 190, 31, 205, 48, 120, 150, 218, 230, 92, 168, 9};
-    int k;
-    cv_begin(240, 120, K_BG);
-    for (k = 0; k < 14; k++)
-        cv_rect(SX[k], SY[k] - oy, 1, 1, mix(K_BG, K_DIM, 3 + (k & 3)));
-    if (f >= 1)
-        text_c(120, 92 - oy, &FONT_L, "T-WRECKS", mix(K_BG, K_TEXT, f >= 8 ? 16 : 2 * f));
-    if (f >= 8)
-        text_c(120, 132 - oy, &FONT_S, "after NACHTFAHRT", mix(K_BG, K_BELL, f >= 16 ? 16 : 2 * (f - 7)));
-    if (f >= 16)
-        text_c(120, 224 - oy, &FONT_XS, EN_VERSION, K_DIM);
-    cv_blit(0, (uint32_t)oy);
+    unsigned p=0,count=0,col=0,row=0;
+    cv_begin(240,120,0);
+    while(count<NC_SPLASH_BYTES){
+        unsigned token=NC_SPLASH_RLE[p++],n=(token&127u)+1u,k;
+        uint8_t repeat=(token&128u)?NC_SPLASH_RLE[p++]:0;
+        for(k=0;k<n;k++){
+            uint8_t v=(token&128u)?repeat:NC_SPLASH_RLE[p++];
+            int y=(int)(row*240u/NC_SPLASH_N)-oy;
+            if(y<120 && y+(240/NC_SPLASH_N+1)>0){
+                unsigned b;
+                for(b=0;b<8;b++)if(v&(128u>>b)){
+                    int x=(int)((col*8u+b)*240u/NC_SPLASH_N);
+                    int x1=(int)((col*8u+b+1u)*240u/NC_SPLASH_N);
+                    int y1=(int)((row+1u)*240u/NC_SPLASH_N)-oy;
+                    cv_rect(x,y,x1-x,y1-y,C_WHITE);
+                }
+            }
+            count++;
+            if(++col==NC_SPLASH_N/8u){col=0;row++;}
+        }
+    }
+    cv_rect(0,-oy,240,40,0);
+    cv_rect(0,214-oy,240,26,0);
+    text_c(120,4-oy,&FONT_L,"NIGHTCLAW",C_WHITE);
+    text_c(120,218-oy,&FONT_S,"GENERATIVE DINOSYNTH",C_WHITE);
+    cv_blit(0,(uint32_t)oy);
 }
-
 void ui_splash(int f)
 {
-    if (f != 0) return;
-    lcd_fill(0, 0, 240, 240, K_BG);
-    draw_text_box(0, 78, 240, &FONT_L, "T-WRECKS", C_WHITE, 1);
-    draw_text_box(0, 130, 240, &FONT_B, "GENERATIVE DINOSYNTH", K_TEXT, 1);
+    if(f)return;
+    nightclaw_splash_band(0);
+    nightclaw_splash_band(120);
 }

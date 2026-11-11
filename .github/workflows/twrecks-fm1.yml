@@ -1,6 +1,6 @@
 # T-WRECKS (on NACHTFAHRT, after DUB-1 and AMB-1): builds the FM-1 package, runs the host tests, and puts the package,
 # the logs and the RAM map on the branch twrecks-fm1-output. No releases from here yet.
-name: twrecks-fm1
+name: NightClaw FM-1
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
           set -o pipefail
           mkdir -p out
           bash build.sh 2>&1 | tee out/build-fm1.log | tail -15
-          cp build/amb.fwsc out/t-wrecks-FM-1_942.fwsc
+          cp build/amb.fwsc out/nightclaw-FM-1_942.fwsc
           cp build/amb.dis out/ 2>/dev/null || true
           # the RAM map: every object of 256 bytes or more in .pool, .bss, .lowram, .noinit, biggest first
           for f in build/*.syms; do [ -f "$f" ] && python3 -c 'import re,sys

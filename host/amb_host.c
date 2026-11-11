@@ -25,7 +25,7 @@
  *                                Both print the film's time there, "@ mm:ss.s  bar N  LABEL" (the edit's cue)
  *   storefile PATH               a saved project from a file (tests/host/proj-*.bin)
  *   pingmark                     remember the ping loops (expect pingsame 1: they are as they were)
- *   splashrun                    the launch screen played out as the device does at power-on (55 ms a frame,
+ *   splashrun                    the static launch screen held for at least 3000 ms (
  *                                the music running, the UI not), then the UI started again
  *   film FILE | filmstop         record the device, 30 frames a second of simulated time, to FILE: each frame
  *                                a header (FILM_HDR words: ms, buttons held, keys held, buttons lit, keys lit,
@@ -957,13 +957,10 @@ int main(int argc, char **argv)
         } else if (!strcmp(cmd, "pingmark")) {
             ping_mark = ping_hash();
         } else if (!strcmp(cmd, "splashrun")) {
-            int f;
-            ui_off = 1;
-            for (f = 1; f < UI_SPLASH_N; f++) {
-                ui_splash(f);
-                run_ms(55);
-            }
-            ui_off = 0;
+            ui_off=1;
+            ui_splash(0);
+            run_ms(UI_SPLASH_HOLD_MS);
+            ui_off=0;
             ui_init();
         } else if (!strcmp(cmd, "splash"))           /* splash N: the launch screen's frame N (shot it after) */
             ui_splash(atoi(a));

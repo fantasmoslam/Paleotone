@@ -1,4 +1,4 @@
-# T-WRECKS completion checkpoint
+# NightClaw completion checkpoint
 
 Musically approved source: 43703d8. Installed performance candidate: 0f889bf, with all twenty audio hashes unchanged by the guarded taiko worker.
 

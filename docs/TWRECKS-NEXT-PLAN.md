@@ -1,4 +1,6 @@
-# T-WRECKS completion plan
+# NightClaw completion plan
+
+The NightClaw rename, landscape artwork and minimum three-second static title screen are prepared for the next update. Installation is deferred because Dylan will save current RED MESA edits later. The installed audio-approved worker candidate remains running. See [branding and timing details](NIGHTCLAW-BRANDING.md).
 
 ## Approved reference
 
@@ -18,7 +20,7 @@ Installed candidate 0f889bf retains the twenty approved audio baselines and runs
 
 ## Current closeout
 
-The full guarded-worker CI run passed: build, all audio-worker modes, storage/updater checks and all control scenarios including orphans. Published package SHA-256 matches the installed candidate exactly. PR #41 is ready for review. The repository front page and [quick-start guide](TWRECKS-QUICKSTART.md) now describe T-WRECKS controls and its own candidate output; the upstream README is retained separately.
+The full guarded-worker CI run passed: build, all audio-worker modes, storage/updater checks and all control scenarios including orphans. Published package SHA-256 matches the installed candidate exactly. PR #41 is ready for review. The repository front page and [quick-start guide](TWRECKS-QUICKSTART.md) now describe NightClaw controls and its own candidate output; the upstream README is retained separately.
 
 Verified source is 0f889bf; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
 

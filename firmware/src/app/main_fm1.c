@@ -174,7 +174,7 @@ static void fm1_fault(const fm1_crash_t *c)
     fm1_cpu1_bar();
     fm1_audio_stop();
     lcd_fill(0, 0, 240, 240, RGB(160, 0, 0));
-    draw_text_box(0, 8, 240, &FONT_S, "T-WRECKS CRASH", C_WHITE, 1);
+    draw_text_box(0, 8, 240, &FONT_S, "NIGHTCLAW CRASH", C_WHITE, 1);
     hexs(b, c->vec);
     draw_text_box(10, 40, 220, &FONT_S, b, C_WHITE, 0);
     hexs(b, c->pc);
@@ -211,7 +211,7 @@ static void safe_main(void)
     char b[24];
     uint32_t t0, play;
     lcd_fill(0, 0, 240, 240, C_BLACK);
-    draw_text_box(0, 18, 240, &FONT_B, "T-WRECKS SAFE MODE", C_HI, 1);
+    draw_text_box(0, 18, 240, &FONT_B, "NIGHTCLAW SAFE MODE", C_HI, 1);
     draw_text_box(0, 52, 240, &FONT_S, "IT CRASHED TWICE", C_WHITE, 1);
     draw_text_box(0, 72, 240, &FONT_S, "WHILE STARTING.", C_WHITE, 1);
     draw_text_box(0, 102, 240, &FONT_S, "NO SOUND. USB IS ON:", C_WHITE, 1);
@@ -241,7 +241,7 @@ static void safe_main(void)
         if ((fm1_in.buttons & play) && fm1_ms - t0 > 500u) {
             bootguard.failed = 0;                   /* try DUB-1 again, from scratch */
             bootguard.pending = 0;
-            draw_text_box(0, 172, 240, &FONT_S, "STARTING T-WRECKS...", C_HI, 1);
+            draw_text_box(0, 172, 240, &FONT_S, "STARTING NIGHTCLAW...", C_HI, 1);
             usb_detach();
             fm1_delay_ms(30);
             fm1_reboot();
@@ -257,10 +257,12 @@ static void safe_main(void)
     }
 }
 
+static uint32_t splash_visible_at;
 static void splash(void)                         /* the launch screen's first frame (ui.c's ui_splash) */
 {
     ui_splash(0);
     lcd_sync();
+    splash_visible_at=fm1_ticks();
 }
 
 static void fm1_main(void)
@@ -319,14 +321,11 @@ static void fm1_main(void)
     fm1_delay_ms(30);
     if ((fm1_in.buttons & 3u) == 3u)
         panel_setup();                              /* OCT- + OCT+ held at power-on */
-    {   /* the launch screen, played out while the rest settles (it was a still, 400 ms) */
-        int f;
-        for (f = 1; f < UI_SPLASH_N; f++) {
-            ui_splash(f);
-            fm1_wdt_feed();
-            fm1_delay_ms(55);
-        }
-        lcd_sync();
+    /* At least three seconds after the complete static image reaches the LCD.
+     * Audio and TIMER5/USB continue; no redraw/animation work is added. */
+    while((uint32_t)(fm1_ticks()-splash_visible_at)<UI_SPLASH_HOLD_MS*1000u*FM1_TICKS_PER_US){
+        fm1_wdt_feed();
+        fm1_delay_ms(10);
     }
     ui_init();
 
