@@ -24,4 +24,4 @@ The Drone's new cello instruments sound one octave below its composer notes; the
 
 ## Installation status
 
-The candidate has not been installed. The device check reported only MIDI input LUME 0 and no FM-1. Actual FM-1 CPU, dropout behavior and listening acceptance of the new voices remain pending. The previously installed taiko candidate remains the last verified device installation.
+Candidate 54fa451 was installed successfully on 2026-11-11 after the FM-1 reconnected. The installer completed its write and restart verification; an independent --info check then reported FM-1_942 running on T-WRECKS FM-1 1. Actual FM-1 CPU, dropout behavior and listening acceptance of the new voices remain pending.
