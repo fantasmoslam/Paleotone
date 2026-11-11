@@ -12,11 +12,11 @@ Preserve RAPTOR NIGHT's beat. Use its feel to guide additional spaghetti western
 
 ## Instrument additions
 
-Add selectable sharp concert cello voices and fat, deep bass pad voices to the synth. These are instruments the player chooses, not prescribed roles in rewritten arrangements. Keep existing Theremin selection working. Retain clear separation and restrained distortion without changing RAPTOR NIGHT to impose a fixed melody or instrument combination.
+Implemented in the new candidate: selectable Cello, Cello Low, Sub Pad and Fat Pad voices on each melodic track. See [instrument details and verification](TWRECKS-INSTRUMENT-ADDITIONS.md). These are instruments the player chooses, not prescribed roles in rewritten arrangements. Keep existing Theremin selection working. Retain clear separation and restrained distortion without changing RAPTOR NIGHT to impose a fixed melody or instrument combination.
 
 ## Remaining work and acceptance
 
-The native candidate is installed and RAPTOR NIGHT's beat with user-selected Theremin Lead has received explicit praise. Next, develop and audition cello and deep bass pad instruments, preserving independent beat and instrument selection. Any further drum patterns should follow the approved beat's feel. Manual creature-call testing and average/peak Setup CPU measurements remain hardware checks; musical praise does not establish CPU headroom. Earlier broad arrangement-audit ideas are not authorization to rewrite arrangements as part of this instrument request.
+The native candidate is installed and RAPTOR NIGHT's beat with user-selected Theremin Lead has received explicit praise. The four new instruments are built and pass host checks; their installation is pending because the FM-1 was not detected. Next, install and audition them, preserving independent beat and instrument selection. Any further drum patterns should follow the approved beat's feel. Manual creature-call testing and average/peak Setup CPU measurements remain hardware checks; musical praise does not establish CPU headroom. Earlier broad arrangement-audit ideas are not authorization to rewrite arrangements as part of this instrument request.
 
 ## Retained requirements
 

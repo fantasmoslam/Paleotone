@@ -1,0 +1,53 @@
+# New instruments append to existing voice IDs and save independently of drums.
+wait 300
+spin SELECT 5
+turn ALGO 4
+wait 200
+expect beat 4
+spin SELECT -5
+turn ALGO 26
+wait 300
+expect par22 32
+spin SELECT 1
+turn ALGO 21
+wait 300
+expect par33 42
+spin SELECT 1
+turn ALGO 18
+wait 300
+expect par34 28
+tapkey w0
+wait 700
+turn ALGO 1
+wait 300
+expect par34 29
+tapkey w2
+wait 700
+turn ALGO 1
+wait 300
+expect par34 30
+tapkey w0
+wait 700
+turn ALGO 1
+wait 300
+expect par34 31
+tapkey w0
+wait 700
+spin SELECT 1
+turn ALGO 37
+wait 300
+expect par35 55
+expect beat 4
+shot new-instruments.png
+press GLO
+wait 700
+release GLO
+wait 300
+expect dirty 0
+reboot
+wait 500
+expect par22 32
+expect par33 42
+expect par34 31
+expect par35 55
+expect beat 4

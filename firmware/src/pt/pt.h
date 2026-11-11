@@ -9,10 +9,10 @@ enum { PT_DRONE, PT_SEQ, PT_LEAD, PT_SEQ2, PT_NLAYER };
 enum { PT_CALLS = PT_NLAYER, PT_NPART };
 #define PT_NCALL 8
 /* the sounds each layer offers (pt.c PT_LIST's); a layer's voice knob has them after its own voices */
-#define PT_NDRONE 26
-#define PT_NSEQ 22
-#define PT_NLEAD 18
-#define PT_NSEQ2 34
+#define PT_NDRONE 30
+#define PT_NSEQ 26
+#define PT_NLEAD 22
+#define PT_NSEQ2 38
 extern const uint8_t PT_N[PT_NPART];
 
 void pt_init(void);

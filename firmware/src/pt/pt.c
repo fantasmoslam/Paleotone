@@ -60,6 +60,8 @@ static const pt_snd_t DRONE_SND[PT_NDRONE] = {
     {0, "STAR SKY", "Star Sky", 0.806f}, {2, "RESIN PAD", "Resin Pad", 1.019f}, {6, "PANGAEA PAD", "Pangaea", 1.149f},
     {6, "SKY STRINGS", "Sky Str", 0.877f}, {6, "SPORE CLOUD", "Spores", 1.271f}, {6, "AURORA PAD", "Aurora", 0.974f},
     {9, "GLACIER PAD", "Glacier", 2.556f}, {7, "TEMPLE ORGAN", "Temple", 1.327f},
+    {0, "CONCERT CELLO", "Cello", 1.0f}, {0, "DARK CELLO", "Cello Low", 1.0f},
+    {0, "DEEP SUB PAD", "Sub Pad", 0.65f}, {0, "FAT BASS PAD", "Fat Pad", 0.85f},
 };
 static const pt_snd_t SEQ_SND[PT_NSEQ] = {
     {10, "KALIMBA", "Kalimba", 1.975f}, {10, "LOG MARIMBA", "Log Bars", 2.848f}, {10, "MARIMBA", "Marimba", 3.886f},
@@ -69,6 +71,8 @@ static const pt_snd_t SEQ_SND[PT_NSEQ] = {
     {9, "AMBER BELLS", "Amber", 0.893f}, {9, "BELL", "FM Bell", 0.935f}, {9, "TINE EP", "Tine EP", 0.638f}, {2, "BELL", "Bell", 1.027f},
     {2, "WIRE", "Wire", 0.558f}, {2, "ICE CRYSTAL", "Crystal", 0.487f}, {3, "EGG ARP", "Egg Arp", 0.623f}, {6, "RING BELL", "Ring Bell", 2.323f},
     {6, "PRIMAL STAB", "Primal", 1.187f}, {0, "SINE KEY", "Sine Key", 0.815f},
+    {0, "CONCERT CELLO", "Cello", 1.0f}, {0, "DARK CELLO", "Cello Low", 1.0f},
+    {0, "DEEP SUB PAD", "Sub Pad", 0.65f}, {0, "FAT BASS PAD", "Fat Pad", 0.85f},
 };
 static const pt_snd_t LEAD_SND[PT_NLEAD] = {
     {9, "MAMMOTH", "Mammoth", 2.097f}, {9, "MAMMOTH CALL", "Mammoth 2", 1.822f}, {6, "BRONTO HORN", "Bronto", 2.084f},
@@ -77,6 +81,8 @@ static const pt_snd_t LEAD_SND[PT_NLEAD] = {
     {2, "TITAN BRASS", "Titan", 1.146f}, {6, "LAVA BRASS", "Lava", 0.685f}, {9, "BRASS", "FM Brass", 1.766f},
     {0, "AMBER LEAD", "Amber", 0.617f}, {0, "SAW LEAD", "Saw Lead", 1.014f}, {2, "RESO", "Reso", 3.451f}, {3, "WAVE LEAD", "Wave Lead", 2.075f},
     {6, "SYNC LEAD", "Sync Lead", 1.059f},
+    {0, "CONCERT CELLO", "Cello", 1.0f}, {0, "DARK CELLO", "Cello Low", 1.0f},
+    {0, "DEEP SUB PAD", "Sub Pad", 0.65f}, {0, "FAT BASS PAD", "Fat Pad", 0.85f},
 };
 static const pt_snd_t BASS_SND[PT_NSEQ2 - PT_NSEQ] = {   /* (Sequence 2's: these, then the Sequence's) */
     {9, "TAR PIT BASS", "Tar Bass", 0.977f}, {9, "TAR GROWL", "Tar Growl", 1.142f}, {0, "SUB BASS", "Sub Bass", 0.590f},
@@ -209,6 +215,7 @@ void pt_sound(int layer, int k)
         return;
     load(&trk[layer], s->e, (uint32_t)pi);
     if (layer == PT_CALLS) trk[layer].p[P_VOICE] = V_MONO;
+    if (s->e == 0 && pi >= 21) trk[layer].p[P_ED_FX] = 0; /* new voices have explicit list gains */
     lay[layer].tg = s->g > 0.0f ? s->g : 1.0f;
     if (layer == PT_SEQ2 && k >= PT_NSEQ2 - PT_NSEQ)
         lay[layer].tg *= 1.62f;                     /* (the Sequence's sounds on Sequence 2, lower: +4.2 dB, their median
@@ -224,12 +231,23 @@ void pt_clean_organ(int on)
 }
 int pt_is(int layer) { return (unsigned)layer < PT_NPART ? lay[layer].snd : 0; }
 
+/* Drone chords sit high in the composer: give the new lower instruments
+ * their intended register. Keyboard and sequence notes keep their written pitch. */
+static int instrument_note(int layer, int note)
+{
+    if (layer == PT_DRONE && lay[layer].snd >= 27u) {
+        int down = lay[layer].snd >= 29u ? 24 : 12;
+        return note >= down ? note - down : 0;
+    }
+    return note;
+}
 void pt_note_on(int layer, int note, int vel, uint32_t gate)
 {
     pt_layer_t *L;
     int i, f = -1;
     if ((unsigned)layer >= PT_NPART || !lay[layer].snd || note < 0 || note > 127)
         return;
+    note = instrument_note(layer, note);
     L = &lay[layer];
     for (i = 0; i < NGATE; i++)                     /* (the same note again: its old gate gone) */
         if (L->gl[i] && L->gn[i] == note)
@@ -255,6 +273,7 @@ void pt_note_off(int layer, int note)
     int i;
     if ((unsigned)layer >= PT_NPART || !lay[layer].snd)
         return;
+    note = instrument_note(layer, note);
     for (i = 0; i < NGATE; i++)
         if (lay[layer].gl[i] && lay[layer].gn[i] == note)
             lay[layer].gl[i] = 0;

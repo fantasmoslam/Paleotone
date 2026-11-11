@@ -54,3 +54,7 @@ Existing saved STAMPEDE settings are preserved across an update. Select STAMPEDE
 Twenty edited presets occupy two independently atomic ten-preset A/B banks at 0x98000..0x9BFFF. Globals keep their original pair at 0xFC000 and panel calibration remains at 0xDC000. External sample storage is untouched. CRC validation, torn-write recovery, bank isolation and save/reload behavior have host tests. Only changed banks are rewritten. Old ten-piece recipes exist solely as host regression fixtures; a compile guard prevents including them in an FM-1 build.
 
 Source branch: twrecks-completion. Product identity remains FM-1_942. CI runs host checks, builds the package and publishes candidate output to twrecks-completion-output. The known installer in the PC's twrecks-install directory remains the installer to use.
+
+## Additional selectable instruments
+
+The current source adds Cello, Cello Low, Sub Pad and Fat Pad at the end of each melodic voice list. Select a track on Home and turn ALGORITHM to choose one; save normally. These synthesized voices are independent of drum patterns. Existing presets and Theremin remain unchanged. No factory reset is needed. See [instrument validation and installation status](docs/TWRECKS-INSTRUMENT-ADDITIONS.md).
