@@ -4,7 +4,7 @@ name: twrecks-fm1
 
 on:
   push:
-    branches: [twrecks]
+    branches: [twrecks, twrecks-controls]
   workflow_dispatch:
 
 permissions:
@@ -52,10 +52,12 @@ jobs:
 
       - name: Host tests
         shell: bash
-        continue-on-error: true
         run: |
-          AC79_SDK="$HOME/fw-AC79_AIoT_SDK" sh tests/run_tests.sh > out/tests.log 2>&1; echo "exit $?" | tee -a out/tests.log
+          status=0
+          AC79_SDK="$HOME/fw-AC79_AIoT_SDK" sh tests/run_tests.sh > out/tests.log 2>&1 || status=$?
+          echo "exit $status" | tee -a out/tests.log
           grep -E "FAIL|^exit" out/tests.log | tail -60
+          exit "$status"
 
       - name: Put the result on the twrecks-fm1-output branch
         if: always()
@@ -65,4 +67,8 @@ jobs:
           echo "${{ github.sha }} ${{ job.status }}" > /tmp/o/RESULT
           cd /tmp/o && git init -q -b twrecks-fm1-output && git add -A
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "build of ${{ github.sha }}"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" twrecks-fm1-output
+          if [ "${{ github.ref_name }}" = "twrecks" ]; then
+            git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" twrecks-fm1-output
+          else
+            git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:twrecks-controls-output
+          fi

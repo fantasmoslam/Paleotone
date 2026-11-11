@@ -3,7 +3,7 @@
 wait 200
 listen
 wait 300
-said Mix page: Drone 60, Seq 70, Lead 40, Seq 2 60. Piece
+said Mix page, track DRONE: Level 60, Filter 0, LFO 30, Reverb 50. Piece
 listen
 where
 said Scale D, E, F, G, A, Bb, C

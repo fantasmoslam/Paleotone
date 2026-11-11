@@ -28,6 +28,12 @@ Paleotone's 8 voices are shared by the layers on its sounds.
 Tests: `tests/host/pt_test.c` (every sound plays), `tests/host/twr_voice_test.c` (each layer on each sound, its level,
 its MIDI notes let go).
 
+## Control interface (before step 3)
+
+The `twrecks-controls` branch replaces decorative animation with control tables. Home shows four tracks at a time; SELECT chooses a track, including Atmosphere on the fifth row, and K1-4 control its Level, Filter, LFO depth and Reverb send. LFO is the existing filter-motion Width; Time and Rate remain on each track's Move row. Each layer page shows its main, sound and Move rows together (the sequences also have Repeats / Pattern). The layer button chooses the active row; SELECT retains its layer-level shortcut there. Performance keeps the same keys, mutes, solos and moves, with a plain text display. Pattern, chord and effects editors keep their functional grids. Terminus uses 16 px labels. Values are Paleotone-style Pac-Man fill indicators: amber, cyan, pink and green by physical control column, without numeric readings or simulated knob bodies. The same indicators appear on the chord/pattern control strips; the boot logo is static. No save format or sound-engine changes.
+
+The first device build fits: later final build measurements and checks are recorded in the pull request. Hardware readability, encoder feel and CPU load still need an FM-1 check before moving this candidate onto `twrecks`. No installation is part of this change.
+
 ## Next
 
 3. The STAMPEDE skin drums, sparse, with their own level; the creature calls.
