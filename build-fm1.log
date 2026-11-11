@@ -1,0 +1,17 @@
+loader: image 7764 B at 0x1c0a800, bss end 0x1c0f428
+loader: ota.bin 6510 B
+font XS: ter-u12n.bdf 12px h 12, digit adv 6, 5700 B
+font S: ter-u16n.bdf 16px h 16, digit adv 8, 9120 B
+font B: ter-u16b.bdf 16px h 16, digit adv 8, 9120 B
+font M: ter-u24b.bdf 24px h 24, digit adv 12, 12288 B
+font L: ter-u32b.bdf 32px h 32, digit adv 16, 20480 B
+font C: ter-u24b.bdf 24px h 24, digit adv 12, 18240 B
+font set terminus: 76510 B (approx)
+words: 41 own + 51 common -> /__w/Paleotone/Paleotone/web/words/6b89770e6b.json (2091 B)
+  ok    .ram_text: 909 insns, no calls
+  ok    no soft-double routines (single-precision FPU only)
+  ok    image 528076 B; RAM .data+.bss 89488 B of 98304; pool 333448 B of 344064
+  ok    register access: hal/ only (src/, loader/ clean)
+app      /__w/Paleotone/Paleotone/build/amb.bin  528076 B
+loader   /__w/Paleotone/Paleotone/build/loader/ota.bin  6510 B
+package  /__w/Paleotone/Paleotone/build/amb.fwsc  609666 B, identity FM-1_942
