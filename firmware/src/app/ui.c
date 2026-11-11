@@ -2348,123 +2348,24 @@ static void draw_main(void)
  * it a cell a knob: its name, a ring (or pips, for a switch of a few positions), the value. The
  * knob being turned is drawn on a tint. Only redrawn when what it shows changes (the rings cost a
  * square root and an arctangent per pixel). */
+static const uint16_t CONTROL_COL[4] = {
+    RGB(255, 180, 48), RGB(80, 220, 255), RGB(255, 120, 210), RGB(140, 240, 100)
+};
+static int control_ratio(int k);
+static void control_indicator(int32_t cx, int32_t cy, int32_t r, int32_t ratio, uint16_t color);
+static const char *control_label(int view, int col);
+static void control_text(int x, int y, int width, const felucca_font_t *font, const char *value, uint16_t color);
 static void draw_knobs(void)
 {
-    uint32_t h = hash(2166136261u, ui.view | (uint32_t)ui.touched << 8), i;
-    if (view_voice(ui.view) >= 0)
-        h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
-    if (ui.view == V_CHORDS)
-        h = hash(h, (uint32_t)proj.par[P_PMODE]);
-    if (atm_view(ui.view))
-        h = hash(h, (uint32_t)proj.par[P_NCHAR]);
-    if (ui.view == V_MIX)
-        h = hash(h, ui.mutes);
-    int now_touch = plat_ms() < ui.touch_until, sel_on = ui.view == V_DUB && plat_ms() < ui.sel_until;
-    for (i = 0; i < 4; i++)
-        h = hash(h, (uint32_t)knob_get(control_knob(ui.view, (int)i)));
-    if (sel_on)
-        h = hash(h, 0x53454Cu ^ (uint32_t)(knob_get(K_ENERGY) + 64) << 24);
-    h = hash(h, (uint32_t)now_touch | (uint32_t)(knob_dot(ui.view) + 1000) << 1);   /* (the filter's dot moving) */
-    if (dens_knob(ui.view) >= 0)
-        h = hash(h, (uint32_t)(dens_dot() + 1000));   /* (Density's dot moving) */
-    if (h == ui.sig[2])
-        return;
-    ui.sig[2] = h;
+    uint32_t h = hash(0x50494553u, ui.view);
+    int c;
+    for (c=0; c<4; c++) h=hash(h, (uint32_t)knob_get(VIEW_KNOB[ui.view][c]));
+    if (h == ui.sig[2]) return;
+    ui.sig[2]=h;
     cv_begin(240, KNB_H, K_BG);
-    {   /* the rule; at its right end, where you are: the page, then the dots */
-        char t[12];
-        int k;
-        int32_t xd = 237 - NROUND * 6, xt;
-        int32_t x0 = 4;
-        if (view_voice(ui.view) >= 0 || ui.view == V_CHORDS || atm_view(ui.view)) {   /* a layer's page: its voice, at the rule's start;
-                                                                   * the Chords page: the walk's; Noise: its character */
-            char vn[12];
-            if (ui.view == V_CHORDS || atm_view(ui.view)) {
-                const char *w = ui.view != V_CHORDS ? EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR]
-                                                  : EN_WALK_NAME[(proj.par[P_PMODE] & 3) % EN_NWALK];
-                int j;
-                for (j = 0; j < 11 && w[j]; j++)
-                    vn[j] = w[j];
-                vn[j] = 0;
-            } else {
-                en_param_text(view_voice(ui.view), proj.par[view_voice(ui.view)], vn);
-            }
-            caps(t, vn, sizeof t);
-            x0 = cv_text(6, -1, &FONT_XS, t, K_DIM) + 5;
-        }
-        if (sel_on) {                            /* (HOME) SELECT turning: Energy, its value and a bar from the
-                                                  * middle (as PERFORM's knob, -50..50), the rule's whole width */
-            char v[8];
-            const int en = knob_get(K_ENERGY);
-            knob_text(K_ENERGY, v);
-            cv_rect(0, 0, 240, 12, K_BG);
-            xt = cv_text(6, -1, &FONT_XS, "ENERGY", K_TEXT) + 5;
-            xt = cv_text(xt, -1, &FONT_XS, v + (v[0] == '+'), K_ACC) + 6;
-            cv_round(xt, 3, 50, 5, 2, K_LINE);
-            if (en)
-                cv_round(en > 0 ? xt + 25 : xt + 25 + en / 2, 3, (en > 0 ? en : -en) / 2 + 1, 5, 2, K_ACC);
-            cv_rect(xt + 25, 2, 1, 7, K_TEXT);
-            xt += 56;
-            if (xt < 234)
-                cv_rect(xt, 5, 234 - xt, 1, K_LINE);
-        } else if (now_touch && ui.touched >= 0 && ui.touched < 4) {   /* a knob turning: what it does, the rule's
-                                                                          * whole width */
-            char hp[48];
-            caps(hp, KNOB_HELP[ui.view][ui.touched], sizeof hp);
-            cv_rect(0, 0, 240, 12, K_BG);
-            xt = cv_text(6, -1, &FONT_XS, hp, K_TEXT) + 5;
-            if (xt < 234)
-                cv_rect(xt, 5, 234 - xt, 1, K_LINE);
-        } else {
-            xt = 234;                            /* (1.3.0: the page's name and its dots top right now; here the rule) */
-            cv_rect(x0, 5, xt - x0, 1, K_LINE);
-            (void)xd, (void)k;
-        }
-    }
-    for (i = 0; i < 4; i++) {
-        const int moff = ui.view == V_MIX && (ui.mutes & LAYER_MUTE[i]) == LAYER_MUTE[i];   /* (the mix: a muted
-                                                                                       * layer grey, its level kept) */
-        int k = VIEW_KNOB[ui.view][i], lo, hi, v, hot = now_touch && ui.touched == (int)i;
-        int32_t x = (int32_t)i * 60, cx = x + 30;
-        char t[16];
-        static const uint16_t MIXC[4] = {K_PAD, K_BELL, K_BASS, K_PULSE};   /* (the Mix page: the layers' colours) */
-        uint16_t bg = hot ? K_PANEL : K_BG, fill = moff ? K_LINE : ui.view == V_MIX ? MIXC[i] : hot ? K_ACC : K_PAD;
-        if (k == K_NONE)
-            continue;
-        if (i)
-            cv_rect(x, 16, 1, 46, K_LINE);
-        if (hot)
-            cv_round(x + 3, 11, 54, 57, 6, K_PANEL);
-        knob_range(k, &lo, &hi);
-        v = knob_get(k);
-        caps(t, KNOB_LABEL[ui.view][i], sizeof t);
-        text_c(cx, 12, &FONT_XS, t, hot ? K_TEXT : K_DIM);
-        if (k == K_SAVE) {                       /* (Save: a dot, lit while there's something to save) */
-            cv_disc(cx, 37, 5, v ? K_ACC : K_LINE);
-        } else if (k != K_CPU && hi - lo < 10) { /* a switch: its positions as pips (up to ten) */
-            int n = hi - lo + 1, j, pw = n > 6 ? 3 : n > 4 ? 6 : 9, gap = n > 6 ? 2 : 3, w0 = n * (pw + gap) - gap;
-            for (j = 0; j < n; j++)
-                cv_round(cx - w0 / 2 + j * (pw + gap), 33, pw, 8, 2, j == v - lo ? fill : K_LINE);
-        } else if (k != K_CPU) {
-            arc(cx, 37, 12, hi > lo ? (float)(v - lo) / (float)(hi - lo) : 0.0f, K_LINE, fill, bg, lo < 0);
-            if (knob_dot(ui.view) > -999 && (int)i == bright_of(ui.view, &(int){0}, &(float){0.0f}) && hi > lo) {
-                /* (BERLIN) the filter motion: where the filter is now, a cyan dot on the ring */
-                const float a = (0.375f + 0.75f * (float)(knob_dot(ui.view) - lo) / (float)(hi - lo)) * FM_TWO_PI;
-                cv_disc(cx + (int32_t)(fm_cosf(a) * 12.0f + 0.5f), 37 + (int32_t)(fm_sinf(a) * 12.0f + 0.5f), 2, K_ACC);
-            }
-            if (k == P_DENSITY && en_dd_shift != 0 && hi > lo) {
-                /* (2026-11-01) Density's drift: where it is now, a dot in the Sequence's colour on the ring */
-                const float a = (0.375f + 0.75f * (float)(dens_dot() - lo) / (float)(hi - lo)) * FM_TWO_PI;
-                cv_disc(cx + (int32_t)(fm_cosf(a) * 12.0f + 0.5f), 37 + (int32_t)(fm_sinf(a) * 12.0f + 0.5f), 2, K_BELL);
-            }
-            if (k == P_MOTION) {                 /* (Motion's three regions: the loop held, variations, Breaks) */
-                arc_mark(cx, 37, 12, 0.4f, K_TEXT);
-                arc_mark(cx, 37, 12, 0.7f, K_TEXT);
-            }
-        }
-        knob_text(k, t);
-        text_c(cx, 50, &FONT_B, t + (t[0] == '+'), moff ? K_DIM : hot ? K_ACC : K_TEXT);   /* (the user: no plus, "1";
-                                                  * the font's thin plus read as a minus; the reader still says it) */
+    for (c=0; c<4; c++) {
+        control_text(c*60+4, 0, 56, &FONT_S, control_label(ui.view, c), CONTROL_COL[c]);
+        control_indicator(c*60+30, 38, 18, control_ratio(VIEW_KNOB[ui.view][c]), CONTROL_COL[c]);
     }
     cv_blit(0, KNB_Y);
 }
@@ -3047,6 +2948,39 @@ static const char *control_label(int view, int col)
     if (str_begins(s, "MIDI out")) return "MIDI";
     return s;
 }
+/* Paleotone ui_studio.c te_pie: a filled value indicator whose missing
+ * wedge opens symmetrically from twelve o'clock. No knob body or pointer.
+ * Adapted to the existing RGB565 canvas (Paleotone uses indexed pixels). */
+
+static int control_ratio(int k)
+{
+    int lo, hi, v = knob_get(k);
+    knob_range(k, &lo, &hi);
+    if (hi <= lo) return -1;
+    v = v < lo ? lo : v > hi ? hi : v;
+    return (v - lo) * 1000 / (hi - lo);
+}
+static void control_indicator(int32_t cx, int32_t cy, int32_t r, int32_t ratio, uint16_t color)
+{
+    int32_t dx, dy, cq = 256;
+    if (ratio >= 0) {
+        const float half = (float)(1000 - (ratio > 1000 ? 1000 : ratio)) * (0.5f * FM_TWO_PI / 1000.0f);
+        cq = (int32_t)(fm_cosf(half) * 256.0f);
+    }
+    for (dy = -r; dy <= r; dy++)
+        for (dx = -r; dx <= r; dx++) {
+            const int32_t d2 = dx*dx + dy*dy, n = -dy;
+            int on;
+            if (d2 > r*r+r) continue;
+            if (ratio < 0 || ratio >= 1000) on = 1;
+            else if (ratio <= 0) on = 0;
+            else if (cq >= 0) on = n <= 0 || n*n*65536 <= d2*cq*cq;
+            else on = n < 0 && n*n*65536 >= d2*cq*cq;
+            if (on) cv_pset(cx+dx, cy+dy, color);
+            else if (d2 >= (r-1)*(r-1)) cv_pset(cx+dx, cy+dy, K_LINE);
+        }
+}
+
 static void draw_controls(void)
 {
     uint8_t rows[4];
@@ -3070,7 +3004,7 @@ static void draw_controls(void)
     control_text(4, 2, 180, &FONT_B, home ? "HOME / TRACKS" : VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_B, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
     if (home) {
-        for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, TRACK_LABEL[c], K_TEXT);
+        for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, TRACK_LABEL[c], CONTROL_COL[c]);
     } else {
         const int voice = view_voice(ui.view);
         if (voice >= 0) {
@@ -3094,11 +3028,8 @@ static void draw_controls(void)
             }
             for (c=0; c<4; c++) {
                 const int k = home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
-                const felucca_font_t *font;
-                if (!home) control_text(c*60+4, 0, 56, &FONT_S, control_label(rows[r], c), K_TEXT);
-                knob_text(k, b);
-                font = text_w(&FONT_M, b) <= 54 ? &FONT_M : &FONT_B;
-                control_text(c*60+4, 18, 56, font, b, active ? C_WHITE : K_TEXT);
+                if (!home) control_text(c*60+4, 0, 56, &FONT_S, control_label(rows[r], c), CONTROL_COL[c]);
+                control_indicator(c*60+30, 29, 12, control_ratio(k), CONTROL_COL[c]);
             }
             if (active) cv_rect(0, 0, 2, 43, K_ACC);
             cv_line(0, 43, 239, 43, K_LINE);
