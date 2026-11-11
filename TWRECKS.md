@@ -2,21 +2,21 @@
 
 ## Current development direction
 
-The controls/manual-call candidate is installed, but its musical direction was rejected: hollow bass and upbeat/noir character do not meet Dylan's **apocalyptic, consequential** target. The [audio study](docs/TWRECKS-APOCALYPTIC-AUDIO-STUDY.md) measures eleven reference streams and candidate diagnostics, alongside a source audit. The [completion plan](docs/TWRECKS-NEXT-PLAN.md) now prioritizes one desktop musical prototype before further flashing or broad preset revision. The documentation below describes the existing candidate, not an accepted final sound.
+The taiko beat bank, selectable cello/bass pad instruments and manual creature calls are implemented. RAPTOR NIGHT with user-selected Theremin Lead is the signature reference. The current candidate adds [six western scene replacements](docs/TWRECKS-WESTERN-SCENES.md); final listening and hardware stress acceptance remain separate from engineering checks. See the [completion plan](docs/TWRECKS-NEXT-PLAN.md).
 
 A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contains only the twenty dinosynth presets below. Fresh startup is EXTINCTION. Previous project formats reset to the new bank, as requested; no old-preset migration or original factory pieces are included in device firmware.
 
 ## Controls
 
-Home shows four track rows at a time. SELECT chooses Drone, Sequence, Lead, Sequence 2, Atmosphere, Skin or Calls. The four right-hand encoders edit the selected row: Level, Filter/tone, LFO depth (Chance on Skin/Calls), Reverb send. Values are the approved amber/cyan/pink/green Paleotone Pac-Man fill indicators, with readable labels and no numeric parameter readouts.
+Home shows four track rows at a time. SELECT chooses Drone, Sequence, Lead, Sequence 2, Atmosphere, Skin or Calls. The four right-hand encoders edit the selected row: Level, Filter/tone, LFO depth (Ghosts on Skin, Chance on Calls), Reverb send. Values are the approved amber/cyan/pink/green Paleotone Pac-Man fill indicators, with readable labels and no numeric parameter readouts.
 
-HOME cycles the track overview, generative controls and key/tempo. The layer buttons select their visible control rows. SAVE cycles Atmosphere, Atmosphere sound, Atmosphere motion, Skin drums, Creature calls. On Home, ALGORITHM changes the selected instrument voice, Atmosphere character or Calls creature; the name stays in the header. Skin uses the fixed TRIBE kit. Voice choices save with each preset. With Skin or Calls selected on Home, SAVE opens its control page immediately. PRESETS turns through the twenty scenes. GLO held half a second saves edits; held longer resets the current preset to its recipe. Performance retains its existing key controls. A solo also silences the two auxiliary layers.
+HOME cycles the track overview, generative controls and key/tempo. The layer buttons select their visible control rows. SAVE cycles Atmosphere, Atmosphere sound, Atmosphere motion, Skin drums, Creature calls. On Home, ALGORITHM changes the selected instrument voice, Atmosphere character or Calls creature; the name stays in the header. With Skin selected, ALGORITHM chooses a saved drum pattern. Voice choices save with each preset. With Skin or Calls selected on Home, SAVE opens its control page immediately. PRESETS turns through the twenty scenes. GLO held half a second saves edits; held longer resets the current preset to its recipe. Performance retains its existing key controls. A solo also silences the two auxiliary layers.
 
 ## Audio
 
 Paleotone provides the existing curated voices and eight SAURUS creatures: Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. Calls are mono, share the melodic eight-voice budget, use a three-second gate and level trims measured from renders. Calls start in Manual mode at each boot. Select Calls on Home, or open Creature calls with SAVE: the first eight white keys trigger Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. The first black key toggles Manual/Auto; the second stops the current call. Auto considers a call at bar lines, with four to eight bars between possible calls; Chance zero disables automatic calls. Manual triggers bypass that cooldown and work with music stopped or held. Level zero or an auxiliary mute silences them. Mode is a live choice, not a saved preset parameter. Leaving call mode releases held instrument-key ownership.
 
-Skin now uses four recorded taiko samples with six overlapping playback voices. All eleven Paleotone/Gurdy rhythm families are independent of the Gurdy instrument: GALOP, TRES, WAR, RAIN, QUAKE, WAR2, TALK, SEVEN, PENTA, SPIRAL and CHAOS. Select Skin on Home (or open its page) and turn ALGORITHM to choose a beat; the choice saves per preset. Ghosts adjusts optional accents while retaining the core beat. Source timing, ghost and fill logic passed 22,528 comparisons against Gurdy. This is an event-logic extraction, not separation of a mixed recording.
+Skin uses four recorded taiko samples with six overlapping playback voices. All eleven original Paleotone/Gurdy rhythm families are independent of the Gurdy instrument: GALOP, TRES, WAR, RAIN, QUAKE, WAR2, TALK, SEVEN, PENTA, SPIRAL and CHAOS. Select Skin on Home (or open its page) and turn ALGORITHM to choose a beat; the choice saves per preset. Ghosts adjusts optional accents while retaining the core beat. Three additional T-WRECKS patterns—TRAIL, OUTRIDER and HUNT—extend the selector to fourteen beats. Original timing, ghost and fill logic passed 22,528 comparisons against Gurdy. This is an event-logic extraction, not separation of a mixed recording.
 
 STAMPEDE defaults to 54 BPM, GALOP, resonant taiko, sustained deep sub bass and clean supporting organ fifths. Automatic lead notes are off, with the keyboard lead ready to play. The recorded drum direction was approved in desktop Prototype 05; native playback and device CPU still need listening validation. Above 75% reported audio load, optional ghost accents and automatic calls are suppressed; core drum hits remain. Level zero clears the sampler. Sample credits and CC BY-SA 4.0 terms are in [the attribution notice](tools/research/taiko-bank-05/ATTRIBUTION.md).
 
@@ -27,21 +27,21 @@ STAMPEDE defaults to 54 BPM, GALOP, resonant taiko, sustained deep sub bass and 
 | EXTINCTION | Deep tundra drone, sparse geode tones, distant herd |
 | STAMPEDE | Resonant taiko, deep sub bass, clean organ fifths, live lead |
 | RAPTOR NIGHT | Primeval bed, kalimba, whistle and raptor chatter |
-| ASHEN SKY | Star-sky pad, harp and wind lead |
+| BONE RIDER | Western gallop, low cello support, sub bass and playable Theremin |
 | BONE TEMPLE | Temple organ, tusk tines and sparse skins |
-| FERN SHADOWS | Jungle pad, kalimba and nest calls |
+| DUST TRAIL | TRES pulse, fat bass pad, restrained harp and playable cello |
 | TAR PIT | Earthquake drone, tar growl bass and skins |
 | DISTANT HERD | Low tundra, valley harp and herd calls |
-| AMBER CAVERN | Resin pad and geode bells |
+| RED MESA | Displaced taiko accents, clean sub pad and playable Theremin |
 | PRIMEVAL | Primeval drone, log marimba and croaks |
 | FROZEN BONES | Glacier pad, ice crystal and canyon horn |
 | VOLCANIC DUSK | Quake, primal stabs, tar bass and drums |
-| CRESTED MOON | Choir, harp, whistle and crest hoots |
+| FOSSIL PASS | Answering war drums, dark cello, sub bass and playable Theremin |
 | SWAMP RITUAL | Swamp fiddle, log bars, skins and croaks |
 | STONE SENTINEL | Temple drone, slit drum and tar bass |
-| HOLLOW NEST | Ice-age pad, water drops and nest calls |
+| HIGH FRONTIER | GALOP, bowed cello support, valley harp and playable cello |
 | MAMMOTH PASS | Strings, tusk tines, mammoth lead and hadro calls |
-| ECHOING RUINS | Temple organ, amber bells and cave echoes |
+| NIGHT RIDER | Dense low ensemble, fat bass pad and playable cello |
 | LAST SUNRISE | Aurora pad, valley harp and canyon horn |
 | DEEP TIME | Tundra drone, sparse geode bells and herd moans |
 

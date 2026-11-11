@@ -66,7 +66,7 @@ for s in tests/scenarios/*.amb; do
     n=$(basename "$s" .amb)
     mkdir -p "build/scenarios/$n"
     host=build/host/amb_host_legacy
-    case "$n" in twrecks-bank|twrecks-live|twrecks-beats|twrecks-instruments) host=build/host/amb_host ;; esac
+    case "$n" in twrecks-bank|twrecks-live|twrecks-beats|twrecks-instruments|twrecks-western) host=build/host/amb_host ;; esac
     run "scenario-$n" "$host" "$s" "build/scenarios/$n"
 done
 [ $FAIL -eq 0 ] && echo "all tests passed" || echo "TESTS FAILED"

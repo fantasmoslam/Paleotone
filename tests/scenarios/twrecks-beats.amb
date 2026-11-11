@@ -3,10 +3,10 @@ wait 300
 spin SELECT 5
 wait 200
 expect beat 0
-turn ALGO 10
+turn ALGO 13
 wait 200
-expect beat 10
-expect enginebeat 10
+expect beat 13
+expect enginebeat 13
 shot beat-home.png
 tap SAVE
 wait 200
@@ -16,7 +16,7 @@ wait 200
 expect beat 0
 turn ALGO -1
 wait 200
-expect beat 10
+expect beat 13
 turn PRESET 1
 wait 200
 expect beat 0
@@ -34,4 +34,4 @@ expect beat 5
 expect enginebeat 5
 turn PRESET -1
 wait 300
-expect beat 10
+expect beat 13

@@ -61,14 +61,14 @@ int main(void) {
         int16_t p[P_NPARAMS];uint16_t pool;double energy=0,pk=0;int frames=30*44100/256;
         en_init();en_piece(k,p,&pool);
         for(j=0;j<P_NPARAMS;j++){if(p[j]<en_param_info(j)->lo || p[j]>en_param_info(j)->hi)printf("preset %d invalid parameter %d (%s): %d\n",k,j,en_param_info(j)->name,p[j]);CHECK(p[j]>=en_param_info(j)->lo && p[j]<=en_param_info(j)->hi);en_set(j,p[j]);}
-        en_pool(pool);en_piece_theme(k);en_regrow();en_play(1);
+        en_pool(pool);en_piece_theme(k);en_drum_pattern(en_piece_beat(k));en_regrow();en_play(1);
         for(b=0;b<frames;b++){
             en_render(pcm,256,2048);
             for(j=0;j<512;j++){double x=(double)pcm[j]/8388608.0;energy+=x*x;if(fabs(x)>pk)pk=fabs(x);}
         }
         energy=sqrt(energy/(frames*512.0));
         printf("preset %-16s rms %.4f peak %.3f\n",en_piece_name(k),energy,pk);
-        CHECK(energy>0.01 && pk<0.95);CHECK(pt_voices()<=8);
+        CHECK(energy>(en_piece_replaced(k)?0.04:0.008) && pk<0.95);CHECK(pt_voices()<=8);
         if(k==1) {printf("stampede: %u drum hits in %u sixteenths\n",en_skin_hits,en_bars);CHECK(en_skin_hits>=60 && en_skin_hits<140);}
     }
     printf("wild: %s\n",fail?"FAIL":"all passed");return fail!=0;

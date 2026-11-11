@@ -45,8 +45,9 @@ static float pt_buf[256];
 #ifndef EN_LEGACY_TEST_BANK
 static float taiko_rbuf[256];
 #endif
+_Static_assert(EN_NBEAT == TAIKO_N_RHYTHMS, "beat selector matches rhythm bank");
 volatile uint8_t en_beat;
-const char *en_beat_name(int i){static const char *const names[11]={"GALOP","TRES","WAR","RAIN","QUAKE","WAR2","TALK","SEVEN","PENTA","SPIRAL","CHAOS"};return names[(unsigned)i<11u?i:0];}                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
+const char *en_beat_name(int i){static const char *const names[EN_NBEAT]={"GALOP","TRES","WAR","RAIN","QUAKE","WAR2","TALK","SEVEN","PENTA","SPIRAL","CHAOS","TRAIL","OUTRIDER","HUNT"};return names[(unsigned)i<EN_NBEAT?i:0];}                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
 static int pt_own_n(int p)                     /* its own voices' count */
 {
     return p == P_CVOICE ? EN_NCV : p == P_SVOICE ? EN_NSV : p == P_LVOICE ? EN_NBV : EN_NS2V;
@@ -166,25 +167,38 @@ static const dino_recipe_t DINO[20] = {
     {"EXTINCTION", 60,2,MODE_PHRYGIAN,0,4,0,0,{45,22,18,0,0,26},18,12,13,0},
     {"STAMPEDE",84,0,MODE_AEOLIAN,1,1,2,1,{32,30,0,28,70,28},28,0,11,7},
     {"RAPTOR NIGHT",68,2,MODE_PHRYGIAN,2,0,4,0,{36,20,24,0,22,34},20,18,15,1},
-    {"ASHEN SKY",60,5,MODE_AEOLIAN,18,7,9,0,{42,18,20,0,0,0},14,12,13,0},
+    {"BONE RIDER",124,5,MODE_PHRYGIAN,27,8,18,2,{26,0,38,30,68,20},12,0,16,1},
     {"BONE TEMPLE",64,0,MODE_PHRYGIAN,25,3,6,0,{40,24,0,0,30,0},20,0,11,0},
-    {"FERN SHADOWS",72,7,MODE_DORIAN,13,0,5,0,{34,26,16,0,0,20},24,14,15,4},
+    {"DUST TRAIL",112,2,MODE_PENT_MIN,29,8,18,2,{26,10,40,0,66,18},12,0,16,4},
     {"TAR PIT",62,1,MODE_PHRYGIAN,1,12,15,1,{32,0,18,32,22,0},12,10,13,0},
     {"DISTANT HERD",60,10,MODE_PENT_MIN,0,8,2,0,{38,18,0,0,0,38},12,0,13,0},
-    {"AMBER CAVERN",66,4,MODE_AEOLIAN,19,4,5,0,{34,25,0,0,0,0},20,0,11,0},
+    {"RED MESA",128,7,MODE_PHRYGIAN,28,8,18,2,{30,0,38,0,68,18},10,0,16,0},
     {"PRIMEVAL",64,0,MODE_PHRYGIAN,2,1,6,0,{40,24,18,0,20,22},18,12,15,5},
     {"FROZEN BONES",60,6,MODE_AEOLIAN,24,16,3,0,{38,20,16,0,0,0},12,10,13,0},
     {"VOLCANIC DUSK",76,5,MODE_PHRYGIAN,1,20,11,1,{30,22,0,28,44,18},22,0,11,3},
-    {"CRESTED MOON",62,9,MODE_DORIAN,9,7,4,0,{38,18,20,0,0,32},14,12,15,2},
+    {"FOSSIL PASS",104,0,MODE_PENT_MIN,27,8,19,2,{28,0,40,32,66,20},10,0,16,2},
     {"SWAMP RITUAL",70,2,MODE_PENT_MIN,3,1,6,0,{34,22,0,0,48,28},18,0,13,5},
     {"STONE SENTINEL",60,0,MODE_PHRYGIAN,25,11,0,0,{40,18,0,26,0,0},10,0,11,0},
-    {"HOLLOW NEST",68,7,MODE_AEOLIAN,12,6,4,0,{32,22,18,0,0,28},16,12,15,4},
+    {"HIGH FRONTIER",116,5,MODE_DORIAN,26,8,19,2,{24,12,38,30,66,18},12,0,16,4},
     {"MAMMOTH PASS",64,2,MODE_DORIAN,16,3,0,0,{34,18,24,0,20,20},16,16,13,6},
-    {"ECHOING RUINS",60,5,MODE_AEOLIAN,25,12,5,0,{34,20,18,0,0,0},12,10,11,0},
+    {"NIGHT RIDER",136,2,MODE_PHRYGIAN,29,8,18,2,{26,0,40,0,70,20},10,0,16,1},
     {"LAST SUNRISE",62,10,MODE_DORIAN,23,8,3,0,{38,20,20,0,0,16},16,12,15,0},
     {"DEEP TIME",60,0,MODE_PENT_MIN,0,4,9,0,{42,14,0,0,0,22},10,0,13,3},
 };
 #endif
+int en_piece_replaced(int i)
+{
+#ifdef EN_LEGACY_TEST_BANK
+    (void)i; return 0;
+#else
+    return i==3 || i==5 || i==8 || i==12 || i==15 || i==17;
+#endif
+}
+int en_piece_beat(int i)
+{
+    static const uint8_t beats[20]={0,0,0,11,0,1,0,0,12,0,0,0,5,0,0,0,0,13,0,0};
+    return en_piece_replaced(i) ? beats[i] : 0;
+}
 const char *en_piece_name(int i)
 {
     if ((unsigned)i>=EN_NPIECES) i=0;
@@ -239,6 +253,20 @@ void en_piece(int i, int16_t *par, uint16_t *pool)
             par[P_SKLEVEL]=90;par[P_SKTONE]=80;par[P_SKDECAY]=100;par[P_SKDENS]=35;par[P_SKVERB]=40;
             par[P_ECHO]=0;par[P_REVERB]=50;par[P_SIZE]=30;par[P_MOTION]=0;par[P_EVOLVE]=0;
             par[P_DRREV]=20;par[P_S2ECHO]=0;par[P_DRECHO]=0;par[P_LATT]=20;par[P_VIB]=0;par[P_GLIDE]=0;
+        }
+        if(en_piece_replaced(i)) {
+            /* Western scene defaults: beat forward, live lead independent. */
+            int n;static const uint8_t levels[6]={P_CHORD,P_SEQ,P_LEAD,P_SEQ2,P_SKLEVEL,P_CLLEVEL};
+            for(n=0;n<6;n++)par[levels[n]]=d->level[n];
+            if(i==3 || i==8 || i==12)par[P_LVOICE]=3; /* existing Theremin */
+            par[P_LDENS]=0;par[P_SEQ2OCT]=-2;par[P_SEQ2LEN]=16;par[P_SCH1]=80;
+            par[P_CATT]=18;par[P_CCOL]=0;par[P_CRES]=0;par[P_DREL]=30;
+            par[P_PHASER]=0;par[P_CUTOFF]=48;par[P_S2CUT]=40;par[P_LTONE]=48;
+            par[P_LATT]=20;par[P_LDIN]=0;par[P_MI3]=0;
+            par[P_SKDENS]=35;par[P_SKTONE]=65;par[P_SKDECAY]=75;par[P_SKVERB]=25;
+            par[P_REVERB]=38;par[P_ECHO]=12;par[P_FEEDBACK]=25;par[P_SIZE]=35;
+            par[P_SQECHO]=10;par[P_S2ECHO]=0;par[P_DRECHO]=0;par[P_DRREV]=25;
+            par[P_MOTION]=0;par[P_EVOLVE]=0;par[P_VIB]=0;par[P_GLIDE]=0;
         }
 
     }
@@ -526,7 +554,7 @@ void en_seed(uint32_t s) { post(C_SEED, 0, (int)(s & 0xFFFFu)); }
 void en_panic(void) { post(C_PANIC, 0, 0); }
 void en_call(int voice) { post(C_CALL, voice < 0 ? 255 : voice, 0); }
 void en_calls_auto(int on) { post(C_CALLAUTO, !!on, 0); }
-void en_drum_pattern(int i) { post(C_BEAT, (i%11+11)%11, 0); }
+void en_drum_pattern(int i) { post(C_BEAT, (i%EN_NBEAT+EN_NBEAT)%EN_NBEAT, 0); }
 void en_clock(int msg) { post(C_CLOCK, msg, 0); }
 void en_regrow(void) { post(C_REGROW, 0, 0); }
 void en_piece_theme(int i) { post(C_THEME, i, 0); }
@@ -4527,7 +4555,7 @@ static void drain(void)
             ld_seed();                           /* (a written theme, if the piece has one) */
             lead_off();
             break;
-        case C_BEAT: en_beat=(uint8_t)(a%11); break;
+        case C_BEAT: en_beat=(uint8_t)(a%EN_NBEAT); break;
         case C_THEME:
             theme_pc = (int8_t)a;
             pt_clean_organ(heavy_profile());

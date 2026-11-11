@@ -391,6 +391,8 @@ const char *en_chord_label(int root, int kind, int type, char *buf);   /* "Fm7",
 /* (2026-10-30: Sakura Rain, the ninth piece, the user's: one more save slot of the two the project's sector holds;
  * 2026-10-31: Umeda, the tenth, the last slot the sector holds) */
 const char *en_piece_name(int i);
+int en_piece_replaced(int i); /* six authorized western factory replacements */
+int en_piece_beat(int i);
 void en_piece(int i, int16_t *par, uint16_t *pool);
 void en_piece_theme(int i);                    /* the piece playing, for en_regrow: a piece with a written theme (Umeda)
                                                 * starts its Lead from it (the keys' kind of theme: its offspring follow) */
@@ -398,7 +400,7 @@ void en_piece_theme(int i);                    /* the piece playing, for en_regr
 /* Calls are manual at boot; mode is a live performance choice, never saved. */
 void en_call(int voice);                     /* 0..7: one shot, negative: stop */
 void en_calls_auto(int on);
-#define EN_NBEAT 11
+#define EN_NBEAT 14
 void en_drum_pattern(int i);
 const char *en_beat_name(int i);
 extern volatile uint8_t en_beat;

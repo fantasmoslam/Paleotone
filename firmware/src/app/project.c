@@ -21,11 +21,14 @@ typedef struct { uint32_t magic, format; uint8_t piece, leds; int16_t tune, midi
 typedef struct { uint32_t magic, format; slot_t slot[10]; } saved_bank_t;
 /* Extended globals retain the original zero-padded header as a full prefix.
  * The ten packed rhythm bytes use project_t.rsv, leaving preset layouts intact. */
-typedef struct { project_head_t head; uint8_t beats[10]; } saved_head_t;
+typedef struct { project_head_t head; uint8_t beats[10], bank_rev, reserved; } saved_head_t;
+_Static_assert(sizeof(saved_head_t)==28, "factory revision reuses prior zero padding");
+static int project_save_objects(void);
 int project_drum_pattern(void){unsigned p=proj.piece,v=proj.rsv[p/2u]>>((p&1u)*4u)&15u;return v<EN_NBEAT?(int)v:0;}
 void project_drum_pattern_set(int i){unsigned p=proj.piece,s=(p&1u)*4u;int v=(i%EN_NBEAT+EN_NBEAT)%EN_NBEAT;proj.rsv[p/2u]=(uint8_t)((proj.rsv[p/2u]&~(15u<<s))|((unsigned)v<<s));}
 _Static_assert(sizeof(saved_bank_t) <= 3840u, "ten presets fit an A/B sector pair");
 _Static_assert(NPIECES <= 20, "reserved preset object map");
+_Static_assert(EN_NBEAT <= 16, "beat choices fit saved four-bit slots");
 
 static void take(const slot_t *s)                /* a piece's settings into play, the globals kept */
 {
@@ -54,8 +57,11 @@ void project_defaults(void)
     memset(&proj, 0, sizeof proj);
     proj.magic = PROJ_MAGIC;
     proj.format = PROJ_FORMAT;
-    for (i = 0; i < NPIECES; i++)
+    for (i = 0; i < NPIECES; i++) {
         recipe(i, &proj.slot[i]);
+        proj.piece=(uint8_t)i;project_drum_pattern_set(en_piece_beat(i));
+    }
+    proj.piece=0;proj.rsv[10]=1;
     for (i = 0; i < P_NPARAMS; i++)
         proj.par[i] = en_param_info(i)->def;
     take(&proj.slot[0]);
@@ -114,13 +120,14 @@ int project_load(void)
     project_head_t head;
     saved_head_t ext;
     saved_bank_t saved;
-    int n, i, bank;
+    int n, i, bank, refresh=0;
     project_defaults();
     memset(&ext,0,sizeof ext);
     n=plat_store_load(OBJ_PROJ, &ext, sizeof ext);
     head=ext.head;
     if ((n==(int)sizeof head || n==(int)sizeof ext) && head.magic==PROJ_MAGIC && head.format==PROJ_FORMAT) {
         if(n==(int)sizeof ext) memcpy(proj.rsv,ext.beats,sizeof ext.beats);
+        refresh = ext.bank_rev < 1;
         for (bank=0;bank<2;bank++) {
             n=plat_store_load(OBJ_BANK0+(uint32_t)bank,&saved,sizeof saved);
             if(n!=(int)sizeof saved || saved.magic!=PROJ_MAGIC || saved.format!=PROJ_FORMAT) continue;
@@ -130,23 +137,31 @@ int project_load(void)
                 proj.slot[bank*10+i]=saved.slot[i];
             }
         }
+        if(refresh) {
+            for(i=0;i<NPIECES;i++)if(en_piece_replaced(i)) {
+                recipe(i,&proj.slot[i]);proj.piece=(uint8_t)i;project_drum_pattern_set(en_piece_beat(i));
+            }
+        }
+        proj.rsv[10]=1;
         proj.piece=head.piece<NPIECES ? head.piece : 0;
         proj.leds=head.leds<=2 ? head.leds : 1;
         take(&proj.slot[proj.piece]);
         proj.par[P_TUNE]=head.tune; proj.par[P_MIDI]=head.midi;
         pars_clamp(proj.par);
-        return project_valid() ? 0 : (project_defaults(), -1);
+        if(!project_valid()){project_defaults();return -1;}
+        /* Commit only the authorized replacement slots once; untouched slots retain their edits. */
+        if(refresh && project_save_objects())return -1;
+        return 0;
     }
     return -1;
 }
 
-int project_save(void)
+static int project_save_objects(void)
 {
     saved_bank_t saved, prior;
     project_head_t head;
     saved_head_t ext;
     int i, bank, rc, n;
-    keep();
     for (bank=0;bank<2;bank++) {
         memset(&saved,0,sizeof saved);
         saved.magic=PROJ_MAGIC; saved.format=PROJ_FORMAT;
@@ -160,9 +175,11 @@ int project_save(void)
     head.magic=PROJ_MAGIC; head.format=PROJ_FORMAT;
     head.piece=proj.piece; head.leds=proj.leds;
     head.tune=proj.par[P_TUNE]; head.midi=proj.par[P_MIDI];
-    memset(&ext,0,sizeof ext);ext.head=head;memcpy(ext.beats,proj.rsv,sizeof ext.beats);
+    memset(&ext,0,sizeof ext);ext.head=head;memcpy(ext.beats,proj.rsv,sizeof ext.beats);ext.bank_rev=proj.rsv[10];
     return plat_store_save(OBJ_PROJ,&ext,sizeof ext);
 }
+
+int project_save(void){keep();return project_save_objects();}
 
 void project_piece(int i)
 {
@@ -175,7 +192,7 @@ void project_piece_reset(void)
 {
     slot_t s;
     recipe(proj.piece, &s);
-    project_drum_pattern_set(0);
+    project_drum_pattern_set(en_piece_beat(proj.piece));
     s.screen = proj.screen;                      /* (the view stays as it is) */
     take(&s);
     proj.slot[proj.piece].pings_ok = 0;          /* (its loops grown afresh too) */
