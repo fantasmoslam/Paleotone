@@ -4,15 +4,19 @@ Prototype 05 was explicitly approved as the target drum sound and apocalyptic di
 
 STAMPEDE is the representative native arrangement: 54 BPM, deep sustained bass, clean supporting fifths, GALOP and playable lead space. Prototype 05 approval is not final approval of native effects, mix, CPU stability or the other nineteen arrangements.
 
-## Signature direction: RAPTOR NIGHT
+## Signature beat reference: RAPTOR NIGHT
 
-Dylan identifies RAPTOR NIGHT on the installed native candidate as the strongest drum track and the signature sound, especially accompanied by theremin (interpreting the typed “therein”). His reference is Ennio Morricone / spaghetti western: tribal western drum grooves, fat low-register bass synth leads, sharp concert cello and eerie theremin. Preserve the current RAPTOR NIGHT factory recipe as a reference; do not overwrite it while developing related scenes. The device may contain live edits: their exact values and selected rhythm have not been read back, so do not infer that the factory defaults capture every detail of the heard performance.
+RAPTOR NIGHT's drum beat is the signature reference. Dylan specifically praises how it works when he chooses the synth's existing Theremin instrument for Lead. Theremin remains an independently selected instrument. This feedback does not request adding melodies to drum patterns or composing new fixed arrangements.
 
-Develop additional spaghetti western / tribal grooves from the feel of RAPTOR NIGHT, retaining resonant low percussion, clear instrument separation and room for a performed lead. Vary related arrangements rather than making every scene identical. Earlier apocalyptic weight and Prototype 05 drum approval remain relevant; RAPTOR NIGHT now provides the strongest native musical reference. Avoid excessive distortion, mud, high-pitched percussion and busy backing melodies.
+Preserve RAPTOR NIGHT's beat. Use its feel to guide additional spaghetti western / tribal drum patterns, keeping drums independent of selected melodic instruments. The device may contain live edits; their exact values and selected rhythm have not been read back, so do not assume factory defaults capture every detail of the heard performance.
 
-## Remaining acceptance
+## Instrument additions
 
-The native candidate is installed and RAPTOR NIGHT has received explicit musical praise. Next, inspect its actual recipe and drum behavior, preserve that reference, and develop related western/tribal arrangements with contrasting theremin, bass synth and cello roles. Evaluate changes through listening before spreading them across the bank. Audition manual creature calls and measure average/peak Setup CPU; musical approval does not establish CPU headroom. Audit all twenty arrangements for distinct roles, variation and useful contrast while retaining successful quiet scenes. A literal march is not required.
+Add selectable sharp concert cello voices and fat, deep bass pad voices to the synth. These are instruments the player chooses, not prescribed roles in rewritten arrangements. Keep existing Theremin selection working. Retain clear separation and restrained distortion without changing RAPTOR NIGHT to impose a fixed melody or instrument combination.
+
+## Remaining work and acceptance
+
+The native candidate is installed and RAPTOR NIGHT's beat with user-selected Theremin Lead has received explicit praise. Next, develop and audition cello and deep bass pad instruments, preserving independent beat and instrument selection. Any further drum patterns should follow the approved beat's feel. Manual creature-call testing and average/peak Setup CPU measurements remain hardware checks; musical praise does not establish CPU headroom. Earlier broad arrangement-audit ideas are not authorization to rewrite arrangements as part of this instrument request.
 
 ## Retained requirements
 
