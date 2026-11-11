@@ -27,7 +27,7 @@ spin K1 5
 wait 250
 expect par29 12
 shot home-atmosphere.png
-spin SELECT 1
+spin SELECT 3
 wait 250
 spin K1 -5
 wait 250

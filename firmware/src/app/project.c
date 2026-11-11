@@ -17,7 +17,10 @@ static void recipe(int i, slot_t *s)
     s->screen = 0;
 }
 
-_Static_assert(sizeof(project_t) <= 3840u, "the project must fit one storage sector's payload");
+typedef struct { uint32_t magic, format; uint8_t piece, leds; int16_t tune, midi; } project_head_t;
+typedef struct { uint32_t magic, format; slot_t slot[10]; } saved_bank_t;
+_Static_assert(sizeof(saved_bank_t) <= 3840u, "ten presets fit an A/B sector pair");
+_Static_assert(NPIECES <= 20, "reserved preset object map");
 
 static void take(const slot_t *s)                /* a piece's settings into play, the globals kept */
 {
@@ -98,28 +101,56 @@ static int project_valid(void)                  /* (not: the recipes again) */
     return 1;
 }
 
+/* Two ten-preset banks use A/B pairs at 0x98000..0x9BFFF, inside
+ * the original data area; external sample slots 0xA0000..0xDBFFF are untouched.
+ * Globals keep their original pair at 0xFC000. Each bank commits atomically. */
 int project_load(void)
 {
-    static project_t buf;
-    int n, i;
-    memset(&buf, 0, sizeof buf);
-    n = plat_store_load(OBJ_PROJ, &buf, sizeof buf);
-    if (n == (int)sizeof buf && buf.magic == PROJ_MAGIC && buf.format == PROJ_FORMAT) {
-        proj = buf;
-        pars_clamp(proj.par);                    /* (the ranges as they are now) */
-        for (i = 0; i < NPIECES; i++)
-            pars_clamp(proj.slot[i].par);
-        if (project_valid())
-            return 0;
-    }
+    project_head_t head;
+    saved_bank_t saved;
+    int n, i, bank;
     project_defaults();
+    n=plat_store_load(OBJ_PROJ, &head, sizeof head);
+    if (n==(int)sizeof head && head.magic==PROJ_MAGIC && head.format==PROJ_FORMAT) {
+        for (bank=0;bank<2;bank++) {
+            n=plat_store_load(OBJ_BANK0+(uint32_t)bank,&saved,sizeof saved);
+            if(n!=(int)sizeof saved || saved.magic!=PROJ_MAGIC || saved.format!=PROJ_FORMAT) continue;
+            for(i=0;i<10 && bank*10+i<NPIECES;i++) {
+                if(!pool_ok(saved.slot[i].pool)) continue;
+                pars_clamp(saved.slot[i].par);
+                proj.slot[bank*10+i]=saved.slot[i];
+            }
+        }
+        proj.piece=head.piece<NPIECES ? head.piece : 0;
+        proj.leds=head.leds<=2 ? head.leds : 1;
+        take(&proj.slot[proj.piece]);
+        proj.par[P_TUNE]=head.tune; proj.par[P_MIDI]=head.midi;
+        pars_clamp(proj.par);
+        return project_valid() ? 0 : (project_defaults(), -1);
+    }
     return -1;
 }
 
 int project_save(void)
 {
+    saved_bank_t saved, prior;
+    project_head_t head;
+    int i, bank, rc, n;
     keep();
-    return plat_store_save(OBJ_PROJ, &proj, sizeof proj);
+    for (bank=0;bank<2;bank++) {
+        memset(&saved,0,sizeof saved);
+        saved.magic=PROJ_MAGIC; saved.format=PROJ_FORMAT;
+        for(i=0;i<10 && bank*10+i<NPIECES;i++) saved.slot[i]=proj.slot[bank*10+i];
+        n=plat_store_load(OBJ_BANK0+(uint32_t)bank,&prior,sizeof prior);
+        if(n==(int)sizeof prior && !memcmp(&prior,&saved,sizeof saved)) continue;
+        rc=plat_store_save(OBJ_BANK0+(uint32_t)bank,&saved,sizeof saved);
+        if(rc) return rc;
+    }
+    memset(&head,0,sizeof head);
+    head.magic=PROJ_MAGIC; head.format=PROJ_FORMAT;
+    head.piece=proj.piece; head.leds=proj.leds;
+    head.tune=proj.par[P_TUNE]; head.midi=proj.par[P_MIDI];
+    return plat_store_save(OBJ_PROJ,&head,sizeof head);
 }
 
 void project_piece(int i)

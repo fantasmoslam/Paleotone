@@ -15,7 +15,7 @@ expect piece 8
 turn PRESET 1
 wait 300
 expect piece 9
-turn PRESET 1
+turn PRESET 21
 wait 300
 expect piece 0
 # piece 0's Sequence Length (Timewind's 16) to 12, then to piece 3 (Rubycon's 8) and back: kept
@@ -39,7 +39,7 @@ wait 300
 expect dirty 0
 reboot
 wait 1000
-expect format 10
+expect format 11
 expect piece 0
 expect par28 12
 # GLO held on (1.5 s): back to its recipe

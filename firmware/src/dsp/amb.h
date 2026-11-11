@@ -108,6 +108,8 @@ enum {
     P_BRIDGE,                                      /* (format 7) the bridge's move on every filter, 0..100 (+-3 octaves) */
     P_LMEM,                                        /* (format 8) Memory: how much the Lead keeps its ideas, 0..100 (the
                                                     * chance a block's motif is kept; 0 a fresh one every pair) */
+    P_SKLEVEL, P_SKDENS, P_SKTONE, P_SKDECAY, P_SKVERB,
+    P_CLLEVEL, P_CLCHANCE, P_CLVOICE, P_CLTONE, P_CLVERB,
     P_NPARAMS
 };
 #define P_MW1 P_SWEEP                              /* (the Sequence's Width is its Sweep: one parameter) */
@@ -136,7 +138,7 @@ void en_regrow(void);                          /* a new piece: fresh loops and p
 void en_seq_get(uint8_t *b);
 void en_seq(const uint8_t *b);
 /* performance (SEL's mode): layers muted (EN_M_*, a mask: set = muted), and the moves held now (EN_PF_*) */
-enum { EN_M_CHORD = 1, EN_M_PINGS = 2, EN_M_BASS = 4, EN_M_KICK = 8, EN_M_HATS = 16, EN_M_NOISE = 32 };   /* (the noise:
+enum { EN_M_CHORD = 1, EN_M_PINGS = 2, EN_M_BASS = 4, EN_M_KICK = 8, EN_M_HATS = 16, EN_M_NOISE = 32, EN_M_WILD = 64 };   /* (the noise:
                                                 * OCT- + OCT+ on its page; its level kept) */
 enum { EN_PF_SWEEP = 1, EN_PF_OPEN = 2, EN_PF_CLOSE = 4, EN_PF_DROP = 8, EN_PF_ECHO = 16 };   /* (KICKDROP: Drop, the kick and the bass) */
 void en_mute(uint32_t mask);
@@ -378,10 +380,21 @@ void en_chord_iv(int kind, int type, int *iv); /* a slot's voicing: four interva
 const char *en_chord_label(int root, int kind, int type, char *buf);   /* "Fm7", "Bbsus4", "Eb6" ("-": empty) */
 
 /* the pieces: recipes for every parameter (Tune and MIDI out included, but they are the player's) */
+#ifdef EN_LEGACY_TEST_BANK
+#ifndef EN_HOST
+#error "Legacy fixtures are host-test only"
+#endif
 #define EN_NPIECES 10
+#else
+#define EN_NPIECES 20
+#endif
 /* (2026-10-30: Sakura Rain, the ninth piece, the user's: one more save slot of the two the project's sector holds;
  * 2026-10-31: Umeda, the tenth, the last slot the sector holds) */
 const char *en_piece_name(int i);
 void en_piece(int i, int16_t *par, uint16_t *pool);
 void en_piece_theme(int i);                    /* the piece playing, for en_regrow: a piece with a written theme (Umeda)
                                                 * starts its Lead from it (the keys' kind of theme: its offspring follow) */
+
+#ifdef EN_HOST
+extern volatile uint32_t en_skin_hits, en_call_hits;
+#endif

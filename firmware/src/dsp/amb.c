@@ -92,6 +92,10 @@ static const en_param_t PARAMS[P_NPARAMS] = {
     {"Noise width", 0, 100, 50}, {"Noise plate", 0, 100, 50}, {"Noise echo", 0, 100, 50}, {"Atmos width", 0, 100, 20},
     {"Noise LFO", 0, 100, 0}, {"Arc", 0, 100, 0},
     {"Atmos rate", 0, 100, 30}, {"Atmos intro", 0, 64, 0}, {"Bridge", 0, 100, 40}, {"Memory", 0, 100, 50},
+    {"Skin level", 0, 100, 0}, {"Skin chance", 0, 100, 35}, {"Skin tone", 0, 100, 45},
+    {"Skin decay", 0, 100, 45}, {"Skin reverb", 0, 100, 30},
+    {"Call level", 0, 100, 0}, {"Call chance", 0, 100, 30}, {"Creature", 0, PT_NCALL-1, 0},
+    {"Call tone", 0, 100, 40}, {"Call reverb", 0, 100, 70},
 };
 const en_param_t *en_param_info(int i) { return (i >= 0 && i < P_NPARAMS) ? &PARAMS[i] : &PARAMS[0]; }
 /* (the voices batch, item 5) a shake's voices (the user, 2026-10-30: "currently only add the choir, we just want to
@@ -122,149 +126,84 @@ int en_voice_shake_n(int p)
  *  is Sweep); the Lead's Width kept low; Bridge the middle section's move. Memory: how much the Lead keeps its ideas,
  *  the Lead's memory spec 3.3's starting values, to tune by ear; every piece's set, Mirage's 50 the default too, so
  *  the table reads whole) */
-static const int16_t PC_TIMEWIND[] = {        /* Schulze, Bayreuth Return: an organ through the phaser; Sequence 2
-                                                * at its default 60 and the reverb at 50, the lengths 16/15 (the user's
-                                                * ear) */
-    P_TEMPO, 96, P_ROOT, 2, P_MODE, MODE_AEOLIAN,
-    P_SVOICE, 0, P_SEQLEN, 16, P_SEQ2LEN, 15, P_SEQGRID, 1, P_DENSITY, 65, P_REVERB, 50,
-    P_TAPB, 50, P_TAPBT, 2,
-    P_CVOICE, 0, P_PHASER, 60, P_DRIFT, 3, P_PMODE, EN_WALK_HOME,
-    P_LVOICE, 0, P_LDIN, 32,
-    P_NCHAR, 1, P_CRACKLE, 7,
-    P_MW0, 30, P_MR0, 25, P_MW2, 15, P_MW4, 30, P_BRIDGE, 45,
-    P_MI1, 32, P_ARC, 25, P_MOTION, 45, P_LMEM, 55, -1};
-static const int16_t PC_WAHNFRIED[] = {       /* Schulze, Wahnfried 1883: roots walking with no home, strings, the
-                                                * Sequence a faint heartbeat under them (the user's ear) */
-    P_TEMPO, 80, P_ROOT, 10, P_MODE, MODE_DORIAN,
-    P_SEQ, 30, P_MI1, 16, P_SEQ2, 50, P_SEQ2OCT, -1,
-    P_CHORD, 95, P_CVOICE, 1, P_PEDAL, 85, P_PHASER, 50, P_CRES, -5, P_DRIFT, 2, P_PMODE, EN_WALK_FREE,
-    P_LEAD, 54, P_LVOICE, 3, P_LTONE, 75, P_VIB, 55, P_LDENS, 60, P_LDIN, 8,
-    P_FEEDBACK, 75, P_REVERB, 45,
-    P_MW0, 45, P_MT0, 60, P_MR0, 45, P_MW2, 15, P_BRIDGE, 30,
-    P_ARC, 20, P_MOTION, 55, P_LMEM, 40, -1};
-static const int16_t PC_SAKURA[] = {         /* (2026-10-30) the ninth piece, the user's: Wahnfried's Lead melody, tempo,
-                                                * key and Strings, the Lead a Theremin two octaves down, gliding ("almost
-                                                * like singing"); Jean-Michel Jarre's arps (the Sequence on 2600 an octave
-                                                * down, dark; Sequence 2 on Sub two down, open); the Drone darker (Colour
-                                                * -30) and quieter (75), on the royal road. First Umeda, then Ryokuu (緑雨,
-                                                * "green rain") with Rain outside; the FM-1's CPU went over 75% and stopped the
-                                                * rain, so, the user (2026-10-31): "it's not point chasing effect if it takes
-                                                * too much cpu": Sakura Rain, no Atmosphere */
-    P_TEMPO, 80, P_ROOT, 10, P_MODE, MODE_DORIAN,
-    P_SEQ, 30, P_MI1, 16, P_SVOICE, 0, P_SEQOCT, -1, P_CUTOFF, 30,
-    P_SEQ2, 50, P_S2VOICE, 5, P_SEQ2OCT, -2, P_S2CUT, 90,
-    P_CHORD, 75, P_CVOICE, 1, P_CCOL, -30, P_PEDAL, 85, P_PHASER, 50, P_CRES, -5, P_DRIFT, 2,
-    /* (the user: "royal road progression, keep Bb Dorian"; research_notes/japanese-chords, progression A) A flat's
-     * royal road in B flat Dorian's notes, IV maj7 - V7 - iii7 - vi7, again, then D flat over E flat and home to B flat
-     * minor 11: the eight slots written, looping, a chord every Drift (8 bars) */
-    P_PMODE, EN_WALK_FREE | EN_PLOOP,
-    P_CR0, 1, P_CQ0, EN_CQ_MAJOR, P_CX0, EN_CX_MAJ7, P_CR1, 3, P_CQ1, EN_CQ_MAJOR, P_CX1, EN_CX_7,
-    P_CR2, 0, P_CQ2, EN_CQ_MINOR, P_CX2, EN_CX_7, P_CR3, 5, P_CQ3, EN_CQ_MINOR, P_CX3, EN_CX_7,
-    P_CR4, 1, P_CQ4, EN_CQ_MAJOR, P_CX4, EN_CX_MAJ7, P_CR5, 3, P_CQ5, EN_CQ_SUS4, P_CX5, EN_CX_9,
-    P_CR6, 0, P_CQ6, EN_CQ_MINOR, P_CX6, EN_CX_11, P_CR7, 10, P_CQ7, EN_CQ_MINOR, P_CX7, EN_CX_11,
-    P_LEAD, 60, P_LVOICE, 3, P_LOCT, -2, P_GLIDE, 70, P_LTONE, 75, P_VIB, 55, P_LDENS, 60, P_LDIN, 2,   /* (the user: the
-                                                  * Lead too quiet for the speaker, 60; in sooner, 2 bars) */
-    P_FEEDBACK, 75, P_REVERB, 45,
-    P_MW0, 45, P_MT0, 60, P_MR0, 45, P_MW2, 15, P_BRIDGE, 30,
-    P_ARC, 20, P_MOTION, 55, P_LMEM, 40, -1};
-static const int16_t PC_PHAEDRA[] = {         /* Tangerine Dream, Phaedra: a Moog bass line, Mellotron flutes and choir */
-    P_TEMPO, 149, P_ROOT, 2, P_MODE, MODE_AEOLIAN,
-    P_SVOICE, 1, P_SEQOCT, -1, P_SEQLEN, 16, P_DENSITY, 70, P_SWEEP, 85,
-    P_SEQ2, 40, P_S2VOICE, 1, P_SEQ2OCT, 0, P_SEQ2LEN, 15, P_MI3, 0,
-    P_CHORD, 70, P_CVOICE, 5, P_DRIFT, 4,         /* (the user's ear: the Drone a formant Choir, at 70) */
-    P_LVOICE, 2, P_LDIN, 24,
-    P_NCHAR, 5, P_CRACKLE, 10,
-    P_MW0, 25, P_MW3, 30, P_MR3, 40, P_MW4, 25,
-    P_MI1, 16, P_ARC, 30, P_MOTION, 55, P_LMEM, 75, -1};
-static const int16_t PC_RUBYCON[] = {         /* Tangerine Dream, Rubycon: dark, two sequences out of the drone (the
-                                                * octaves and voices the user's ear: the Sequence -2 on the 2600, Sequence 2 0,
-                                                * the Lead the Synthi) */
-    P_TEMPO, 144, P_ROOT, 5, P_MODE, MODE_AEOLIAN,
-    P_SVOICE, 0, P_SEQOCT, -2, P_SEQLEN, 8, P_CUTOFF, 32, P_SWEEP, 60,
-    P_SEQ2, 55, P_S2VOICE, 5, P_SEQ2OCT, 0, P_SEQ2LEN, 7, P_MI3, 32,
-    P_TAPB, 40, P_TAPBT, 4,
-    P_CHORD, 65, P_CVOICE, 0, P_CCOL, -20, P_PEDAL, 85, P_DRIFT, 4,
-    P_LVOICE, 4, P_LDIN, 32,
-    P_MW0, 35, P_MR0, 25, P_MW3, 30, P_BRIDGE, 50,
-    P_MI1, 16, P_ARC, 40, P_MOTION, 65, P_LMEM, 45, -1};
-static const int16_t PC_STRATOSFEAR[] = {     /* Tangerine Dream, Stratosfear: brighter, driving, the Lead forward */
-    P_TEMPO, 138, P_ROOT, 4, P_MODE, MODE_AEOLIAN,
-    P_SVOICE, 3, P_SEQLEN, 16, P_DENSITY, 70, P_CUTOFF, 55,
-    P_SEQ2, 60, P_S2VOICE, 0, P_SEQ2LEN, 15, P_MI3, 0,
-    P_CVOICE, 1, P_DRIFT, 3,
-    P_LEAD, 52, P_LVOICE, 1, P_LDENS, 65, P_LDIN, 12,
-    P_MR1, 40, P_MW3, 30, P_MR3, 40, P_BRIDGE, 35,
-    P_ARC, 20, P_MOTION, 50, P_LMEM, 85, -1};
-static const int16_t PC_SUNRAIN[] = {         /* Ashra, New Age of Earth: major, the strongest repeats, bright strings;
-                                                * the lengths 8/7 (the user: "works best") */
-    P_TEMPO, 130, P_ROOT, 2, P_MODE, MODE_IONIAN,
-    P_SVOICE, 3, P_SEQLEN, 8, P_CUTOFF, 55,
-    P_SEQ2, 50, P_S2VOICE, 4, P_SEQ2OCT, 0, P_SEQ2LEN, 7, P_MI3, 0,
-    P_TAPA, 100, P_TAPB, 100, P_TAPBT, 3, P_ECHO, 65, P_FEEDBACK, 65,
-    P_CVOICE, 1, P_DRIFT, 3,
-    P_LVOICE, 0, P_LDIN, 16,
-    P_NCHAR, 2, P_CRACKLE, 5,
-    P_MW3, 25, P_MW4, 25, P_BRIDGE, 35,
-    P_ARC, 25, P_MOTION, 45, P_LMEM, 60, -1};
-static const int16_t PC_MIRAGE[] = {          /* Schulze, Mirage: icy, a glass sequence, sparse, a long reverb; the
-                                                * lengths 12/11 (the user's) */
-    P_TEMPO, 95, P_ROOT, 6, P_MODE, MODE_AEOLIAN,
-    P_SVOICE, 4, P_SEQLEN, 12, P_SEQGRID, 1, P_DENSITY, 40, P_SWEEP, 30,
-    P_SEQ2, 45, P_S2VOICE, 4, P_SEQ2OCT, 0, P_SEQ2LEN, 11, P_MI3, 24,
-    P_TAPB, 60, P_TAPBT, 4,
-    P_CVOICE, 4, P_PHASER, 85, P_DRIFT, 4,
-    P_LVOICE, 3, P_LDIN, 24,
-    P_REVERB, 55, P_SIZE, 90,
-    P_NCHAR, 3, P_CRACKLE, 10,
-    P_MW0, 25, P_MR0, 20, P_MW4, 35, P_MR4, 20,
-    P_MI1, 16, P_ARC, 20, P_MOTION, 40, P_LMEM, 50, -1};
-static const int16_t PC_CYBORG[] = {          /* Schulze, Cyborg: early, raw, deep organ drones beating; a quiet
-                                                * Sequence (20, the user's: at its defaults), no Sequence 2; the Lead
-                                                * up front (70, the user's) */
-    P_TEMPO, 70, P_ROOT, 0, P_MODE, MODE_PHRYGIAN,
-    P_SEQ, 20, P_SEQ2, 0,
-    P_CHORD, 70, P_CVOICE, 0, P_CCOL, 25, P_PEDAL, 90, P_PHASER, 20, P_DRIFT, 4, P_PMODE, EN_WALK_WANDER,
-    P_LEAD, 70, P_LVOICE, 3, P_LDENS, 30, P_LOCT, -1, P_LDIN, 8,
-    P_MW0, 50, P_MT0, 70, P_MR0, 45, P_MW2, 10, P_BRIDGE, 30,
-    P_ARC, 15, P_MOTION, 35, P_LMEM, 35, -1};
-static const int16_t PC_UMEDA[] = {           /* (2026-10-31) the tenth piece, the user's: Kankyo Ongaku, the piano in the
-                                                * plazas of Umeda; F sharp major pentatonic at 50 (a sixteenth 0.3 s: the
-                                                * motive's own grid), a quiet Organ pad on the home chord, the Piano on
-                                                * both sequences (sparse, low) and the Lead, the Lead's theme the user's
-                                                * second motive (ld_seed); no Atmosphere (the user: "I prefer the Umeda
-                                                * with None atmosphere": the Rain, then, took about 8 points of
-                                                * the FM-1's load, 72 to 80) */
-    P_TEMPO, 50, P_ROOT, 6, P_MODE, MODE_PENT_MAJ,
-    P_SEQ, 25, P_SVOICE, 16, P_DENSITY, 20, P_SEQOCT, -1, P_MI1, 8,   /* (the user, in the browser: the Piano on both
-                                                  * sequences; Sequence: Volume 25, Density 20, octave -1, Intro 8) */
-    P_SEQ2, 30, P_S2VOICE, 17, P_SCH1, 65, P_SEQ2OCT, -2, P_S2DEC, 70,   /* (Sequence 2: Volume 30, Chance 65, octave -2,
-                                                  * Decay 70) */
-    P_CHORD, 45, P_CVOICE, 0, P_PEDAL, 85, P_DRIFT, 1, P_PMODE, EN_WALK_HOME,   /* (the user: "the drone sounds better with
-                                                  * Organ"; Drift 4 bars; by ear in the browser, "the current good volumes":
-                                                  * Drone 45) */
-    P_LEAD, 70, P_LVOICE, 9, P_GLIDE, 0, P_LDENS, 50, P_LDIN, 2,   /* (the user: no glide, a piano's notes struck) */
-    P_REVERB, 60,
-    P_ARC, 15, P_MOTION, 30, P_LMEM, 60, -1};
-static const struct {
-    const char *name;
-    const int16_t *set;
-} PIECES[EN_NPIECES] = {
-    {"Timewind", PC_TIMEWIND}, {"Wahnfried", PC_WAHNFRIED}, {"Phaedra", PC_PHAEDRA},   {"Rubycon", PC_RUBYCON},
-    {"Stratosfear", PC_STRATOSFEAR}, {"Sunrain", PC_SUNRAIN}, {"Mirage", PC_MIRAGE}, {"Cyborg", PC_CYBORG},
-    {"Sakura Rain", PC_SAKURA}, {"Umeda", PC_UMEDA},
-};
+#ifdef EN_LEGACY_TEST_BANK
+#include "../../../tests/fixtures/nachtfahrt_recipes.inc"
+#endif
 
-const char *en_piece_name(int i) { return PIECES[(unsigned)i < EN_NPIECES ? i : 0].name; }
+/* Twenty dark, deliberately sparse recipes: the complete factory bank. Voices index
+ * the curated Paleotone lists. Levels: Drone, Sequence, Lead, Bass, Skin, Calls. */
+#ifndef EN_LEGACY_TEST_BANK
+typedef struct {
+    const char *name;
+    uint8_t tempo, root, mode, drone, seq, lead, bass;
+    uint8_t level[6], density, phrases, length, call;
+} dino_recipe_t;
+static const dino_recipe_t DINO[20] = {
+    {"EXTINCTION", 60,2,MODE_PHRYGIAN,0,4,0,0,{45,22,18,0,0,26},18,12,13,0},
+    {"STAMPEDE",84,0,MODE_AEOLIAN,1,1,2,1,{32,30,0,28,70,28},28,0,11,7},
+    {"RAPTOR NIGHT",68,2,MODE_PHRYGIAN,2,0,4,0,{36,20,24,0,22,34},20,18,15,1},
+    {"ASHEN SKY",60,5,MODE_AEOLIAN,18,7,9,0,{42,18,20,0,0,0},14,12,13,0},
+    {"BONE TEMPLE",64,0,MODE_PHRYGIAN,25,3,6,0,{40,24,0,0,30,0},20,0,11,0},
+    {"FERN SHADOWS",72,7,MODE_DORIAN,13,0,5,0,{34,26,16,0,0,20},24,14,15,4},
+    {"TAR PIT",62,1,MODE_PHRYGIAN,1,12,15,1,{32,0,18,32,22,0},12,10,13,0},
+    {"DISTANT HERD",60,10,MODE_PENT_MIN,0,8,2,0,{38,18,0,0,0,38},12,0,13,0},
+    {"AMBER CAVERN",66,4,MODE_AEOLIAN,19,4,5,0,{34,25,0,0,0,0},20,0,11,0},
+    {"PRIMEVAL",64,0,MODE_PHRYGIAN,2,1,6,0,{40,24,18,0,20,22},18,12,15,5},
+    {"FROZEN BONES",60,6,MODE_AEOLIAN,24,16,3,0,{38,20,16,0,0,0},12,10,13,0},
+    {"VOLCANIC DUSK",76,5,MODE_PHRYGIAN,1,20,11,1,{30,22,0,28,44,18},22,0,11,3},
+    {"CRESTED MOON",62,9,MODE_DORIAN,9,7,4,0,{38,18,20,0,0,32},14,12,15,2},
+    {"SWAMP RITUAL",70,2,MODE_PENT_MIN,3,1,6,0,{34,22,0,0,48,28},18,0,13,5},
+    {"STONE SENTINEL",60,0,MODE_PHRYGIAN,25,11,0,0,{40,18,0,26,0,0},10,0,11,0},
+    {"HOLLOW NEST",68,7,MODE_AEOLIAN,12,6,4,0,{32,22,18,0,0,28},16,12,15,4},
+    {"MAMMOTH PASS",64,2,MODE_DORIAN,16,3,0,0,{34,18,24,0,20,20},16,16,13,6},
+    {"ECHOING RUINS",60,5,MODE_AEOLIAN,25,12,5,0,{34,20,18,0,0,0},12,10,11,0},
+    {"LAST SUNRISE",62,10,MODE_DORIAN,23,8,3,0,{38,20,20,0,0,16},16,12,15,0},
+    {"DEEP TIME",60,0,MODE_PENT_MIN,0,4,9,0,{42,14,0,0,0,22},10,0,13,3},
+};
+#endif
+const char *en_piece_name(int i)
+{
+    if ((unsigned)i>=EN_NPIECES) i=0;
+#ifdef EN_LEGACY_TEST_BANK
+    return PIECES[i].name;
+#else
+    return DINO[i].name;
+#endif
+}
 void en_piece(int i, int16_t *par, uint16_t *pool)
 {
-    const int16_t *s;
     int p;
-    i = (unsigned)i < EN_NPIECES ? i : 0;
-    for (p = 0; p < P_NPARAMS; p++)
-        par[p] = PARAMS[p].def;
-    for (s = PIECES[i].set; s[0] >= 0; s += 2)
-        par[s[0]] = s[1];
-    *pool = EN_MODE_POOL[par[P_MODE]];
+    i=(unsigned)i<EN_NPIECES ? i : 0;
+    for(p=0;p<P_NPARAMS;p++) par[p]=PARAMS[p].def;
+#ifdef EN_LEGACY_TEST_BANK
+    { const int16_t *s;for(s=PIECES[i].set;s[0]>=0;s+=2) par[s[0]]=s[1]; }
+#else
+    {
+        const dino_recipe_t *d=&DINO[i];
+        /* Equalize complete arrangements from measured 30-second renders,
+         * scaling their relative layer balance together (not the master). */
+        static const uint8_t balance[20]={155,120,165,160,160,185,200,160,190,160,170,180,180,130,160,190,180,190,175,120};
+        par[P_TEMPO]=d->tempo; par[P_ROOT]=d->root; par[P_MODE]=d->mode;
+        par[P_CVOICE]=EN_NCV+d->drone; par[P_SVOICE]=EN_NSV+d->seq;
+        par[P_LVOICE]=EN_NBV+d->lead; par[P_S2VOICE]=EN_NS2V+d->bass;
+        par[P_CHORD]=d->level[0]; par[P_SEQ]=d->level[1]; par[P_LEAD]=d->level[2];
+        par[P_SEQ2]=d->level[3]; par[P_SKLEVEL]=d->level[4]; par[P_CLLEVEL]=d->level[5];
+        par[P_DENSITY]=d->density; par[P_LDENS]=d->phrases; par[P_SEQLEN]=d->length;
+        par[P_SEQ2LEN]=d->length-2; par[P_SEQGRID]=0; par[P_SCH1]=35;
+        par[P_CATT]=65; par[P_DREL]=70; par[P_CCOL]=-18; par[P_CRES]=-15; par[P_PHASER]=15;
+        par[P_CUTOFF]=32; par[P_S2CUT]=28; par[P_LTONE]=36; par[P_LATT]=35;
+        par[P_LDIN]=4; par[P_MI1]=0; par[P_MI3]=4; par[P_MW0]=20; par[P_MW1]=18;
+        par[P_MW2]=10; par[P_MW3]=12; par[P_DRIFT]=4; par[P_PMODE]=EN_WALK_WANDER;
+        par[P_ECHO]=35; par[P_TAPA]=35; par[P_TAPB]=0; par[P_FEEDBACK]=45;
+        par[P_REVERB]=60; par[P_CLOUD]=0; par[P_SIZE]=65; par[P_MOTION]=25;
+        par[P_LMEM]=60; par[P_CRACKLE]=0; par[P_NCHAR]=0;
+        par[P_SKDENS]=i==1 ? 70 : 35; par[P_SKTONE]=38; par[P_SKDECAY]=48;
+        { static const uint8_t levelpar[6]={P_CHORD,P_SEQ,P_LEAD,P_SEQ2,P_SKLEVEL,P_CLLEVEL};
+          int n;for(n=0;n<6;n++){int v=par[levelpar[n]]*(int)balance[i]/100;par[levelpar[n]]=(int16_t)(v>100?100:v);} }
+        par[P_CLVOICE]=d->call; par[P_CLCHANCE]=i==2 ? 45 : 25; par[P_CLTONE]=40;
+    }
+    #endif
+    *pool=EN_MODE_POOL[par[P_MODE]];
 }
 
 const char *const EN_CV_NAME[EN_NCV] = {"Organ", "Strings", "Horn", "Saws", "Glass", "Choir"};   /* (BERLIN: the Drone's;
@@ -317,6 +256,8 @@ void en_param_text(int i, int v, char *b)
     const char *s = 0;
     if (pt_layer_of(i) >= 0 && v >= pt_own_n(i))   /* (T-WRECKS) a Paleotone sound: its name */
         s = pt_name(pt_layer_of(i), v - pt_own_n(i));
+    else if (i == P_CLVOICE)
+        s = pt_name(PT_CALLS, v);
     else if (i == P_ETIME)
         s = ETIME_NAME[(unsigned)v < 6u ? v : 0];
     else if (i == P_MIDI)
@@ -3196,8 +3137,11 @@ static void ld_seed(void)
     ld_motif_t *m = &ld_bank[0];
     const int r = ld_cdeg(0);
     int i;
-    if (theme_pc != 9)
-        return;
+#ifdef EN_LEGACY_TEST_BANK
+    if (theme_pc != 9) return;
+#else
+    return; /* No inherited written theme in the dinosynth bank. */
+#endif
     for (i = 0; i < 6; i++)
         m->off[i] = (int8_t)(UM_DEG[i] - r), m->dur[i] = UM_DUR[i];
     m->n = 6;
@@ -3380,6 +3324,44 @@ static void bar_start(void)
     bar++;
 }
 
+
+/* T-WRECKS: sparse percussion and calls have their own dice and never draw
+ * from the melody/harmony streams. Three possible drum strikes per bar;
+ * a creature at most once per four bars, with no overlapping call gates. */
+static uint32_t wild_rng=0xA54FF53Au, call_wait;
+static float call_lp;
+#ifdef EN_HOST
+volatile uint32_t en_skin_hits, en_call_hits;
+#endif
+static void wild_tick(int st)
+{
+    if (st == 0 && call_wait) call_wait--;
+    if (en_frozen || (mutes & EN_M_WILD) || en_load>75u) return;
+    if (par[P_SKLEVEL] && par[P_SKDENS]) {
+        int lane=-1, chance=par[P_SKDENS];
+        if (st==0) lane=0;
+        else if (st==10) lane=1, chance/=2;
+        else if (st==14 && (bar & 3u)==0u) lane=2, chance/=2;
+        if (lane>=0 && seq_rand(&wild_rng)%100u < (uint32_t)chance) {
+            int vel=64+(int)(seq_rand(&wild_rng)%32u);
+            pt_skin_hit(lane, vel, par[P_SKTONE], par[P_SKDECAY]);
+#ifdef EN_HOST
+            en_skin_hits++;
+#endif
+        }
+    }
+    if (st==0 && !call_wait && par[P_CLLEVEL] && par[P_CLCHANCE] &&
+        seq_rand(&wild_rng)%100u < (uint32_t)par[P_CLCHANCE]) {
+        const int note=36+par[P_ROOT]+(int)(seq_rand(&wild_rng)%2u)*12;
+        pt_sound(PT_CALLS, par[P_CLVOICE]);
+        pt_notes_off(PT_CALLS);
+        pt_note_on(PT_CALLS, note, 75+(int)(seq_rand(&wild_rng)%25u), 3u*44100u);
+        call_wait=4u+(seq_rand(&wild_rng)%5u);
+#ifdef EN_HOST
+        en_call_hits++;
+#endif
+    }
+}
 /* the grid: one call a sixteenth (MIDI clock: 6 ticks) */
 static void tick(void)
 {
@@ -3391,6 +3373,7 @@ static void tick(void)
         en_drum_pos[d] = (uint8_t)st;
     seq_tick();
     lead_tick();
+    wild_tick(st);
 #ifdef EN_HOST
     if (ld_draws > en_lead_dmax)                 /* (the draws this tick; any made between ticks counted with it) */
         en_lead_dmax = ld_draws;
@@ -3918,6 +3901,9 @@ static void apply(int p, int v)
     par[p] = (int16_t)v;
     v = pe(p);                                   /* (as the master actions move it) */
     switch (p) {
+    case P_SKLEVEL: if (!v) pt_skin_quiet(); break;
+    case P_CLLEVEL: if (!v) pt_quiet(PT_CALLS); break;
+    case P_CLVOICE: pt_sound(PT_CALLS, v); break;
     case P_CHORD:
         chord_vol = (float)(v * v) * 0.0001f;
         if (!v)                                  /* (at 0, as muted: its MIDI notes let go) */
@@ -4135,8 +4121,10 @@ static void quiet(void)
             midi(pluck[i].layer ? 0x83u : 0x81u, pluck[i].note, 0);
         }
     ptg_all(0), ptg_all(1);                      /* (T-WRECKS) Paleotone's sounds quiet too */
-    for (i = 0; i < PT_NLAYER; i++)
+    for (i = 0; i < PT_NPART; i++)
         pt_quiet(i);
+    pt_skin_quiet();
+    call_lp = 0.0f;
     notes_off();
 }
 
@@ -4144,7 +4132,12 @@ static void ch_gt_init(void);
 void en_init(void)
 {
     int i;
-    pt_init();                                   /* (T-WRECKS) Paleotone's sounds: no layer on one yet */
+    pt_init();
+    pt_skin_quiet();
+    wild_rng=0xA54FF53Au; call_wait=0; call_lp=0.0f;
+#ifdef EN_HOST
+    en_skin_hits=en_call_hits=0;
+#endif                                   /* (T-WRECKS) Paleotone's sounds: no layer on one yet */
     for (i = 0; i <= SN; i++)
         sint[i] = fm_sinf((float)i * (FM_TWO_PI / (float)SN));
     for (i = 0; i <= SN; i++)
@@ -4343,6 +4336,7 @@ static void drain(void)
             break;
         case C_FREEZE: en_frozen = (uint8_t)(a != 0); break;
         case C_SEED:
+            wild_rng ^= (uint32_t)(b & 0xFFFF) * 2246822519u;
             rng ^= (uint32_t)(b & 0xFFFF) * 2654435761u;
             if (!rng)
                 rng = 1u;
@@ -4395,6 +4389,7 @@ static void drain(void)
             seq_hist_clear(&sq_hist[a & 1]);
             break;
         case C_REGROW:
+            pt_quiet(PT_CALLS); pt_skin_quiet(); call_wait=0; call_lp=0.0f;
             for (a = 0; a < EN_NMAC; a++)        /* (the user, 2026-10-28) a piece from the master actions at 0: none
                                                   * of the last one's push carried over */
                 macro(a, 0);
@@ -6358,6 +6353,32 @@ static void layer_act(void)
         en_layer_act[i] = fm_maxf(fm_clampf(a[i], 0.0f, 1.0f), en_layer_act[i] * 0.97f);
 }
 
+static void render_wild(uint32_t n)
+{
+    uint32_t j;
+    const float audible=(mutes & EN_M_WILD) ? 0.0f : 1.0f;
+    if (par[P_SKLEVEL] && pt_skin_render(pt_buf,n)) {
+        const float v=(float)par[P_SKLEVEL]*0.01f, g=0.65f*v*v*audible;
+        const float send=(float)par[P_SKVERB]*0.01f;
+        for (j=0;j<n;j++) {
+            const float y=pt_buf[j]*g;
+            mixl[j]+=y; mixr[j]+=y; rsend[j]+=y*send;
+        }
+    }
+    if (par[P_CLLEVEL] && pt_render(PT_CALLS,pt_buf,n)) {
+        const float v=(float)par[P_CLLEVEL]*0.01f, g=0.8f*v*v*audible;
+        const float send=(float)par[P_CLVERB]*0.01f;
+        const float cutoff=180.0f*fm_exp2f((float)par[P_CLTONE]*0.055f);
+        const float k=1.0f-fm_exp2f(-9.06472f*cutoff/EN_SR);
+        for (j=0;j<n;j++) {
+            const float x=pt_buf[j]*g;
+            call_lp+=k*(x-call_lp);
+            mixl[j]+=call_lp*0.8f; mixr[j]+=call_lp; rsend[j]+=call_lp*send;
+        }
+        call_lp=fm_flush(call_lp);
+    }
+}
+
 static void render_chunk(int32_t *out, uint32_t n, float gain)
 {
     uint32_t j;
@@ -6387,6 +6408,7 @@ static void render_chunk(int32_t *out, uint32_t n, float gain)
     render_drone(n);
     render_lead(n);
     render_crash(n);
+    render_wild(n);
     widen(n);                                    /* (the chord's and the pings' dry, wider) */
     if (atm_char == ATM_TAPE)
         render_crackle(n);

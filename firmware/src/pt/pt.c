@@ -84,15 +84,22 @@ static const pt_snd_t BASS_SND[PT_NSEQ2 - PT_NSEQ] = {   /* (Sequence 2's: these
     {3, "WAVE BASS", "Wave Bass", 1.552f}, {5, "WOW BASS", "Wow Bass", 0.638f}, {6, "FAT BASS", "Fat Bass", 1.439f}, {9, "FM BASS", "FM Bass", 1.308f},
     {0, "SQR BASS", "Sqr Bass", 1.016f}, {0, "ACID", "Acid", 1.627f},
 };
-const uint8_t PT_N[PT_NLAYER] = {PT_NDRONE, PT_NSEQ, PT_NLEAD, PT_NSEQ2};
+static const pt_snd_t CALL_SND[PT_NCALL] = {
+    {12, "DISTANT HERD", "Herd", 0.455f}, {12, "RAPTOR CHAT", "Raptor", 1.027f},
+    {12, "CREST HOOT", "Hoot", 0.386f}, {12, "HERD MOAN", "Moan", 0.607f},
+    {12, "NEST CHIRPS", "Nest", 1.717f}, {12, "SWAMP CROAK", "Croak", 1.030f},
+    {12, "HADRO HORN", "Hadro", 0.366f}, {12, "SAURO SNORT", "Snort", 1.884f},
+};
+const uint8_t PT_N[PT_NPART] = {PT_NDRONE, PT_NSEQ, PT_NLEAD, PT_NSEQ2, PT_NCALL};
 static const pt_snd_t *snd_of(int layer, int k)
 {
-    if ((unsigned)layer >= PT_NLAYER || k < 0 || k >= PT_N[layer])
+    if ((unsigned)layer >= PT_NPART || k < 0 || k >= PT_N[layer])
         return 0;
     switch (layer) {
     case PT_DRONE: return &DRONE_SND[k];
     case PT_SEQ: return &SEQ_SND[k];
     case PT_LEAD: return &LEAD_SND[k];
+    case PT_CALLS: return &CALL_SND[k];
     default: return k < PT_NSEQ2 - PT_NSEQ ? &BASS_SND[k] : &SEQ_SND[k - (PT_NSEQ2 - PT_NSEQ)];
     }
 }
@@ -128,7 +135,7 @@ typedef struct {
     uint32_t gl[NGATE];
     float buf[CTL];
 } pt_layer_t;
-static pt_layer_t lay[PT_NLAYER];
+static pt_layer_t lay[PT_NPART];
 
 void pt_init(void)
 {
@@ -139,7 +146,7 @@ void pt_init(void)
         for (k = 0; k < P_E0; k++)
             trk[i].p[k] = TP[k].def;
     fm6_init();
-    for (i = 0; i < PT_NLAYER; i++) {
+    for (i = 0; i < PT_NPART; i++) {
         lay[i].snd = 0;
         lay[i].pos = CTL;
     }
@@ -189,7 +196,7 @@ void pt_sound(int layer, int k)
 {
     const pt_snd_t *s;
     int pi;
-    if ((unsigned)layer >= PT_NLAYER)
+    if ((unsigned)layer >= PT_NPART)
         return;
     s = snd_of(layer, k);
     pi = s ? preset_of(s) : -1;
@@ -201,6 +208,7 @@ void pt_sound(int layer, int k)
     if (lay[layer].snd == k + 1)
         return;
     load(&trk[layer], s->e, (uint32_t)pi);
+    if (layer == PT_CALLS) trk[layer].p[P_VOICE] = V_MONO;
     lay[layer].tg = s->g > 0.0f ? s->g : 1.0f;
     if (layer == PT_SEQ2 && k >= PT_NSEQ2 - PT_NSEQ)
         lay[layer].tg *= 1.62f;                     /* (the Sequence's sounds on Sequence 2, lower: +4.2 dB, their median
@@ -208,13 +216,13 @@ void pt_sound(int layer, int k)
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
     lay[layer].snd = (uint8_t)(k + 1);
 }
-int pt_is(int layer) { return (unsigned)layer < PT_NLAYER ? lay[layer].snd : 0; }
+int pt_is(int layer) { return (unsigned)layer < PT_NPART ? lay[layer].snd : 0; }
 
 void pt_note_on(int layer, int note, int vel, uint32_t gate)
 {
     pt_layer_t *L;
     int i, f = -1;
-    if ((unsigned)layer >= PT_NLAYER || !lay[layer].snd || note < 0 || note > 127)
+    if ((unsigned)layer >= PT_NPART || !lay[layer].snd || note < 0 || note > 127)
         return;
     L = &lay[layer];
     for (i = 0; i < NGATE; i++)                     /* (the same note again: its old gate gone) */
@@ -239,7 +247,7 @@ void pt_note_on(int layer, int note, int vel, uint32_t gate)
 void pt_note_off(int layer, int note)
 {
     int i;
-    if ((unsigned)layer >= PT_NLAYER || !lay[layer].snd)
+    if ((unsigned)layer >= PT_NPART || !lay[layer].snd)
         return;
     for (i = 0; i < NGATE; i++)
         if (lay[layer].gl[i] && lay[layer].gn[i] == note)
@@ -250,7 +258,7 @@ void pt_notes_off(int layer)
 {
     track_t *t;
     uint32_t i;
-    if ((unsigned)layer >= PT_NLAYER)
+    if ((unsigned)layer >= PT_NPART)
         return;
     t = &trk[layer];
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
@@ -263,7 +271,7 @@ void pt_quiet(int layer)
 {
     track_t *t;
     uint32_t i;
-    if ((unsigned)layer >= PT_NLAYER)
+    if ((unsigned)layer >= PT_NPART)
         return;
     t = &trk[layer];
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
@@ -311,7 +319,7 @@ int pt_render(int layer, float *out, uint32_t n)
     pt_layer_t *L;
     int any = 0;
     uint32_t j = 0;
-    if ((unsigned)layer >= PT_NLAYER || !lay[layer].snd)
+    if ((unsigned)layer >= PT_NPART || !lay[layer].snd)
         return 0;
     L = &lay[layer];
     while (j < n) {
@@ -331,6 +339,57 @@ int pt_render(int layer, float *out, uint32_t n)
             k = n - j;
         while (k--)
             out[j++] = L->buf[L->pos++];
+    }
+    return any;
+}
+
+/* Reuse Paleotone's exact TRIBE lane models without allocating a fifth
+ * general-purpose synth arena or consuming the eight melodic voices. */
+static struct {
+    dv_coef_t coef;
+    dv_voice_t voice;
+    float gain;
+} skin[3];
+static float skin_buf[CTL];
+static uint32_t skin_pos = CTL;
+void pt_skin_quiet(void)
+{
+    memset(skin, 0, sizeof skin);
+    memset(skin_buf, 0, sizeof skin_buf);
+    skin_pos = CTL;
+}
+void pt_skin_hit(int lane, int velocity, int tone, int decay)
+{
+    static const uint8_t role[3] = {DV_KICK, DV_SNARE, DV_TOM};
+    dv_param_t p;
+    uint32_t type;
+    if ((unsigned)lane >= 3u) return;
+    type = DV_KTYPE(DV_NKIT, role[lane]);
+    dv_default(&p, type);
+    p.tone = (uint8_t)clamp(tone * 127 / 100, 0, 127);
+    p.decay = (uint8_t)clamp(decay * 127 / 100, 0, 127);
+    dv_setup(&skin[lane].coef, &p);
+    skin[lane].gain = (float)clamp(velocity, 1, 127) * (1.0f / (127.0f * 32768.0f));
+    dv_trigger(&skin[lane].voice);
+}
+int pt_skin_render(float *out, uint32_t n)
+{
+    uint32_t j=0, i, l;
+    int any=0;
+    while (j<n) {
+        if (skin_pos >= CTL) {
+            int32_t y[CTL];
+            for (i=0; i<CTL; i++) skin_buf[i]=0.0f;
+            for (l=0; l<3; l++) {
+                if (!skin[l].voice.live && !skin[l].voice.trig) continue;
+                dv_run(&skin[l].coef, &skin[l].voice, 0, y, CTL);
+                for (i=0; i<CTL; i++) skin_buf[i]+=(float)y[i]*skin[l].gain;
+            }
+            skin_pos=0;
+        }
+        out[j]=skin_buf[skin_pos++];
+        if (out[j] != 0.0f) any=1;
+        j++;
     }
     return any;
 }

@@ -18,24 +18,25 @@
  *   GLO held       saves (it also saves by itself a few seconds after a change, while resting);
  *                  held on 1.5 s: the piece back to its recipe */
 #include "../dsp/fastmath.h"
+#include "../pt/pt.h"
 
 /* the pages, one a layer (a button each, NPAGES; the Noise page, V_NSND, SAVE's); the header's dots show them in the
  * panel's order, PAGE_ORDER below (the view numbers stay as they were: the tests use them) */
 /* (past NPAGES, on no button of their own: V_MIX, PERFORM's knobs, the four layers' levels; the layers' sound
  * pages, the layer's button pressed again) */
 enum { V_DUB, V_CHORD, V_TEXTURE, V_BASS, V_DRUMS, V_SPACE, V_SETUP, NPAGES, V_MIX = NPAGES, V_CSND, V_PSND, V_BSND,
-       V_DSND, V_CFM, V_PFM, V_BFM, V_CHORDS, V_PAT, V_PERF, V_KEY, V_NSND, V_ESND, V_NSND2, V_ARC, V_SMOVE, V_S2MOVE, V_AMOVE, NVIEWS };
+       V_DSND, V_CFM, V_PFM, V_BFM, V_CHORDS, V_PAT, V_PERF, V_KEY, V_NSND, V_ESND, V_NSND2, V_ARC, V_SMOVE, V_S2MOVE, V_AMOVE, V_SKIN, V_CALLS, NVIEWS };
 /* (V_PERF: PERFORM's knobs, the master actions; V_MIX while white 6 is held. V_KEY: HOME again, the key and the
  * tempo, the Dub page's second) */
 static const char *const VIEW_NAME[NVIEWS] = {"Nachtfahrt", "Drone", "Sequence", "Lead", "Sequence 2", "Space", "Setup",
                                               "Mix", "Drone sound", "Seq sound", "Lead sound", "Seq2 sound",
                                               "Drone move", "Repeats", "Lead move", "Chords", "Pattern", "Perform", "Key",
                                               "Atmosphere", "Echo", "Atmos sound", "Arc", "Seq move", "Seq2 move",
-                                              "Atmos move"};
+                                              "Atmos move", "Skin drums", "Creature calls"};
 #define B_NONE 0xFFu
 static const uint8_t VIEW_BTN[NVIEWS] = {B_HOME, B_ENV, B_ARP, B_LFO, B_SEQ, B_FX, B_GLO, B_NONE, B_NONE, B_NONE, B_NONE,
                                          B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_SAVE, B_NONE, B_NONE,
-                                         B_NONE, B_NONE, B_NONE, B_NONE};
+                                         B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE};
 static int sound_of(int v) { return v == V_CHORD ? V_CSND : v == V_TEXTURE ? V_PSND : v == V_BASS ? V_BSND : v == V_DRUMS ? V_DSND : -1; }
 static int fm_of(int v) { return v == V_TEXTURE ? V_PFM : -1; }   /* (BERLIN: no FM pages; the Sequence's third, its
                                                                    * Repeats, in the Ping FM page's place) */
@@ -60,7 +61,7 @@ static int next_page(int v)                      /* (BERLIN) a layer's button ag
 static int atm_view(int v) { return v == V_NSND || v == V_NSND2 || v == V_AMOVE; }   /* (the Atmosphere's pages) */
 static int page_of(int v)                        /* a sound page: its layer's; the Echo page: Space's */
 {
-    return v == V_KEY || v == V_MIX ? V_DUB : v == V_ESND ? V_SPACE : v == V_NSND2 || v == V_AMOVE ? V_NSND : v == V_ARC ? V_SETUP
+    return v == V_SKIN || v == V_CALLS ? V_NSND : v == V_KEY || v == V_MIX ? V_DUB : v == V_ESND ? V_SPACE : v == V_NSND2 || v == V_AMOVE ? V_NSND : v == V_ARC ? V_SETUP
          : parent_of(v) >= 0 ? parent_of(v) : v;
 }
 /* the header's dots, as the buttons sit on the panel: FX ENV LFO GLO, then HOME SAVE ARP SEQ (SELECT's round once) */
@@ -113,15 +114,22 @@ static const uint16_t VIEW_KNOB[NVIEWS][4] = {
     {P_MW1, P_MT1, P_MR1, P_MI1},                /* the Sequence's Move (ARP, a fourth time; its Width is Sweep) */
     {P_MW3, P_MT3, P_MR3, P_MI3},                /* Sequence 2's Move (SEQ, a fourth time) */
     {P_MW4, P_MT4, P_MR4, P_MI4},                /* the Atmosphere's Move (SAVE, a third time) */
+    {P_SKLEVEL, P_SKTONE, P_SKDENS, P_SKDECAY},
+    {P_CLLEVEL, P_CLTONE, P_CLCHANCE, P_CLVOICE},
 };
 /* Home: selected track, four physical knobs, no new DSP state. */
-static const uint16_t TRACK_KNOB[5][4] = {
+static const uint16_t TRACK_KNOB[7][4] = {
     {P_CHORD, P_CCOL, P_MW0, P_DRREV},
     {P_SEQ, P_CUTOFF, P_MW1, P_SQREV},
     {P_LEAD, P_LTONE, P_MW2, P_LDREV},
     {P_SEQ2, P_S2CUT, P_MW3, P_S2REV},
     {P_CRACKLE, P_NCOL, P_MW4, P_NPLATE},
+    {P_SKLEVEL, P_SKTONE, P_SKDENS, P_SKVERB},
+    {P_CLLEVEL, P_CLTONE, P_CLCHANCE, P_CLVERB},
 };
+static const char *const HOME_NAME[7] = {"DRONE", "SEQ", "LEAD", "SEQ 2", "ATMOS", "SKIN", "CALLS"};
+#define HOME_TRACKS 7
+static const char *track_label(int col);
 static const char *const TRACK_LABEL[4] = {"Level", "Filter", "LFO", "Reverb"};
 static int control_knob(int view, int col);
 static const char *const KNOB_LABEL[NVIEWS][4] = {
@@ -151,10 +159,12 @@ static const char *const KNOB_LABEL[NVIEWS][4] = {
     {"Width", "Time", "Rate", "Intro"},
     {"Width", "Time", "Rate", "Intro"},
     {"Width", "Time", "Rate", "Intro"},
+    {"Level", "Tone", "Chance", "Decay"},
+    {"Level", "Filter", "Chance", "Voice"},
 };
 /* what each knob does, a line: on the rule above the knobs while it's being turned (in capitals; each fits the
  * rule's 228 px, and every view has its row: the host's expect helpfit) */
-_Static_assert(NVIEWS == 26, "a view added: its KNOB_HELP row too");
+_Static_assert(NVIEWS == 28, "a view added: its KNOB_HELP row too");
 static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, V_DUB .. V_ARC) */
     {"Down shuts, up opens; Off mid", "How often a step changes", "How much, and the sections' pace", "Bars before the chord moves on"},
     {"The root an octave under", "The filter's resonance", "The slow phaser's depth", "How slowly the chord swells in"},
@@ -182,6 +192,8 @@ static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, 
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
+    {"The skin drums level", "Darker or brighter skins", "How often the sparse hits play", "How long the skins ring"},
+    {"The creature calls level", "Darker or brighter calls", "How often a creature calls", "Which creature answers"},
 };
 
 /* (BERLIN) the screen's colours: Cosmic, on black (spec 15): lavender text, a cyan accent; the layers in their own
@@ -259,6 +271,10 @@ static struct {
 static uint8_t sp_said;
 static char sp_buf[ANN_MAX + 1];                 /* (the screen reader's text, built below) */
 static uint32_t sp_n;
+static const char *track_label(int col)
+{
+    return ui.track>=NLAYER && col==2 ? "Chance" : TRACK_LABEL[col];
+}
 static int control_knob(int view, int col)
 {
     return view == V_MIX && !ui.perf ? TRACK_KNOB[ui.track][col] : VIEW_KNOB[view][col];
@@ -768,7 +784,7 @@ static const char *const PERF_NAME[PERF_N] = {"DRONE", "SEQ", "LEAD", "SEQ 2", "
                                               "DROP", "ECHO", "DRONE", "SEQ", "LEAD", "SEQ 2", "ATMOS"};
 /* each layer's mute (EN_M_*), in the meters' order: Sequence 2 is two of the engine's bits (DUB-1's kick and hats) */
 static const uint32_t LAYER_MUTE[NLAYER] = {EN_M_CHORD, EN_M_PINGS, EN_M_BASS, EN_M_KICK | EN_M_HATS, EN_M_NOISE};
-#define ALL_MUTE (EN_M_CHORD | EN_M_PINGS | EN_M_BASS | EN_M_KICK | EN_M_HATS | EN_M_NOISE)
+#define ALL_MUTE (EN_M_CHORD | EN_M_PINGS | EN_M_BASS | EN_M_KICK | EN_M_HATS | EN_M_NOISE | EN_M_WILD)
 static void perf_mutes(void)                     /* to the engine: the mutes, and with a solo, all but it */
 {
     en_mute(ui.mutes | (ui.solo ? ALL_MUTE & ~ui.solo : 0u));
@@ -1124,8 +1140,8 @@ static void button(int b)
         break;
     case B_SAVE:                                 /* the Noise page (one page: again stays; saving: GLO held, Setup's
                                                   * KNOB 4) */
-        if (atm_view(ui.view)) {                 /* (SAVE again steps through: its sound, its Move page, back) */
-            set_view(ui.view == V_NSND ? V_NSND2 : ui.view == V_NSND2 ? V_AMOVE : V_NSND);
+        if (atm_view(ui.view) || ui.view==V_SKIN || ui.view==V_CALLS) { /* (SAVE again steps through: its sound, its Move page, back) */
+            set_view(ui.view == V_NSND ? V_NSND2 : ui.view == V_NSND2 ? V_AMOVE : ui.view == V_AMOVE ? V_SKIN : ui.view == V_SKIN ? V_CALLS : V_NSND);
         } else {
             ui.noise_from = (uint8_t)ui.view;
             set_view(V_NSND);
@@ -1509,11 +1525,11 @@ static void input(void)
             level_turn(oct_layer(ui.view), e);
         else if (ui.view == V_MIX && !ui.perf)   /* Home: SELECT chooses the track. */
             {
-            int t = (int)ui.track + (int)(e % NLAYER);
-            ui.track = (uint8_t)((t % NLAYER + NLAYER) % NLAYER);
+            int t = (int)ui.track + (int)(e % HOME_TRACKS);
+            ui.track = (uint8_t)((t % HOME_TRACKS + HOME_TRACKS) % HOME_TRACKS);
             ui.sig[0] = ui.sig[1] = ui.sig[2] = 0;
             ui.touched = -1;
-            say("TRACK", LAYER_NAME[ui.track]);
+            say("TRACK", HOME_NAME[ui.track]);
         }
         else if (ui.view == V_DUB)               /* (HOME: Energy, the user's: to play the keys and push it at once) */
             energy_turn(e);
@@ -1521,7 +1537,11 @@ static void input(void)
     }
     if ((e = plat_enc(EN_ALGO)) != 0) {         /* a layer's page: its voice; the Chords page: the walk */
         int vp = view_voice(ui.view);
-        if (atm_view(ui.view)) {   /* the Noise pages: its character */
+        if ((ui.view==V_MIX && ui.track==6) || ui.view==V_CALLS) {
+            int voice=(proj.par[P_CLVOICE]+(int)(e%PT_NCALL)+PT_NCALL)%PT_NCALL;
+            knob_set(P_CLVOICE,voice);
+            say("CALL",pt_name(PT_CALLS,voice));
+        } else if (atm_view(ui.view)) {   /* the Noise pages: its character */
             int c = ((proj.par[P_NCHAR] + (int)(e % EN_NNCHAR)) % EN_NNCHAR + EN_NNCHAR) % EN_NNCHAR;
             knob_set(P_NCHAR, c);
             say("NOISE", EN_NCHAR_NAME[c]);
@@ -2517,7 +2537,7 @@ static void sp_value(int k)
 }
 static void sp_knob(int view, int i)           /* "Stabs 30": the name the page gives it, then its value */
 {
-    sp_cat(view == V_MIX && !ui.perf ? TRACK_LABEL[i] : KNOB_LABEL[view][i]);
+    sp_cat(view == V_MIX && !ui.perf ? track_label(i) : KNOB_LABEL[view][i]);
     sp_cat(" ");
     sp_value(control_knob(view, i));
 }
@@ -2553,7 +2573,7 @@ static void sp_page(int all)
     sp_cat(" page");
     if (ui.view == V_MIX && !ui.perf) {
         sp_cat(", track ");
-        sp_cat(LAYER_NAME[ui.track]);
+        sp_cat(HOME_NAME[ui.track]);
     }
     if (atm_view(ui.view)) {
         sp_cat(", character ");
@@ -2925,6 +2945,7 @@ static void control_text(int x, int y, int width, const felucca_font_t *font,
 }
 static int control_rows(uint8_t *rows)
 {
+    if (ui.view==V_SKIN || ui.view==V_CALLS) { rows[0]=V_SKIN; rows[1]=V_CALLS; return 2; }
     int p = parent_of(ui.view) >= 0 ? parent_of(ui.view) : ui.view;
     if (p == V_CHORD) { rows[0]=V_CHORD; rows[1]=V_CSND; rows[2]=V_CFM; return 3; }
     if (p == V_TEXTURE) { rows[0]=V_TEXTURE; rows[1]=V_PSND; rows[2]=V_PFM; rows[3]=V_SMOVE; return 4; }
@@ -2997,6 +3018,7 @@ static void draw_controls(void)
     for (r=0; r<n; r++) for (c=0; c<4; c++)
         h = hash(h, (uint32_t)knob_get(home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c]));
     if (view_voice(ui.view) >= 0) h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
+    if (ui.view==V_CALLS) h=hash(h,(uint32_t)proj.par[P_CLVOICE]);
     if (atm_view(ui.view)) h = hash(h, (uint32_t)proj.par[P_NCHAR]);
     if (h == ui.sig[0]) return;
     ui.sig[0] = h;
@@ -3004,9 +3026,9 @@ static void draw_controls(void)
     control_text(4, 2, 180, &FONT_B, home ? "HOME / TRACKS" : VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_B, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
     if (home) {
-        for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, TRACK_LABEL[c], CONTROL_COL[c]);
+        for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, track_label(c), CONTROL_COL[c]);
     } else {
-        const int voice = view_voice(ui.view);
+        const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
         if (voice >= 0) {
             en_param_text(voice, proj.par[voice], b);
             control_text(4, 28, 232, &FONT_B, b, K_ACC);
@@ -3022,8 +3044,8 @@ static void draw_controls(void)
         cv_begin(240, 44, active ? K_PANEL : K_BG);
         if (r<n) {
             if (home) {
-                control_text(4, 0, 140, &FONT_B, LAYER_NAME[first+r], active ? K_ACC : K_TEXT);
-                if ((ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r])
+                control_text(4, 0, 140, &FONT_B, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
+                if (first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r])
                     control_text(176, 0, 60, &FONT_B, "MUTED", K_TEXT);
             }
             for (c=0; c<4; c++) {

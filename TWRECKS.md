@@ -1,40 +1,48 @@
-# T-WRECKS (placeholder name)
+# T-WRECKS
 
-NACHTFAHRT for the M-VAVE FM-1 with Paleotone's sounds: it plays by itself, sparse, and answers what you play.
-Package identity **FM-1_942**, USB name `T-WRECKS FM-1`. Built by `.github/workflows/twrecks-fm1.yml` on the
-`twrecks` branch; the package lands on `twrecks-fm1-output` (`t-wrecks-FM-1_942.fwsc`).
+A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contains only the twenty dinosynth presets below. Fresh startup is EXTINCTION. Previous project formats reset to the new bank, as requested; no old-preset migration or original factory pieces are included in device firmware.
 
-## Step 1: Nachtfahrt as the base
+## Controls
 
-Nachtfahrt (github.com/FartyPants/fm1-nachtfahrt, ba07283) as it is, its own identity.
+Home shows four track rows at a time. SELECT chooses Drone, Sequence, Lead, Sequence 2, Atmosphere, Skin or Calls. The four right-hand encoders edit the selected row: Level, Filter/tone, LFO depth (Chance on Skin/Calls), Reverb send. Values are the approved amber/cyan/pink/green Paleotone Pac-Man fill indicators, with readable labels and no numeric parameter readouts.
 
-## Step 2: Paleotone's sounds as the voices
+HOME cycles the track overview, generative controls and key/tempo. The layer buttons select their visible control rows. SAVE cycles Atmosphere, Atmosphere sound, Atmosphere motion, Skin drums, Creature calls. On Home with Calls selected, ALGORITHM chooses the creature; it also does so on the Creature calls page. PRESETS turns through the twenty scenes. GLO held half a second saves edits; held longer resets the current preset to its recipe. Performance retains its existing key controls. A solo also silences the two auxiliary layers.
 
-`firmware/src/pt/`: Paleotone's synth (engines, voices, presets; fantasmoslam/paleotone 6f027f0) in a unit of its
-own (`pt.c`, built at -Os as Paleotone is). Each layer's voice (ALGORITHM on its page) turns through its own voices,
-then Paleotone's:
+## Audio
 
-| Layer | Paleotone's sounds |
+Paleotone provides the existing curated voices and eight SAURUS creatures: Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. Calls are mono, share the melodic eight-voice budget, use a three-second gate and level trims measured from renders. A call is considered only at a bar line, with four to eight bars between possible calls. Chance zero disables new calls.
+
+Skin uses the exact BOOM, SKIN and LOG models from Paleotone's TRIBE kit. Three compact drum states avoid adding another large synth arena. The scheduler considers one earth-drum strike on the downbeat, an occasional skin strike later in the bar, and a log strike on some fourth bars: at most three hits in a bar, with no four-on-the-floor pattern. Chance zero disables new hits. Hold stops new auxiliary events; overload suppresses new events above 75% reported audio load. Level zero clears that layer's voices.
+
+## Factory bank
+
+| Preset | Main character |
 |---|---|
-| Drone | 26: ROAR's drones, the choirs and chants, the pads, Bow Metal, Temple |
-| Sequence | 22: PHYS's kalimba, marimbas, bells, harps; FM bells; the struck keys |
-| Lead | 18: the horns (Mammoth, Bronto, Canyon), Shaman, the brass and leads |
-| Sequence 2 | 34: the basses (Tar Bass, Tar Growl, Sub Bass, Pulse...), then the Sequence's |
+| EXTINCTION | Deep tundra drone, sparse geode tones, distant herd |
+| STAMPEDE | Earth drums, log percussion, tar bass, snorts |
+| RAPTOR NIGHT | Primeval bed, kalimba, whistle and raptor chatter |
+| ASHEN SKY | Star-sky pad, harp and wind lead |
+| BONE TEMPLE | Temple organ, tusk tines and sparse skins |
+| FERN SHADOWS | Jungle pad, kalimba and nest calls |
+| TAR PIT | Earthquake drone, tar growl bass and skins |
+| DISTANT HERD | Low tundra, valley harp and herd calls |
+| AMBER CAVERN | Resin pad and geode bells |
+| PRIMEVAL | Primeval drone, log marimba and croaks |
+| FROZEN BONES | Glacier pad, ice crystal and canyon horn |
+| VOLCANIC DUSK | Quake, primal stabs, tar bass and drums |
+| CRESTED MOON | Choir, harp, whistle and crest hoots |
+| SWAMP RITUAL | Swamp fiddle, log bars, skins and croaks |
+| STONE SENTINEL | Temple drone, slit drum and tar bass |
+| HOLLOW NEST | Ice-age pad, water drops and nest calls |
+| MAMMOTH PASS | Strings, tusk tines, mammoth lead and hadro calls |
+| ECHOING RUINS | Temple organ, amber bells and cave echoes |
+| LAST SUNRISE | Aurora pad, valley harp and canyon horn |
+| DEEP TIME | Tundra drone, sparse geode bells and herd moans |
 
-Each sound is levelled to its layer's own voices (`tools/pt_levels.py`, from `tests/host/twr_voice_test.c`), so the
-layer's Volume is its level whatever it plays. Paleotone's SAMPLE and GRAIN engines (its recordings) are not built.
-Paleotone's 8 voices are shared by the layers on its sounds.
+These are first-pass listening candidates. Complete arrangements were levelled together from measured renders, preserving each scene's internal balance. Musical quality, relative call/drum balance and device CPU headroom still require listening and the FM-1 Setup reading.
 
-Tests: `tests/host/pt_test.c` (every sound plays), `tests/host/twr_voice_test.c` (each layer on each sound, its level,
-its MIDI notes let go).
+## Storage and build
 
-## Control interface (before step 3)
+Twenty edited presets occupy two independently atomic ten-preset A/B banks at 0x98000..0x9BFFF. Globals keep their original pair at 0xFC000 and panel calibration remains at 0xDC000. External sample storage is untouched. CRC validation, torn-write recovery, bank isolation and save/reload behavior have host tests. Only changed banks are rewritten. Old ten-piece recipes exist solely as host regression fixtures; a compile guard prevents including them in an FM-1 build.
 
-The `twrecks-controls` branch replaces decorative animation with control tables. Home shows four tracks at a time; SELECT chooses a track, including Atmosphere on the fifth row, and K1-4 control its Level, Filter, LFO depth and Reverb send. LFO is the existing filter-motion Width; Time and Rate remain on each track's Move row. Each layer page shows its main, sound and Move rows together (the sequences also have Repeats / Pattern). The layer button chooses the active row; SELECT retains its layer-level shortcut there. Performance keeps the same keys, mutes, solos and moves, with a plain text display. Pattern, chord and effects editors keep their functional grids. Terminus uses 16 px labels. Values are Paleotone-style Pac-Man fill indicators: amber, cyan, pink and green by physical control column, without numeric readings or simulated knob bodies. The same indicators appear on the chord/pattern control strips; the boot logo is static. No save format or sound-engine changes.
-
-The first device build fits: later final build measurements and checks are recorded in the pull request. Hardware readability, encoder feel and CPU load still need an FM-1 check before moving this candidate onto `twrecks`. No installation is part of this change.
-
-## Next
-
-3. The STAMPEDE skin drums, sparse, with their own level; the creature calls.
-4. The dinosynth presets (EXTINCTION, STAMPEDE, RAPTOR NIGHT, then the rest of the 20).
+Source branch: twrecks-completion. Product identity remains FM-1_942. CI runs host checks, builds the package and publishes candidate output to twrecks-completion-output. The known installer in the PC's twrecks-install directory remains the installer to use.

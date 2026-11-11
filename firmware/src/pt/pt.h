@@ -6,12 +6,14 @@
 #include <stdint.h>
 
 enum { PT_DRONE, PT_SEQ, PT_LEAD, PT_SEQ2, PT_NLAYER };
+enum { PT_CALLS = PT_NLAYER, PT_NPART };
+#define PT_NCALL 8
 /* the sounds each layer offers (pt.c PT_LIST's); a layer's voice knob has them after its own voices */
 #define PT_NDRONE 26
 #define PT_NSEQ 22
 #define PT_NLEAD 18
 #define PT_NSEQ2 34
-extern const uint8_t PT_N[PT_NLAYER];
+extern const uint8_t PT_N[PT_NPART];
 
 void pt_init(void);
 const char *pt_name(int layer, int k);          /* its name as the screen shows it (9 characters at most) */
@@ -26,3 +28,8 @@ void pt_quiet(int layer);                       /* everything it plays, now (a v
 /* the next n samples of the layer into out (written, not added); 0: nothing sounds (out left as it was) */
 int pt_render(int layer, float *out, uint32_t n);
 int pt_voices(void);                            /* Paleotone's voices sounding now, every layer's (of 8) */
+
+/* Original TRIBE kit's BOOM, SKIN and LOG models, independent of melodic voices. */
+void pt_skin_hit(int lane, int velocity, int tone, int decay);
+int pt_skin_render(float *out, uint32_t n);
+void pt_skin_quiet(void);

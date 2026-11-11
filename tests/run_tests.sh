@@ -27,13 +27,18 @@ run trs sh -c "$CC -O2 -w -Ifirmware/src -Ifirmware/hal -o $OUT/trs_test tests/h
 # (T-WRECKS) Paleotone's sounds: its unit (Paleotone's code, its own warnings), every sound of the lists
 run pt sh -c "$CC -O2 -ffp-contract=off -std=c99 -w -DEN_HOST -c -o $OUT/pt.o firmware/src/pt/pt.c && \
     $CC -O2 -std=c99 -Wall -Werror -o $OUT/pt_test tests/host/pt_test.c $OUT/pt.o -lm && $OUT/pt_test build/host"
-run twr-voices sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
+run twr-voices sh -c "$CC -DEN_LEGACY_TEST_BANK -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
     -o $OUT/twr_voice_test tests/host/twr_voice_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/twr_voice_test 8"
-run amb sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
+run project sh -c "$CC -O2 -std=c99 -Wall -Wextra -Werror -DEN_HOST -Ifirmware/src/dsp \
+    -o $OUT/project_test tests/host/project_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/project_test"
+run wild sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
+    -o $OUT/wild_test tests/host/wild_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/wild_test"
+run amb sh -c "$CC -DEN_LEGACY_TEST_BANK -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
     -o $OUT/amb_test tests/host/amb_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/amb_test"
-run golden sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
-    -o $OUT/golden_test tests/host/golden_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/golden_test"
+run golden sh -c "$CC -DEN_LEGACY_TEST_BANK -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp \
+    -o $OUT/golden_test tests/host/golden_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/golden_test tests/fixtures/nachtfahrt_golden.txt"
 run seq sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -Ifirmware/src/dsp -o $OUT/seq_test tests/host/seq_test.c firmware/src/dsp/seq.c && $OUT/seq_test"
+run dino-golden sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Werror -DEN_HOST -Ifirmware/src/dsp -o $OUT/dino_golden tests/host/golden_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/dino_golden"
 run storage sh -c "$CC -O2 -o $OUT/storage_test tests/storage_test.c && $OUT/storage_test"
 # the update path, against the firmware package (Felucca's tests; needs ./build.sh)
 if [ -f build/amb.fwsc ]; then
@@ -50,6 +55,7 @@ else
     echo "  skip update-path tests (no build/amb.fwsc: run ./build.sh)"
 fi
 run host-build sh host/build_host.sh
+run legacy-host-build env EN_LEGACY_TEST_BANK=1 sh host/build_host.sh
 if command -v emcc >/dev/null 2>&1; then
     run emu sh -c "sh web/emu/build.sh >/dev/null && node tests/host/emu_test.mjs build/emu/amb.wasm"
     run app sh -c "sh web/app/build.sh >/dev/null && node tests/host/app_test.mjs build/app/amb.wasm"
@@ -57,7 +63,9 @@ fi
 for s in tests/scenarios/*.amb; do
     n=$(basename "$s" .amb)
     mkdir -p "build/scenarios/$n"
-    run "scenario-$n" build/host/amb_host "$s" "build/scenarios/$n"
+    host=build/host/amb_host_legacy
+    [ "$n" = twrecks-bank ] && host=build/host/amb_host
+    run "scenario-$n" "$host" "$s" "build/scenarios/$n"
 done
 [ $FAIL -eq 0 ] && echo "all tests passed" || echo "TESTS FAILED"
 exit $FAIL

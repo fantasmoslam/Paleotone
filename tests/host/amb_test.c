@@ -5756,21 +5756,21 @@ int main(void)
      * difference is in its voices); not every piece
      * has an Atmosphere (three at least None, the user); the Lead dreamy in all of them (its reverb and echo 90) */
     {
-        static const char *const NAME[EN_NPIECES] = {"Timewind", "Wahnfried", "Phaedra", "Rubycon", "Stratosfear",
+        static const char *const NAME[10] = {"Timewind", "Wahnfried", "Phaedra", "Rubycon", "Stratosfear",
                                                      "Sunrain", "Mirage", "Cyborg", "Sakura Rain", "Umeda"};
         static const int KEY[] = {P_TEMPO, P_ROOT, P_MODE, P_SVOICE, P_CVOICE, P_LVOICE, P_NCHAR, P_MI1, P_MI3,
                                   P_S2VOICE, P_LOCT, P_SEQOCT, P_CCOL, P_GLIDE};
-        int16_t pa[EN_NPIECES][P_NPARAMS];
+        int16_t pa[10][P_NPARAMS];
         uint16_t pl;
         int a, b, k, none = 0, worst = 99, wa = 0, wb = 0, dreamy = 1;
-        for (a = 0; a < EN_NPIECES; a++) {
+        for (a = 0; a < 10; a++) {
             en_piece(a, pa[a], &pl);
             CHECK(!strcmp(en_piece_name(a), NAME[a]), "test_pieces_names: piece %d is %s", a, en_piece_name(a));
             none += pa[a][P_NCHAR] == 0;
             dreamy &= pa[a][P_LDREV] == 90 && pa[a][P_LDECHO] == 90;
         }
-        for (a = 0; a < EN_NPIECES; a++)
-            for (b = a + 1; b < EN_NPIECES; b++) {
+        for (a = 0; a < 10; a++)
+            for (b = a + 1; b < 10; b++) {
                 int d = (pa[a][P_SEQ2] > 0) != (pa[b][P_SEQ2] > 0);
                 d += (pa[a][P_TAPB] > 0) != (pa[b][P_TAPB] > 0);
                 for (k = 0; k < (int)(sizeof KEY / sizeof KEY[0]); k++)
@@ -5784,7 +5784,7 @@ int main(void)
         CHECK(dreamy, "test_pieces_lead_dreamy: a piece's Lead reverb or echo not 90");
         /* (the user, 2026-10-28: the FM-1's speaker and headphones bright, the noise far too loud) the Atmosphere's
          * level by its type: Surf 5, Wind 7, Tape and Space 10; none: the default kept */
-        for (a = 0; a < EN_NPIECES; a++) {
+        for (a = 0; a < 10; a++) {
             static const int LV[EN_NNCHAR] = {25, 7, 5, 10, -1, 10, -1, -1, 10, -1};   /* (None Wind Surf Space Air Tape
                                                                            * Drops Hail Stereo Rain; Air, Drops, Hail: unused; Stereo
                                                                            * Rain: Umeda's, 10, the user's) */
@@ -5880,13 +5880,13 @@ int main(void)
               "test_pieces_phaedra: Drone voice %d, level %d (the user's: Choir 5, 70)", pa[2][P_CVOICE], pa[2][P_CHORD]);
         /* (the Lead's memory, spec 3.3) each piece's Memory (the Arc page's fourth knob): the report's starting
          * values, to tune by ear */
-        for (a = 0; a < EN_NPIECES; a++) {
-            static const int LMEM[EN_NPIECES] = {55, 40, 75, 45, 85, 60, 50, 35, 40, 60};   /* (Sakura Rain: Wahnfried's; Umeda 60:
+        for (a = 0; a < 10; a++) {
+            static const int LMEM[10] = {55, 40, 75, 45, 85, 60, 50, 35, 40, 60};   /* (Sakura Rain: Wahnfried's; Umeda 60:
                                                                            * its theme comes back, the rest varies) */
             CHECK(pa[a][P_LMEM] == LMEM[a], "test_pieces_memory: %s Memory %d (spec 3.3: %d)", en_piece_name(a),
                   pa[a][P_LMEM], LMEM[a]);
         }
-        for (a = 1; a < EN_NPIECES; a += 6)
+        for (a = 1; a < 10; a += 6)
             CHECK(pa[a][P_MW0] >= 40 && pa[a][P_MR0] >= 40, "test_pieces_move: %s Drone width %d rate %d",
                   en_piece_name(a), pa[a][P_MW0], pa[a][P_MR0]);
         CHECK(en_param_info(P_ETIME)->def == 3 && en_param_info(P_TAPAT)->def == 1,

@@ -4,7 +4,7 @@ name: twrecks-fm1
 
 on:
   push:
-    branches: [twrecks, twrecks-controls]
+    branches: [twrecks, twrecks-controls, twrecks-completion]
   workflow_dispatch:
 
 permissions:
@@ -70,5 +70,5 @@ jobs:
           if [ "${{ github.ref_name }}" = "twrecks" ]; then
             git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" twrecks-fm1-output
           else
-            git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:twrecks-controls-output
+            git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:${{ github.ref_name }}-output
           fi
