@@ -176,5 +176,8 @@ void project_apply(void)                         /* (then en_regrow keeps the pi
     for (i = 0; i < P_NPARAMS; i++)
         en_set(i, proj.par[i]);
     en_pool(proj.pool);
+#ifndef EN_LEGACY_TEST_BANK
+    en_piece_theme(proj.piece);               /* scene-specific drum profile */
+#endif
     en_seq(s->pings_ok ? s->pings : 0);
 }

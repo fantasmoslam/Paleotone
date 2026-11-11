@@ -745,6 +745,15 @@ static void set_voice(int p, int v)
     mark_dirty();
 }
 
+static int home_voice(void)
+{
+    static const uint8_t voice[5]={P_CVOICE,P_SVOICE,P_LVOICE,P_S2VOICE,P_NCHAR};
+    return ui.track<5 ? voice[ui.track] : ui.track==6 ? P_CLVOICE : -1;
+}
+static int calls_context(void)
+{
+    return !ui.perf && (ui.view==V_CALLS || (ui.view==V_MIX && ui.track==6));
+}
 static void mac_home(void)                       /* (the user, 2026-10-28) a piece from the master actions at 0 (the
                                                   * engine's own, at its regrow) */
 {
@@ -796,6 +805,7 @@ static int perf_sounds(int i)                    /* layer i (0..4) heard: not mu
     return (ui.mutes & LAYER_MUTE[i]) != LAYER_MUTE[i];
 }
 static void set_view(int v);
+static void keys_release_mode(void);
 #define PERF_SHIFT 9u                            /* white 6 (D4), held: the knobs the mix */
 #define PERF_FORGET 26u                          /* white 16 (G5), the top key: the Lead's memory erased */
 static void lock_toggle(void)                    /* SEL held: Lock, on or off: the phrases keep their kick, groove and plan,
@@ -873,6 +883,7 @@ static void set_view(int v);
 static void perf_set(int on)                     /* on: the mixer on the knobs; off: back to the page */
 {
     const int was = ui.perf;
+    if (on && calls_context()) keys_release_mode();
     ui.perf = (uint8_t)on;
     if (on) {
         if (!was)                                /* (T-WRECKS: the Mix page is HOME's too, so where it came from) */
@@ -1063,9 +1074,17 @@ static void pattern_key(uint32_t key, uint32_t keys)
 }
 
 /* ------------------------------------------------------------ buttons --- */
+static void keys_release_mode(void)
+{
+    int k;
+    for (k=0;k<16;k++) if (ui.keys >> STEP_KEY[k] & 1u) en_lead_key(k,0);
+    for (k=0;k<11;k++) black_set(k,0);
+}
 static void set_view(int v)
 {
+    const int was_calls=calls_context();
     ui.view = (uint8_t)v;
+    if (was_calls!=calls_context()) keys_release_mode();
     ui.sig[0] = ui.sig[1] = ui.sig[2] = 0;
     ui.touched = -1;
 }
@@ -1140,7 +1159,9 @@ static void button(int b)
         break;
     case B_SAVE:                                 /* the Noise page (one page: again stays; saving: GLO held, Setup's
                                                   * KNOB 4) */
-        if (atm_view(ui.view) || ui.view==V_SKIN || ui.view==V_CALLS) { /* (SAVE again steps through: its sound, its Move page, back) */
+        if (ui.view==V_MIX && ui.track>=5) {
+            set_view(ui.track==6 ? V_CALLS : V_SKIN);
+        } else if (atm_view(ui.view) || ui.view==V_SKIN || ui.view==V_CALLS) { /* (SAVE again steps through: its sound, its Move page, back) */
             set_view(ui.view == V_NSND ? V_NSND2 : ui.view == V_NSND2 ? V_AMOVE : ui.view == V_AMOVE ? V_SKIN : ui.view == V_SKIN ? V_CALLS : V_NSND);
         } else {
             ui.noise_from = (uint8_t)ui.view;
@@ -1492,6 +1513,24 @@ static void input(void)
                     continue;                    /* REC held: the effects (and their keys let go) */
             if (btn >> B_REC & 1u)
                 continue;                        /* (REC held: the other keys do nothing) */
+            if (calls_context()) {
+                if (down) {
+                    int st, black=black_of(i);
+                    for (st=0; st<PT_NCALL && STEP_KEY[st]!=i; st++) ;
+                    if (st<PT_NCALL) {
+                        knob_set(P_CLVOICE,st);
+                        en_call(st);
+                        say("CALL",pt_name(PT_CALLS,st));
+                    } else if (black==0) {
+                        en_calls_auto(!en_call_auto);
+                        say("CALLS",en_call_auto ? "MANUAL" : "AUTO");
+                    } else if (black==1) {
+                        en_call(-1);
+                        say("CALLS","STOP");
+                    }
+                }
+                continue;
+            }
             if (ui.view == V_PAT && !ui.perf) {  /* the Pattern page: the white keys, the lane's steps */
                 if (down)
                     pattern_key(i, keys);
@@ -1525,8 +1564,10 @@ static void input(void)
             level_turn(oct_layer(ui.view), e);
         else if (ui.view == V_MIX && !ui.perf)   /* Home: SELECT chooses the track. */
             {
+            const int was_calls=calls_context();
             int t = (int)ui.track + (int)(e % HOME_TRACKS);
             ui.track = (uint8_t)((t % HOME_TRACKS + HOME_TRACKS) % HOME_TRACKS);
+            if (was_calls!=calls_context()) keys_release_mode();
             ui.sig[0] = ui.sig[1] = ui.sig[2] = 0;
             ui.touched = -1;
             say("TRACK", HOME_NAME[ui.track]);
@@ -1536,12 +1577,12 @@ static void input(void)
         ui.turn_t = plat_ms();
     }
     if ((e = plat_enc(EN_ALGO)) != 0) {         /* a layer's page: its voice; the Chords page: the walk */
-        int vp = view_voice(ui.view);
+        int vp = ui.view==V_MIX && !ui.perf ? home_voice() : view_voice(ui.view);
         if ((ui.view==V_MIX && ui.track==6) || ui.view==V_CALLS) {
             int voice=(proj.par[P_CLVOICE]+(int)(e%PT_NCALL)+PT_NCALL)%PT_NCALL;
             knob_set(P_CLVOICE,voice);
             say("CALL",pt_name(PT_CALLS,voice));
-        } else if (atm_view(ui.view)) {   /* the Noise pages: its character */
+        } else if (atm_view(ui.view) || (ui.view==V_MIX && !ui.perf && ui.track==4)) {   /* Atmosphere character */
             int c = ((proj.par[P_NCHAR] + (int)(e % EN_NNCHAR)) % EN_NNCHAR + EN_NNCHAR) % EN_NNCHAR;
             knob_set(P_NCHAR, c);
             say("NOISE", EN_NCHAR_NAME[c]);
@@ -3018,12 +3059,18 @@ static void draw_controls(void)
     for (r=0; r<n; r++) for (c=0; c<4; c++)
         h = hash(h, (uint32_t)knob_get(home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c]));
     if (view_voice(ui.view) >= 0) h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
-    if (ui.view==V_CALLS) h=hash(h,(uint32_t)proj.par[P_CLVOICE]);
+    if (home && home_voice()>=0) h=hash(h,(uint32_t)proj.par[home_voice()]);
+    if (calls_context()) h=hash(hash(h,(uint32_t)proj.par[P_CLVOICE]),en_call_auto);
     if (atm_view(ui.view)) h = hash(h, (uint32_t)proj.par[P_NCHAR]);
     if (h == ui.sig[0]) return;
     ui.sig[0] = h;
     cv_begin(240, 48, K_BG);
-    control_text(4, 2, 180, &FONT_B, home ? "HOME / TRACKS" : VIEW_NAME[ui.view], K_TEXT);
+    if (home) {
+        const int voice=home_voice();
+        if (voice>=0) en_param_text(voice,proj.par[voice],b);
+        else { const char *s="TRIBE SKIN"; int j=0; while ((b[j]=s[j])!=0) j++; }
+        control_text(4,2,180,&FONT_B,b,K_TEXT);
+    } else control_text(4, 2, 180, &FONT_B, VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_B, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
     if (home) {
         for (c=0; c<4; c++) control_text(c*60+4, 28, 56, &FONT_S, track_label(c), CONTROL_COL[c]);
@@ -3058,6 +3105,16 @@ static void draw_controls(void)
         }
         cv_blit(0, 48+r*44);
     }
+    if (ui.view==V_CALLS) {
+        cv_begin(240,88,K_BG);
+        for (r=0; r<4; r++) for (c=0; c<2; c++) {
+            const int creature=r+c*4;
+            char key[4]={'W',(char)('1'+creature),' ',0};
+            control_text(c*120+4,r*21,24,&FONT_B,key,CONTROL_COL[c]);
+            control_text(c*120+30,r*21,88,&FONT_B,pt_name(PT_CALLS,creature),K_TEXT);
+        }
+        cv_blit(0,136);
+    }
     if (ui.view == V_PERF) {
         cv_begin(240, 132, K_BG);
         for (r=0; r<NLAYER; r++) {
@@ -3076,6 +3133,8 @@ static void draw_controls(void)
     if (plat_ms() < ui.msg_until) {
         msg_text(ui.msg[0], ui.msg[1], b);
         control_text(4, 0, 232, &FONT_B, b, K_ACC);
+    } else if (calls_context()) {
+        control_text(4,0,232,&FONT_S,en_call_auto ? "AUTO  B1: mode B2: stop" : "MANUAL B1: auto B2: stop",K_TEXT);
     } else if (ui.view == V_SETUP) {
         char a[12];
         char *out = b;
@@ -3087,7 +3146,7 @@ static void draw_controls(void)
         *out++='%'; *out=0;
         control_text(4, 0, 232, &FONT_B, b, K_TEXT);
     } else {
-        control_text(4, 0, 232, &FONT_S, home ? "SELECT: track   K1-4: edit" : ui.view == V_PERF ? "W6: mix  W7-11: moves" : "Lit row: K1-4   Button: row", K_TEXT);
+        control_text(4, 0, 232, &FONT_S, home ? "SELECT: track ALGO: voice" : ui.view == V_PERF ? "W6: mix  W7-11: moves" : "Lit row: K1-4   Button: row", K_TEXT);
     }
     cv_blit(0, 224);
 }

@@ -1,6 +1,6 @@
 # Dinosynth research for T-WRECKS
 
-Research checkpoint: 10 November 2026. Installed candidate: 464e9c7. This document informs the next implementation pass; it does not describe features already implemented.
+Research checkpoint: 10 November 2026, reviewing candidate 464e9c7. The audit below describes that earlier candidate. Subsequent user guidance asks for the weight and drive of a march, without requiring a literal march or elaborate march-specific structure. The [completion plan](TWRECKS-NEXT-PLAN.md) records the current implementation and remaining listening work.
 
 ## Finding
 
@@ -42,7 +42,7 @@ The next musical acceptance step must include direct reference listening and com
 
 Weight should come from a defined low-register part, clear attacks, deliberate accents and space around those attacks. For the aggressive scene, use a deep mono synth bass with sufficient upper harmonics to remain audible on the FM-1 speaker. A low-frequency fundamental alone is not a reliable test of perceived weight. Start with existing bass voices before adding another DSP layer.
 
-The drum part needs a coherent marching pattern, with a repeated footfall and intentional reinforcement. The present random sparse-hit approach remains useful for ambience; it cannot be the only rhythm architecture. Variation should operate on a retained pattern or phrase—accent changes, omissions, a short fill, a turnaround—so the march remains recognizable.
+The heavy scene needs a coherent, weighty pulse, with repeated footfalls and intentional reinforcement. The present random sparse-hit approach remains useful for ambience; it cannot be the only rhythm architecture. Variation should operate on a retained pattern or phrase—accent changes, omissions, a short fill, a turnaround—so the underlying pulse remains recognizable.
 
 ### Melodic and harmonic identity
 
@@ -52,7 +52,7 @@ Brass-like, organ, choir, string and other deliberately synthetic timbres are ca
 
 ### Form and production
 
-Use purposeful sections: introduction, established figure, answer, reduction and return. Give an aggressive scene its own transition into a full marching arrangement. Keep low bass and drum attacks readable through the effects. Evaluate saturation, filtering and restricted bandwidth by listening, rather than adding blanket hiss as a shortcut to age or grit.
+Use purposeful sections: introduction, established figure, answer, reduction and return. Give an aggressive scene its own transition into a full, driving arrangement. Keep low bass and drum attacks readable through the effects. Evaluate saturation, filtering and restricted bandwidth by listening, rather than adding blanket hiss as a shortcut to age or grit.
 
 Creature calls should be expressive events the player can place. Manual control is a separate usability requirement from whether a source recording uses effects. The music should retain its identity when the calls are turned off.
 

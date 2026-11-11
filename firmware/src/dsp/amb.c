@@ -198,6 +198,13 @@ void en_piece(int i, int16_t *par, uint16_t *pool)
         par[P_REVERB]=60; par[P_CLOUD]=0; par[P_SIZE]=65; par[P_MOTION]=25;
         par[P_LMEM]=60; par[P_CRACKLE]=0; par[P_NCHAR]=0;
         par[P_SKDENS]=i==1 ? 70 : 35; par[P_SKTONE]=38; par[P_SKDECAY]=48;
+        if (i==1) {
+            par[P_TEMPO]=96; par[P_SEQ2]=48; par[P_SEQ2OCT]=-1;
+            par[P_SEQ2LEN]=8; par[P_SCH1]=85; par[P_S2CUT]=42;
+            par[P_CATT]=30; par[P_DENSITY]=35;
+            par[P_SKTONE]=30; par[P_SKDECAY]=62;
+            par[P_REVERB]=35; par[P_ECHO]=20; par[P_FEEDBACK]=30;
+        }
         { static const uint8_t levelpar[6]={P_CHORD,P_SEQ,P_LEAD,P_SEQ2,P_SKLEVEL,P_CLLEVEL};
           int n;for(n=0;n<6;n++){int v=par[levelpar[n]]*(int)balance[i]/100;par[levelpar[n]]=(int16_t)(v>100?100:v);} }
         par[P_CLVOICE]=d->call; par[P_CLCHANCE]=i==2 ? 45 : 25; par[P_CLTONE]=40;
@@ -463,7 +470,7 @@ const char *en_chord_name(const int *pcs, int n, char *buf)
 }
 
 /* ------------------------------------------------------------ commands --- */
-enum { C_SET, C_POOL, C_PLAY, C_NEXT, C_FREEZE, C_SEED, C_PANIC, C_CLOCK, C_REGROW, C_MUTE, C_PERF, C_FX, C_SEQ, C_MACRO, C_PROT, C_REWALK, C_LOCK, C_SEQSET, C_LKEY, C_MOVE, C_LFORGET, C_THEME, C_LMIDI };
+enum { C_SET, C_POOL, C_PLAY, C_NEXT, C_FREEZE, C_SEED, C_PANIC, C_CLOCK, C_REGROW, C_MUTE, C_PERF, C_FX, C_SEQ, C_MACRO, C_PROT, C_REWALK, C_LOCK, C_SEQSET, C_LKEY, C_MOVE, C_LFORGET, C_THEME, C_LMIDI, C_CALL, C_CALLAUTO };
 #define QN 512u                                 /* (a piece is every parameter at once: room for twice over and more) */
 _Static_assert(QN >= 2u * (P_NPARAMS + 8), "the command queue can't hold a piece's parameters twice over");
 static uint32_t q[QN];
@@ -484,6 +491,8 @@ void en_next(void) { post(C_NEXT, 0, 0); }
 void en_freeze(int on) { post(C_FREEZE, on, 0); }
 void en_seed(uint32_t s) { post(C_SEED, 0, (int)(s & 0xFFFFu)); }
 void en_panic(void) { post(C_PANIC, 0, 0); }
+void en_call(int voice) { post(C_CALL, voice < 0 ? 255 : voice, 0); }
+void en_calls_auto(int on) { post(C_CALLAUTO, !!on, 0); }
 void en_clock(int msg) { post(C_CLOCK, msg, 0); }
 void en_regrow(void) { post(C_REGROW, 0, 0); }
 void en_piece_theme(int i) { post(C_THEME, i, 0); }
@@ -3328,21 +3337,42 @@ static void bar_start(void)
 /* T-WRECKS: sparse percussion and calls have their own dice and never draw
  * from the melody/harmony streams. Three possible drum strikes per bar;
  * a creature at most once per four bars, with no overlapping call gates. */
+volatile uint8_t en_call_auto;
 static uint32_t wild_rng=0xA54FF53Au, call_wait;
 static float call_lp;
 #ifdef EN_HOST
 volatile uint32_t en_skin_hits, en_call_hits;
 #endif
+static void call_trigger(int voice)
+{
+    if (!par[P_CLLEVEL] || (mutes & EN_M_WILD)) return;
+    pt_sound(PT_CALLS, voice % PT_NCALL);
+    pt_notes_off(PT_CALLS);
+    pt_note_on(PT_CALLS, 36+par[P_ROOT], 100, 3u*44100u);
+    call_wait=4u+(seq_rand(&wild_rng)%5u);
+#ifdef EN_HOST
+    en_call_hits++;
+#endif
+}
 static void wild_tick(int st)
 {
     if (st == 0 && call_wait) call_wait--;
-    if (en_frozen || (mutes & EN_M_WILD) || en_load>75u) return;
+    if (en_frozen || (mutes & EN_M_WILD)) return;
     if (par[P_SKLEVEL] && par[P_SKDENS]) {
         int lane=-1, chance=par[P_SKDENS];
         if (st==0) lane=0;
         else if (st==10) lane=1, chance/=2;
         else if (st==14 && (bar & 3u)==0u) lane=2, chance/=2;
-        if (lane>=0 && seq_rand(&wild_rng)%100u < (uint32_t)chance) {
+#ifndef EN_LEGACY_TEST_BANK
+        /* A steady heavy pulse with sparse extra hits; density adds movement. */
+        if (theme_pc==1) {
+            lane=-1;
+            if ((st & 3)==0) lane=(st==4 || st==12) ? 1 : 0, chance=100;
+            else if (st==6 || st==14) lane=2, chance=par[P_SKDENS]/2;
+            else if (st==15 && (bar & 3u)==3u) lane=2, chance=par[P_SKDENS];
+        }
+#endif
+        if (lane>=0 && (en_load<=75u || chance==100) && seq_rand(&wild_rng)%100u < (uint32_t)chance) {
             int vel=64+(int)(seq_rand(&wild_rng)%32u);
             pt_skin_hit(lane, vel, par[P_SKTONE], par[P_SKDECAY]);
 #ifdef EN_HOST
@@ -3350,7 +3380,7 @@ static void wild_tick(int st)
 #endif
         }
     }
-    if (st==0 && !call_wait && par[P_CLLEVEL] && par[P_CLCHANCE] &&
+    if (en_load<=75u && en_call_auto && st==0 && !call_wait && par[P_CLLEVEL] && par[P_CLCHANCE] &&
         seq_rand(&wild_rng)%100u < (uint32_t)par[P_CLCHANCE]) {
         const int note=36+par[P_ROOT]+(int)(seq_rand(&wild_rng)%2u)*12;
         pt_sound(PT_CALLS, par[P_CLVOICE]);
@@ -4134,7 +4164,7 @@ void en_init(void)
     int i;
     pt_init();
     pt_skin_quiet();
-    wild_rng=0xA54FF53Au; call_wait=0; call_lp=0.0f;
+    wild_rng=0xA54FF53Au; call_wait=0; call_lp=0.0f; en_call_auto=0;
 #ifdef EN_HOST
     en_skin_hits=en_call_hits=0;
 #endif                                   /* (T-WRECKS) Paleotone's sounds: no layer on one yet */
@@ -4355,6 +4385,15 @@ static void drain(void)
             } else if (en_playing) {
                 play_stop();
             }
+            break;
+        case C_CALL:
+            if (a==255) pt_quiet(PT_CALLS), call_lp=0.0f;
+            else call_trigger(a);
+            break;
+        case C_CALLAUTO:
+            en_call_auto=(uint8_t)a;
+            if (!a) pt_quiet(PT_CALLS), call_lp=0.0f;
+            call_wait=0;
             break;
         case C_PANIC: quiet(); break;
         case C_LKEY:                             /* (the white keys: the Lead, in the scale) */

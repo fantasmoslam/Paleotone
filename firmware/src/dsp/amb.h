@@ -395,6 +395,11 @@ void en_piece(int i, int16_t *par, uint16_t *pool);
 void en_piece_theme(int i);                    /* the piece playing, for en_regrow: a piece with a written theme (Umeda)
                                                 * starts its Lead from it (the keys' kind of theme: its offspring follow) */
 
+/* Calls are manual at boot; mode is a live performance choice, never saved. */
+void en_call(int voice);                     /* 0..7: one shot, negative: stop */
+void en_calls_auto(int on);
+extern volatile uint8_t en_call_auto;
+
 #ifdef EN_HOST
 extern volatile uint32_t en_skin_hits, en_call_hits;
 #endif

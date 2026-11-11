@@ -34,6 +34,11 @@ int main(void) {
     }
     en_init();en_set(P_TEMPO,120);en_set(P_CHORD,0);en_set(P_SEQ,0);en_set(P_SEQ2,0);en_set(P_LEAD,0);en_set(P_CRACKLE,0);
     en_set(P_SKLEVEL,70);en_set(P_SKDENS,100);en_set(P_CLLEVEL,60);en_set(P_CLCHANCE,100);en_play(1);
+    /* No automatic calls until explicitly enabled. Manual calls also work stopped. */
+    render_seconds(8);CHECK(en_call_hits==0);CHECK(en_call_auto==0);
+    en_play(0);en_call(2);render_seconds(1);CHECK(en_call_hits==1);
+    en_call(-1);render_seconds(1);CHECK(pt_voices()==0);
+    en_calls_auto(1);en_play(1);
     render_seconds(64);
     printf("scheduler: %u skins, %u calls in %u sixteenths\n",en_skin_hits,en_call_hits,en_bars);
     CHECK(en_skin_hits>20 && en_skin_hits<80);CHECK(en_call_hits>2 && en_call_hits<10);CHECK(pt_voices()<=8);
@@ -41,6 +46,17 @@ int main(void) {
     en_freeze(0);en_set(P_SKLEVEL,0);en_set(P_CLLEVEL,0);
     {uint32_t h=en_skin_hits,c=en_call_hits;render_seconds(8);CHECK(h==en_skin_hits && c==en_call_hits);}
     en_panic();render_seconds(1);CHECK(pt_voices()==0);
+    en_calls_auto(0);render_seconds(1);CHECK(en_call_auto==0);
+    {uint32_t c=en_call_hits;en_set(P_CLLEVEL,60);render_seconds(16);CHECK(c==en_call_hits);}
+    for(k=0;k<PT_NCALL;k++) {
+        uint32_t c=en_call_hits;
+        en_call(k);render_seconds(1);CHECK(en_call_hits==c+1);CHECK(pt_voices()<=8);
+    }
+    en_call(-1);render_seconds(1);CHECK(pt_voices()==0);
+    {uint32_t c=en_call_hits;
+     en_set(P_CLLEVEL,0);en_call(0);render_seconds(1);CHECK(en_call_hits==c);
+     en_set(P_CLLEVEL,60);en_mute(EN_M_WILD);en_call(0);render_seconds(1);CHECK(en_call_hits==c);
+     en_mute(0);render_seconds(1);CHECK(pt_voices()==0);}
     for(k=0;k<EN_NPIECES;k++) {
         int16_t p[P_NPARAMS];uint16_t pool;double energy=0,pk=0;int frames=30*44100/256;
         en_init();en_piece(k,p,&pool);
@@ -53,6 +69,7 @@ int main(void) {
         energy=sqrt(energy/(frames*512.0));
         printf("preset %-16s rms %.4f peak %.3f\n",en_piece_name(k),energy,pk);
         CHECK(energy>0.01 && pk<0.95);CHECK(pt_voices()<=8);
+        if(k==1) {printf("stampede: %u drum hits in %u sixteenths\n",en_skin_hits,en_bars);CHECK(en_skin_hits>=45 && en_skin_hits<90);}
     }
     printf("wild: %s\n",fail?"FAIL":"all passed");return fail!=0;
 }

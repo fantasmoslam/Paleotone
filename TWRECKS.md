@@ -2,7 +2,7 @@
 
 ## Current development direction
 
-The installed candidate is working, but Dylan wants stronger dinosynth identity, explicit instrument voice selection and on-demand dinosaur calls, plus an aggressive bass-and-marching-drums scene. Implementation is paused for the [dinosynth research](docs/TWRECKS-DINOSYNTH-RESEARCH.md) and [revised completion plan](docs/TWRECKS-NEXT-PLAN.md). The descriptions below document the installed candidate, rather than the final musical target.
+The new candidate adds Home instrument voice selection, manual dinosaur calls and a heavier STAMPEDE prototype. The [dinosynth research](docs/TWRECKS-DINOSYNTH-RESEARCH.md) informs the [completion plan](docs/TWRECKS-NEXT-PLAN.md). Dylan clarified that the heavy scene needs the weight and drive of a march, without requiring a literal march. Musical acceptance and device CPU measurements remain outstanding.
 
 A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contains only the twenty dinosynth presets below. Fresh startup is EXTINCTION. Previous project formats reset to the new bank, as requested; no old-preset migration or original factory pieces are included in device firmware.
 
@@ -10,13 +10,13 @@ A dark, sparse generative dinosynth for the M-VAVE FM-1. The factory bank contai
 
 Home shows four track rows at a time. SELECT chooses Drone, Sequence, Lead, Sequence 2, Atmosphere, Skin or Calls. The four right-hand encoders edit the selected row: Level, Filter/tone, LFO depth (Chance on Skin/Calls), Reverb send. Values are the approved amber/cyan/pink/green Paleotone Pac-Man fill indicators, with readable labels and no numeric parameter readouts.
 
-HOME cycles the track overview, generative controls and key/tempo. The layer buttons select their visible control rows. SAVE cycles Atmosphere, Atmosphere sound, Atmosphere motion, Skin drums, Creature calls. On Home with Calls selected, ALGORITHM chooses the creature; it also does so on the Creature calls page. PRESETS turns through the twenty scenes. GLO held half a second saves edits; held longer resets the current preset to its recipe. Performance retains its existing key controls. A solo also silences the two auxiliary layers.
+HOME cycles the track overview, generative controls and key/tempo. The layer buttons select their visible control rows. SAVE cycles Atmosphere, Atmosphere sound, Atmosphere motion, Skin drums, Creature calls. On Home, ALGORITHM changes the selected instrument voice, Atmosphere character or Calls creature; the name stays in the header. Skin uses the fixed TRIBE kit. Voice choices save with each preset. With Skin or Calls selected on Home, SAVE opens its control page immediately. PRESETS turns through the twenty scenes. GLO held half a second saves edits; held longer resets the current preset to its recipe. Performance retains its existing key controls. A solo also silences the two auxiliary layers.
 
 ## Audio
 
-Paleotone provides the existing curated voices and eight SAURUS creatures: Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. Calls are mono, share the melodic eight-voice budget, use a three-second gate and level trims measured from renders. A call is considered only at a bar line, with four to eight bars between possible calls. Chance zero disables new calls.
+Paleotone provides the existing curated voices and eight SAURUS creatures: Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. Calls are mono, share the melodic eight-voice budget, use a three-second gate and level trims measured from renders. Calls start in Manual mode at each boot. Select Calls on Home, or open Creature calls with SAVE: the first eight white keys trigger Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort. The first black key toggles Manual/Auto; the second stops the current call. Auto considers a call at bar lines, with four to eight bars between possible calls; Chance zero disables automatic calls. Manual triggers bypass that cooldown and work with music stopped or held. Level zero or an auxiliary mute silences them. Mode is a live choice, not a saved preset parameter. Leaving call mode releases held instrument-key ownership.
 
-Skin uses the exact BOOM, SKIN and LOG models from Paleotone's TRIBE kit. Three compact drum states avoid adding another large synth arena. The scheduler considers one earth-drum strike on the downbeat, an occasional skin strike later in the bar, and a log strike on some fourth bars: at most three hits in a bar, with no four-on-the-floor pattern. Chance zero disables new hits. Hold stops new auxiliary events; overload suppresses new events above 75% reported audio load. Level zero clears that layer's voices.
+Skin uses the exact BOOM, SKIN and LOG models from Paleotone's TRIBE kit. Three compact drum states avoid adding another large synth arena. Ambient scenes retain sparse downbeat, skin and occasional log events. STAMPEDE uses a 96 BPM heavy pulse alternating BOOM/SKIN on the quarter beats, with variable log accents. Its bass is lower, more prominent and more active; reduced echo/reverb leaves room for attacks. Chance zero disables all new drum hits; above zero it varies the extra accents while the core pulse remains steady. Hold stops automatic auxiliary events. Above 75% reported audio load, optional accents and automatic calls are suppressed while guaranteed drum hits remain. This policy still needs device CPU/dropout testing. Level zero clears that layer's voices.
 
 ## Factory bank
 
@@ -44,6 +44,8 @@ Skin uses the exact BOOM, SKIN and LOG models from Paleotone's TRIBE kit. Three 
 | DEEP TIME | Tundra drone, sparse geode bells and herd moans |
 
 These are first-pass listening candidates. Complete arrangements were levelled together from measured renders, preserving each scene's internal balance. Musical quality, relative call/drum balance and device CPU headroom still require listening and the FM-1 Setup reading.
+
+Existing saved STAMPEDE settings are preserved across an update. Select STAMPEDE and hold GLO until RESET (about 1.5 seconds) to load the revised factory recipe.
 
 ## Storage and build
 
