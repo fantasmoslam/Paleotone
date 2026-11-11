@@ -1,0 +1,37 @@
+{
+  "audio_library_id": "libfile_108c161448e4819187acd346aacb2620",
+  "type": "Fixed-score desktop accompaniment audition; no generative firmware change",
+  "max_melodic_voices": 3,
+  "seconds": 77.11111111111111,
+  "bpm": 54,
+  "melodic_lead_events": 0,
+  "drum_events": 50,
+  "bass_events": 6,
+  "peak_dbfs": -2,
+  "rms_dbfs": -17.52,
+  "decoded_mp3_peak": 0.7712756991386414,
+  "stems": [
+    {
+      "role": "bass",
+      "target_dbfs": -21,
+      "gain": 0.5114512072643861
+    },
+    {
+      "role": "body",
+      "target_dbfs": -25,
+      "gain": 0.34855171007986074
+    },
+    {
+      "role": "lead",
+      "muted": true
+    },
+    {
+      "role": "drums",
+      "target_dbfs": -18.5,
+      "gain": 0.7979098265422268
+    }
+  ],
+  "master_static_gain": 1.24666972928008,
+  "room_seconds": 1.05,
+  "drive": "Organ drive/click/rotary zero; clean Sub Bass; no mix saturation"
+}

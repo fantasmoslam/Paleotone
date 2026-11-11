@@ -2,7 +2,7 @@
 
 Status: controls and manual calls are implemented, but the musical candidate was rejected. Dylan describes hollow/insufficiently deep bass, upbeat/noir tonality and unsuitable instruments. **“Apocalyptic” and “consequential” are the current musical acceptance criteria.** The [audio study](TWRECKS-APOCALYPTIC-AUDIO-STUDY.md) examines 48 minutes of reference streams plus candidate diagnostics and identifies register, harmonic grammar, orchestration and balance problems. Computational analysis is complete; it is not a claim of human critical listening or a verified reference transcription.
 
-Desktop [prototype 01](TWRECKS-APOCALYPTIC-PROTOTYPE-01.md) is rendered and ready for listening: a foundational low bass, organ/brass body, deliberate harmony and slower movement. This is a fixed-score audition using the existing voice DSP and an offline mix; the generative composer is unchanged. Get listening acceptance before a wider bank rewrite or another hardware flash. A literal march is not required.
+Dylan accepts prototype 01’s general vibe as a start, but requests less distortion/mud, clearer separation, audible primitive drums and room to play a lead. Desktop [prototype 02](TWRECKS-APOCALYPTIC-PROTOTYPE-02.md) now supplies a recurring three-strike low-tom pulse, clean bass/organ support and an empty lead role. It is a fixed-score desktop audition using existing DSP and offline mixing; the generative composer is unchanged. Get listening acceptance before a wider bank rewrite or another hardware flash. A literal march is not required.
 
 ## Requirements retained
 
