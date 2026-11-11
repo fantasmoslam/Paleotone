@@ -103,3 +103,12 @@ static void fm1_guard_unlock_top(void)
     FM1_C0_WR_LIMIT_EN &= ~4u;
     fm1__dbg_lock();
 }
+
+/* Paleotone: ROM startup of the second core requires temporary open PC limits. */
+static void fm1_guard_pc_open(void)
+{
+    fm1__dbg_unlock();
+    FM1_PC_LIMIT0_L=0u;FM1_PC_LIMIT0_H=0xFFFFFFFFu;
+    FM1_PC_LIMIT1_L=0u;FM1_PC_LIMIT1_H=0xFFFFFFFFu;
+    fm1__dbg_lock();
+}

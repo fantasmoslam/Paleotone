@@ -6,6 +6,22 @@
 extern uint32_t _data_start[], _data_end[], _data_load[], _bss_start[], _bss_end[];
 extern uint32_t _pool_start[], _pool_end[], _rt_start[], _rt_end[], _rt_load[];
 
+/* Paleotone/X0X guarded worker: only independent taiko playback runs here. */
+static volatile uint32_t worker_test_out;
+static void worker_selftest(uint32_t x){uint32_t i;for(i=0;i<64u;i++)x=x*1664525u+1013904223u;worker_test_out=x;}
+static void audio_worker_boot(void)
+{
+    uint32_t want=20261010u,i;
+    for(i=0;i<64u;i++)want=want*1664525u+1013904223u;
+    fm1_guard_pc_open();
+    if(fm1_cpu1_start()!=0){fm1_guard_enable(FM1_GUARD_PC);return;}
+    fm1_guard_enable(FM1_GUARD_PC);
+    if(!fm1_cpu1_run(worker_selftest,20261010u)||fm1_cpu1_wait()!=0||worker_test_out!=want){fm1_cpu1_hold();return;}
+    en_worker_on=1;
+}
+int en_worker_start(void (*fn)(uint32_t),uint32_t arg){return en_worker_on?fm1_cpu1_run(fn,arg):0;}
+int en_worker_wait(void){int rc=fm1_cpu1_wait();if(rc){en_worker_on=0;en_worker_faults++;}return rc;}
+
 /* --------------------------------------------------------------- audio --- */
 /* Felucca's 256-frame halves (5.8 ms): AMB-1's render is light, and a strum wants the short latency */
 #define HALF_FRAMES 256u                    /* I2S half buffer: 5.8 ms at 44.1 kHz */
@@ -155,6 +171,7 @@ static void fm1_fault(const fm1_crash_t *c)
 {
     char b[12];
     uint32_t t0;
+    fm1_cpu1_bar();
     fm1_audio_stop();
     lcd_fill(0, 0, 240, 240, RGB(160, 0, 0));
     draw_text_box(0, 8, 240, &FONT_S, "T-WRECKS CRASH", C_WHITE, 1);
@@ -288,6 +305,7 @@ static void fm1_main(void)
     en_init();
     project_load();                                 /* defaults when nothing (or another format) is saved */
     project_apply();
+    audio_worker_boot();
     audio_init();
     usb_start();
 #if EN_TRS
@@ -390,6 +408,8 @@ void fm1_cstart(void)
 {
     uint32_t *s, *d, p3, src, wdt;
     fm1_time_init();
+    fm1_cpu1_halt();
+    fm1_supplies_stock();
     fm1_reset_reason();
     p3 = fm1_boot.p3_rst;
     src = fm1_boot.rst_src;

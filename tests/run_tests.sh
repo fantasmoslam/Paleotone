@@ -41,6 +41,7 @@ run golden sh -c "$CC -DEN_LEGACY_TEST_BANK -O2 -ffp-contract=off -std=c99 -Wall
     -o $OUT/golden_test tests/host/golden_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/golden_test tests/fixtures/nachtfahrt_golden.txt"
 run seq sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -Ifirmware/src/dsp -o $OUT/seq_test tests/host/seq_test.c firmware/src/dsp/seq.c && $OUT/seq_test"
 run dino-golden sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Werror -DEN_HOST -Ifirmware/src/dsp -o $OUT/dino_golden tests/host/golden_test.c firmware/src/dsp/amb.c $OUT/pt.o -lm && $OUT/dino_golden"
+run audio-worker sh -c "$CC -O2 -ffp-contract=off -std=c99 -Wall -Wextra -Wdouble-promotion -Werror -DEN_HOST -Ifirmware/src/dsp -o $OUT/worker_golden tests/host/golden_test.c tests/host/worker_host.c firmware/src/dsp/amb.c $OUT/pt.o -lm -pthread && WORKER_MODE=sync $OUT/worker_golden && WORKER_MODE=async $OUT/worker_golden && WORKER_MODE=fail $OUT/worker_golden"
 run storage sh -c "$CC -O2 -o $OUT/storage_test tests/storage_test.c && $OUT/storage_test"
 # the update path, against the firmware package (Felucca's tests; needs ./build.sh)
 if [ -f build/amb.fwsc ]; then

@@ -409,3 +409,9 @@ extern volatile uint8_t en_call_auto;
 #ifdef EN_HOST
 extern volatile uint32_t en_skin_hits, en_call_hits;
 #endif
+
+/* Independent audio worker: platform implementation, serial weak fallback on host. */
+extern volatile uint8_t en_worker_on;
+extern volatile uint32_t en_worker_faults;
+int en_worker_start(void (*fn)(uint32_t), uint32_t arg);
+int en_worker_wait(void);

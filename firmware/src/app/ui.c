@@ -2663,6 +2663,8 @@ static void sp_page(int all)
         sp_cat("%, peak ");
         sp_int(plat_cpu_peak());
         sp_cat("%");
+        if(en_worker_on)sp_cat(", 2 cores");
+        if(en_worker_faults){sp_cat(", worker fallback ");sp_int(en_worker_faults);}
         if (plat_usb_power()) {
             sp_cat(", on USB power");
         } else if (plat_battery() >= 0) {

@@ -1,6 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* The instrument (amb.h). One compilation unit, -O2. */
 #include "amb.h"
+#ifdef EN_HOST
+#include <string.h>
+#else
+extern void *memcpy(void *,const void *,unsigned);
+#endif
 #ifdef EN_LEGACY_TEST_BANK
 #define TWR_MIN_TEMPO 60
 #else
@@ -44,8 +49,13 @@ static float heavy_hp;
 static float pt_buf[256];
 #ifndef EN_LEGACY_TEST_BANK
 static float taiko_rbuf[256];
+static float taiko_lbuf[256] __attribute__((section(".pool")));
 #endif
 _Static_assert(EN_NBEAT == TAIKO_N_RHYTHMS, "beat selector matches rhythm bank");
+volatile uint8_t en_worker_on;
+volatile uint32_t en_worker_faults;
+__attribute__((weak)) int en_worker_start(void (*fn)(uint32_t),uint32_t arg){(void)fn;(void)arg;return 0;}
+__attribute__((weak)) int en_worker_wait(void){return 0;}
 volatile uint8_t en_beat;
 const char *en_beat_name(int i){static const char *const names[EN_NBEAT]={"GALOP","TRES","WAR","RAIN","QUAKE","WAR2","TALK","SEVEN","PENTA","SPIRAL","CHAOS","TRAIL","OUTRIDER","HUNT"};return names[(unsigned)i<EN_NBEAT?i:0];}                        /* (a chunk of a layer's Paleotone sound: render_chunk's at most) */
 static int pt_own_n(int p)                     /* its own voices' count */
@@ -6508,14 +6518,42 @@ static void layer_act(void)
         en_layer_act[i] = fm_maxf(fm_clampf(a[i], 0.0f, 1.0f), en_layer_act[i] * 0.97f);
 }
 
+#ifndef EN_LEGACY_TEST_BANK
+/* Core 0 schedules all hits and joins before the next transport event. The
+ * worker touches only taiko state and its two private output buffers. */
+static struct {ta_voice_t v[TA_VOICES];float l,r,k;int tone;} ta_checkpoint;
+static uint8_t ta_job_started,ta_job_live;
+static void taiko_job(uint32_t arg){ta_job_live=(uint8_t)taiko_render(taiko_lbuf,taiko_rbuf,arg&65535u,(int)(arg>>16));}
+static void taiko_prepare(uint32_t n)
+{
+    ta_job_started=0;
+    if(!en_worker_on || !par[P_SKLEVEL])return;
+    memcpy(ta_checkpoint.v,ta_voice,sizeof ta_voice);
+    ta_checkpoint.l=ta_lp_l;ta_checkpoint.r=ta_lp_r;ta_checkpoint.k=ta_k;ta_checkpoint.tone=ta_tone;
+    ta_job_started=(uint8_t)en_worker_start(taiko_job,n|((uint32_t)par[P_SKTONE]<<16));
+}
+static int taiko_finish(uint32_t n)
+{
+    if(ta_job_started){
+        ta_job_started=0;
+        if(!en_worker_wait())return ta_job_live;
+        /* A failed worker is held first. Restore any partial state, then render
+         * exactly once on core 0; the approved sample stream is not advanced twice. */
+        memcpy(ta_voice,ta_checkpoint.v,sizeof ta_voice);
+        ta_lp_l=ta_checkpoint.l;ta_lp_r=ta_checkpoint.r;ta_k=ta_checkpoint.k;ta_tone=ta_checkpoint.tone;
+    }
+    return taiko_render(taiko_lbuf,taiko_rbuf,n,par[P_SKTONE]);
+}
+#endif
+
 static void render_wild(uint32_t n)
 {
     uint32_t j;
     const float audible=(mutes & EN_M_WILD) ? 0.0f : 1.0f;
 #ifndef EN_LEGACY_TEST_BANK
-    if(par[P_SKLEVEL] && taiko_render(pt_buf,taiko_rbuf,n,par[P_SKTONE])) {
+    if(par[P_SKLEVEL] && taiko_finish(n)) {
         const float v=(float)par[P_SKLEVEL]*.01f,g=v*v*audible,send=(float)par[P_SKVERB]*.01f;
-        for(j=0;j<n;j++){float l=pt_buf[j]*g,r=taiko_rbuf[j]*g;mixl[j]+=l;mixr[j]+=r;rsend[j]+=(l+r)*.5f*send;}
+        for(j=0;j<n;j++){float l=taiko_lbuf[j]*g,r=taiko_rbuf[j]*g;mixl[j]+=l;mixr[j]+=r;rsend[j]+=(l+r)*.5f*send;}
     }
 #else
     if (par[P_SKLEVEL] && pt_skin_render(pt_buf,n)) {
@@ -6566,6 +6604,9 @@ static void render_chunk(int32_t *out, uint32_t n, float gain)
     for (j = 0; j < n; j++)
         mixl[j] = mixr[j] = rsend[j] = esend[j] = 0.0f;
     lfo_step();
+#ifndef EN_LEGACY_TEST_BANK
+    taiko_prepare(n);
+#endif
     render_plucks(n);
     render_drone(n);
     render_lead(n);
