@@ -55,7 +55,7 @@ FONTSETS = {
                ("C", "ChakraPetch-Bold.ttf", 19, 1, False, 32, 126)],
 }
 import os  # noqa: E402
-FONTSET = os.environ.get("X0X_FONTSET", "barlow")    # the others need X0X_FONT_DIRS (not in assets/)
+FONTSET = os.environ.get("X0X_FONTSET", "terminus")    # the others need X0X_FONT_DIRS (not in assets/)
 FONTDIRS = [Path(p) for p in os.environ.get("X0X_FONT_DIRS", "").split(":") if p]
 SIZES = FONTSETS[FONTSET]
 PAD = 2
