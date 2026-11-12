@@ -24,3 +24,7 @@ Native and host builds pass. Home and Space screenshots match the approved previ
 Source 35c98f8 is installed after explicit user authorization to proceed despite unsaved edits. The installer completed with exit 0; NightClaw reconnected and answered its status handshake with RAPTOR NIGHT playing at 130 BPM, F# Phrygian. The earlier automatic approval block is resolved.
 
 Installed package SHA-256: 7f00468862be85c5a3af0f19b9c26ddd842486417cda5fe55a9df98558b94320.
+
+## Home gauge correction
+
+Home now uses 36 px diameter gauges instead of 24 px. The four track rows remain visible; full track names occupy a left column, with muted status below the name. Gauges have 49 px column spacing and sit within their 46 px rows. The approved colors and encoder response are retained. Setup, Space and Lead captures are pixel-for-pixel identical to the prior approved-palette build. The native build and focused knob scenario pass; image 544,188 / 581,564 bytes, RAM/pool unchanged. Installation is pending this correction.

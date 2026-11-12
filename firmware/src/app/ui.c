@@ -3033,7 +3033,7 @@ static void draw_controls(void)
     const int fixed = ui.view==V_CALLS || ui.view==V_PERF;
     const int row_h = home ? 46 : fixed ? 44 : n > 1 ? 176/n : 88;
     const int slots = home || fixed ? 4 : n;
-    const int radius = row_h > 70 ? 26 : row_h > 50 ? 18 : row_h >= 46 ? 12 : 11;
+    const int radius = home ? 18 : row_h > 70 ? 26 : row_h > 50 ? 18 : row_h >= 46 ? 12 : 11;
     const int first = home && ui.track >= 4 ? (int)ui.track - 3 : 0;
     uint32_t h = hash(0x54575243u, ui.view | (uint32_t)ui.track << 8);
     int r, c;
@@ -3060,7 +3060,7 @@ static void draw_controls(void)
     } else control_text(4, -4, 180, &FONT_UL, VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_UM, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
     if (home) {
-        for (c=0; c<4; c++) control_text(c*60+3, 20, 56, &FONT_UM, track_label(c), CONTROL_COL[c]);
+        for (c=0; c<4; c++) control_text(44+c*49, 20, 49, &FONT_UM, track_label(c), CONTROL_COL[c]);
     } else {
         const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
         if(ui.view==V_SKIN) {
@@ -3081,14 +3081,14 @@ static void draw_controls(void)
         cv_begin(240, height, active ? K_PANEL : K_BG);
         if (r<n) {
             if (home) {
-                control_text(4, 0, 140, &FONT_UM, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
-                if (first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r])
-                    control_text(176, 0, 60, &FONT_UM, "MUTED", K_TEXT);
+                const int muted = first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r];
+                control_text(4, muted ? 3 : 14, 40, &FONT_B, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
+                if (muted) control_text(4,25,36,&FONT_XS,"MUTED",K_TEXT);
             }
             for (c=0; c<4; c++) {
                 const int k = home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
                 if (!home) control_text(c*60+3, 0, 56, &FONT_UM, control_label(rows[r], c), CONTROL_COL[c]);
-                control_indicator(c*60+30, (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
+                control_indicator(home ? 68+c*49 : c*60+30, home ? height/2 : (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
             }
             if (active) cv_rect(0, 0, 3, height-1, K_ACC);
             cv_line(0, height-1, 239, height-1, K_LINE);
