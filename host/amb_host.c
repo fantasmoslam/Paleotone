@@ -664,8 +664,8 @@ static int expect(const char *what, const char *val)
         got = 0;
         for (e = 0; e < EN_NFX; e++) {
             caps(t, GRID_CELL[e], sizeof t);
-            if (text_w(&FONT_S, t) > 56)
-                printf("  too wide: %s (%d px)\n", t, (int)text_w(&FONT_S, t)), got++;
+            if (text_w(&FONT_UN, t) > 56)
+                printf("  too wide: %s (%d px)\n", t, (int)text_w(&FONT_UN, t)), got++;
         }
     }
     else if (!strcmp(what, "nev"))                /* the noise's events that show, so far */

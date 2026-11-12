@@ -1,261 +1,84 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-"""Render the bitmap fonts to a C header (assets/fonts/):
-  XS / S / B / M / L: Terminus 12, 16, 16 bold, 24 bold, 32 bold (BDF, SIL OFL 1.1); see SIZES. TTF fonts also work through render()
-(anti-aliased, tabular figures via the OpenType `tnum` feature).
+"""NightClaw's single Clayborn-based UI family, packed at one bit per pixel.
 
-Glyph format: per glyph an advance width, a bitmap width and an offset; the
-bitmap starts FONT_PAD pixels left of the pen position (room for side
-bearings). Binary glyphs use one bit per pixel, high bit first, each glyph
-byte-aligned; antialiased glyphs retain two 4-bit alpha pixels per byte.
-Paleotone-style condensed UI cuts are 16, 20 and 24 px in 16/24/32 px cells.
+No legacy font or fallback is emitted. Role heights remain compatible with the
+renderer. UN is a tall condensed cut for the narrow Home track-name column.
+Condensing and baseline placement follow Paleotone main 6f027f0.
 """
 import sys
 from pathlib import Path
-
 from PIL import Image, ImageDraw, ImageFont
 
 FONTS = Path(__file__).resolve().parents[1] / "assets" / "fonts"
-# (name, file, px, scale, pixel, first, last): pixel fonts are rendered without
-# anti-aliasing at their design size and enlarged by an integer factor
-# X0X: five roles, XS (grid labels, units, hints), S (body), B (headers, names, the selected
-# row), M (knob values), L (the big readout) and C (the chord's name, over the ripples). Each set gives them a face and a pixel size,
-# chosen so the line height stays near the layout's 12 / 16 / 24 / 32. X0X_FONTSET picks one.
-# A TTF entry "file.ttf@wght=600" sets a variable font's axis.
-FONTSETS = {
-    "terminus": [("XS", "ter-u12n.bdf", 12, 1, True, 32, 126),
-                 ("S", "ter-u16n.bdf", 16, 1, True, 32, 126),
-                 ("B", "ter-u16b.bdf", 16, 1, True, 32, 126),
-                 ("M", "ter-u24b.bdf", 24, 1, True, 32, 95),
-                 ("L", "ter-u32b.bdf", 32, 1, True, 32, 95),
-                 ("C", "ter-u24b.bdf", 24, 1, True, 32, 126)],
-    "barlow": [("XS", "BarlowSemiCondensed-SemiBold.ttf", 12, 1, False, 32, 126),
-               ("S", "BarlowSemiCondensed-Medium.ttf", 15, 1, False, 32, 126),
-               ("B", "BarlowSemiCondensed-Bold.ttf", 15, 1, False, 32, 126),
-               ("M", "BarlowSemiCondensed-SemiBold.ttf", 23, 1, False, 32, 95),
-               ("L", "BarlowSemiCondensed-Bold.ttf", 31, 1, False, 32, 126),
-               ("C", "BarlowSemiCondensed-Bold.ttf", 20, 1, False, 32, 126)],
-    "inter": [("XS", "Inter[opsz,wght].ttf@wght=600", 11, 1, False, 32, 126),
-              ("S", "Inter[opsz,wght].ttf@wght=500", 14, 1, False, 32, 126),
-              ("B", "Inter[opsz,wght].ttf@wght=700", 14, 1, False, 32, 126),
-              ("M", "Inter[opsz,wght].ttf@wght=650", 21, 1, False, 32, 95),
-              ("L", "Inter[opsz,wght].ttf@wght=700", 29, 1, False, 32, 95),
-              ("C", "Inter[opsz,wght].ttf@wght=700", 19, 1, False, 32, 126)],
-    "rajdhani": [("XS", "Rajdhani-Bold.ttf", 14, 1, False, 32, 126),
-                 ("S", "Rajdhani-SemiBold.ttf", 17, 1, False, 32, 126),
-                 ("B", "Rajdhani-Bold.ttf", 17, 1, False, 32, 126),
-                 ("M", "Rajdhani-Bold.ttf", 26, 1, False, 32, 95),
-                 ("L", "Rajdhani-Bold.ttf", 35, 1, False, 32, 95),
-                 ("C", "Rajdhani-Bold.ttf", 23, 1, False, 32, 126)],
-    "chakra": [("XS", "ChakraPetch-SemiBold.ttf", 11, 1, False, 32, 126),
-               ("S", "ChakraPetch-Medium.ttf", 14, 1, False, 32, 126),
-               ("B", "ChakraPetch-Bold.ttf", 14, 1, False, 32, 126),
-               ("M", "ChakraPetch-SemiBold.ttf", 21, 1, False, 32, 95),
-               ("L", "ChakraPetch-Bold.ttf", 29, 1, False, 32, 95),
-               ("C", "ChakraPetch-Bold.ttf", 19, 1, False, 32, 126)],
-}
-import os  # noqa: E402
-FONTSET = os.environ.get("X0X_FONTSET", "terminus")    # the others need X0X_FONT_DIRS (not in assets/)
-FONTDIRS = [Path(p) for p in os.environ.get("X0X_FONT_DIRS", "").split(":") if p]
-SIZES = FONTSETS[FONTSET]
 PAD = 2
+# name, source pixels, cell height, baseline, horizontal scale
+CUTS = [("XS",12,12,10,.85), ("S",16,16,13,.85), ("B",16,16,13,.85),
+        ("M",20,24,18,.85), ("L",32,32,28,.85), ("C",20,24,18,.85),
+        ("US",16,16,13,.85), ("UM",20,24,18,.85), ("UL",24,32,24,.85),
+        ("UN",20,24,18,.58)]
 
-
-def upscale(px_, w, h, scale):
-    """integer nearest-neighbour enlargement of a w x h glyph"""
-    if scale == 1:
-        return px_
-    big = []
-    for y in range(h):
-        row = []
-        for x in range(w):
-            row += [px_[y * w + x]] * scale
-        big += row * scale
-    return big
-
-
-def render_bdf(path, scale, first, last):
-    """BDF bitmap font (Terminus 8x16): exact pixels, cell = the font bounding box."""
-    lines = path.read_text(errors="replace").splitlines()
-    fbb = next(l for l in lines if l.startswith("FONTBOUNDINGBOX")).split()
-    cw, ch, fx, fy = int(fbb[1]), int(fbb[2]), int(fbb[3]), int(fbb[4])
-    base = ch + fy                                     # rows above the baseline
-    glyphs, i = {}, 0
-    while i < len(lines):
-        if lines[i].startswith("ENCODING"):
-            code = int(lines[i].split()[1])
-            j = i
-            while not lines[j].startswith("BBX"):
-                j += 1
-            bw, bh, bx, by = map(int, lines[j].split()[1:5])
-            dw = cw
-            k = i
-            while not lines[k].startswith("BITMAP"):
-                if lines[k].startswith("DWIDTH"):
-                    dw = int(lines[k].split()[1])
-                k += 1
-            rows = [int(r, 16) for r in lines[k + 1:k + 1 + bh]]
-            nbits = ((bw + 7) // 8) * 8
-            cell = [0] * (cw * ch)
-            top = base - (by + bh)
-            for r, bits in enumerate(rows):
-                for c in range(bw):
-                    if bits >> (nbits - 1 - c) & 1:
-                        x, y = bx + c, top + r
-                        if 0 <= x < cw and 0 <= y < ch:
-                            cell[y * cw + x] = 15
-            glyphs[code] = (dw, cell)
-            i = k + bh
-        i += 1
-    if last >= 0xDC and 0xDC not in glyphs and ord("U") in glyphs:      # Ü for "HÜGELTON": U with dots on its top row
-        dw, cell = glyphs[ord("U")]
-        cell = cell[:]
-        lit = [x for y in range(ch) for x in range(cw) if cell[y * cw + x]]
-        if lit:
-            top = min(y for y in range(ch) for x in range(cw) if cell[y * cw + x])
-            for x in range(cw):
-                cell[top * cw + x] = 15 if x in (min(lit), max(lit)) else 0
-            for x in range(cw):
-                cell[(top + 1) * cw + x] = 0
-            glyphs[0xDC] = (dw, cell)
-    missing = [chr(c) for c in range(first, min(last, 126) + 1) if c not in glyphs]
-    if missing:
-        print(f"font {path.name}: no glyph for {''.join(missing)!r} (drawn as '?')")
-    out = []
-    for c in range(first, last + 1):
-        dw, cell = glyphs.get(c, glyphs[ord("?")])
-        bw = cw + 2 * PAD                              # keep the PAD convention of the TTF path
-        px_ = []
-        for y in range(ch):
-            px_ += [0] * PAD + cell[y * cw:(y + 1) * cw] + [0] * PAD
-        out.append((dw * scale, bw * scale, upscale(px_, bw, ch, scale)))
-    return ch * scale, out
-
-
-def font_path(name):
-    for d in [FONTS, *FONTDIRS]:
-        if (d / name).exists():
-            return d / name
-    raise SystemExit(f"gen_font: {name} not in {FONTS} or X0X_FONT_DIRS")
-
-
-def render(ttf, px, scale, pixel, first, last):
-    if ttf.endswith(".bdf"):
-        return render_bdf(font_path(ttf), scale, first, last)
-    name, _, var = ttf.partition("@")
-    font = ImageFont.truetype(str(font_path(name)), px)
-    if var:                                            # a variable font: "wght=600"
-        axes = dict(kv.split("=") for kv in var.split(","))
-        names = [a["name"] if isinstance(a["name"], str) else a["name"].decode() for a in font.get_variation_axes()]
-        font.set_variation_by_axes([float(axes.get(n.lower()[:4], axes.get(n, 0)) or a["default"])
-                                    for n, a in zip(names, font.get_variation_axes())])
-    feats = None if pixel else ["tnum"]
-    asc, desc = font.getmetrics()
-    top = max(0, font.getbbox("A8|(", features=feats)[1] - 1)
-    h = asc + desc - top
-    glyphs = []
-    for c in range(first, last + 1):
-        ch = chr(c)
-        adv = int(round(font.getlength(ch, features=feats)))
-        bw = adv + 2 * PAD
-        img = Image.new("L", (bw, asc + desc), 0)
-        ImageDraw.Draw(img).text((PAD, 0), ch, font=font, fill=255, features=feats)
-        img = img.crop((0, top, bw, top + h))
-        px_ = [(15 if v >= 128 else 0) if pixel else min(15, (v + 8) // 17) for v in img.tobytes()]
-        glyphs.append((adv * scale, bw * scale, upscale(px_, bw, h, scale)))
-    return h * scale, glyphs
-
-
-# Condensed type and binary packing adapted from Paleotone main 6f027f0.
-def render_clay(ttf, px, h, base, fk, first, last, sx=1.0):
-    """a pixel-thresholded TTF (1 bit) at px in an h-row cell, its baseline on row base; a character it has no glyph
-    for is Terminus's at fk x, moved down onto the same baseline"""
-    font = ImageFont.truetype(str(FONTS / ttf), px)
-    asc, desc = font.getmetrics()
-    _, term = render_bdf(FONTS / "ter-u16b.bdf", fk, first, last)
-    dy = base - 12 * fk                                # Terminus's baseline: row 12 of 16, at fk x
-    term = [(a, bw, ([0] * (dy * bw) + g)[:h * bw] + [0] * max(0, h * bw - len(g) - dy * bw)) for a, bw, g in term]
-    notdef = Image.new("L", (64, 64), 0)
-    ImageDraw.Draw(notdef).text((8, 8), "\ue000", font=font, fill=255)
-    out, fell = [], []
-    for c in range(first, last + 1):
-        ch = chr(c)
-        probe = Image.new("L", (64, 64), 0)
-        ImageDraw.Draw(probe).text((8, 8), ch, font=font, fill=255)
-        if (127 <= c < 160) or (ch != " " and (probe.tobytes() == notdef.tobytes() or not probe.getbbox())):
-            out.append(term[c - first])                # (cell, pad and advance as the C font's)
-            fell.append(ch)
-            continue
-        adv = int(round(font.getlength(ch) * sx))
-        if sx != 1.0:                                  # condensed (CS, M): drawn at 2x, box-filtered down, threshold
-            big = ImageFont.truetype(str(FONTS / ttf), 2 * px)
-            right = max(big.getlength(ch), big.getbbox(ch)[2]) if ch != " " else big.getlength(ch)
-            img = Image.new("L", (int(right) + 2, 2 * h), 0)
-            ImageDraw.Draw(img).text((0, 2 * base - big.getmetrics()[0]), ch, font=big, fill=255)
-            img = img.resize((max(1, int(round(img.width * sx / 2))), h), Image.BOX)
+def render_cut(px, height, baseline, sx):
+    font = ImageFont.truetype(str(FONTS / "Clayborn.ttf"), 2*px)
+    missing = Image.new("L",(128,128))
+    ImageDraw.Draw(missing).text((8,8),chr(0xe000),font=font,fill=255)
+    glyphs=[]
+    for code in range(32,96):
+        ch=chr(code)
+        adv=max(1,round(font.getlength(ch)*sx/2))
+        probe=Image.new("L",(128,128))
+        ImageDraw.Draw(probe).text((8,8),ch,font=font,fill=255)
+        absent=ch!=' ' and (not probe.getbbox() or probe.tobytes()==missing.tobytes())
+        if absent:
+            # Three source-font omissions: simple symbols, never another face.
+            assert ch in '<>@', repr(ch)
+            adv=max(4,round(px*.6*sx))
+            img=Image.new("L",(adv+2*PAD,height))
+            d=ImageDraw.Draw(img)
+            x0,x1=PAD,PAD+adv-1
+            top=max(0,baseline-round(px*.65)); bottom=baseline-1; mid=(top+bottom)//2
+            stroke=max(1,round(px/14))
+            if ch in '<>':
+                a,b=(x1,x0) if ch=='<' else (x0,x1)
+                d.line([(a,top),(b,mid),(a,bottom)],fill=255,width=stroke)
+            else:
+                d.ellipse((x0,top,x1,bottom),outline=255,width=stroke)
+                d.line([(x1-1,mid),(x1-1,bottom-2),(x0+2,bottom-2),(x0+2,mid),(x1-1,mid)],fill=255,width=stroke)
         else:
-            right = max(font.getlength(ch), font.getbbox(ch)[2]) if ch != " " else font.getlength(ch)
-            img = Image.new("L", (int(right) + 1, h), 0)
-            ImageDraw.Draw(img).text((0, base - asc), ch, font=font, fill=255)
-        cell = Image.new("L", (img.width + 2 * PAD * fk, h), 0)
-        cell.paste(img, (PAD * fk, 0))
-        thr = 128
-        out.append((adv, cell.width, [15 if v >= thr else 0 for v in cell.tobytes()]))
-    print(f"font Clayborn {px}px: Terminus for {len(fell)} characters")
-    return h, out
-
-
+            right=max(font.getlength(ch),font.getbbox(ch)[2]) if ch!=' ' else font.getlength(ch)
+            big=Image.new("L",(int(right)+2,2*height))
+            ImageDraw.Draw(big).text((0,2*baseline-font.getmetrics()[0]),ch,font=font,fill=255)
+            small=big.resize((max(1,round(big.width*sx/2)),height),Image.Resampling.BOX)
+            img=Image.new("L",(small.width+2*PAD,height))
+            img.paste(small,(PAD,0))
+        glyphs.append((adv,img.width,[15 if v>=128 else 0 for v in img.tobytes()]))
+    return glyphs
 
 def main(out):
-    lines = [f"/* generated by tools/gen_font.py: font set {FONTSET} */",
-             "#pragma once", "#include <stdint.h>", f"#define FONT_PAD {PAD}  /* x scale for L, see below */", ""]
-    total_bytes = 0
-    for name, ttf, px, scale, pixel, first, last in SIZES + [
-        ("US", "Clayborn.ttf", 16, 1, True, 32, 95),
-        ("UM", "Clayborn.ttf", 20, 1, True, 32, 95),
-        ("UL", "Clayborn.ttf", 24, 1, True, 32, 95)]:
-        if name.startswith("U"):
-            h, glyphs = render_clay(ttf, px, {"US":16,"UM":24,"UL":32}[name],
-                                    {"US":13,"UM":18,"UL":24}[name], 1, first, last, 0.85)
-        else:
-            h, glyphs = render(ttf, px, scale, pixel, first, last)
-        data, offs = [], []
-        one = all(v in (0, 15) for _, _, g in glyphs for v in g)
-        for adv, bw, g in glyphs:
-            offs.append(len(data))
-            if one:
-                acc = 0
-                for i, v in enumerate(g + [0] * (-len(g) % 8)):
-                    acc = (acc << 1) | (v != 0)
-                    if i % 8 == 7:
-                        data.append(acc)
-                        acc = 0
-                unpacked = [15 if data[offs[-1] + i // 8] >> (7 - i % 8) & 1 else 0 for i in range(len(g))]
-                assert unpacked == g, "packed glyph must round-trip exactly"
-            else:
-                for y in range(h):
-                    row = g[y * bw:(y + 1) * bw] + [0]
-                    for x in range(0, bw, 2):
-                        data.append((row[x] << 4) | row[x + 1])
-        assert len(data) < 65536
-        total_bytes += len(data)
-        lines.append(f"static const uint8_t FONT_{name}_DATA[{len(data)}] = {{")
-        for i in range(0, len(data), 24):
-            lines.append("    " + ", ".join(f"0x{b:02x}" for b in data[i:i + 24]) + ",")
-        lines.append("};")
-        lines.append(f"static const uint16_t FONT_{name}_OFF[{len(offs)}] = {{" + ", ".join(map(str, offs)) + "};")
-        lines.append(f"static const uint8_t FONT_{name}_ADV[{len(glyphs)}] = {{" +
-                     ", ".join(str(a) for a, _, _ in glyphs) + "};")
-        lines.append(f"static const uint8_t FONT_{name}_BW[{len(glyphs)}] = {{" +
-                     ", ".join(str(b) for _, b, _ in glyphs) + "};")
-        lines.append(f"static const felucca_font_t FONT_{name} = {{ {h}, {PAD * scale}, {first}, {last}, "
-                     f"FONT_{name}_ADV, FONT_{name}_BW, FONT_{name}_OFF, FONT_{name}_DATA, {1 if one else 0} }};")
-        lines.append("")
-        print(f"font {name}: {ttf} {px}px h {h}, digit adv {glyphs[ord('0') - first][0]}, {len(data)} B")
-    print(f"font set {FONTSET}: {total_bytes} bitmap bytes")
-    Path(out).write_text("\n".join(lines))
+    lines=['/* Generated by tools/gen_font.py: NightClaw UI, Clayborn only. */',
+           '#pragma once','#include <stdint.h>',f'#define FONT_PAD {PAD}','']
+    total=0
+    for name,px,height,baseline,sx in CUTS:
+        glyphs=render_cut(px,height,baseline,sx)
+        data=[]; offsets=[]
+        for adv,width,pixels in glyphs:
+            offsets.append(len(data)); acc=0
+            for i,v in enumerate(pixels+[0]*(-len(pixels)%8)):
+                acc=(acc<<1)|(v!=0)
+                if i%8==7: data.append(acc); acc=0
+            assert [15 if data[offsets[-1]+i//8]>>(7-i%8)&1 else 0 for i in range(len(pixels))]==pixels
+        assert len(data)<65536
+        total+=len(data)
+        lines.append(f'static const uint8_t FONT_{name}_DATA[{len(data)}] = {{')
+        for i in range(0,len(data),24): lines.append('    '+', '.join(f'0x{v:02x}' for v in data[i:i+24])+',')
+        lines.append('};')
+        lines.append(f'static const uint16_t FONT_{name}_OFF[{len(offsets)}] = {{'+', '.join(map(str,offsets))+'};')
+        lines.append(f'static const uint8_t FONT_{name}_ADV[{len(glyphs)}] = {{'+', '.join(str(a) for a,_,_ in glyphs)+'};')
+        lines.append(f'static const uint8_t FONT_{name}_BW[{len(glyphs)}] = {{'+', '.join(str(w) for _,w,_ in glyphs)+'};')
+        lines.append(f'static const felucca_font_t FONT_{name} = {{ {height}, {PAD}, 32, 95, FONT_{name}_ADV, FONT_{name}_BW, FONT_{name}_OFF, FONT_{name}_DATA, 1 }};')
+        print(f'font {name}: NightClaw UI {px}px, cell {height}, {len(data)} bytes')
+    Path(out).write_text('\n'.join(lines)+'\n')
+    print(f'NightClaw UI: {total} bitmap bytes; no legacy fallback')
 
-
-if __name__ == "__main__":
-    main(sys.argv[1])
+if __name__=='__main__': main(sys.argv[1])

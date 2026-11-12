@@ -1,5 +1,7 @@
 # NightClaw screen visibility
 
+This records the first visibility pass. The [complete typeface correction](NIGHTCLAW-TYPEFACE.md) supersedes its mixed font set and Home label sizing.
+
 Reference: Paleotone main 6f027f0f34101fa70a1b74a045745ba1a81eb773, especially tools/gen_font.py, firmware/src/gfx.c and firmware/src/ui_studio.c. The useful patterns are condensed 16/20/24 px type, choosing the largest size that fits, compact one-bit glyphs, and using the available area for clear indicator shapes.
 
 NightClaw retains its four-column controls and colored filled indicators. Home uses four 46 px rows under a 40 px header; the current scene name remains visible in the footer. Other ordinary control pages distribute their available height across their actual two, three or four rows, instead of reserving four rows and leaving empty space. Two-row pages use 52 px diameter indicators, three-row pages 36 px, with compact indicators on four-row and special pages. Creature and Performance key maps keep their reserved regions.

@@ -1800,100 +1800,25 @@ static void draw_battery(int32_t bx)
         cv_rect(bx + 2 + k * 4, 11, 3, 5, c);
 }
 
-/* the header: the piece in a tag, its root and mode; on the right, the tempo with a slow beat light
- * (a play triangle while resting) and a dot while there is something unsaved. Messages take its place
- * for a moment. */
+static void control_text(int x, int y, int width, const felucca_font_t *font, const char *value, uint16_t color);
+/* Edit and Pattern use the same large UI family as the control tables. */
 static void draw_header(void)
 {
-    char t[24];
-    int msg = plat_ms() < ui.msg_until;
-    uint32_t h = hash(hash(hash(2166136261u, proj.piece | (uint32_t)proj.par[P_ROOT] << 8 | (uint32_t)proj.pool << 12),
-                           en_playing | ui.dirty << 4 | (uint32_t)msg << 5 | (uint32_t)en_ext << 6 | (uint32_t)proj.par[P_MODE] << 8),
-                      (uint32_t)proj.par[P_TEMPO] | (uint32_t)(ui.view == V_SETUP ? batt_pct() : 0) << 22 | (uint32_t)batt_bars() << 29 | (uint32_t)plat_usb_power() << 31 |
-                      (plat_usb_power() ? (plat_ms() / 600u) % 3u << 7 : 0u) | (ui.view == V_SETUP ? plat_cpu_pct() << 8 | plat_cpu_peak() << 15 |
-                                                                           (plat_xruns() & 0x1FFu) << 22 : 0u));
-    if (msg)
-        h = hash(hash(h, (uint32_t)ui.msg[0][0] << 8 | ui.msg[0][1]), ui.msg_until);
-    if (en_playing)
-        h = hash(h, (en_bars / 4u) & 1u);
-    if (h == ui.sig[0])
-        return;
-    ui.sig[0] = h;
-    cv_begin(240, HDR_H, K_BG);
-    if (msg) {
-        int32_t x = cv_text(10, 6, &FONT_B, ui.msg[0], K_TEXT);
-        cv_text(x + 8, 6, &FONT_B, ui.msg[1], K_ACC);
-    } else {
-        int32_t x = 232, w;
-        if (plat_battery() >= 0 || plat_usb_power()) {   /* the battery, at the right edge */
-            draw_battery(219);
-            x = 213;
-        }
-        if (ui.view == V_SETUP && (plat_battery() >= 0 || plat_usb_power())) {   /* Setup: the charge, by the icon */
-            char c[8];
-            if (plat_usb_power()) {
-                c[0] = 'U', c[1] = 'S', c[2] = 'B', c[3] = 0;
-            } else {
-                uint32_t k;
-                itoa_u((uint32_t)batt_pct(), c);
-                for (k = 0; c[k]; k++)
-                    ;
-                c[k++] = '%', c[k] = 0;
-            }
-            x -= text_w(&FONT_XS, c);
-            cv_text(x, 8, &FONT_XS, c, K_TEXT);
-            x -= 8;
-        }
-        if (ui.dirty) {                            /* unsaved */
-            cv_round(x - 5, 12, 5, 5, 2, K_DIM);
-            x -= 11;
-        }
-        if (en_ext) {
-            t[0] = 'E';
-            t[1] = 'X';
-            t[2] = 'T';
-            t[3] = 0;
-        } else {
-            itoa_u((uint32_t)proj.par[P_TEMPO], t);
-        }
-        if (ui.view == V_SETUP) {                 /* Setup: the audio load (now/peak), and any dropouts ("!n") */
-            char c[24] = "CPU ";
-            uint32_t k;
-            itoa_u(plat_cpu_pct(), c + 4);
-            for (k = 0; c[k]; k++)
-                ;
-            c[k++] = '/';
-            itoa_u(plat_cpu_peak(), c + k);
-            if (plat_xruns()) {
-                for (; c[k]; k++)
-                    ;
-                c[k++] = ' ', c[k++] = '!';
-                itoa_u(plat_xruns() > 999u ? 999u : plat_xruns(), c + k);
-            }
-            x -= text_w(&FONT_XS, c);
-            cv_text(x, 8, &FONT_XS, c, K_DIM);   /* (the leftmost on the right: its changing width moves nothing) */
-        } else {                                 /* elsewhere: the tempo and the beat light */
-        x -= text_w(&FONT_S, t);
-        cv_text(x, 6, &FONT_S, t, en_playing ? K_TEXT : K_DIM);
-        x -= 16;
-        if (en_playing) {                         /* a slow beat light */
-            int on = ((en_bars / 4u) & 1u) == 0u;
-            cv_round(x, 9, 10, 10, 5, on ? K_PAD : K_PAD_T);
-        } else {
-            int32_t j;                            /* resting: a play triangle */
-            for (j = 0; j < 5; j++)
-                cv_rect(x + 2 + j, 9 + j, 1, 11 - 2 * j, K_DIM);
-        }
-        }
-        w = text_w(&FONT_B, piece_name(proj.piece)) + 12;   /* the piece, in a coral tag */
-        cv_round(4, 4, w, 20, 6, K_TEXT);
-        cv_text(10, 6, &FONT_B, piece_name(proj.piece), K_BG);
-        if (ui.view != V_SETUP) {                /* (Setup: the room is the CPU's; the root is its first knob) */
-            w = cv_text(w + 10, 8, &FONT_XS, EN_NOTE_NAME[proj.par[P_ROOT]], K_TEXT);
-            cv_text(w + 3, 8, &FONT_XS, mode_name(), K_DIM);
-        }
+    const int msg=plat_ms()<ui.msg_until;
+    uint32_t h=hash(hash(hash(2166136261u,ui.view),en_playing | ui.dirty<<4 | en_frozen<<5),msg?ui.msg_until:0);
+    if(h==ui.sig[0])return;
+    ui.sig[0]=h;
+    cv_begin(240,HDR_H,K_BG);
+    if(msg){
+        char text[48];
+        msg_text(ui.msg[0],ui.msg[1],text);
+        control_text(4,0,232,&FONT_UM,text,K_ACC);
+    }else{
+        control_text(4,-4,172,&FONT_UL,ui.view==V_CHORDS?"CHORDS":"PATTERN",K_TEXT);
+        control_text(188,2,50,&FONT_UM,en_frozen?"HOLD":en_playing?"PLAY":"STOP",K_ACC);
+        if(ui.dirty)cv_rect(177,10,4,4,K_ACC);
     }
-    cv_blit(0, 0);
+    cv_blit(0,0);
 }
 
 /* (BERLIN) the main screen, Cosmic: a slow starfield; the chord a glowing body in the middle; each sequence note a
@@ -2164,7 +2089,7 @@ static void grid_band(int32_t oy)                 /* the whole screen, in two ba
     static const char *const GROUP[4] = {"ECHO", "FILTER", "SPACE", "MOVES"};   /* (BERLIN's) */
     int r, c;
     cv_begin(240, 120, K_BG);
-    text_c(120, 2 - oy, &FONT_S, "EFFECTS", K_ACC);
+    text_c(120, 0 - oy, &FONT_UM, "EFFECTS", K_ACC);
     text_c(120, 20 - oy, &FONT_XS, "HOLD A WHITE KEY    TAP REC: HOLD", K_DIM);
     for (r = 0; r < 4; r++) {
         int32_t yr = 38 + r * 50;
@@ -2177,7 +2102,7 @@ static void grid_band(int32_t oy)                 /* the whole screen, in two ba
             if (c == 0 && !on)                   /* (the first of a group: its key is lit) */
                 cv_rect(x + 4, y + 29, 47, 2, K_ACC);
             caps(t, GRID_CELL[e], sizeof t);
-            text_c(x + 28, y + 8, &FONT_S, t, on ? K_BG : K_TEXT);
+            text_c(x + 28, y + 4, &FONT_UN, t, on ? K_BG : K_TEXT);
         }
     }
     cv_blit(0, (uint32_t)oy);
@@ -2236,28 +2161,27 @@ static void draw_pattern(void)
  * progression shows that the chord before it goes on */
 static void draw_slots(void)
 {
-    static const char *const HEAD[4] = {"HOME: THE WALK WRITES SLOT 8", "WANDER: THE WALK WRITES SLOT 8",
-                                        "FREE: THE WALK WRITES SLOT 8", "LOOP: THE SLOTS IN TURN"};
+    static const char *const HEAD[4] = {"HOME: NEW SLOT 8", "WANDER: NEW SLOT 8",
+                                        "FREE: NEW SLOT 8", "LOOP: SLOTS IN TURN"};
     int i, loop = (proj.par[P_PMODE] & EN_PLOOP) != 0, n = loop ? prog_count() : EN_NPROG;
     char nm[16];
-    text_c(120, -1, &FONT_XS, HEAD[loop ? 3 : (proj.par[P_PMODE] & 3) % EN_NWALK], K_ACC);
+    control_text(6,0,228,&FONT_US,HEAD[loop ? 3 : (proj.par[P_PMODE] & 3) % EN_NWALK],K_ACC);
     for (i = 0; i < EN_NPROG; i++) {
-        int32_t x = 12 + (i & 3) * 55, y = 30 + (i >> 2) * 46;   /* (the two rows in the middle) */
+        int32_t x = 4 + (i & 3) * 59, y = 24 + (i >> 2) * 54;   /* (the two rows in the middle) */
         int filled = !slot_is_gap(i), now = en_playing && i == en_prog_pos && n, sel = i == ui.slot;
         if (sel)
-            cv_round(x - 2, y - 2, 54, 38, 5, K_ACC);
-        cv_round(x, y, 50, 34, 4, now ? K_PAD : filled ? K_PANEL : mix(K_BG, K_PANEL, 6));
+            cv_round(x - 1, y - 1, 57, 48, 5, K_ACC);
+        cv_round(x, y, 55, 46, 4, now ? K_PAD : filled ? K_PANEL : mix(K_BG, K_PANEL, 6));
         {
             char d[2];
             d[0] = (char)('1' + i), d[1] = 0;
-            cv_text(x + 3, y + 1, &FONT_XS, d, now ? K_BG : K_DIM);
+            control_text(x+3,y+1,14,&FONT_US,d,now?K_BG:K_DIM);
         }
         if (filled) {                            /* (yours in white; the walk's in the scale's teal) */
             const char *t = slot_label(i, nm);
-            text_c(x + 25, y + 11, text_w(&FONT_B, t) <= 46 ? &FONT_B : &FONT_XS, t,
-                   now ? K_BG : slot_is_walk(i) ? K_PAD : K_TEXT);
+            control_text(x+3,y+19,49,&FONT_UM,t,now?K_BG:slot_is_walk(i)?K_PAD:K_TEXT);
         } else if (i < n) {
-            text_c(x + 25, y + 13, &FONT_XS, "(HOLDS)", now ? K_BG : K_DIM);
+            control_text(x+3,y+19,49,&FONT_UM,"HOLD",now?K_BG:K_DIM);
         }
     }
 }
@@ -2398,7 +2322,7 @@ static void draw_knobs(void)
     ui.sig[2]=h;
     cv_begin(240, KNB_H, K_BG);
     for (c=0; c<4; c++) {
-        control_text(c*60+4, 0, 56, &FONT_S, control_label(ui.view, c), CONTROL_COL[c]);
+        control_text(c*60+4, 0, 56, &FONT_UM, control_label(ui.view, c), CONTROL_COL[c]);
         control_indicator(c*60+30, 38, 18, control_ratio(VIEW_KNOB[ui.view][c]), CONTROL_COL[c]);
     }
     cv_blit(0, KNB_Y);
@@ -2955,7 +2879,8 @@ static void control_text(int x, int y, int width, const felucca_font_t *font,
     char b[48];
     int n = 0, height = font->h;
     if (font == &FONT_UL && text_w(font, value) > width) font = &FONT_UM;
-    if (font == &FONT_UM && text_w(font, value) > width) font = &FONT_US;
+    if (font == &FONT_UM && text_w(font, value) > width) font = &FONT_UN;
+    if (font == &FONT_UN && text_w(font, value) > width) font = &FONT_US;
     if (text_w(font, value) > width) font = &FONT_B;
     if (text_w(font, value) > width) font = &FONT_XS;
     while (value[n] && n < (int)sizeof(b) - 1) { b[n] = value[n]>='a' && value[n]<='z' ? (char)(value[n]-32) : value[n]; n++; }
@@ -3060,7 +2985,7 @@ static void draw_controls(void)
     } else control_text(4, -4, 180, &FONT_UL, VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_UM, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
     if (home) {
-        for (c=0; c<4; c++) control_text(44+c*49, 20, 49, &FONT_UM, track_label(c), CONTROL_COL[c]);
+        for (c=0; c<4; c++) control_text(60+c*45, 20, 45, &FONT_UM, track_label(c), CONTROL_COL[c]);
     } else {
         const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
         if(ui.view==V_SKIN) {
@@ -3082,13 +3007,13 @@ static void draw_controls(void)
         if (r<n) {
             if (home) {
                 const int muted = first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r];
-                control_text(4, muted ? 3 : 14, 40, &FONT_B, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
-                if (muted) control_text(4,25,36,&FONT_XS,"MUTED",K_TEXT);
+                control_text(4, muted ? 1 : 11, 56, &FONT_UM, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
+                if (muted) control_text(4,25,56,&FONT_US,"MUTED",K_TEXT);
             }
             for (c=0; c<4; c++) {
                 const int k = home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
                 if (!home) control_text(c*60+3, 0, 56, &FONT_UM, control_label(rows[r], c), CONTROL_COL[c]);
-                control_indicator(home ? 68+c*49 : c*60+30, home ? height/2 : (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
+                control_indicator(home ? 82+c*45 : c*60+30, home ? height/2 : (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
             }
             if (active) cv_rect(0, 0, 3, height-1, K_ACC);
             cv_line(0, height-1, 239, height-1, K_LINE);
