@@ -1,86 +1,30 @@
 <!doctype html>
-<html lang="en">
-<head>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Physical FM-1 panel adapted from Paleotone main 6f027f0, after X0X/Felucca.
+     Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments. -->
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050508">
-<title>NightClaw — Play & Learn</title>
-<meta name="description" content="A prehistoric western instrument. Play the NightClaw synthesizer in your browser and learn the FM-1 controls with a visual guide.">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<a class="skip" href="#main">Skip to instrument</a>
-<header class="topbar">
-  <a class="brand" href="#play" aria-label="NightClaw home"><span class="claw" aria-hidden="true">///</span> NIGHTCLAW</a>
-  <nav aria-label="Main navigation"><a href="#play" data-tab="play" aria-current="page">Play</a><a href="#guide" data-tab="guide">Visual guide</a><a href="https://github.com/fantasmoslam/Paleotone/raw/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc" download>Firmware ↓</a><a href="https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion" target="_blank" rel="noopener">Source ↗</a></nav>
-</header>
-<main id="main">
-<section class="hero" aria-labelledby="title">
-  <div><p class="eyebrow">A PREHISTORIC WESTERN INSTRUMENT</p><h1 id="title">THE NIGHT<br>HAS TEETH.</h1><p>Deep synths. Towering drums.<br>A world waiting for your lead.</p></div>
-  <div class="hero-credit">NIGHTCLAW / M-VAVE FM-1</div>
-</section>
-
-<section id="play-panel" aria-label="Browser instrument">
-  <div class="section-title"><div><p class="eyebrow">01 / PLAY IN THE BROWSER</p><h2>Your midnight expedition.</h2></div><a class="text-link" href="#guide">First time? Take the visual tour ↗</a></div>
-  <div class="transport">
-    <button id="start" class="primary">Start audio <span aria-hidden="true">▶</span></button>
-    <button id="play" disabled aria-pressed="false">Rest</button>
-    <button id="hold" disabled aria-pressed="false">Hold</button>
-    <button id="mute" disabled aria-pressed="false">Mute</button>
-    <label class="volume" for="volume">Listening volume <input id="volume" type="range" min="0" max="100" value="65" aria-label="Listening volume"></label>
-    <span id="status" role="status">Sound starts only when you press Start audio.</span>
-  </div>
-  <div class="instrument" id="instrument">
-    <aside class="scenes panel">
-      <div class="panel-heading"><h3>Choose your scene</h3><span class="tag">20 SCENES</span></div>
-      <label class="sr" for="scene">Scene</label><select id="scene" disabled><option>Start audio to choose</option></select>
-      <div id="scene-picks" class="scene-picks"><p>RAPTOR NIGHT is the signature starting point. Choose Theremin for its Lead.</p></div>
-      <p class="aside-note">These are starting settings. The music is generated live.</p>
-    </aside>
-
-    <section class="screen-panel panel" aria-label="Live FM-1 screen">
-      <div class="panel-heading"><h3>The FM-1 screen</h3><button id="zoom" class="small-button" aria-pressed="false">Enlarge</button></div>
-      <div class="screen-frame"><canvas id="screen" width="240" height="240" role="img" aria-label="Live NightClaw firmware screen; the same controls are available as labeled controls alongside it."></canvas><div id="screen-off"><img src="assets/home.png" alt="NightClaw Home screen with track rows and four colored indicators"><span>Ready when you are.</span></div></div>
-      <div class="screen-caption"><span class="status-dot" id="audio-dot" aria-hidden="true"></span><span id="page-caption">The actual NightClaw firmware, running locally.</span></div>
-    </section>
-
-    <section class="edit-panel panel" aria-labelledby="edit-title">
-      <div class="panel-heading"><h3 id="edit-title">Shape the sound</h3><span class="tag">K1 — K4</span></div>
-      <div class="page-tabs" aria-label="Sound pages">
-        <button data-page="7" disabled aria-pressed="true">Home</button><button data-page="18" disabled aria-pressed="false">Key</button><button data-page="5" disabled aria-pressed="false">Space</button><button data-page="17" disabled aria-pressed="false">Perform</button><button data-page="15" disabled aria-pressed="false">Chords</button>
-      </div>
-      <details class="more-pages"><summary>More sound pages</summary><label class="sr" for="sound-page">Sound page</label><select id="sound-page" disabled><option value="7">Home</option></select></details>
-      <div id="track-controls"><label for="track">Track <span>SELECT on the FM-1</span></label><select id="track" disabled><option value="0">Drone</option><option value="1">Sequence</option><option value="2" selected>Lead</option><option value="3">Sequence 2</option><option value="4">Atmosphere</option><option value="5">Skin · drums</option><option value="6">Calls · creatures</option></select></div>
-      <div id="voice-wrap"><label for="voice"><span id="voice-label">Instrument</span> <span>ALGORITHM on the FM-1</span></label><select id="voice" disabled><option>Choose after starting audio</option></select></div>
-      <div id="controls" class="parameter-grid" aria-label="Four controls"></div>
-      <div id="auto-wrap" hidden><button id="auto" disabled aria-pressed="false">Automatic calls: off</button><p>Manual is the startup default. Q–I trigger the eight creatures.</p></div>
-      <p id="context-help" class="context-help">Select a track, choose its voice, then shape it with the four controls.</p>
-    </section>
-  </div>
-
-  <section class="keys-panel panel" aria-labelledby="keys-title">
-    <div class="panel-heading"><div><h3 id="keys-title">Play your Lead</h3><p id="keys-help">Click and hold the keys, use touch, or enable your computer keyboard.</p></div><label class="keyboard-toggle"><input id="keyboard" type="checkbox"> Computer keyboard</label></div>
-    <div id="keys" class="keys" role="group" aria-label="Playable FM-1 keys"></div>
-    <div class="keyboard-footer"><div class="octaves"><button id="oct-down" disabled aria-label="Lead octave down">Octave −</button><button id="oct-up" disabled aria-label="Lead octave up">Octave +</button></div><p id="keyboard-hint">White keys: Q–I, then A–K. Black keys: 1–0, then −. Release a key to release the note.</p><button id="release" disabled>Release all keys</button></div>
-  </section>
-  <div class="savebar"><div><strong id="save-label">Your browser, your instrument.</strong><p id="storage-note">Save keeps scene edits in this browser. It does not change your FM-1.</p></div><button id="save" disabled>Save browser session</button></div>
-  <details class="technical"><summary>About this browser instrument & credits</summary><p>This player compiles NightClaw’s firmware UI, project storage and sound engine to WebAssembly. The browser controls edit the same parameters; the FM-1’s physical hardware and two-core scheduling are simulated. Sound is generated locally, not streamed from a recording. Browser performance does not measure FM-1 CPU load.</p><p>Based on NACHTFAHRT/Felucca and Paleotone. Code: <a href="LICENSE.txt">GPL-3.0</a>. Taiko samples: <a href="TAIKO-ATTRIBUTION.txt">CC BY-SA 4.0 credits</a>. Fonts: <a href="assets/Clayborn-LICENSE.txt">Clayborn</a> and <a href="assets/Barlow-OFL.txt">Barlow</a>.</p></details>
-</section>
-
-<section id="guide-panel" aria-labelledby="guide-title" hidden>
-  <div class="section-title"><div><p class="eyebrow">02 / THE VISUAL FIELD GUIDE</p><h2 id="guide-title">Know your instrument.</h2></div><p>For the browser and your physical FM-1.</p></div>
-  <div class="guide-layout">
-    <nav id="lessons" class="lessons" aria-label="Tutorial chapters"></nav>
-    <div class="lesson-body">
-      <div class="diagram-wrap"><div id="diagram" aria-label="FM-1 control diagram"></div><p id="diagram-caption"></p></div>
-      <article class="lesson-copy" aria-live="polite" aria-atomic="true"><p class="eyebrow" id="lesson-number"></p><h3 id="lesson-title"></h3><p id="lesson-intro"></p><ol id="lesson-steps"></ol><div class="lesson-note" id="lesson-note"></div><button id="try-lesson">Show this on the player ↗</button></article>
-    </div>
-  </div>
-  <div class="lesson-pagination"><button id="previous">← Previous</button><span id="lesson-position"></span><button id="next">Next chapter →</button></div>
-  <section class="cheatsheet panel"><h3>The shortcuts worth knowing.</h3><div class="cheat-grid">
-    <div><span class="cheat-key">PRESETS</span><p>Choose a scene.</p></div><div><span class="cheat-key">SELECT</span><p>On Home, choose a track.</p></div><div><span class="cheat-key">ALGORITHM</span><p>Choose that track’s voice or drum beat.</p></div><div><span class="cheat-key">K1 · K2 · K3 · K4</span><p>Control the four displayed parameters.</p></div><div><span class="cheat-key">GLO · HOLD ½ SEC</span><p>Save edits, then release. A short tap opens Setup.</p></div><div><span class="cheat-key">PLAY / REC</span><p>Play or rest / tap to toggle Hold.</p></div>
-  </div><p class="important">The button printed SAVE opens sound pages. To save edits on the FM-1, hold GLO for about half a second, then release. Holding to about 1.5 seconds resets the current scene.</p></section>
-</section>
-</main>
-<footer><span class="brand">NIGHTCLAW</span><p>A small instrument. An enormous night.</p><a href="https://github.com/fantasmoslam/Paleotone/pull/41" target="_blank" rel="noopener">Development & documentation ↗</a></footer>
-<script type="module" src="player.js"></script>
-</body></html>
+<title>NightClaw · FM-1 emulator</title>
+<meta name="description" content="Play NightClaw on a clickable M-VAVE FM-1 panel: the actual knobs, buttons, keys and firmware screen.">
+<link rel="stylesheet" href="panel.css?v=fm1-panel-1">
+</head><body>
+<a class="skip" href="#device">Skip to the FM-1</a>
+<main>
+<header class="crest"><img src="assets/jungle.png" alt="" width="160" height="100"><h1>NIGHTCLAW</h1></header>
+<p class="tagline">Prehistoric western synth for the FM-1 · play it in your browser</p>
+<nav class="calls" aria-label="NightClaw"><a class="slab" href="guide.html">Visual guide</a><a class="slab bone" href="https://github.com/fantasmoslam/Paleotone/raw/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc">Download firmware</a><a href="https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion">Source</a></nav>
+<div class="stage">
+<div class="device" id="device" role="group" aria-label="NightClaw FM-1 instrument" tabindex="-1">
+<svg id="panel" viewBox="0 0 1000 624" aria-hidden="true"></svg>
+<canvas id="screen" width="240" height="240" role="button" tabindex="0" aria-label="Live FM-1 screen; activate to enlarge"></canvas>
+<div class="start" id="start"><button id="go" type="button">Switch on</button><p id="status" role="status">Sound starts when you switch on.</p></div>
+</div></div>
+<p class="screen-status" id="screen-status" role="status"></p>
+<div class="keys help"><p>Play with the mouse, touch, or the computer keys printed on the panel.</p><p>Drag or scroll a knob to turn it. Arrow keys turn a focused knob one detent.</p><p><kbd>Shift</kbd>-click or right-click a button to keep it held; click again to release. Hold <b>GLO</b> for about ½ second, then release to save.</p><p>Click the screen to enlarge it. <kbd>Esc</kbd> returns to the panel.</p></div>
+<details class="utility"><summary>Keyboard, audio & display</summary><div class="utility-grid">
+<label><input type="checkbox" id="shortcuts" checked> Computer keyboard</label>
+<button id="mute" disabled aria-pressed="false">Mute</button><button id="release" disabled>Release all controls</button><button id="focus-mode">Enlarge screen</button>
+</div><p id="tool-status" role="status"></p><p class="note">GLO saves scene edits in this browser, separately from your physical FM-1. Holding GLO to about 1.5 seconds resets the current scene. The button printed SAVE opens sound pages.</p></details>
+<footer><nav><a href="guide.html">Visual guide</a> · <a href="https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion">Source</a> · <a href="LICENSE.txt">GPL-3.0</a> · <a href="TAIKO-ATTRIBUTION.txt">Taiko credits</a></nav><p>NightClaw’s firmware UI and sound engine, running locally. FM-1 panel adapted from Paleotone, after X0X and Felucca. <a href="assets/Clayborn-LICENSE.txt">Clayborn by Frank Baranowski</a>.</p></footer>
+</main><script type="module" src="player.js?v=fm1-panel-1"></script></body></html>

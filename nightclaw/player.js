@@ -1,262 +1,410 @@
 // SPDX-License-Identifier: GPL-3.0-only
-const $ = id => document.getElementById(id);
-const COLORS = ["#e6dcc2","#ff284e","#eaff00","#a63aff"];
-const STORE = "nightclaw-browser-v1";
-const WHITE = [0,2,4,6,7,9,11,12,14,16,18,19,21,23,24,26];
-const BLACK = [1,3,5,8,10,13,15,17,20,22,25], AFTER = [0,1,2,4,5,7,8,9,11,12,14];
-const WHITE_CODES = "QWERTYUIASDFGHJK".split(""), BLACK_CODES = "1234567890-".split("");
-let ac, engine, gain, state, scenes = [], starting = false, started = false, muted = false;
-let voiceSignature = "", storageFailed = false;
-const held = new Map(), keyButtons = [], parameterEls = [];
-function send(type, data = {}) { engine?.port.postMessage({ type, ...data }); }
-function tell(text) { $("status").textContent = text; }
-function releaseAll() { held.clear(); syncKeys(); }
-function syncKeys() {
-  let mask = 0; for (const n of held.values()) mask |= 1 << n;
-  send("keys", { mask });
-  keyButtons.forEach((b,i) => { if (b) { b.classList.toggle("down", !!(mask & (1 << i))); b.setAttribute("aria-pressed", String(!!(mask & (1 << i)))); } });
+// Physical FM-1 drawing/input adapted from Paleotone main 6f027f0, after X0X.
+// Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments.
+const NS="http://www.w3.org/2000/svg";
+const B={FX:0,SEL:1,ENV:2,LFO:3,EDIT:4,GLO:5,HOME:6,SAVE:7,ARP:8,SEQ:9,PLAY:10,REC:11,"OCT-":12,"OCT+":13};
+const EN={SELECT:0,ALGORITHM:1,PRESETS:2,"KNOB 1":3,"KNOB 2":4,"KNOB 3":5,"KNOB 4":6};
+const PLAY_GREEN=14;
+const WHITE=[0,2,4,6,7,9,11,12,14,16,18,19,21,23,24,26],BLACK=[1,3,5,8,10,13,15,17,20,22,25],BLACK_AFTER=[0,1,2,4,5,7,8,9,11,12,14];
+const STORE="nightclaw-browser-v1";
+if(location.hash==="#guide")location.replace("guide.html");
+// ------------------------------------------------------------------ the panel
+// Two drawings of the same controls: WIDE after the FM-1's own layout, TALL for a phone held upright (the
+// screen larger, the keys across the whole width). Rebuilt when the orientation changes; the state stays.
+const ROW1 = ["FX", "SEL", "ENV", "LFO", "EDIT", "GLO"], ROW2 = ["HOME", "SAVE", "ARP", "SEQ", "PLAY", "REC"];
+const KNOBS = ["MASTER", "SELECT", "PRESETS", "ALGORITHM", "KNOB 1", "KNOB 2", "KNOB 3", "KNOB 4"];
+// the computer keyboard, every key one control: F3..A#4 on the Z (white) and A (black) rows, B4..G5 on Q..O
+// in semitones, the twelve buttons on the number row in the panel's order (held while the key is), [ ] OCT
+const KEYMAP = {};
+["KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Comma", "Period", "Slash"].forEach((c, i) => KEYMAP[c] = { key: WHITE[i] });
+[["KeyS", 1], ["KeyD", 3], ["KeyF", 5], ["KeyH", 8], ["KeyJ", 10], ["KeyL", 13], ["Semicolon", 15], ["Quote", 17]].forEach(([c, k]) => KEYMAP[c] = { key: k });
+["KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO"].forEach((c, i) => KEYMAP[c] = { key: 18 + i });
+["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "Digit0", "Minus", "Equal"]
+  .forEach((c, i) => KEYMAP[c] = { btn: B[[...ROW1, ...ROW2][i]] });
+Object.assign(KEYMAP, { BracketLeft: { btn: B["OCT-"] }, BracketRight: { btn: B["OCT+"] } });
+// what the panel prints for each
+const CAP = { Comma: ",", Period: ".", Slash: "/", Semicolon: ";", Quote: "'", Minus: "-", Equal: "=", BracketLeft: "[", BracketRight: "]" };
+const KEYCAP = {}, BTNCAP = {};
+for (const [c, m] of Object.entries(KEYMAP)) {
+  const t = CAP[c] || c.replace(/^(Key|Digit)/, "");
+  if (m.key !== undefined) KEYCAP[m.key] = t;
+  else BTNCAP[m.btn] = t;
 }
-function act(type, value) { releaseAll(); send(type, { value }); }
-function loadStore() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORE) || "{}"), data = {};
-    for (const [o,b] of Object.entries(raw)) {
-      if (!/^[0-3]$/.test(o) || typeof b !== "string" || b.length > 5120) continue;
-      data[o] = Uint8Array.from(atob(b), c => c.charCodeAt(0)).buffer;
-    }
-    return data;
-  } catch { return {}; }
+const LAYOUTS = {
+  wide: {
+    w: 1000, h: 624, screen: [292, 44, 256],
+    knobs: [[105, 100, 24], [215, 100, 24], [105, 205, 24], [215, 205, 24], [610, 100, 22], [714, 100, 22], [818, 100, 22], [922, 100, 22]],
+    trays: [[50, 250, 220, 50], [568, 160, 400, 140]],
+    oct: [[60, 258, 90, 34], [170, 258, 90, 34]],
+    grid: [582, 174, 54, 48, 63, 62], keybed: [36, 332, 928, 256],
+  },
+  tall: {
+    w: 600, h: 1070, screen: [130, 104, 340],
+    knobs: [[66, 64, 24], [186, 64, 24], [414, 64, 24], [534, 64, 24], [90, 512, 26], [230, 512, 26], [370, 512, 26], [510, 512, 26]],
+    trays: [[14, 572, 572, 146], [150, 728, 300, 62]],
+    oct: [[164, 737, 128, 44], [308, 737, 128, 44]],
+    grid: [24, 582, 86, 60, 94, 70], keybed: [14, 800, 572, 256],
+  },
+};
+const svg = document.getElementById("panel"), device = document.getElementById("device"), canvas = document.getElementById("screen");
+function el(tag, attrs, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
 }
-function saveStore(data) {
-  try {
-    const raw = {};
-    for (const [o,b] of Object.entries(data)) { let s = ""; for (const c of b) s += String.fromCharCode(c); raw[o] = btoa(s); }
-    localStorage.setItem(STORE, JSON.stringify(raw)); storageFailed = false;
-    $("storage-note").textContent = "Saved in this browser. Your physical FM-1 is unchanged.";
-  } catch {
-    storageFailed = true;
-    $("storage-note").textContent = "Browser storage is unavailable. Edits will last only for this open session.";
-  }
+const SANS = "'Clayborn', Arial, sans-serif", DOT = SANS;
+function label(parent, x, y, s, size, font = SANS, ink = "var(--label)") {
+  const t = el("text", { x, y, "text-anchor": "middle", "font-family": font,
+                         "font-size": size, "font-weight": 600, fill: ink, "letter-spacing": ".04em" }, parent);
+  t.textContent = s;
+  return t;
 }
-const screenContext = $("screen").getContext("2d"), screenImage = screenContext.createImageData(240,240);
-function drawScreen(fb) {
-  const d = screenImage.data;
-  for (let i=0; i<240*240; i++) {
-    const v=fb[i], p=((v>>8)|(v<<8))&65535;
-    d[i*4]=((p>>11)&31)*255/31; d[i*4+1]=((p>>5)&63)*255/63; d[i*4+2]=(p&31)*255/31; d[i*4+3]=255;
-  }
-  screenContext.putImageData(screenImage,0,0);
-}
-for (let i=0;i<4;i++) {
-  const card=document.createElement("div"); card.className="parameter"; card.style.setProperty("--color",COLORS[i]);
-  const title=document.createElement("h4"); title.id="parameter-name-"+i; title.textContent=["Level","Filter","LFO","Reverb"][i];
-  const pie=document.createElement("div"); pie.className="indicator"; pie.setAttribute("aria-hidden","true");
-  const input=document.createElement("input"); input.type="range"; input.min=0; input.max=100; input.value=0; input.disabled=true; input.setAttribute("aria-labelledby",title.id);
-  input.addEventListener("input",()=>{ send("control",{col:i,value:+input.value}); });
-  const buttons=document.createElement("div"); buttons.className="step-buttons";
-  for (const [symbol,n] of [["−",-1],["+",1]]) {
-    const b=document.createElement("button"); b.textContent=symbol; b.disabled=true;
-    b.setAttribute("aria-label",["Decrease ","Increase "][n===1?1:0]+title.textContent);
-    b.addEventListener("click",()=>{input.value=String(+input.value+n);send("control",{col:i,value:+input.value});}); buttons.append(b);
-  }
-  const word=document.createElement("span"); word.className="word";
-  card.append(title,pie,input,buttons,word); $("controls").append(card); parameterEls.push({title,pie,input,buttons,word});
-}
-function makeKey(index,white,pos,label) {
-  const b=document.createElement("button"); b.className="piano-key "+(white?"white":"black"); b.disabled=true;
-  b.style.left=(white ? pos*6.25 : (pos+1)*6.25-1.85)+"%"; b.style.width=(white?6.0:3.7)+"%"; b.textContent=label;
-  b.setAttribute("aria-label",(white?"White key "+(WHITE.indexOf(index)+1):"Black key "+(BLACK.indexOf(index)+1))+"; computer key "+label);
-  b.setAttribute("aria-pressed","false");
-  b.addEventListener("pointerdown",e=>{if(!started||e.button!==0)return;e.preventDefault();b.focus({preventScroll:true});b.setPointerCapture(e.pointerId);held.set("p"+e.pointerId,index);syncKeys();});
-  for(const ev of ["pointerup","pointercancel","lostpointercapture"]) b.addEventListener(ev,e=>{held.delete("p"+e.pointerId);syncKeys();});
-  b.addEventListener("keydown",e=>{if(e.key!==" "&&e.key!=="Enter")return;e.preventDefault();e.stopPropagation();if(!e.repeat){held.set("b"+index,index);syncKeys();}});
-  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();held.delete("b"+index);syncKeys();}});
-  b.addEventListener("blur",()=>{held.delete("b"+index);syncKeys();});
-  b.addEventListener("click",e=>{if(e.detail===0&&!held.has("b"+index)&&started){held.set("s"+index,index);syncKeys();setTimeout(()=>{held.delete("s"+index);syncKeys();},160);}});
-  keyButtons[index]=b; $("keys").append(b);
-}
-WHITE.forEach((k,i)=>makeKey(k,true,i,WHITE_CODES[i]));
-BLACK.forEach((k,i)=>makeKey(k,false,AFTER[i],BLACK_CODES[i]));
-function update(s) {
-  state=s; $("sound-page").value=String(s.view);
-  $("scene").value=String(s.scene);
-  $("play").textContent=s.playing?"Rest":"Play"; $("play").setAttribute("aria-pressed",String(s.playing));
-  $("hold").setAttribute("aria-pressed",String(s.held));
-  $("save-label").textContent=s.dirty?"You have unsaved scene edits.":storageFailed?"Playing with session-only storage.":"Scene settings are saved.";
-  $("page-caption").textContent=s.page+" · "+(scenes[s.scene]||"NightClaw");
-  const home=s.view===7;
-  $("track-controls").hidden=!home; $("track").value=String(s.track);
-  document.querySelectorAll("[data-page]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.page===s.view)));
-  document.querySelectorAll(".scene-pick").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.scene===s.scene)));
-  $("voice-wrap").hidden=!s.voices.length;
-  const sig=s.voices.join("|");
-  if(sig!==voiceSignature) { voiceSignature=sig; $("voice").replaceChildren(...s.voices.map((v,i)=>new Option(v,String(i)))); }
-  $("voice").value=String(s.voice);
-  $("voice-label").textContent=home&&s.track===5?"Drum beat":s.context===1?"Creature":"Instrument";
-  s.controls.forEach((p,i)=>{
-    const el=parameterEls[i]; el.title.textContent=p.name;
-    el.input.min=p.min;el.input.max=p.max; if(document.activeElement!==el.input)el.input.value=p.value;
-    el.input.disabled=p.max<=p.min;
-    el.input.setAttribute("aria-valuetext",p.text);
-    [...el.buttons.children].forEach((b,j)=>{b.disabled=p.max<=p.min;b.setAttribute("aria-label",(j?"Increase ":"Decrease ")+p.name);});
-    const percent=p.max>p.min?Math.max(0,Math.min(1,(p.value-p.min)/(p.max-p.min))):1;
-    const missing=(1-percent)*360,half=missing/2;
-    el.pie.style.background=percent<=0?"#443b45":percent>=1?COLORS[i]:`conic-gradient(from ${half}deg,${COLORS[i]} 0deg ${360-missing}deg,#443b45 ${360-missing}deg 360deg)`;
-    el.word.textContent=/^[\d\s%+−\-.,]+$/.test(p.text)?"":p.text;
+const KEYNAMES = ["F", "F♯", "G", "G♯", "A", "A♯", "B", "C", "C♯", "D", "D♯", "E"];
+const keyName = (k) => KEYNAMES[k % 12] + (3 + Math.floor((k + 5) / 12));
+
+let audioContext = null, node = null, btnMask = 0, keyMask = 0, latched = 0, masterValue = 2800, lastLeds = [0, 0, 0, 0, 0], layout = null;
+let requestId = 0, toolBusy = false, recording = null;
+const requests = new Map(), midiLast = new Map(), midiDiverted = new Set();
+const angle = Object.fromEntries(KNOBS.map((n) => [n, 0]));
+angle.MASTER = -135 + 270 * masterValue / 4096;
+const knobs = [], buttons = [], keys = [];
+const btnBy = new Map(), keyBy = new Map();                   // pointer / key code -> label bit or key
+const send = (m) => { if (node) node.port.postMessage(m); };
+
+function build(name) {
+  const L = LAYOUTS[name];
+  layout = name;
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${L.w} ${L.h}`);
+  device.style.aspectRatio = `${L.w} / ${L.h}`;
+  for (const d of device.querySelectorAll(".hit")) d.remove();
+  knobs.length = buttons.length = keys.length = 0;
+  el("rect", { x: 4, y: 4, width: L.w - 8, height: L.h - 8, rx: 40, fill: "var(--body)" });
+  for (const [x, y, w, h] of L.trays) el("rect", { x, y, width: w, height: h, rx: 14, fill: "var(--tray)" });
+  const [sx, sy, ss] = L.screen;
+  el("rect", { x: sx, y: sy, width: ss, height: ss, rx: 18, fill: "#0b0b0c" });
+  const inset = ss / 32;                                         // the 240 x 240 panel inside its bezel
+  Object.assign(canvas.style, { left: `${(sx + inset) / L.w * 100}%`, top: `${(sy + inset) / L.h * 100}%`,
+                                width: `${(ss - 2 * inset) / L.w * 100}%`, height: `${(ss - 2 * inset) / L.h * 100}%` });
+  KNOBS.forEach((n, i) => {
+    const [x, y, r] = L.knobs[i], g = el("g", {});
+    el("circle", { cx: x, cy: y, r: r + 5, fill: "var(--tray)" }, g);
+    el("circle", { cx: x, cy: y, r, fill: "var(--part)", stroke: "var(--edge)", "stroke-width": 2 }, g);
+    const ind = n === "MASTER" ? el("line", { x1: x, y1: y - r + 4, x2: x, y2: y - r * 0.35, stroke: "#fff", "stroke-width": 4, "stroke-linecap": "round" }, g) : null;   // (GHOULBOX: white, to near the centre)
+    label(g, x, y - r - 12, n, 16, DOT);
+    const arrows = { SELECT: "\u2191 \u2193", ALGORITHM: "\u2190 \u2192" }[n];
+    if (arrows && name === "wide") el("text", { x: x + r + 10, y: y + 5, class: "hint" }, g).textContent = arrows;
+    el("circle", { cx: x, cy: y, r: r + 12, fill: "transparent" }, g);
+    knobs.push({ g, ind, x, y, name: n, role: n === "MASTER" ? "master" : EN[n] });
   });
-  const calls=s.context===1,perform=s.context===2;
-  $("auto-wrap").hidden=!calls; $("auto").setAttribute("aria-pressed",String(s.auto));$("auto").textContent="Automatic calls: "+(s.auto?"on":"off");
-  $("keys-title").textContent=calls?"Call into the night":perform?"Perform with mutes & moves":s.context===3?"Edit with the keys":"Play your Lead";
-  $("keys-help").textContent=calls?"The first eight white keys trigger creatures. Black 1 toggles Auto; black 2 stops a call.":perform?"White 1–5 mute layers; black 1–5 solo them. White 7–11 hold performance moves.":s.context===3?"These keys edit the scale, chords or pattern on this page. Return Home and select Lead to play.":"Click and hold the keys, use touch, or enable your computer keyboard.";
-  $("context-help").textContent=home?"Select a track, choose its "+(s.track===5?"beat":"voice")+", then edit the four controls.":perform?"Filter, Wet, Energy and Sweep are performance gestures. Return Home for track editing.":"The four browser controls follow the four controls on the firmware screen.";
-  $("oct-down").disabled=$("oct-up").disabled=!(home&&[1,2,3].includes(s.track)||[2,3,4,9,10,11,13,14,16,23,24].includes(s.view));
-  keyButtons.forEach((b,i)=>b?.classList.toggle("lit",!!(s.keyLights&(1<<i))));
+  const button = ([x, y, w, h], n, sub) => {
+    const g = el("g", {});
+    el("rect", { x, y, width: w, height: h, rx: 8, fill: "var(--part)", stroke: "var(--edge)", "stroke-width": 1.5, class: "face btn" }, g);
+    const ink = n === "REC" ? "#ff453a" : undefined;
+    if (sub) { label(g, x + w / 2, y + h / 2 - 2, n, 10.8, SANS, ink); label(g, x + w / 2, y + h / 2 + 11, sub, 9.9); }
+    else label(g, x + w / 2, y + h / 2 + 4.5, n, 12.6, SANS, ink);
+    if (name === "wide" && BTNCAP[B[n]]) el("text", { x: x + w - 6, y: y + 12, "text-anchor": "end", class: "hint small" }, g).textContent = BTNCAP[B[n]];
+    buttons.push({ g, bit: B[n], name: sub ? `${n} / ${sub}` : n });
+  };
+  button(L.oct[0], "OCT-");
+  button(L.oct[1], "OCT+");
+  const [gx, gy, gw, gh, dx, dy] = L.grid;
+  for (let i = 0; i < 6; i++) {
+    button([gx + i * dx, gy, gw, gh], ROW1[i]);
+    button([gx + i * dx, gy + dy, gw, gh], ROW2[i], ROW2[i] === "PLAY" ? "STOP" : "");
+  }
+  const [x0, y0, w, h] = L.keybed;
+  el("rect", { x: x0, y: y0, width: w, height: h, rx: 18, fill: "var(--tray)" });
+  // the keys: two rows of the same black keys, each with a slit down its middle that lights
+  const pitch = (w - 24) / 16, kw = pitch * 0.78, kh = h * 0.425, sw = Math.max(3, kw * 0.14);
+  const key = (cx, cy, k) => {
+    const g = el("g", {}), y = cy - kh / 2;
+    el("rect", { x: cx - kw / 2, y, width: kw, height: kh, rx: kw / 2, class: "face key" }, g);
+    el("rect", { x: cx - sw / 2, y: y + kw * 0.4, width: sw, height: kh - kw * 0.8, rx: sw / 2, class: "slit" }, g);
+    if (name === "wide" && KEYCAP[k]) el("text", { x: cx, y: y + kh - 5, "text-anchor": "middle", class: "hint" }, g).textContent = KEYCAP[k];
+    el("rect", { x: cx - pitch / 2, y: cy - h * 0.24, width: pitch, height: h * 0.48, fill: "transparent" }, g);   // its target
+    keys[k] = { g, name: keyName(k) };
+  };
+  WHITE.forEach((k, i) => key(x0 + 12 + (i + 0.5) * pitch, y0 + h * 0.75, k));
+  BLACK_AFTER.forEach((a, j) => key(x0 + 12 + (a + 1) * pitch, y0 + h * 0.25, BLACK[j]));
+  // HTML targets over the drawing (pointer-events: none): touch-action and pointer capture work on them everywhere
+  const hit = (c, cls, role) => {
+    const b = c.g.getBBox(), d = document.createElement("div");
+    d.className = "hit" + (cls ? " " + cls : "");
+    Object.assign(d.style, { left: `${b.x / L.w * 100}%`, top: `${b.y / L.h * 100}%`,
+                             width: `${b.width / L.w * 100}%`, height: `${b.height / L.h * 100}%` });
+    d.setAttribute("role", role);
+    d.setAttribute("aria-label", c.name);
+    d.title = c.name;
+    d.tabIndex = 0;
+    d.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
+    d.addEventListener("contextmenu", (e) => e.preventDefault());
+    device.insertBefore(d, document.getElementById("start"));
+    c.hit = d;
+  };
+  knobs.forEach((k) => {
+    hit(k, "knob", k.role === "master" ? "slider" : "button");
+    k.hit.setAttribute("aria-description", k.role === "master" ? "Volume. Drag up or down, scroll, or use arrow keys." : "Drag up or down, scroll, or use arrow keys. Each step is one detent.");
+    if(k.role==="master"){k.hit.setAttribute("aria-valuemin","0");k.hit.setAttribute("aria-valuemax","100");k.hit.setAttribute("aria-valuenow",Math.round(masterValue*100/4096));}
+    bindKnob(k); drawKnob(k);
+  });
+  buttons.forEach((b) => { hit(b, "", "button"); bindButton(b); });
+  keys.forEach((k, i) => { hit(k, "", "button"); bindKey(k, i); });
+  syncButtons(true);
+  syncKeys(true);
+  drawLights(lastLeds);
+  enablePanel(!!node);
 }
-function setEnabled(on) {
-  for(const id of ["scene","track","voice","play","hold","mute","release","save","auto","sound-page"]) $(id).disabled=!on;
-  document.querySelectorAll("[data-page]").forEach(b=>b.disabled=!on);
-  keyButtons.forEach(b=>{if(b)b.disabled=!on;});
+
+// ------------------------------------------------------------------ input
+function syncButtons(redraw) {
+  let m = latched;
+  for (const b of btnBy.values()) m |= 1 << b;
+  if (m !== btnMask) { btnMask = m; send({ type: "buttons", mask: m }); }
+  else if (!redraw) return;
+  for (const b of buttons) {
+    const on = !!(m & (1 << b.bit));
+    b.g.classList.toggle("held", on);
+    b.g.classList.toggle("latched", !!(latched & (1 << b.bit)));
+    b.hit.setAttribute("aria-pressed", on);
+  }
 }
-async function startAudio() {
-  if(starting||started)return; starting=true;
-  const start=$("start");start.disabled=true;start.textContent="Opening the night…";tell("Loading the instrument.");
-  let readyTimer;
-  try {
-    if(!window.isSecureContext)throw new Error("Audio needs an HTTPS page or localhost.");
-    ac=new AudioContext({sampleRate:44100,latencyHint:"interactive"});
-    if(!ac.audioWorklet)throw new Error("This browser does not support AudioWorklet. Try a current Chrome, Edge, Firefox or Safari.");
-    // Resume during the user's gesture, before any network awaits.
-    const resume=ac.resume();
-    const [response]=await Promise.all([fetch("nightclaw.wasm"),ac.audioWorklet.addModule("worklet.js"),resume]);
-    if(!response.ok)throw new Error("The instrument download failed ("+response.status+").");
-    const wasm=await response.arrayBuffer(),store=loadStore();
-    engine=new AudioWorkletNode(ac,"nightclaw",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
-    gain=ac.createGain();gain.gain.value=+$("volume").value/100;engine.connect(gain).connect(ac.destination);
+function syncKeys(redraw) {
+  let m = 0;
+  for (const k of keyBy.values()) m |= 1 << k;
+  if (m !== keyMask) { keyMask = m; send({ type: "keys", mask: m }); }
+  else if (!redraw) return;
+  keys.forEach((k, i) => k.g.classList.toggle("held", !!(m & (1 << i))));
+}
+function bindButton(b) {
+  bindAccessibleClick(b.hit, btnBy, b.bit, syncButtons);
+  b.hit.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (!node) return;
+    if (e.shiftKey || e.button === 2) { latched ^= 1 << b.bit; syncButtons(true); return; }
+    if (latched & (1 << b.bit)) { latched &= ~(1 << b.bit); syncButtons(true); return; }
+    b.hit.setPointerCapture(e.pointerId);
+    btnBy.set("p" + e.pointerId, b.bit);
+    syncButtons();
+  });
+  b.hit.addEventListener("keydown", (e) => {
+    if (node && (e.key === "Enter" || e.key === " ") && !e.repeat) { btnBy.set("f" + b.bit, b.bit); syncButtons(); e.preventDefault(); e.stopPropagation(); }
+  });
+  b.hit.addEventListener("keyup", () => { if (btnBy.delete("f" + b.bit)) syncButtons(); });
+}
+function bindKey(k, i) {
+  bindAccessiblePress(k.hit, keyBy, i, syncKeys);
+  k.hit.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (!node) return;
+    k.hit.setPointerCapture(e.pointerId);
+    keyBy.set("p" + e.pointerId, i);
+    syncKeys();
+  });
+}
+function release(e) {
+  const id = "p" + e.pointerId;
+  if (btnBy.delete(id)) syncButtons();
+  if (keyBy.delete(id)) syncKeys();
+}
+for (const t of ["pointerup", "pointercancel", "lostpointercapture"]) device.addEventListener(t, release);
+
+function drawKnob(k) { if (k.ind) k.ind.setAttribute("transform", `rotate(${angle[k.name]} ${k.x} ${k.y})`); }
+function setMaster(value) {
+  masterValue = Math.max(0, Math.min(4096, value | 0));
+  angle.MASTER = -135 + 270 * masterValue / 4096;
+  send({ type: "master", value: masterValue });
+  const k = knobs.find((x) => x.role === "master");
+  if (k) { drawKnob(k); k.hit.setAttribute("aria-valuenow",Math.round(masterValue*100/4096)); }
+}
+function turn(k, n) {
+  if (!node || !k || !n) return;
+  if (k.role === "master") {
+    setMaster(masterValue + n * 64);
+  } else {
+    angle[k.name] = (angle[k.name] + n * 18) % 360;            // 20 detents a turn
+    send({ type: "enc", role: k.role, n });
+  }
+  if (k.role !== "master") drawKnob(k);
+}
+function bindKnob(k) {
+  let drag = null, wheel = 0;
+  k.hit.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    k.hit.setPointerCapture(e.pointerId);
+    drag = { y: e.clientY, acc: 0 };
+  });
+  k.hit.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    drag.acc += drag.y - e.clientY;
+    drag.y = e.clientY;
+    const step = k.role === "master" ? 3 : 8, n = Math.trunc(drag.acc / step);
+    if (n) { drag.acc -= n * step; turn(k, n); }
+  });
+  const end = () => { drag = null; };
+  k.hit.addEventListener("pointerup", end);
+  k.hit.addEventListener("pointercancel", end);
+  k.hit.addEventListener("lostpointercapture", end);
+  k.hit.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+    if (Math.abs(dy) >= 50) { turn(k, dy < 0 ? 1 : -1); wheel = 0; return; }   // a wheel notch: one detent
+    wheel -= dy;                                                                   // a trackpad: by distance
+    const n = Math.trunc(wheel / 25);
+    if (n) { wheel -= n * 25; turn(k, n); }
+  }, { passive: false });
+  k.hit.addEventListener("keydown", (e) => {
+    const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+    if (d) { turn(k, d); e.preventDefault(); e.stopPropagation(); }
+  });
+}
+const tall = matchMedia("(orientation: portrait) and (max-width: 700px)");
+build(tall.matches ? "tall" : "wide");
+tall.addEventListener("change", () => { releaseAll(); build(tall.matches ? "tall" : "wide"); });
+document.fonts?.load("16px Clayborn").then(() => build(layout), () => {});   // the labels' width: the hit areas
+
+const ARROWS = { ArrowUp: [EN.SELECT, 1], ArrowDown: [EN.SELECT, -1], ArrowRight: [EN.ALGORITHM, 1], ArrowLeft: [EN.ALGORITHM, -1] };
+addEventListener("keydown", (e) => {
+  if (!node || !document.getElementById("shortcuts").checked || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.(".hit, input, select, textarea, button, a, summary")) return;
+  if (ARROWS[e.code]) { const [r, n] = ARROWS[e.code]; turn(knobs.find((k) => k.role === r), n); e.preventDefault(); return; }
+  const m = KEYMAP[e.code];
+  if (!m) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  if (m.key !== undefined) { keyBy.set("k" + e.code, m.key); syncKeys(); }
+  else { btnBy.set("k" + e.code, m.btn); syncButtons(); }
+});
+addEventListener("keyup", (e) => {
+  const id = "k" + e.code;
+  if (keyBy.delete(id)) syncKeys();
+  if (btnBy.delete(id)) syncButtons();
+});
+function releaseAll() { latched = 0; btnBy.clear(); keyBy.clear(); syncButtons(true); syncKeys(true); }
+addEventListener("blur", releaseAll);
+
+// ------------------------------------------------------------------ screen and lights
+const ctx = document.getElementById("screen").getContext("2d");
+const img = ctx.createImageData(240, 240);
+function drawScreen(fb) {
+  const d = img.data;
+  for (let i = 0; i < 240 * 240; i++) {
+    const v = fb[i], p = ((v >> 8) | (v << 8)) & 0xFFFF;          // the panel's byte order -> RGB565
+    d[i * 4] = ((p >> 11) & 31) * 255 / 31;
+    d[i * 4 + 1] = ((p >> 5) & 63) * 255 / 63;
+    d[i * 4 + 2] = (p & 31) * 255 / 31;
+    d[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+// the power-on sweep (hal/fm1_led_anim.h): a level per LED, lit frames /64 (| 128: the glow under them), drawn as the
+// LED's share of lit between its dark (or glowing) colour and the lit one, mixed in linear light
+const lin = (h) => [1, 3, 5].map((i) => (parseInt(h.slice(i, i + 2), 16) / 255) ** 2.2);
+const ANIM = { btn: [lin("#3a3934"), lin("#3a3934"), lin("#fff4d6")], slit: [lin("#3a3a3c"), lin("#77777b"), lin("#ececee")] };
+function animFill(kind, q) {
+  const [dark, glow, lit] = ANIM[kind], s = Math.min(q & 127, 64) / 64, base = q & 128 ? glow : dark;
+  const c = base.map((v, i) => Math.round(255 * (v + (lit[i] - v) * s) ** (1 / 2.2)));
+  return `rgb(${c.join(",")})`;
+}
+function drawAnim(anim) {
+  for (const b of buttons) b.g.querySelector(".face").style.fill = anim ? animFill("btn", anim[b.bit]) : "";
+  keys.forEach((k, i) => { k.g.querySelector(".slit").style.fill = anim ? animFill("slit", anim[14 + i]) : ""; });
+}
+function drawLights([litB, litK, dimB, dimK, dimLo = 0, brB = 0, brK = 0, midK = 0], anim = null) {
+  drawAnim(anim);
+  document.documentElement.classList.toggle("dimlo", !!dimLo);   // (the breath's lower peak)
+  for (const b of buttons) {
+    const bit = 1 << b.bit, green = b.bit === B.PLAY && (litB & (1 << PLAY_GREEN));
+    b.g.classList.toggle("lit", !!(litB & bit) && !green);
+    b.g.classList.toggle("green", !!green);
+    b.g.classList.toggle("dim", !!(dimB & bit));
+    b.g.classList.toggle("breath", !!(brB & bit));
+  }
+  keys.forEach((k, i) => {
+    k.g.classList.toggle("lit", !!(litK & (1 << i)));
+    k.g.classList.toggle("dim", !!(dimK & (1 << i)));
+    k.g.classList.toggle("breath", !!(brK & (1 << i)));
+    k.g.classList.toggle("mid", !!(midK & (1 << i)));
+  });
+}
+
+
+function bindAccessibleClick(target,map,bit,sync) {
+  target.addEventListener("click",e=>{if(e.detail===0&&node){map.set("a"+bit,bit);sync(true);setTimeout(()=>{map.delete("a"+bit);sync(true);},120);}});
+  target.addEventListener("blur",()=>{if(map.delete("f"+bit))sync(true);});
+}
+function bindAccessiblePress(target,map,bit,sync) {
+  bindAccessibleClick(target,map,bit,sync);
+  target.addEventListener("keydown",e=>{if(e.key!==" "&&e.key!=="Enter")return;e.preventDefault();e.stopPropagation();if(node&&!e.repeat){map.set("f"+bit,bit);sync(true);}});
+  target.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){map.delete("f"+bit);sync(true);e.preventDefault();}});
+}
+function loadFlash() {
+  try {const raw=JSON.parse(localStorage.getItem(STORE)||"{}"),out={};
+    for(const [o,b] of Object.entries(raw))if(/^[0-3]$/.test(o)&&typeof b==="string"&&b.length<=5120)out[o]=Uint8Array.from(atob(b),c=>c.charCodeAt(0)).buffer;
+    return out;
+  }catch{return {};}
+}
+function saveFlash(data) {
+  try{const raw={};for(const [o,b] of Object.entries(data)){let s="";for(const v of b)s+=String.fromCharCode(v);raw[o]=btoa(s);}localStorage.setItem(STORE,JSON.stringify(raw));
+    document.getElementById("tool-status").textContent="Scene edits saved in this browser.";
+  }catch{document.getElementById("tool-status").textContent="Browser storage is unavailable; saves last for this session only.";}
+}
+let output=null,muted=false;
+const toolSay=t=>{document.getElementById("tool-status").textContent=t;};
+const go=document.getElementById("go"),status=document.getElementById("status");
+function enablePanel(on){device.querySelectorAll(".hit").forEach(d=>{d.inert=!on;});}
+enablePanel(false);
+async function switchOn() {
+  if(node)return;go.disabled=true;go.textContent="Starting…";let timer;
+  try{
+    const ac=new AudioContext({sampleRate:44100,latencyHint:"interactive"});audioContext=ac;
+    const unlocked=ac.resume();
+    const [r]=await Promise.all([fetch("nightclaw.wasm"),ac.audioWorklet.addModule("worklet.js?v=fm1-panel-1"),unlocked]);
+    if(!r.ok)throw new Error("Instrument download: HTTP "+r.status);
+    const wasm=await r.arrayBuffer(),store=loadFlash();
+    node=new AudioWorkletNode(ac,"nightclaw",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
+    output=ac.createGain();node.connect(output).connect(ac.destination);
     await new Promise((resolve,reject)=>{
-      readyTimer=setTimeout(()=>reject(new Error("The instrument took too long to start. Please retry.")),20000);
-      engine.onprocessorerror=()=>{tell("The audio engine stopped. Reload the page to restart.");releaseAll();setEnabled(false);};
-      engine.port.onmessage=e=>{
+      timer=setTimeout(()=>reject(new Error("The audio engine did not start in time.")),15000);
+      node.onprocessorerror=()=>{releaseAll();enablePanel(false);toolSay("The audio engine stopped. Reload this page to restart.");};
+      node.port.onmessage=e=>{
         const m=e.data;
         if(m.type==="ready"){
-          scenes=m.scenes; $("sound-page").replaceChildren(...m.pages.map((name,i)=>({name,i})).filter(x=>x.i>0).map(x=>new Option(x.name,String(x.i))));
-          $("scene").replaceChildren(...scenes.map((v,i)=>new Option(v,String(i))));
-          const picks=[["RAPTOR NIGHT","The signature night"],["BONE RIDER","Out on the trail"],["RED MESA","Western percussion"],["HIGH FRONTIER","Room for your Lead"]];
-          $("scene-picks").replaceChildren(...picks.flatMap(([name,desc])=>{
-            const i=scenes.indexOf(name); if(i<0)return[];
-            const b=document.createElement("button");b.className="scene-pick";b.dataset.scene=i;b.setAttribute("aria-pressed","false");
-            const title=document.createElement("span");title.textContent=name;const small=document.createElement("small");small.textContent=desc;b.append(title,small);
-            b.addEventListener("click",()=>act("scene",i));return[b];
-          }));
-          if(!Object.keys(store).length){const i=scenes.indexOf("RAPTOR NIGHT");if(i>=0)send("scene",{value:i});}
-          clearTimeout(readyTimer);resolve();
-        }else if(m.type==="error"){reject(new Error(m.message));tell("Audio error: "+m.message);setEnabled(false);}
-        else if(m.type==="frame"){if(m.fb)drawScreen(m.fb);if(m.state)update(m.state);if(m.store)saveStore(m.store);}
+          const params=new URLSearchParams(location.search),track=Number(params.get("track")),page=Number(params.get("page"));
+          if(!Object.keys(store).length&&!params.has("track")){const i=m.scenes.indexOf("RAPTOR NIGHT");if(i>=0)send({type:"scene",value:i});}
+          if(params.has("track")&&Number.isInteger(track)&&track>=0&&track<7)send({type:"track",value:track});
+          if(params.has("page")&&Number.isInteger(page)&&page>0&&page<28)send({type:"page",value:page});
+          clearTimeout(timer);resolve();
+        }else if(m.type==="error"){reject(new Error(m.message));toolSay("Audio error: "+m.message);}
+        else if(m.type==="frame"){
+          if(m.fb)drawScreen(m.fb);
+          if(m.state){lastLeds=[m.buttons||0,m.state.keyLights||0,0,0,0];drawLights(lastLeds);const text=m.state.page+" · "+(m.sceneName||"NightClaw")+(m.state.dirty?" · Unsaved edits":"");const s=document.getElementById("screen-status");if(s.textContent!==text)s.textContent=text;}
+          if(m.store)saveFlash(m.store);
+        }
       };
-      engine.port.postMessage({type:"load",wasm,store},[wasm]);
+      node.port.postMessage({type:"load",wasm,store,master:masterValue},[wasm]);
     });
-    started=true;starting=false;setEnabled(true);$("screen-off").hidden=true;$("audio-dot").classList.add("on");
-    start.textContent="Audio on";start.disabled=true;
-    tell("Ready. Choose a scene and play.");
-    send("visible",{value:!document.hidden});
+    document.getElementById("start").hidden=true;enablePanel(true);
+    document.getElementById("mute").disabled=document.getElementById("release").disabled=false;
+    device.focus({preventScroll:true});syncButtons(true);syncKeys(true);
+    send({type:"visible",value:!document.hidden});
+    ac.onstatechange=()=>{if(ac.state!=="running")toolSay("Audio is paused. Press Resume audio to continue.");document.getElementById("mute").textContent=ac.state==="running"?(muted?"Unmute":"Mute"):"Resume audio";};
   }catch(e){
-    clearTimeout(readyTimer);engine?.disconnect();engine=null;await ac?.close().catch(()=>{});
-    starting=false;started=false;setEnabled(false);start.disabled=false;start.textContent="Retry audio";
-    tell(e.message||String(e));
+    clearTimeout(timer);node?.disconnect();node=null;audioContext?.close().catch(()=>{});
+    enablePanel(false);go.disabled=false;go.textContent="Switch on";status.textContent="Could not start: "+e.message;
   }
 }
-$("start").addEventListener("click",startAudio);
-$("scene").addEventListener("change",()=>act("scene",+$("scene").value));
-$("track").addEventListener("change",()=>act("track",+$("track").value));
-$("sound-page").addEventListener("change",()=>act("page",+$("sound-page").value));
-$("voice").addEventListener("change",()=>send("voice",{value:+$("voice").value}));
-document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>act("page",+b.dataset.page)));
-$("play").addEventListener("click",()=>send("play",{value:state?.playing?0:1}));
-$("hold").addEventListener("click",()=>send("hold",{value:state?.held?0:1}));
-$("auto").addEventListener("click",()=>send("auto",{value:state?.auto?0:1}));
-$("save").addEventListener("click",()=>{send("save");$("storage-note").textContent="Saving scene settings in this browser…";});
-$("mute").addEventListener("click",()=>{muted=!muted;$("mute").textContent=muted?"Unmute":"Mute";$("mute").setAttribute("aria-pressed",String(muted));gain?.gain.setTargetAtTime(muted?0:+$("volume").value/100,ac.currentTime,.015);});
-$("volume").addEventListener("input",()=>{if(gain)gain.gain.setTargetAtTime(muted?0:+$("volume").value/100,ac.currentTime,.015);});
-$("release").addEventListener("click",releaseAll);
-$("keyboard").addEventListener("change",()=>{releaseAll();$("keyboard-hint").textContent=$("keyboard").checked?"Keyboard enabled: Q–I and A–K play white keys; 1–0 and − play black keys. Space plays or rests.":"White keys: Q–I, then A–K. Black keys: 1–0, then −. Release a key to release the note.";});
-$("zoom").addEventListener("click",()=>{const on=$("instrument").classList.toggle("zoomed");$("zoom").setAttribute("aria-pressed",String(on));$("zoom").textContent=on?"Normal size":"Enlarge";});
-const keyMap=new Map();WHITE_CODES.forEach((k,i)=>keyMap.set("Key"+k,WHITE[i]));BLACK_CODES.forEach((k,i)=>keyMap.set(k==="-"?"Minus":"Digit"+k,BLACK[i]));
-document.addEventListener("keydown",e=>{
-  if(!started||!$("keyboard").checked||$("play-panel").hidden||e.ctrlKey||e.metaKey||e.altKey)return;
-  if(e.target.closest("input,select,textarea,button,a,summary"))return;
-  if(e.code==="Space"){e.preventDefault();if(!e.repeat)send("play",{value:state?.playing?0:1});return;}
-  if(keyMap.has(e.code)){e.preventDefault();if(!e.repeat){held.set("k"+e.code,keyMap.get(e.code));syncKeys();}}
+go.addEventListener("click",switchOn);
+document.getElementById("mute").addEventListener("click",async()=>{
+  if(audioContext?.state!=="running"){try{await audioContext.resume();toolSay("");}catch{toolSay("Audio did not resume. Reload the page.");}return;}
+  muted=!muted;output.gain.setTargetAtTime(muted?0:1,audioContext.currentTime,.015);
+  document.getElementById("mute").textContent=muted?"Unmute":"Mute";document.getElementById("mute").setAttribute("aria-pressed",String(muted));
 });
-document.addEventListener("keyup",e=>{if(held.delete("k"+e.code)){e.preventDefault();syncKeys();}});
-addEventListener("blur",releaseAll);
-document.addEventListener("visibilitychange",()=>{if(document.hidden)releaseAll();send("visible",{value:!document.hidden});});
-function oct(bit) {send("octave",{value:bit===13?1:-1});}
-$("oct-down").addEventListener("click",()=>oct(12));$("oct-up").addEventListener("click",()=>oct(13));
-
-const LESSONS=[
- {title:"Start the expedition",short:"Start & scenes",intro:"A scene is a starting world: its instruments, drum beat, scale, tempo and mix. You can reshape every one.",
-  steps:["On the FM-1, turn PRESETS to choose a scene. In the browser, choose a name in the scene menu.","Try RAPTOR NIGHT first. BONE RIDER, RED MESA and HIGH FRONTIER explore the western side.","Press PLAY to rest or resume. In the browser, press Start audio once before playing."],
-  note:"The browser generates sound live. You do not need an FM-1 connected.",targets:["presets","play"],image:"home",caption:"PRESETS chooses the world. PLAY starts or rests it.",page:7,track:2},
- {title:"One track. Four controls.",short:"Home & the mix",intro:"Home is your control table. Select a track, then edit its four colored columns.",
-  steps:["Press HOME until the track table appears. Turn SELECT to move between Drone, Sequence, Lead, Sequence 2, Atmosphere, Skin and Calls.","K1 controls Level; K2 controls Filter; K3 controls LFO; K4 controls Reverb send.","Skin uses Ghosts in the third column. Calls uses Chance for automatic calling."],
-  note:"The colored circles are indicators. The four physical knobs do the editing. Each detent is one parameter step, with no speed acceleration.",targets:["home","select","controls"],image:"home",caption:"SELECT chooses the row. K1–K4 edit its four columns.",page:7,track:0},
- {title:"Choose your own voice.",short:"Instruments & Lead",intro:"The instrument is your choice. It is independent of the scene’s drum beat.",
-  steps:["On Home, select Lead with SELECT. Turn ALGORITHM to choose Theremin for the RAPTOR NIGHT signature combination.","Try Cello or Cello Low for a bowed, cutting voice. Sub Pad and Fat Pad offer deep sustained sounds, especially on Drone.","The white keys play the Lead in the scene’s scale. On the FM-1, press LFO for the Lead page, then use OCT− or OCT+. In the browser, use the Octave buttons below the keys."],
-  note:"Changing an instrument does not choose a new beat. Home K3 is filter motion; Lead’s sound pages provide further voice controls.",targets:["select","algorithm","keys"],image:"home",caption:"Select Lead, choose its voice with ALGORITHM, then play.",page:7,track:2},
- {title:"Put the drums in front.",short:"Beats & Skin",intro:"Skin is NightClaw’s independent drum track: deep, resonant percussion with fourteen selectable beat families.",
-  steps:["On Home, select Skin. Turn ALGORITHM to choose the beat.","Use Level to bring the drums forward and Filter to darken or brighten them. Reverb adds space.","Ghosts adds secondary accents. At zero, the main beat remains."],
-  note:"GALOP, TRES, WAR, RAIN, QUAKE, WAR2, TALK, SEVEN, PENTA, SPIRAL and CHAOS come from Paleotone/Gurdy. TRAIL, OUTRIDER and HUNT add western variations.",targets:["select","algorithm","controls"],image:"home",caption:"Skin chooses the drums. Its beat stays separate from your Lead.",page:7,track:5},
- {title:"Call into the dark.",short:"Creature calls",intro:"Creature calls are playable instruments, not something you have to leave running.",
-  steps:["On Home, select Calls. The first eight white keys trigger Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort.","The first black key toggles Manual / Auto. The second black key stops the current call.","Level zero silences the calls. Select Lead again to return the keyboard to instrument playing."],
-  note:"Manual is the startup default. In this browser, the first eight white keys are Q W E R T Y U I when computer keyboard control is enabled.",targets:["select","calls"],image:"calls",caption:"White 1–8: creatures. Black 1: Auto. Black 2: stop.",page:7,track:6},
- {title:"Perform the changes.",short:"Performance & space",intro:"Keep the beat going and shape the whole scene with broad gestures.",
-  steps:["Press SEL to enter Performance. The four controls become Filter, Wet, Energy and Sweep.","White keys 1–5 mute or restore layers; black keys 1–5 solo them. White keys 7–11 hold performance moves.","Press a page button to leave Performance. FX opens Space; another press opens Echo. Tap REC to toggle Hold."],
-  note:"Performance keys are commands, so return Home and select Lead before playing a melody. Hold repeats the sound it has captured; use it as a deliberate performance effect.",targets:["sel","fx","controls","keys"],image:"home",caption:"SEL changes the keys’ job: mutes and moves instead of Lead notes.",page:17,track:2},
- {title:"Shape the key & chords.",short:"Key & chords",intro:"The scene provides a harmonic world. Key and Chords let you guide it.",
-  steps:["From Home, use HOME again to find Key. The four controls set Tempo, Root, Mode and Transpose.","Tap EDIT for Chords. Choose a slot with K1; the keys choose its root, K2 its chord kind and K3 its type.","K4 chooses Endless or Loop. Return Home when you want to mix tracks or play Lead."],
-  note:"The keys edit harmony on Key and Chords pages. They return to live instrument playing when you leave those pages.",targets:["home","edit","controls"],image:"edit",caption:"EDIT opens the chord cards. K1–K4 follow the screen’s labels.",page:15,track:2},
- {title:"Keep the world you made.",short:"Save your settings",intro:"On the hardware, saving is a GLO gesture. The printed SAVE button has a different job.",
-  steps:["Hold GLO for about half a second, then release to save your edits.","A short GLO tap opens Setup. Holding to about 1.5 seconds resets the current scene, so release after the save gesture.","In this player, use Save browser session. It keeps your scene settings on this browser and device."],
-  note:"The physical SAVE button opens sound pages. Browser saves and the FM-1’s saved settings are separate; neither transfers to the other.",targets:["glo"],image:"home",caption:"Hold GLO briefly to save. SAVE is a sound-page button.",page:7,track:2}
-];
-let lesson=0;
-function diagram(item) {
- const active=new Set(item.targets);
- const hi=(id,x,y,w,h,rx=12)=>active.has(id)?`<rect x="${x-6}" y="${y-6}" width="${w+12}" height="${h+12}" rx="${rx}" class="diagram-highlight"/>`:"";
- let s=`<svg viewBox="0 0 1000 550" role="img" aria-label="FM-1 diagram highlighting ${item.targets.join(", ")}"><title>${item.caption}</title><rect x="8" y="8" width="984" height="534" rx="32" fill="#28232b" stroke="#554759" stroke-width="2"/><text x="50" y="47" fill="#e6dcc2" font-family="Barlow,Arial" font-size="22" font-weight="700">M-VAVE FM-1</text>`;
- const knobs=[["master",92,105,"MASTER"],["select",205,105,"SELECT"],["presets",92,222,"PRESETS"],["algorithm",205,222,"ALGORITHM"]];
- for(const [id,x,y,label] of knobs) s+=hi(id,x-33,y-35,66,80)+`<circle cx="${x}" cy="${y}" r="26" fill="#0c0a0e" stroke="#706477" stroke-width="2"/><path d="M ${x} ${y-20} v 9" stroke="#e6dcc2" stroke-width="3"/><text x="${x}" y="${y+48}" class="diagram-label">${label}</text>`;
- s+=`<rect x="306" y="70" width="222" height="222" rx="6" fill="#050508"/><image href="assets/${item.image}.png" x="312" y="76" width="210" height="210" style="image-rendering:pixelated"/>`;
- s+=hi("controls",565,68,388,88);
- for(let i=0;i<4;i++)s+=`<circle cx="${604+i*100}" cy="100" r="24" fill="#0c0a0e" stroke="${COLORS[i]}" stroke-width="3"/><path d="M ${604+i*100} 82 v 10" stroke="${COLORS[i]}" stroke-width="3"/><text x="${604+i*100}" y="148" class="diagram-label">K${i+1}</text>`;
- const rows=[["FX","SEL","ENV","LFO","EDIT","GLO"],["HOME","SAVE","ARP","SEQ","PLAY","REC"]];
- rows.forEach((row,r)=>row.forEach((name,i)=>{const x=567+i*66,y=185+r*62;s+=hi(name.toLowerCase(),x,y,56,44,9)+`<rect x="${x}" y="${y}" width="56" height="44" rx="6" fill="#151117" stroke="#68596b"/><text x="${x+28}" y="${y+28}" class="diagram-label" style="font-size:14px">${name}</text>`;}));
- s+=hi("keys",42,346,916,150)+hi("calls",42,346,457,150);
- for(let i=0;i<16;i++)s+=`<rect x="${48+i*57}" y="402" width="44" height="105" rx="18" fill="${active.has("calls")&&i<8?COLORS[i%4]:"#e6dcc2"}"/><text x="${70+i*57}" y="480" text-anchor="middle" font-family="Barlow,Arial" font-size="18" fill="#050508">${i+1}</text>`;
- AFTER.forEach((a,i)=>{s+=`<rect x="${76+a*57}" y="347" width="40" height="46" rx="15" fill="${active.has("calls")&&i<2?"#eaff00":"#7c727e"}"/>`;});
- s+="</svg>"; return s;
-}
-LESSONS.forEach((l,i)=>{const b=document.createElement("button");const num=document.createElement("span");num.textContent=String(i+1).padStart(2,"0");b.append(num,document.createTextNode(l.short));b.addEventListener("click",()=>showLesson(i));$("lessons").append(b);});
-function showLesson(i){
- lesson=i;const l=LESSONS[i];
- [...$("lessons").children].forEach((b,n)=>{if(n===i)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");});
- $("diagram").innerHTML=diagram(l);$("diagram-caption").textContent=l.caption;
- $("lesson-number").textContent="CHAPTER "+String(i+1).padStart(2,"0")+" / "+String(LESSONS.length).padStart(2,"0");
- $("lesson-title").textContent=l.title;$("lesson-intro").textContent=l.intro;
- $("lesson-steps").replaceChildren(...l.steps.map(t=>{const li=document.createElement("li");li.textContent=t;return li;}));
- $("lesson-note").textContent=l.note;$("lesson-position").textContent=(i+1)+" / "+LESSONS.length;
- $("previous").disabled=i===0;$("next").disabled=i===LESSONS.length-1;
-}
-$("previous").addEventListener("click",()=>showLesson(Math.max(0,lesson-1)));
-$("next").addEventListener("click",()=>showLesson(Math.min(LESSONS.length-1,lesson+1)));
-$("try-lesson").addEventListener("click",()=>{
- const l=LESSONS[lesson];location.hash="play";
- if(started){act("track",l.track);if(l.page!==7)send("page",{value:l.page});}
- else tell("Press Start audio, then select the track or page shown in the guide.");
- $("instrument").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth",block:"start"});
-});
-function route(){
- const guide=location.hash==="#guide";$("guide-panel").hidden=!guide;$("play-panel").hidden=guide;
- document.querySelectorAll("[data-tab]").forEach(a=>{if(a.dataset.tab===(guide?"guide":"play"))a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");});
- if(guide)releaseAll();
-}
-addEventListener("hashchange",route);showLesson(0);route();
+document.getElementById("release").addEventListener("click",releaseAll);
+document.getElementById("shortcuts").addEventListener("change",releaseAll);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)releaseAll();send({type:"visible",value:!document.hidden});});
+function focusMode(on){if(on&&!node){toolSay("Switch on before enlarging the screen.");return;}document.body.classList.toggle("focus-mode",on);canvas.setAttribute("aria-label",on?"Live FM-1 screen; activate to return to panel":"Live FM-1 screen; activate to enlarge");document.getElementById("focus-mode").textContent=on?"Return to panel":"Enlarge screen";}
+const toggleFocus=()=>focusMode(!document.body.classList.contains("focus-mode"));
+canvas.addEventListener("click",toggleFocus);canvas.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleFocus();}});
+document.getElementById("focus-mode").addEventListener("click",toggleFocus);
+addEventListener("keydown",e=>{if(e.key==="Escape")focusMode(false);});

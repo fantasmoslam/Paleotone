@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#050508">
+<title>NightClaw · Visual guide</title>
+<meta name="description" content="A prehistoric western instrument. Play the NightClaw synthesizer in your browser and learn the FM-1 controls with a visual guide.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to instrument</a>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="NightClaw home"><span class="claw" aria-hidden="true">///</span> NIGHTCLAW</a>
+  <nav aria-label="Main navigation"><a href="#play" data-tab="play">Play</a><a href="guide.html" data-tab="guide" aria-current="page">Visual guide</a><a href="https://github.com/fantasmoslam/Paleotone/raw/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc" download>Firmware ↓</a><a href="https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion" target="_blank" rel="noopener">Source ↗</a></nav>
+</header>
+<main id="main">
+<section id="guide-panel" aria-labelledby="guide-title">
+  <div class="section-title"><div><p class="eyebrow">02 / THE VISUAL FIELD GUIDE</p><h2 id="guide-title">Know your instrument.</h2></div><p>For the browser and your physical FM-1.</p></div>
+  <div class="guide-layout">
+    <nav id="lessons" class="lessons" aria-label="Tutorial chapters"></nav>
+    <div class="lesson-body">
+      <div class="diagram-wrap"><div id="diagram" aria-label="FM-1 control diagram"></div><p id="diagram-caption"></p></div>
+      <article class="lesson-copy" aria-live="polite" aria-atomic="true"><p class="eyebrow" id="lesson-number"></p><h3 id="lesson-title"></h3><p id="lesson-intro"></p><ol id="lesson-steps"></ol><div class="lesson-note" id="lesson-note"></div><button id="try-lesson">Show this on the player ↗</button></article>
+    </div>
+  </div>
+  <div class="lesson-pagination"><button id="previous">← Previous</button><span id="lesson-position"></span><button id="next">Next chapter →</button></div>
+  <section class="cheatsheet panel"><h3>The shortcuts worth knowing.</h3><div class="cheat-grid">
+    <div><span class="cheat-key">PRESETS</span><p>Choose a scene.</p></div><div><span class="cheat-key">SELECT</span><p>On Home, choose a track.</p></div><div><span class="cheat-key">ALGORITHM</span><p>Choose that track’s voice or drum beat.</p></div><div><span class="cheat-key">K1 · K2 · K3 · K4</span><p>Control the four displayed parameters.</p></div><div><span class="cheat-key">GLO · HOLD ½ SEC</span><p>Save edits, then release. A short tap opens Setup.</p></div><div><span class="cheat-key">PLAY / REC</span><p>Play or rest / tap to toggle Hold.</p></div>
+  </div><p class="important">The button printed SAVE opens sound pages. To save edits on the FM-1, hold GLO for about half a second, then release. Holding to about 1.5 seconds resets the current scene.</p></section>
+</section>
+</main>
+<footer><span class="brand">NIGHTCLAW</span><p>A small instrument. An enormous night.</p><a href="https://github.com/fantasmoslam/Paleotone/pull/41" target="_blank" rel="noopener">Development & documentation ↗</a></footer>
+<script type="module" src="guide.js"></script>
+</body></html>
