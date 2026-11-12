@@ -2,6 +2,8 @@
 
 The player runs NightClaw's actual application, UI, project storage and DSP in WebAssembly. It does not substitute recordings or a JavaScript sound-alike engine. This is a separate browser build; the installed FM-1 firmware does not change.
 
+Public project page: https://fantasmoslam.github.io/Paleotone/nightclaw/
+
 ## Use
 
 Press **Start audio** once. Choose a scene, choose a track, select its instrument or beat, and use the four colored controls. The live 240 × 240 firmware screen is enlarged alongside these controls. Home, Key, Space, Performance and Chords are directly accessible; the remaining sound pages are in More sound pages.
@@ -38,4 +40,4 @@ The shipped WASM passes checks for all twenty scenes producing bounded finite au
 
 JavaScript syntax and static asset/element references are checked locally. A connected browser was unavailable during development, so visual layout, real browser interaction and subjective listening remain unverified. Node engine/worklet tests do not establish those results.
 
-The NightClaw browser GitHub workflow rebuilds and tests the player when its sources or firmware dependencies change. Code, font licenses and taiko attribution ship with the page.
+The NightClaw browser GitHub workflow rebuilds and tests the player when its sources or firmware dependencies change, then publishes only the nightclaw/ subtree of gh-pages. The existing Paleotone site is preserved. The firmware download is pinned to the verified installed f9b11d6 package. TOTAL_STACK retains compatibility with Ubuntu 24.04’s Emscripten while newer versions also accept it. Code, font licenses and taiko attribution ship with the page.

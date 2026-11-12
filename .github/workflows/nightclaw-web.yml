@@ -14,7 +14,10 @@ on:
       - '.github/workflows/nightclaw-web.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
 jobs:
   browser:
     runs-on: ubuntu-24.04
@@ -24,7 +27,8 @@ jobs:
       - name: WebAssembly tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends emscripten python3-pil python3-fonttools
+          sudo apt-get install -y --no-install-recommends emscripten libraqm0
+          python3 -m pip install --break-system-packages pillow==12.3.0 fonttools==4.61.1
       - name: Build actual firmware for the browser
         run: sh web/nightclaw/build.sh
       - name: Browser engine and worklet checks
@@ -36,3 +40,16 @@ jobs:
         with:
           name: nightclaw-browser
           path: build/nightclaw/
+      - name: Publish NightClaw on GitHub Pages
+        shell: bash
+        run: |
+          git fetch --depth 1 origin gh-pages
+          git worktree add pages FETCH_HEAD
+          mkdir -p pages/nightclaw
+          cp -R build/nightclaw/. pages/nightclaw/
+          printf "Source: https://github.com/%s/tree/%s\n" "$GITHUB_REPOSITORY" "$GITHUB_SHA" > pages/nightclaw/SOURCE.txt
+          cd pages
+          git add nightclaw
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -m "NightClaw browser and guide: ${GITHUB_SHA::7}"
+          git push origin HEAD:gh-pages
