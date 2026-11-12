@@ -16,7 +16,7 @@ The twenty-scene bank includes BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HI
 
 ## Candidate installation and build
 
-The installed NightClaw candidate is source 0cb944a, product identity FM-1_942, with [revised knob response](docs/NIGHTCLAW-KNOB-RESPONSE.md) and the [jungle title screen with a three-second minimum hold](docs/NIGHTCLAW-BRANDING.md). It retains the twenty approved audio baselines and guarded two-core worker. This is a development candidate; [the audio headroom record](docs/TWRECKS-AUDIO-HEADROOM.md) distinguishes measurements from wider release coverage.
+The installed NightClaw candidate is source 35c98f8, product identity FM-1_942, with [revised knob response](docs/NIGHTCLAW-KNOB-RESPONSE.md) and the [jungle title screen with a three-second minimum hold](docs/NIGHTCLAW-BRANDING.md). It retains the twenty approved audio baselines and guarded two-core worker. This is a development candidate; [the audio headroom record](docs/TWRECKS-AUDIO-HEADROOM.md) distinguishes measurements from wider release coverage.
 
 The [NightClaw package](https://github.com/fantasmoslam/Paleotone/blob/77f1b86224ea55fd076eb4df496e70d455b234c9/nightclaw-FM-1_942.fwsc) passed [full CI](https://github.com/fantasmoslam/Paleotone/actions/runs/43092611149). That published package matches the previously installed 3cf8a1a build. The 0cb944a visibility revision adds [larger type and adaptive control spacing](docs/NIGHTCLAW-VISIBILITY.md), retaining the physically accepted knob response and Home Energy sweep. Local audio, worker, storage/updater and all 39 control scenarios pass after the Energy and host-audit corrections; its full CI result is pending.
 
@@ -27,3 +27,5 @@ CI publishes this branch's package and logs to [twrecks-completion-output](https
 NightClaw builds on NACHTFAHRT/Felucca and Paleotone's synthesis work. The Paleotone/X0X/Melodee-derived guarded worker and original copyright notices remain in their source files. Firmware code follows the repository's GPL notices; the recorded taiko assets have separate [CC BY-SA 4.0 attribution](tools/research/taiko-bank-05/ATTRIBUTION.md).
 
 The [upstream README](UPSTREAM-NACHTFAHRT-README.md) is retained as a historical reference; its installer, website and musical description describe NACHTFAHRT.
+
+The [approved NightClaw palette](docs/NIGHTCLAW-PALETTE.md) is installed: bone white, saturated crimson, sulfur yellow and electric violet on near-black.

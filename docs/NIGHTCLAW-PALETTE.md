@@ -21,4 +21,6 @@ The columns retain the same colors across every control page. Layer, pattern and
 
 Native and host builds pass. Home and Space screenshots match the approved preview exactly. Native image is 543,948 / 581,564 bytes; RAM remains 95,644 / 98,304 and pool 334,472 / 344,064.
 
-Installation is pending. Automatic approval review rejected flashing based on the historical RED MESA save-later instruction. A read-only check now shows RAPTOR NIGHT at 130 BPM, F Phrygian, with unsaved edits. The device is left running until installation is cleared.
+Source 35c98f8 is installed after explicit user authorization to proceed despite unsaved edits. The installer completed with exit 0; NightClaw reconnected and answered its status handshake with RAPTOR NIGHT playing at 130 BPM, F# Phrygian. The earlier automatic approval block is resolved.
+
+Installed package SHA-256: 7f00468862be85c5a3af0f19b9c26ddd842486417cda5fe55a9df98558b94320.
