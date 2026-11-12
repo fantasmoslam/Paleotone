@@ -6,6 +6,10 @@ A generative dinosaur synth with resonant taiko drums, western/tribal scenes, se
 
 **[Quick start](docs/TWRECKS-QUICKSTART.md)** · **[Current features](TWRECKS.md)** · **[Completion checks](docs/TWRECKS-COMPLETION-CHECKLIST.md)** · **[Development PR](https://github.com/fantasmoslam/Paleotone/pull/41)**
 
+## Play in your browser
+
+The [NightClaw browser player](https://nightclaw-player.scentedpheasant1.chatgpt.site) includes the live firmware screen, playable keys, independent instrument/beat selection, browser saves and an eight-chapter visual FM-1 tutorial. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The hosted preview initially has owner-only access.
+
 ## Play
 
 Turn PRESETS to choose a scene. On Home, SELECT chooses a track; ALGORITHM chooses its instrument, or the beat when Skin is selected. The four right encoders edit that row. Play the Lead on the white keys, or select Calls for manual creatures.
