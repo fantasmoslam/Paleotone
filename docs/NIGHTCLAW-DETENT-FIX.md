@@ -10,7 +10,7 @@ Velocity acceleration is removed from the application, including its state, help
 
 New physical-input tests exercise all seven encoders and all four starting phases: slow and fast turns, mid-click pauses, immediate reversals, missing sampled phases, bounce, partial reversals and off-detent boot recovery. Before correction, five slow clicks counted zero and five clicks with halfway pauses counted nine. After correction, these tests pass for every encoder/phase. Fundamentally ambiguous two-state samples are explicitly tested to generate no invented direction.
 
-The UI scenario verifies a 100-click sweep, one-click reverse corrections, exact movement through zero and one-item voice/preset selection. Font-render tests also pass. Native image is 544,364 / 581,564 bytes; RAM 95,596 / 98,304; pool 334,472 / 344,064. Physical feel on Dylan's device still needs feedback after installation.
+The UI scenario verifies a 100-click sweep, one-click reverse corrections, exact movement through zero and one-item voice/preset selection. Font-render tests also pass. Native image is 544,364 / 581,564 bytes; RAM 95,596 / 98,304; pool 334,472 / 344,064. Dylan subsequently reports “Works much much better”; this is the accepted physical knob response.
 
 ## Home readability
 
@@ -22,4 +22,6 @@ All 39 control scenarios pass with these changes. The eleven-cut font renderer c
 
 ## Installation
 
-Source f9b11d6 installed successfully (installer exit 0). NightClaw reconnected and answered its status handshake with RAPTOR NIGHT playing at 130 BPM. Package SHA-256: 641cd0a0784ca05baf0b17c6878b479c7a30fcd82f1510a99ffae805f37337ed. Physical control feel and Home readability await Dylan's feedback.
+Source f9b11d6 installed successfully (installer exit 0). NightClaw reconnected and answered its status handshake with RAPTOR NIGHT playing at 130 BPM. Package SHA-256: 641cd0a0784ca05baf0b17c6878b479c7a30fcd82f1510a99ffae805f37337ed. Dylan has accepted the corrected physical knob feel. Direct readability feedback across all pages remains open.
+
+Full CI run [43139217653](https://github.com/fantasmoslam/Paleotone/actions/runs/43139217653) passed. Published output commit 1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2 identifies this source as successful; its checksum matches the installed package above.

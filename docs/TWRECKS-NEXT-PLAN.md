@@ -1,49 +1,44 @@
 # NightClaw completion plan
 
-NightClaw source f9b11d6 is installed with landscape artwork and a minimum three-second static title screen. The device reconnected under its new name and resumed playback; Dylan reports that it is good so far. The preceding branding baseline passed full CI run 43092611149; the knob-response revision has its own regression checks. See [branding and timing details](NIGHTCLAW-BRANDING.md).
+## Current checkpoint
 
-## Approved reference
+Installed firmware source: **f9b11d6**. Its [full CI run](https://github.com/fantasmoslam/Paleotone/actions/runs/43139217653) passed. The published package matches the installed package by SHA-256; see the [completion checklist](TWRECKS-COMPLETION-CHECKLIST.md).
 
-The audio baseline 0f889bf retains the twenty approved audio baselines and runs independent taiko playback on a guarded second core. RAPTOR NIGHT with user-selected Theremin Lead is the signature reference. Dylan also explicitly approved BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER after installation. Preserve these sounds and the independence of beat and instrument choices.
+Dylan reports “Works much much better” after the physical-detent correction. This is the accepted control response: one full detent produces one item or parameter step, with no velocity acceleration. Earlier progressive-response tuning is superseded.
 
-## Completed
+## Completed and to preserve
 
-- Physically accepted progressive knob response, precise reversals and immediate movement away from zero.
-- Large readable labels, four-column track controls and colored Pac-Man fill indicators; existing Performance controls retained.
-- Twenty dinosynth scenes, with six authorized western replacements and fourteen retained saved slots. The original non-dinosynth preset bank is excluded from device builds.
-- Eleven original Paleotone/Gurdy rhythms plus TRAIL, OUTRIDER and HUNT, independently selectable and saved per scene.
-- Selectable Cello, Cello Low, Sub Pad and Fat Pad voices; existing Theremin and all prior instrument IDs retained.
-- Eight manual creature calls; optional automatic mode; manual mode at boot.
-- Saved instrument/beat choices, old format-11 header compatibility, scoped replacement revision and interrupted-save recovery tests.
-- Native memory bounds, update-loader/recovery checks, twenty repeatable production audio hashes and ten legacy fixture hashes.
-- Full CI checkpoint 6f85262 passed, including the long orphan scenario. Worker-mode tests prove all twenty hashes in serial, concurrent and partial-failure fallback execution.
-- The live HIGH FRONTIER Lead test originally produced pops at 70–101% CPU. The installed two-core candidate repeats that performance cleanly at about 65% average / 91% peak, with zero reported dropouts or worker fallback after restart. Dylan confirmed it plays well.
+- Twenty dinosynth scenes, including six approved western replacements. RAPTOR NIGHT with user-selected Theremin Lead remains the signature reference.
+- Fourteen independent beats: eleven Paleotone/Gurdy families plus TRAIL, OUTRIDER and HUNT. Beat selection stays independent of melodic instruments.
+- Cello, Cello Low, Sub Pad and Fat Pad appended without moving existing voice IDs.
+- Eight manual creature calls, with optional Auto and manual mode at boot.
+- Saved beat/instrument choices, compatible format-11 headers, scoped scene migration and interrupted-save recovery.
+- Guarded second-core taiko playback. The formerly overloading HIGH FRONTIER live-Lead test played cleanly at about 65% average / 91% peak on the tested device.
+- Approved saturated bone/crimson/sulfur/violet palette, single NightClaw font family and static jungle title held at least three seconds.
+- Home track names at 24–32 px and 36 px gauges; four columns and up to four visible track rows. Preserve these sizes.
+- Seven-encoder/four-phase decoder coverage, eleven-cut font checks, all 39 UI scenarios, storage/updater checks and twenty audio baselines.
 
-## Current closeout
+The sound target remains consequential and apocalyptic: grandiose low percussion, distinct voices, restrained distortion and space for live Lead. No further rewrite of approved scenes is planned.
 
-The installed knob-response revision f92fe8c is physically accepted: Dylan reports “Feels much better.” Preserve its progressive sweep and fine reverse corrections. The native build, focused response tests, all 38 regular UI scenarios and the 91-knob exhaustive audit pass. Audio baselines, worker modes, storage and updater checks pass; GitHub CI remains pending.
+## Remaining docket
 
-The full guarded-worker CI run passed: build, all audio-worker modes, storage/updater checks and all control scenarios including orphans. The published branding-baseline package SHA-256 matches its installation exactly; the later installed control revision has a separate checksum in the knob-response record. PR #41 is ready for review. The repository front page and [quick-start guide](TWRECKS-QUICKSTART.md) now describe NightClaw controls and its own candidate output; the upstream README is retained separately.
+| Work | Current status / next evidence |
+|---|---|
+| Release preparation | Published candidate and installed checksum agree; documentation and PR describe the current firmware. PR #41 remains open for review. |
+| Long physical-device playback | Short live-Lead overload reproduction is accepted. Longer sessions and wider instrument combinations remain unverified. |
+| Physical readability | Large Home labels and the single-family correction are installed and pass render/fit checks. Readability across all pages still needs direct user feedback. |
+| Final release decision | Review remaining physical results before treating the candidate as a finished release. |
 
-The fully CI-verified branding baseline is 3cf8a1a; current installed source is f9b11d6; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
+The [72-minute host pass](NIGHTCLAW-ENDURANCE.md) covers twenty scenes and the four appended Lead voices. It establishes host selection/output coverage, not physical-device endurance. No firmware reinstall is needed for the remaining device checks.
 
-The [visibility pass](NIGHTCLAW-VISIBILITY.md) is installed: Paleotone-style condensed size-to-fit type, adaptive row spacing, larger indicators on shorter pages, and packed font data. Font-pixel/clipping checks and all 39 control scenarios pass. Physical screen readability feedback remains open.
+## Practical device coverage
 
-## Remaining coverage
-
-The [72-minute host endurance pass](NIGHTCLAW-ENDURANCE.md) now covers all twenty production scenes and all four appended Lead voices. Its 24 selection and output-peak checks pass. Longer physical-device sessions and wider instrument combinations remain the next release-confidence work; no additional firmware installation is needed for these checks.
+During normal use, include RAPTOR NIGHT with Theremin and HIGH FRONTIER with a live Lead, then try the cello and bass-pad voices with drum accents and effects. A longer session should include scene changes and manual calls. Record audible glitches, CPU average/peak, the dropout count and any labels that are hard to read. These are coverage goals, not a claim that they have already passed.
 
 ## References
 
-- [Completion checklist](TWRECKS-COMPLETION-CHECKLIST.md)
-- [Paleotone source review, worker adaptation and measured result](TWRECKS-AUDIO-HEADROOM.md)
+- [Current detent and Home readability correction](NIGHTCLAW-DETENT-FIX.md)
+- [Audio headroom measurements and worker adaptation](TWRECKS-AUDIO-HEADROOM.md)
 - [Western scene mapping and migration](TWRECKS-WESTERN-SCENES.md)
 - [Instrument additions](TWRECKS-INSTRUMENT-ADDITIONS.md)
-
-## User requirements retained
-
-Physical knobs do the editing; indicators show settings without simulated on-screen knobs or numeric parameter clutter. Direct saved instrument choices and dinosaur triggering remain accessible. Beats stay independent of melodic instruments. The sound target remains deep, consequential and apocalyptic, with grandiose low percussion, clear voices, restrained distortion and room for live Lead. A literal march is not required.
-
-The installed [typeface correction](NIGHTCLAW-TYPEFACE.md) uses a single family in every font role. Large Home text, 36 px gauges, expanded Edit cards and same-family Pattern/effects labels pass the font and control checks.
-
-Current control/readability checkpoint: [f9b11d6](NIGHTCLAW-DETENT-FIX.md) is installed with full-detent counting, no velocity acceleration, literal item/parameter steps and 24–32 px Home track names. Seven-encoder/four-phase tests, eleven-cut font checks and all 39 control scenarios pass. Physical feel remains to be confirmed.
+- [Quick start](TWRECKS-QUICKSTART.md)

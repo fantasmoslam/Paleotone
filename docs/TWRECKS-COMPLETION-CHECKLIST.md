@@ -1,51 +1,53 @@
 # NightClaw completion checkpoint
 
-Musically approved source: 43703d8. Worker audio baseline: 0f889bf. Current installed NightClaw candidate: f9b11d6, retaining all twenty approved audio hashes.
+Current installed firmware source: **f9b11d61af8c05598089cea8ad5c6360470fe13a**. Later documentation-only commits do not change this binary.
 
 | Item | Evidence / status |
 |---|---|
 | Musical direction | RAPTOR NIGHT and all six western scenes explicitly approved on the device |
-| Control UI | Large labels and colored fill indicators; independent saved instrument/beat selectors |
-| Instruments | Cello, Cello Low, Sub Pad and Fat Pad available on each melodic layer; 116 registered voices checked |
-| Drums | Eleven exact imported beat families plus three independent western variations; fourteen finite render checks |
-| Creature calls | Manual by default; optional Auto; key routing and stop/mute behavior covered by scenarios |
-| Preset bank | Twenty scenes; six authorized replacements; fourteen retained saved slots verified byte for byte |
-| Storage | Beat/instrument save and reboot checks, interrupted replacement write/retry and old-header compatibility pass |
-| Audio regression | Twenty production baselines repeat; RAPTOR NIGHT baseline preserved; ten legacy fixture baselines unchanged |
-| Device installation | Write/restart verified; RAPTOR NIGHT observed at the same 130 BPM, F Phrygian and Drone controls before/after |
-| Resource fit | Current NightClaw image 544,364 / 581,564 bytes; RAM 95,596 / 98,304; pool 334,472 / 344,064 |
+| Physical knobs | Full-detent counting, no velocity acceleration; Dylan reports “Works much much better” |
+| UI | Approved saturated palette; one NightClaw typeface family with no original-font fallback; Home names 24–32 px and gauges 36 px |
+| Instruments | Cello, Cello Low, Sub Pad and Fat Pad available on melodic layers; existing voice IDs retained |
+| Drums | Eleven imported beat families plus three western variations; independent of instrument selection |
+| Creature calls | Eight manual calls; optional Auto; manual mode at boot |
+| Preset bank | Twenty scenes; six authorized replacements; fourteen other saved slots preserved |
+| Storage | Beat/instrument save and reboot, interrupted replacement write/retry and old-header compatibility checks pass |
+| Audio regression | Twenty production baselines match in serial, concurrent and partial-worker-failure modes; ten legacy fixtures retained |
+| Decoder and UI checks | All seven encoders/four starting phases; eleven font cuts; all 39 control scenarios pass |
 | Updater | Entry, loader bounds/recovery and installer protocol checks pass |
-| Full CI audit | Guarded-worker source 0f889bf passed the complete CI run, including concurrent/fallback audio checks and the long orphan scenario |
-| Corrected release check | The two voices were released FM bells and died naturally within one additional second; a bounded ten-second window passes, without changing audio code |
+| Installation | Installer exit 0; NightClaw status handshake answered with RAPTOR NIGHT playing at 130 BPM |
+| Resource fit | Image 544,364 / 581,564 bytes; RAM 95,596 / 98,304; pool 334,472 / 344,064 |
+| Full CI | Source f9b11d6 passed run 43139217653 |
+| Extended host playback | 72 minutes, 24 selection/output-peak checks passed |
+| Remaining device coverage | Longer sessions, wider voice/effect combinations and direct readability feedback across pages |
 
-## Hardware overload follow-up
+## Verified candidate publication
 
-Lead over HIGH FRONTIER reproduced pops and 70–101% CPU. Candidate 0f889bf adapts Paleotone's guarded second-core worker for independent taiko playback. It installed successfully and reports two active cores. Dylan repeated the test and reported clean playback with about 65% average / 91% peak. Three read-only snapshots showed 63–68% average / 81–90% peak and zero reported dropouts or worker fallback after restart.
+[Full CI run 43139217653](https://github.com/fantasmoslam/Paleotone/actions/runs/43139217653) completed successfully.
 
-All twenty production audio hashes match under serial, concurrent and injected partial-worker-failure execution. Resource fit is now image 580,492 / 581,564, RAM 95,708 / 98,304 and pool 334,472 / 344,064. See [source review and measured result](TWRECKS-AUDIO-HEADROOM.md).
+Fixed output commit: **1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2**. Its RESULT identifies the installed source f9b11d61af8c05598089cea8ad5c6360470fe13a with success.
 
-Long-session and wider instrument combinations remain broader release coverage. The original overload reproduction now plays cleanly; further musical rewrites of approved scenes are not planned.
+[Candidate firmware](https://github.com/fantasmoslam/Paleotone/blob/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc) is 609,759 bytes. The published checksum and local installed-package checksum agree:
 
-Installed worker package SHA-256: 4d6336a0e7657f9943986694a7e40964fc5b83600cb4a237777af65dd9feb015
+```text
+641cd0a0784ca05baf0b17c6878b479c7a30fcd82f1510a99ffae805f37337ed
+```
 
-## Verified CI publication
+The candidate remains product FM-1_942 and retains the compatible preset format. PR #41 is open; this is not a final release announcement.
 
-[Worker CI run 43076204934](https://github.com/fantasmoslam/Paleotone/actions/runs/43076204934) completed successfully. Published output commit 249b5f999308d8e0f5388132d696cf9b07afc8fa identifies source 0f889bf99dde15656d211f0064fe7ffa43a3cffd with success. Its package SHA-256 exactly matches the locally installed worker package above. The output log reports audio-worker and scenario-orphans passed, all tests passed, exit 0.
+## Hardware evidence and limits
 
-## Installed NightClaw publication
+The original HIGH FRONTIER live-Lead test produced pops at 70–101% CPU. The guarded second-core taiko candidate repeated that performance cleanly at about 65% average / 91% peak. Read-only snapshots showed zero reported dropouts or worker fallback after restart. Those observations are evidence for that tested performance, not a worst-case or long-session benchmark.
 
-[Full CI run 43092611149](https://github.com/fantasmoslam/Paleotone/actions/runs/43092611149) passed for source 3cf8a1a4c9e8feedfc14ceebdf7578fb4481ef34. Fixed output commit 77f1b86224ea55fd076eb4df496e70d455b234c9 identifies that source as successful. Its nightclaw-FM-1_942.fwsc SHA-256 matches the installed package exactly: beb6ce14e4b50ef44270442c312e750abb8d6aa49f02ed1c6a72cdb59671586e.
+The latest detent correction has explicit physical user acceptance. Automated render/fit checks pass for the larger labels; direct readability feedback across every page remains separate.
 
-The installer completed and the device reconnected as NightClaw FM-1, answered the screen-reader handshake as NightClaw DEV, and resumed HIGH FRONTIER at 116 BPM. Dylan reports that it is good so far. The title hold is at least three seconds after the completed LCD transfer; audio and USB servicing continue.
+## Detailed records
 
-## Extended playback
+- [Physical detent correction and installation](NIGHTCLAW-DETENT-FIX.md)
+- [Typeface correction](NIGHTCLAW-TYPEFACE.md)
+- [Approved palette](NIGHTCLAW-PALETTE.md)
+- [Audio-worker measurements](TWRECKS-AUDIO-HEADROOM.md)
+- [Host endurance evidence and limits](NIGHTCLAW-ENDURANCE.md)
+- [Remaining completion plan](TWRECKS-NEXT-PLAN.md)
 
-A [72-minute simulated playback pass](NIGHTCLAW-ENDURANCE.md) across all twenty scenes and the four appended Lead instruments passed all 24 selection/output-peak checks. This extends host coverage; long physical-device sessions remain separate.
-
-## Knob response accepted
-
-Installed source f92fe8c replaces abrupt acceleration and centre dead clicks with a progressive response. Dylan reports “Feels much better.” Focused response tests, all 38 regular control scenarios and the 91-knob exhaustive audit pass after the Energy correction and host audit fix. Audio, worker, storage and updater checks pass; GitHub CI remains pending. See [response and installation record](NIGHTCLAW-KNOB-RESPONSE.md).
-
-The installed [typeface correction](NIGHTCLAW-TYPEFACE.md) uses a single family in every font role. Large Home text, 36 px gauges, expanded Edit cards and same-family Pattern/effects labels pass the font and control checks.
-
-Current control/readability checkpoint: [f9b11d6](NIGHTCLAW-DETENT-FIX.md) is installed with full-detent counting, no velocity acceleration, literal item/parameter steps and 24–32 px Home track names. Seven-encoder/four-phase tests, eleven-cut font checks and all 39 control scenarios pass. Physical feel remains to be confirmed.
+Earlier branding, progressive-response and visibility checkpoints remain in their individual historical records. Their binaries, resource figures and pending-CI statements do not describe the current candidate.

@@ -16,20 +16,16 @@ The twenty-scene bank includes BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HI
 
 ## Candidate installation and build
 
-The installed NightClaw candidate is source f9b11d6, product identity FM-1_942, with [revised knob response](docs/NIGHTCLAW-KNOB-RESPONSE.md) and the [jungle title screen with a three-second minimum hold](docs/NIGHTCLAW-BRANDING.md). It retains the twenty approved audio baselines and guarded two-core worker. This is a development candidate; [the audio headroom record](docs/TWRECKS-AUDIO-HEADROOM.md) distinguishes measurements from wider release coverage.
+Installed source **f9b11d6** passed [full CI](https://github.com/fantasmoslam/Paleotone/actions/runs/43139217653). The [published candidate](https://github.com/fantasmoslam/Paleotone/blob/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc) matches the installed package by SHA-256; its fixed output commit and checksum are recorded in the [completion checklist](docs/TWRECKS-COMPLETION-CHECKLIST.md). Product identity remains FM-1_942.
 
-The [NightClaw package](https://github.com/fantasmoslam/Paleotone/blob/77f1b86224ea55fd076eb4df496e70d455b234c9/nightclaw-FM-1_942.fwsc) passed [full CI](https://github.com/fantasmoslam/Paleotone/actions/runs/43092611149). That published package matches the previously installed 3cf8a1a build. The 0cb944a visibility revision adds [larger type and adaptive control spacing](docs/NIGHTCLAW-VISIBILITY.md), retaining the Home Energy sweep. Local audio, worker, storage/updater and all 39 control scenarios pass after the Energy and host-audit corrections; its full CI result is pending.
+The [physical-detent correction](docs/NIGHTCLAW-DETENT-FIX.md) is installed and user-approved: one click is one item or parameter step, with no velocity acceleration. Home names use 24–32 px cuts and retain 36 px gauges. Every generated font role uses the NightClaw family, without the original-font fallback. The approved palette is bone white, saturated crimson, sulfur yellow and electric violet on near-black.
 
-CI publishes this branch's package and logs to [twrecks-completion-output](https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion-output). Use its RESULT file to identify the built source and successful check status. Install its nightclaw-FM-1_942.fwsc with the project's trusted fm1_install.py USB-MIDI installer. The checksum is published beside the package. [BUILDING.md](BUILDING.md) describes the compiler and SDK setup.
+The static jungle title is visible for at least three seconds. Twenty approved audio baselines and the guarded two-core worker are retained. The [completion plan](docs/TWRECKS-NEXT-PLAN.md) separates completed checks from longer physical-device sessions and broader readability feedback still needed.
+
+Install nightclaw-FM-1_942.fwsc using tools/fm1_install.py, the project's USB-MIDI installer. A reinstall is unnecessary if the current candidate is already installed. [BUILDING.md](BUILDING.md) describes the compiler and SDK setup.
 
 ## Source and credits
 
 NightClaw builds on NACHTFAHRT/Felucca and Paleotone's synthesis work. The Paleotone/X0X/Melodee-derived guarded worker and original copyright notices remain in their source files. Firmware code follows the repository's GPL notices; the recorded taiko assets have separate [CC BY-SA 4.0 attribution](tools/research/taiko-bank-05/ATTRIBUTION.md).
 
 The [upstream README](UPSTREAM-NACHTFAHRT-README.md) is retained as a historical reference; its installer, website and musical description describe NACHTFAHRT.
-
-The [approved NightClaw palette](docs/NIGHTCLAW-PALETTE.md) is installed: bone white, saturated crimson, sulfur yellow and electric violet on near-black.
-
-The [complete typeface correction](docs/NIGHTCLAW-TYPEFACE.md) is installed. Every firmware font role now uses the NightClaw UI family, with no original-font fallback; Home retains its 36 px gauges.
-
-The installed [physical-detent correction](docs/NIGHTCLAW-DETENT-FIX.md) removes velocity acceleration and fixes slow-turn/mid-click counting. Each click is a literal item or parameter step. Home track names use 24–32 px cuts while retaining the 36 px gauges.
