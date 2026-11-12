@@ -11,6 +11,7 @@ on:
       - 'tools/gen_font.py'
       - 'tools/gen_words.py'
       - 'tests/host/nightclaw_web_test.mjs'
+      - 'tests/host/nightclaw_tablet_test.mjs'
       - '.github/workflows/nightclaw-web.yml'
   workflow_dispatch:
 permissions:
@@ -36,6 +37,7 @@ jobs:
           node --check web/nightclaw/player.js
           node --check web/nightclaw/guide.js
           node --check web/nightclaw/worklet.js
+          node tests/host/nightclaw_tablet_test.mjs
           node tests/host/nightclaw_web_test.mjs build/nightclaw
       - uses: actions/upload-artifact@v4
         with:

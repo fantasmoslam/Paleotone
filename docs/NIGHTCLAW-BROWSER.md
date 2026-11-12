@@ -4,6 +4,16 @@ Project page: https://fantasmoslam.github.io/Paleotone/nightclaw/
 
 Visual guide: https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html
 
+## Tablet / fullscreen player
+
+https://fantasmoslam.github.io/Paleotone/nightclaw/?view=tablet
+
+Tablet view removes the hardware casing, site header and margins, using the viewport for the same running instrument. Screen, knobs, buttons and keys reflow for portrait/landscape; the four sound controls show their current parameter names. Narrow screens use two key banks to retain at least 44 px key targets. Short windows can scroll the instrument rather than shrink its controls.
+
+Fullscreen requests browser fullscreen from a tap. Unsupported or denied fullscreen leaves the viewport layout usable and reports the limitation; Add to Home Screen can hide browser bars on devices without the API. FM-1 view returns to the physical panel without reloading audio. Window/size/fullscreen changes release held inputs before rebuilding. Existing browser saves are shared between both views.
+
+Automated layout checks cover eleven sizes, including 768/1024-class tablets, checking bounds, screen separation, button spacing and at least 44 px touch targets. This is geometry validation, not a physical-tablet visual or multitouch test.
+
 ## Physical-panel player
 
 The player follows Paleotone's FM-1 emulator: the eight physical knobs, fourteen buttons, twenty-seven touch keys and live firmware screen are arranged like the instrument. It uses Paleotone main 6f027f0's wide and portrait panel geometry and input approach, adapted to NightClaw's firmware and saturated palette. This replaces the earlier dashboard with scene menus, sliders and a piano keyboard.
