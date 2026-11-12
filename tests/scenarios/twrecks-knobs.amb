@@ -1,9 +1,9 @@
-# Shared continuous-control response: full sweep, immediate reversal and centre.
+# Literal detents: speed never changes steps, including through zero.
 wait 300
 expect view 7
 spin K1 -100
 expect par0 0
-turn K1 30 30
+turn K1 100 10
 expect par0 100
 turn K1 -1 30
 expect par0 99
@@ -25,6 +25,14 @@ said Tune 0
 turn K1 -1 150
 wait 300
 said Tune -1
+spin K1 5
+wait 300
+said Tune +4
+expect par16 4
+turn K1 -5 5
+wait 300
+said Tune -1
+expect par16 -1
 # Small discrete choices and navigators never accelerate.
 tap HOME
 wait 300

@@ -19,7 +19,6 @@
  *                  held on 1.5 s: the piece back to its recipe */
 #include "../dsp/fastmath.h"
 #include "../pt/pt.h"
-#include "knob_response.h"
 
 /* the pages, one a layer (a button each, NPAGES; the Noise page, V_NSND, SAVE's); the header's dots show them in the
  * panel's order, PAGE_ORDER below (the view numbers stay as they were: the tests use them) */
@@ -251,7 +250,6 @@ static struct {
     uint8_t lane;                      /* the Pattern page: the lane edited */
     uint8_t grid_said;
     uint32_t btn, keys, btn_used;
-    knob_response_t enc_response[NE];
     uint32_t down_t[NB];               /* when each button went down */
     uint32_t turn_t;                   /* the last knob turn */
     uint8_t reset_done;                /* SAVE held: the piece went back to its recipe this hold */
@@ -594,29 +592,13 @@ static void knob_set(int k, int v)
     mark_dirty();
 }
 
-/* The host's exact-step commands bypass only response scaling. */
-static uint8_t accel_off;
-static int32_t accel(int role, int k, int32_t steps, int range)
-{
-    return accel_off ? steps : knob_response(&ui.enc_response[role], plat_ms(), k, range, steps);
-}
-
+/* Physical detents are literal steps: no velocity scaling or centre dead zone. */
 static void turn(int role, int k, int32_t e)
 {
-    int lo, hi;
-    if (!e || k == K_NONE || k == K_CPU)
-        return;
-    if (k == K_SAVE) {                           /* a turn, either way: saved */
-        do_save();
-        return;
-    }
-    knob_range(k, &lo, &hi);
-    {
-        int v = knob_get(k), n = v + accel(role, k, e, hi - lo);
-        /* Stop at the meaningful centre when crossing it; the next click
-         * moves immediately, without the old three-click dead zone. */
-        knob_set(k, lo < 0 && hi > 0 && ((v > 0 && n < 0) || (v < 0 && n > 0)) ? 0 : n);
-    }
+    (void)role;
+    if(!e || k==K_NONE || k==K_CPU)return;
+    if(k==K_SAVE){do_save();return;}
+    knob_set(k,knob_get(k)+(int)e);
 }
 
 /* ------------------------------------------------------------- the pool --- */
@@ -1188,7 +1170,7 @@ static void level_turn(int l, int32_t e)         /* SELECT on a layer's page: sa
 static void energy_turn(int32_t e)               /* SELECT on HOME: Energy, with the same response as its knob. */
 {
     char t[8];
-    knob_set(K_ENERGY, knob_get(K_ENERGY) + accel(EN_SELECT, K_ENERGY, e, 100));
+    knob_set(K_ENERGY, knob_get(K_ENERGY) + (int)e);
     knob_text(K_ENERGY, t);
     say("ENERGY", t);
     ui.sel_until = plat_ms() + 1200u;
@@ -3007,8 +2989,9 @@ static void draw_controls(void)
         if (r<n) {
             if (home) {
                 const int muted = first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r];
-                control_text(4, muted ? 1 : 11, 56, &FONT_UM, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
-                if (muted) control_text(4,25,56,&FONT_US,"MUTED",K_TEXT);
+                const felucca_font_t *name_font = text_w(&FONT_L, HOME_NAME[first+r])<=56 ? &FONT_L : &FONT_UH;
+                control_text(4, muted ? -2 : 7, 56, name_font, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
+                if (muted) control_text(4,28,56,&FONT_US,"MUTED",K_TEXT);
             }
             for (c=0; c<4; c++) {
                 const int k = home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];

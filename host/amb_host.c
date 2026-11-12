@@ -850,9 +850,7 @@ int main(int argc, char **argv)
             }
             enc_acc[e] += atoi(b);
             film_enc[e] += atoi(b);
-            accel_off = 1;
             run_ms(1);
-            accel_off = 0;
         } else if (!strcmp(cmd, "master"))
             master = (uint32_t)atoi(a);
         else if (!strcmp(cmd, "midi")) {

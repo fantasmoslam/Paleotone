@@ -4,7 +4,7 @@
 """NightClaw's single Clayborn-based UI family, packed at one bit per pixel.
 
 No legacy font or fallback is emitted. Role heights remain compatible with the
-renderer. UN is a tall condensed cut for the narrow Home track-name column.
+renderer. UN is the narrow control-label cut; UH is the tall Home-name cut.
 Condensing and baseline placement follow Paleotone main 6f027f0.
 """
 import sys
@@ -17,7 +17,7 @@ PAD = 2
 CUTS = [("XS",12,12,10,.85), ("S",16,16,13,.85), ("B",16,16,13,.85),
         ("M",20,24,18,.85), ("L",32,32,28,.85), ("C",20,24,18,.85),
         ("US",16,16,13,.85), ("UM",20,24,18,.85), ("UL",24,32,24,.85),
-        ("UN",20,24,18,.58)]
+        ("UN",20,24,18,.58), ("UH",24,32,24,.68)]
 
 def render_cut(px, height, baseline, sx):
     font = ImageFont.truetype(str(FONTS / "Clayborn.ttf"), 2*px)

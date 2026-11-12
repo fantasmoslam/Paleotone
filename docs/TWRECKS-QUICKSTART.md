@@ -51,4 +51,4 @@ PLAY rests/resumes the music. A short REC tap toggles Hold. SEL enters Performan
 
 ## Knob response
 
-Turn slowly for one-unit corrections. Faster continuous turns broaden the sweep progressively, up to four units per detent. Reversing direction starts with a fine step immediately. Centered controls stop at zero when crossing it, and the next click moves away. Track, instrument, beat and scene selection remain one item per detent.
+Each physical detent is one selection or one parameter step, regardless of turn speed. There is no velocity acceleration, centre catch or three-click dead zone. Reversing direction works immediately. The main volume pot retains its existing analog response.

@@ -44,11 +44,11 @@ static void check(const felucca_font_t *font)
 }
 int main(void)
 {
-    const felucca_font_t *fonts[]={&FONT_XS,&FONT_S,&FONT_B,&FONT_M,&FONT_L,&FONT_C,&FONT_US,&FONT_UM,&FONT_UL,&FONT_UN};
+    const felucca_font_t *fonts[]={&FONT_XS,&FONT_S,&FONT_B,&FONT_M,&FONT_L,&FONT_C,&FONT_US,&FONT_UM,&FONT_UL,&FONT_UN,&FONT_UH};
     for(unsigned i=0;i<sizeof fonts/sizeof fonts[0];i++) check(fonts[i]);
     const char *tracks[]={"DRONE","SEQ","LEAD","SEQ 2","ATMOS","SKIN","CALLS"};
-    for(unsigned i=0;i<sizeof tracks/sizeof tracks[0];i++) assert(text_w(&FONT_UN,tracks[i])<=40);
-    assert(FONT_UN.h==24 && text_w(&FONT_UN,"REVERB")<=45);
+    for(unsigned i=0;i<sizeof tracks/sizeof tracks[0];i++) assert(text_w(&FONT_UH,tracks[i])<=56);
+    assert(FONT_UH.h==32 && FONT_UN.h==24 && text_w(&FONT_UN,"REVERB")<=45);
     puts("font renderer: packed/alpha pixels and clipping match for every packed font");
     return 0;
 }
