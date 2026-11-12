@@ -1,5 +1,7 @@
 # NightClaw typeface correction
 
+The later [detent and readability correction](NIGHTCLAW-DETENT-FIX.md) increases Home names to 24–32 px, adds the eleventh font cut, and supersedes the Home sizing and resource figures in this earlier checkpoint.
+
 The firmware now generates one NightClaw UI family from its licensed Clayborn source. Every role, including XS, S, B, M, L and C, uses that family. No original bitmap typeface or original-font fallback is emitted. Three unavailable punctuation marks are drawn as simple symbols rather than substituted from another font.
 
 Home track names use 20 px text in a 60 px side column. Its four gauge columns retain 36 px diameter indicators and the approved palette. The narrow 20 px cut keeps long column labels large instead of falling back to the old face. Muted status uses the same family.

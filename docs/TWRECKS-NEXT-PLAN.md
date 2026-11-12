@@ -1,6 +1,6 @@
 # NightClaw completion plan
 
-NightClaw source 9a74fc2 is installed with landscape artwork and a minimum three-second static title screen. The device reconnected under its new name and resumed playback; Dylan reports that it is good so far. The preceding branding baseline passed full CI run 43092611149; the knob-response revision has its own regression checks. See [branding and timing details](NIGHTCLAW-BRANDING.md).
+NightClaw source f9b11d6 is installed with landscape artwork and a minimum three-second static title screen. The device reconnected under its new name and resumed playback; Dylan reports that it is good so far. The preceding branding baseline passed full CI run 43092611149; the knob-response revision has its own regression checks. See [branding and timing details](NIGHTCLAW-BRANDING.md).
 
 ## Approved reference
 
@@ -25,7 +25,7 @@ The installed knob-response revision f92fe8c is physically accepted: Dylan repor
 
 The full guarded-worker CI run passed: build, all audio-worker modes, storage/updater checks and all control scenarios including orphans. The published branding-baseline package SHA-256 matches its installation exactly; the later installed control revision has a separate checksum in the knob-response record. PR #41 is ready for review. The repository front page and [quick-start guide](TWRECKS-QUICKSTART.md) now describe NightClaw controls and its own candidate output; the upstream README is retained separately.
 
-The fully CI-verified branding baseline is 3cf8a1a; current installed source is 9a74fc2; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
+The fully CI-verified branding baseline is 3cf8a1a; current installed source is f9b11d6; the fixed output commit and checksum are recorded in the completion checklist. Wider long-session coverage remains useful for release confidence; do not describe the short hardware test as a worst-case benchmark. No further musical rewrite is required for the accepted scenes.
 
 The [visibility pass](NIGHTCLAW-VISIBILITY.md) is installed: Paleotone-style condensed size-to-fit type, adaptive row spacing, larger indicators on shorter pages, and packed font data. Font-pixel/clipping checks and all 39 control scenarios pass. Physical screen readability feedback remains open.
 
@@ -45,3 +45,5 @@ The [72-minute host endurance pass](NIGHTCLAW-ENDURANCE.md) now covers all twent
 Physical knobs do the editing; indicators show settings without simulated on-screen knobs or numeric parameter clutter. Direct saved instrument choices and dinosaur triggering remain accessible. Beats stay independent of melodic instruments. The sound target remains deep, consequential and apocalyptic, with grandiose low percussion, clear voices, restrained distortion and room for live Lead. A literal march is not required.
 
 The installed [typeface correction](NIGHTCLAW-TYPEFACE.md) uses a single family in every font role. Large Home text, 36 px gauges, expanded Edit cards and same-family Pattern/effects labels pass the font and control checks.
+
+Current control/readability checkpoint: [f9b11d6](NIGHTCLAW-DETENT-FIX.md) is installed with full-detent counting, no velocity acceleration, literal item/parameter steps and 24–32 px Home track names. Seven-encoder/four-phase tests, eleven-cut font checks and all 39 control scenarios pass. Physical feel remains to be confirmed.

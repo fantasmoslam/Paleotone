@@ -19,3 +19,7 @@ Home track names use the largest supported cut that fits their 56 px text area: 
 All 39 control scenarios pass with these changes. The eleven-cut font renderer comparison and Home-name width checks pass.
 
 ![Home with larger names](assets/nightclaw-detents/home.png)
+
+## Installation
+
+Source f9b11d6 installed successfully (installer exit 0). NightClaw reconnected and answered its status handshake with RAPTOR NIGHT playing at 130 BPM. Package SHA-256: 641cd0a0784ca05baf0b17c6878b479c7a30fcd82f1510a99ffae805f37337ed. Physical control feel and Home readability await Dylan's feedback.
