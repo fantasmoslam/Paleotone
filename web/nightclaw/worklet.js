@@ -24,7 +24,7 @@ class NightClaw extends AudioWorkletProcessor {
           new Uint8Array(this.mem.buffer, this.ex.web_store(+o), b.byteLength).set(new Uint8Array(b));
           this.ex.web_store_set_len(+o, b.byteLength);
         }
-        this.ex.web_master(2800); this.ex.web_boot(); this.ex.nc_track(2);
+        this.ex.web_master(Number.isFinite(m.master)?Math.max(0,Math.min(4096,m.master|0)):2800); this.ex.web_boot(); this.ex.nc_track(2);
         this.left = new Float32Array(this.mem.buffer, this.ex.web_out_l(), 1024);
         this.right = new Float32Array(this.mem.buffer, this.ex.web_out_r(), 1024);
         this.lastWrites = this.ex.web_store_writes();
@@ -42,7 +42,8 @@ class NightClaw extends AudioWorkletProcessor {
         case "voice": ex.nc_voice(n); break;
         case "keys": ex.web_keys((m.mask >>> 0) & 0x7ffffff); break;
         case "buttons": ex.web_buttons((m.mask >>> 0) & 0x3fff); break;
-        case "enc": ex.web_enc(m.role | 0, Math.max(-100, Math.min(100, n))); break;
+        case "enc": ex.web_enc(m.role | 0, Math.max(-100, Math.min(100, Number.isFinite(m.n)?Math.trunc(m.n):n))); break;
+        case "master": ex.web_master(Math.max(0,Math.min(4096,n))); break;
         case "play": ex.nc_play(n); break;
         case "hold": ex.nc_hold(n); break;
         case "auto": ex.nc_calls_auto(n); break;
@@ -63,7 +64,7 @@ class NightClaw extends AudioWorkletProcessor {
         value: st[12 + i * 3], min: st[13 + i * 3], max: st[14 + i * 3] })),
       keyLights: ex.web_lit_keys() >>> 0,
     };
-    const msg = { type: "frame", state }, transfer = [];
+    const msg = { type: "frame", state, buttons: ex.web_lit_buttons() >>> 0, sceneName: this.str(ex.nc_scene_name(st[0])) }, transfer = [];
     if (ex.web_blits() !== this.lastBlit) {
       this.lastBlit = ex.web_blits();
       msg.fb = new Uint16Array(this.mem.buffer, ex.web_fb(), 240 * 240).slice(); transfer.push(msg.fb.buffer);
@@ -96,7 +97,7 @@ class NightClaw extends AudioWorkletProcessor {
           while (this.phase >= 1) { this.phase--; this.aL = this.bL; this.aR = this.bR; this.source(); }
         }
       }
-      if (this.visible && currentTime - this.lastFrame >= 1 / 12) { this.lastFrame = currentTime; this.publish(); }
+      if (this.visible && currentTime - this.lastFrame >= 1 / 30) { this.lastFrame = currentTime; this.publish(); }
     } catch(e) {
       this.port.postMessage({type:"error", message:String(e.message || e)}); this.ex=null;
       out.forEach(ch=>ch.fill(0));

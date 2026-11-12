@@ -64,5 +64,19 @@ for(const rate of [44100,48000]){
  await p.message({type:"keys",mask:0x7fffffff});await p.message({type:"keys",mask:0});
  await p.message({type:"visible",value:false});const before=messages.length;
  for(let k=0;k<10;k++){context.currentTime+=128/rate;p.process([], [out]);}assert.equal(messages.length,before,"no background screen traffic");
+ // Physical FM-1 panel messages (Paleotone-style n payload, button masks, master).
+ const advance=(seconds)=>{for(let k=0;k<Math.ceil(rate*seconds/128);k++){context.currentTime+=128/rate;p.process([], [out]);}};
+ const snapshot=()=>Array.from(new Int32Array(p.mem.buffer,p.ex.nc_state(),32));
+ await p.message({type:"visible",value:true});await p.message({type:"track",value:2});advance(.05);
+ await p.message({type:"enc",role:0,n:1});advance(.05);assert.equal(snapshot()[2],3,"SELECT one detent selects next track");
+ const oldVoice=snapshot()[7],nVoice=p.ex.nc_voice_count();
+ await p.message({type:"enc",role:1,n:1});advance(.05);assert.equal(snapshot()[7],(oldVoice+1)%nVoice,"ALGORITHM physical detent");
+ const oldScene=snapshot()[0];await p.message({type:"enc",role:2,n:1});advance(.05);assert.equal(snapshot()[0],(oldScene+1)%20,"PRESETS physical detent");
+ await p.message({type:"track",value:2});advance(.05);
+ for(let i=0;i<4;i++){const s=snapshot(),off=12+i*3,n=s[off]<s[off+2]?1:-1;await p.message({type:"enc",role:3+i,n});advance(.05);assert.equal(snapshot()[off],s[off]+n,"physical K"+(i+1));}
+ await p.message({type:"buttons",mask:1<<3});advance(.08);await p.message({type:"buttons",mask:0});advance(.08);assert.equal(snapshot()[1],3,"LFO button opens Lead");
+ await p.message({type:"buttons",mask:1<<5});advance(.65);await p.message({type:"buttons",mask:0});advance(.08);assert.equal(snapshot()[5],0,"physical GLO save gesture");
+ await p.message({type:"master",value:0});advance(.1);assert(out.every(ch=>ch.every(v=>Math.abs(v)<.00001)),"MASTER silence");
+ console.log("Physical panel: seven encoders, page button, GLO save and MASTER passed at "+rate+" Hz.");
  console.log("AudioWorklet: "+rate+" Hz, commands, finite stereo output, screen, persistence and background suppression passed.");
 }

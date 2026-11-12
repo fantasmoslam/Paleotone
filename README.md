@@ -8,7 +8,7 @@ A generative dinosaur synth with resonant taiko drums, western/tribal scenes, se
 
 ## Play in your browser
 
-The [NightClaw browser player](https://fantasmoslam.github.io/Paleotone/nightclaw/) includes the live firmware screen, playable keys, independent instrument/beat selection, browser saves and an eight-chapter visual FM-1 tutorial. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The project page is published on GitHub Pages.
+The [NightClaw browser player](https://fantasmoslam.github.io/Paleotone/nightclaw/) is a clickable physical FM-1 panel, following Paleotone’s emulator: knobs, buttons, touch keys and the live firmware screen. Its [separate visual guide](https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html) covers the instrument in eight illustrated chapters. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The project page is published on GitHub Pages.
 
 ## Play
 

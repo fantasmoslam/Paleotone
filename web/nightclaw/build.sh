@@ -10,7 +10,7 @@ emcc -O2 -ffp-contract=off -std=gnu99 -Wall -Wno-unused-function -Wno-unused-par
     -DEN_HOST -DEN_WEB '-DEN_VERSION="WEB"' -Ifirmware/src -Ifirmware/src/dsp -Ibuild/gen \
     --no-entry -sSTANDALONE_WASM -sTOTAL_STACK=1048576 -sINITIAL_MEMORY=33554432 -sFILESYSTEM=0 \
     -o build/nightclaw/nightclaw.wasm web/nightclaw/nightclaw_web.c firmware/src/dsp/amb.c firmware/src/pt/pt.c
-cp web/nightclaw/index.html web/nightclaw/style.css web/nightclaw/player.js web/nightclaw/worklet.js build/nightclaw/
+cp web/nightclaw/index.html web/nightclaw/panel.css web/nightclaw/style.css web/nightclaw/player.js web/nightclaw/worklet.js web/nightclaw/guide.html web/nightclaw/guide.js build/nightclaw/
 cp docs/assets/nightclaw-jungle.png build/nightclaw/assets/jungle.png
 cp docs/assets/nightclaw-detents/home.png build/nightclaw/assets/home.png
 cp docs/assets/nightclaw-typeface/edit.png build/nightclaw/assets/edit.png

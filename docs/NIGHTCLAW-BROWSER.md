@@ -1,28 +1,28 @@
-# NightClaw browser player and visual tutorial
+# NightClaw FM-1 browser emulator and visual guide
 
-The player runs NightClaw's actual application, UI, project storage and DSP in WebAssembly. It does not substitute recordings or a JavaScript sound-alike engine. This is a separate browser build; the installed FM-1 firmware does not change.
+Project page: https://fantasmoslam.github.io/Paleotone/nightclaw/
 
-Public project page: https://fantasmoslam.github.io/Paleotone/nightclaw/
+Visual guide: https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html
 
-## Use
+## Physical-panel player
 
-Press **Start audio** once. Choose a scene, choose a track, select its instrument or beat, and use the four colored controls. The live 240 × 240 firmware screen is enlarged alongside these controls. Home, Key, Space, Performance and Chords are directly accessible; the remaining sound pages are in More sound pages.
+The player follows Paleotone's FM-1 emulator: the eight physical knobs, fourteen buttons, twenty-seven touch keys and live firmware screen are arranged like the instrument. It uses Paleotone main 6f027f0's wide and portrait panel geometry and input approach, adapted to NightClaw's firmware and saturated palette. This replaces the earlier dashboard with scene menus, sliders and a piano keyboard.
 
-The sixteen white and eleven black keys support mouse, touch and keyboard focus. Enable Computer keyboard for Q–I and A–K white-key shortcuts, and 1–0 / minus black-key shortcuts. Shortcuts do not intercept form controls or tutorial navigation. Losing focus, hiding the page, changing scene/track/page or pressing Release all keys releases held inputs.
+Switch on, then drag or scroll the physical knobs. Arrow keys turn a focused knob one detent. Buttons and keys support mouse, touch and keyboard. Computer shortcuts are printed on the wide panel; the number row operates page buttons, with Z-row and upper-row shortcuts playing the keybed. Shift-click or right-click latches a button until pressed again. Losing window focus, hiding the page, or Release all controls releases every held and latched input.
 
-Calls and Performance preserve the firmware's context-dependent keyboard roles. Their explanations change with the page. Manual creature calls remain the boot default.
+The browser sends the same encoder roles and button/key masks that the host platform uses. MASTER controls the firmware render gain. GLO's half-second hold/release saves through the firmware's own gesture, persisting the resulting saved objects in this browser. The physical SAVE button opens sound pages. Holding GLO to about 1.5 seconds resets the current scene.
 
-**Save browser session** stores the firmware's saved objects in this browser. It does not read or write a connected FM-1. Unavailable browser storage is reported. Listening volume and Mute are browser output controls.
+Click the live screen to enlarge it; click again or press Escape to return. Listening mute and keyboard/display utilities stay below the instrument. Browser storage remains separate from the physical FM-1.
 
 ## Visual tutorial
 
-Eight chapters cover scenes, Home's four columns, independent voice selection, Skin beats, manual creature calls, Performance, Key/Chords and saving. Each chapter has a labeled FM-1 diagram, highlighted controls, a real firmware screen and numbered actions.
+The separate guide has eight illustrated chapters for scenes, Home's track table, independent voice/beat selection, Skin drums, manual creature calls, Performance, Key/Chords and saving. Show this on the player opens the physical emulator with the illustrated track/page selected after Switch on. Navigating tutorial chapters does not change music.
 
-The tutorial does not change the music as you navigate. Show this on the player explicitly selects the illustrated track/page when audio is running. It does not select a different instrument or beat for you.
+The guide follows the physical panel and its keyboard shortcuts. Legacy #guide links redirect to guide.html.
 
-Hardware instructions distinguish the GLO half-second save gesture from the printed SAVE sound-page button, and warn that holding GLO to 1.5 seconds resets the current scene. Octave instructions identify the Lead page on hardware; browser octave buttons also support the selected Home melodic track.
+## Engine and build
 
-## Build
+The player runs NightClaw's actual application, UI, project storage and DSP in WebAssembly, using the existing host-based emulator. It does not change native firmware source, DSP or scene recipes. The browser renders serially, rather than reproducing the hardware's two-core scheduling.
 
 ```sh
 sh web/nightclaw/build.sh
@@ -30,14 +30,18 @@ node tests/host/nightclaw_web_test.mjs build/nightclaw
 python3 -m http.server 8000 --bind 127.0.0.1 --directory build/nightclaw
 ```
 
-Requires Emscripten, Python/Pillow/fonttools and Node. Serve over localhost or HTTPS; opening an HTML file directly is insufficient for AudioWorklet. The generated build/nightclaw directory is a self-contained static site with local fonts and images.
+Requires Emscripten, Python/Pillow/fonttools and Node. Serve over localhost or HTTPS for AudioWorklet. TOTAL_STACK supports Ubuntu 24.04's older Emscripten and newer compilers.
 
-Source adapter: web/nightclaw/nightclaw_web.c. It includes the existing host-based emulator and adds bounded browser commands and read-only metadata. No native firmware source, musical recipe or DSP code is changed. The browser runs the renderer serially; it does not reproduce the FM-1's two-core scheduling or hardware CPU measurement.
+The GitHub browser workflow tests and publishes only nightclaw/ on gh-pages, preserving the rest of the existing Paleotone site. The download link is pinned to the verified f9b11d6 FM-1 package.
 
 ## Validation
 
-The shipped WASM passes checks for all twenty scenes producing bounded finite audio; voice/beat independence; parameter steps; calls; page contexts; octave control; transport; and save/reboot restoration. AudioWorklet tests execute the real processor with the shipped WASM at 44.1 and 48 kHz, including timing-preserving resampling, screen transfer, persisted bytes and background message suppression.
+The shipped WASM passes twenty audible-scene checks, independent voices/beats, calls, page contexts, octave control, transport and save/reboot restoration. Worklet tests run the shipped processor and WASM at 44.1 and 48 kHz, including correct timing, stereo output, screen transfer, persistence and background message suppression.
 
-JavaScript syntax and static asset/element references are checked locally. A connected browser was unavailable during development, so visual layout, real browser interaction and subjective listening remain unverified. Node engine/worklet tests do not establish those results.
+Physical-panel protocol tests additionally check all seven encoder roles using the panel's detent payload, page-button masks, GLO's hold/release save timing and MASTER silence at both sample rates. Main player and guide JavaScript syntax and static references are checked.
 
-The NightClaw browser GitHub workflow rebuilds and tests the player when its sources or firmware dependencies change, then publishes only the nightclaw/ subtree of gh-pages. The existing Paleotone site is preserved. The firmware download is pinned to the verified installed f9b11d6 package. TOTAL_STACK retains compatibility with Ubuntu 24.04’s Emscripten while newer versions also accept it. Code, font licenses and taiko attribution ship with the page.
+No connected browser is available for live visual/interaction/listening QA. The panel's geometry and drawing come from the reference implementation; protocol tests do not establish a rendered-browser result.
+
+## Credits
+
+Physical FM-1 panel adapted from Paleotone main 6f027f0, after charlesvestal's X0X and Felucca. Original copyright and GPL notices are retained in index.html and player.js. Clayborn's font license, code license and separate taiko attribution ship with the page.
