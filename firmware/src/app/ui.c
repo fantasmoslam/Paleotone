@@ -197,30 +197,30 @@ static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, 
     {"The creature calls level", "Darker or brighter calls", "How often a creature calls", "Which creature answers"},
 };
 
-/* NightClaw: charcoal, bone, weathered copper, storm blue and heather.
+/* NightClaw: near-black, bone, saturated crimson, sulfur and electric violet.
  * The four control columns keep stable colors across pages. Legacy layer
  * tokens use the same palette, including their inactive tints. */
-#define K_BG RGB(8, 9, 11)
-#define K_PANEL RGB(35, 30, 27)
-#define K_LINE RGB(75, 69, 65)
-#define K_DIM RGB(155, 148, 137)
+#define K_BG RGB(5, 5, 8)
+#define K_PANEL RGB(27, 18, 24)
+#define K_LINE RGB(83, 69, 86)
+#define K_DIM RGB(166, 160, 166)
 #define K_TEXT RGB(230, 220, 194)
-#define K_ACC RGB(220, 149, 101)         /* the accent: the page, the knob being turned, a message's word */
-#define K_BELL RGB(220, 149, 101)
-#define K_BELL_T RGB(77, 48, 32)
+#define K_ACC RGB(255, 40, 78)         /* the accent: the page, the knob being turned, a message's word */
+#define K_BELL RGB(255, 40, 78)
+#define K_BELL_T RGB(92, 8, 25)
 #define K_PAD RGB(230, 220, 194)
 #define K_PAD_T RGB(66, 62, 51)
-#define K_PULSE RGB(181, 154, 200)
-#define K_PULSE_T RGB(58, 45, 68)
-#define K_BASS RGB(142, 170, 194)
-#define K_BASS_T RGB(40, 51, 64)
-#define K_FROST RGB(212, 118, 105)         /* dub hold */
-#define K_FROST_T RGB(77, 36, 32)
-#define K_RIM RGB(199, 177, 141)         /* the rim */
-#define K_RIM_T RGB(65, 54, 37)
-#define K_CLAP RGB(197, 189, 169)         /* the clap */
-#define K_CLAP_T RGB(60, 56, 46)
-#define K_NOISE RGB(159, 167, 167)       /* the noise (its level ring) */
+#define K_PULSE RGB(166, 58, 255)
+#define K_PULSE_T RGB(47, 12, 83)
+#define K_BASS RGB(234, 255, 0)
+#define K_BASS_T RGB(72, 78, 0)
+#define K_FROST RGB(255, 40, 78)         /* dub hold */
+#define K_FROST_T RGB(92, 8, 25)
+#define K_RIM RGB(234, 255, 0)         /* the rim */
+#define K_RIM_T RGB(72, 78, 0)
+#define K_CLAP RGB(166, 58, 255)         /* the clap */
+#define K_CLAP_T RGB(47, 12, 83)
+#define K_NOISE RGB(180, 180, 190)       /* the noise (its level ring) */
 
 static struct {
     uint8_t view;

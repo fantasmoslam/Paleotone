@@ -1,24 +1,24 @@
-# NightClaw palette proposal
+# NightClaw approved palette
 
-Bone and Copper gives NightClaw a distinct, restrained identity suited to its moonlit jungle artwork, western percussion and apocalyptic sound. It replaces the previous bright orange/cyan/pink/green controls with warm bone, weathered copper, storm blue and muted heather against almost-black charcoal.
+Dylan approved the saturated preview: bone white, crimson, sulfur yellow and electric violet on near-black. The earlier dusty Bone and Copper proposal is superseded.
 
 | Role | Color | RGB source |
 |---|---|---|
-| Background | Charcoal | #08090B |
-| Selected row | Warm charcoal | #231E1B |
+| Background | Near-black | #050508 |
+| Selected row | Dark charcoal | #1B1218 |
 | Text / first column | Bone | #E6DCC2 |
-| Selection / second column | Copper | #DC9565 |
-| Third column | Storm blue | #8EAAC2 |
-| Fourth column | Heather | #B59AC8 |
-| Empty indicator rims | Stone | #4B4541 |
+| Selection / second column | Crimson | #FF284E |
+| Third column | Sulfur | #EAFF00 |
+| Fourth column | Electric violet | #A63AFF |
+| Empty indicator rims | Dark stone | #534556 |
 
-Colors retain their column roles across every control page. Existing layer and pattern colors use the same palette and matching dark tints. The high-contrast title artwork remains black and white. Typography, control geometry, accepted encoder response and audio are unchanged.
-
-Actual simulator previews:
+The columns retain the same colors across every control page. Layer, pattern and effect tokens use the same colors and matching dark tints. The monochrome jungle title, typography, control geometry, accepted encoder response and audio are unchanged.
 
 ![Home](assets/nightclaw-palette/home.png)
 ![Space](assets/nightclaw-palette/space.png)
 ![Calls](assets/nightclaw-palette/calls.png)
 ![Performance](assets/nightclaw-palette/perform.png)
 
-This is a review candidate, not installed. The native build and simulator previews are checked; physical color/readability feedback remains open. The device still has the prior installed visibility build.
+Native and host builds pass. Home and Space screenshots match the approved preview exactly. Native image is 543,948 / 581,564 bytes; RAM remains 95,644 / 98,304 and pool 334,472 / 344,064.
+
+Installation is pending. Automatic approval review rejected flashing based on the historical RED MESA save-later instruction. A read-only check now shows RAPTOR NIGHT at 130 BPM, F Phrygian, with unsaved edits. The device is left running until installation is cleared.
