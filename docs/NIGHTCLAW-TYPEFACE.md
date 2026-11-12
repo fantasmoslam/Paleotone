@@ -21,4 +21,4 @@ Actual simulator captures:
 ![Calls](assets/nightclaw-typeface/calls.png)
 ![Title](assets/nightclaw-typeface/title.png)
 
-The candidate is built and prepared for installation.
+Source 9a74fc2 installed successfully (installer exit 0). NightClaw reconnected and answered its status handshake on RAPTOR NIGHT at 130 BPM. Installed package SHA-256: 9108a6e4a1bc07d015d5783bb22bdb86689f3f4e7de560cf23de2c9757da5488.
