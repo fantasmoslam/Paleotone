@@ -1,3 +1,4 @@
+import { tabletLayout } from "./tablet-layout.mjs?v=tablet-1";
 // SPDX-License-Identifier: GPL-3.0-only
 // Physical FM-1 drawing/input adapted from Paleotone main 6f027f0, after X0X.
 // Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments.
@@ -7,6 +8,8 @@ const EN={SELECT:0,ALGORITHM:1,PRESETS:2,"KNOB 1":3,"KNOB 2":4,"KNOB 3":5,"KNOB 
 const PLAY_GREEN=14;
 const WHITE=[0,2,4,6,7,9,11,12,14,16,18,19,21,23,24,26],BLACK=[1,3,5,8,10,13,15,17,20,22,25],BLACK_AFTER=[0,1,2,4,5,7,8,9,11,12,14];
 const STORE="nightclaw-browser-v1";
+let tabletMode=new URLSearchParams(location.search).get("view")==="tablet";
+document.body.classList.toggle("tablet-mode",tabletMode);
 if(location.hash==="#guide")location.replace("guide.html");
 // ------------------------------------------------------------------ the panel
 // Two drawings of the same controls: WIDE after the FM-1's own layout, TALL for a phone held upright (the
@@ -73,18 +76,19 @@ const btnBy = new Map(), keyBy = new Map();                   // pointer / key c
 const send = (m) => { if (node) node.port.postMessage(m); };
 
 function build(name) {
-  const L = LAYOUTS[name];
+  const bounds=device.getBoundingClientRect();
+  const L = name === "tablet" ? tabletLayout(bounds.width,bounds.height) : LAYOUTS[name];
   layout = name;
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${L.w} ${L.h}`);
-  device.style.aspectRatio = `${L.w} / ${L.h}`;
+  device.style.aspectRatio = name === "tablet" ? "auto" : `${L.w} / ${L.h}`;
   for (const d of device.querySelectorAll(".hit")) d.remove();
   knobs.length = buttons.length = keys.length = 0;
-  el("rect", { x: 4, y: 4, width: L.w - 8, height: L.h - 8, rx: 40, fill: "var(--body)" });
+  if (!L.tablet) el("rect", { x: 4, y: 4, width: L.w - 8, height: L.h - 8, rx: 40, fill: "var(--body)" });
   for (const [x, y, w, h] of L.trays) el("rect", { x, y, width: w, height: h, rx: 14, fill: "var(--tray)" });
   const [sx, sy, ss] = L.screen;
-  el("rect", { x: sx, y: sy, width: ss, height: ss, rx: 18, fill: "#0b0b0c" });
-  const inset = ss / 32;                                         // the 240 x 240 panel inside its bezel
+  if (!L.tablet) el("rect", { x: sx, y: sy, width: ss, height: ss, rx: 18, fill: "#0b0b0c" });
+  const inset = L.tablet ? 0 : ss / 32;                                         // the 240 x 240 panel inside its bezel
   Object.assign(canvas.style, { left: `${(sx + inset) / L.w * 100}%`, top: `${(sy + inset) / L.h * 100}%`,
                                 width: `${(ss - 2 * inset) / L.w * 100}%`, height: `${(ss - 2 * inset) / L.h * 100}%` });
   KNOBS.forEach((n, i) => {
@@ -92,18 +96,18 @@ function build(name) {
     el("circle", { cx: x, cy: y, r: r + 5, fill: "var(--tray)" }, g);
     el("circle", { cx: x, cy: y, r, fill: "var(--part)", stroke: "var(--edge)", "stroke-width": 2 }, g);
     const ind = n === "MASTER" ? el("line", { x1: x, y1: y - r + 4, x2: x, y2: y - r * 0.35, stroke: "#fff", "stroke-width": 4, "stroke-linecap": "round" }, g) : null;   // (GHOULBOX: white, to near the centre)
-    label(g, x, y - r - 12, n, 16, DOT);
+    const caption=label(g, x, y - r - 12, n, L.tablet ? (L.w<720?16:20) : 16, DOT);
     const arrows = { SELECT: "\u2191 \u2193", ALGORITHM: "\u2190 \u2192" }[n];
     if (arrows && name === "wide") el("text", { x: x + r + 10, y: y + 5, class: "hint" }, g).textContent = arrows;
     el("circle", { cx: x, cy: y, r: r + 12, fill: "transparent" }, g);
-    knobs.push({ g, ind, x, y, name: n, role: n === "MASTER" ? "master" : EN[n] });
+    knobs.push({ g, ind, caption, x, y, name: n, role: n === "MASTER" ? "master" : EN[n] });
   });
   const button = ([x, y, w, h], n, sub) => {
     const g = el("g", {});
     el("rect", { x, y, width: w, height: h, rx: 8, fill: "var(--part)", stroke: "var(--edge)", "stroke-width": 1.5, class: "face btn" }, g);
     const ink = n === "REC" ? "#ff453a" : undefined;
-    if (sub) { label(g, x + w / 2, y + h / 2 - 2, n, 10.8, SANS, ink); label(g, x + w / 2, y + h / 2 + 11, sub, 9.9); }
-    else label(g, x + w / 2, y + h / 2 + 4.5, n, 12.6, SANS, ink);
+    if (sub) { label(g, x + w / 2, y + h / 2 - 2, n, L.tablet ? 17 : 10.8, SANS, ink); label(g, x + w / 2, y + h / 2 + 11, sub, L.tablet ? 14 : 9.9); }
+    else label(g, x + w / 2, y + h / 2 + 4.5, n, L.tablet ? Math.max(18,Math.min(26,h*.34)) : 12.6, SANS, ink);
     if (name === "wide" && BTNCAP[B[n]]) el("text", { x: x + w - 6, y: y + 12, "text-anchor": "end", class: "hint small" }, g).textContent = BTNCAP[B[n]];
     buttons.push({ g, bit: B[n], name: sub ? `${n} / ${sub}` : n });
   };
@@ -115,19 +119,24 @@ function build(name) {
     button([gx + i * dx, gy + dy, gw, gh], ROW2[i], ROW2[i] === "PLAY" ? "STOP" : "");
   }
   const [x0, y0, w, h] = L.keybed;
-  el("rect", { x: x0, y: y0, width: w, height: h, rx: 18, fill: "var(--tray)" });
+  if (!L.tablet) el("rect", { x: x0, y: y0, width: w, height: h, rx: 18, fill: "var(--tray)" });
   // the keys: two rows of the same black keys, each with a slit down its middle that lights
-  const pitch = (w - 24) / 16, kw = pitch * 0.78, kh = h * 0.425, sw = Math.max(3, kw * 0.14);
+  const pitch = (w - 24) / (L.compactKeys ? 8 : 16), kw = pitch * 0.78, kh = L.compactKeys ? h*.215 : h * 0.425, sw = Math.max(3, kw * 0.14);
   const key = (cx, cy, k) => {
     const g = el("g", {}), y = cy - kh / 2;
     el("rect", { x: cx - kw / 2, y, width: kw, height: kh, rx: kw / 2, class: "face key" }, g);
     el("rect", { x: cx - sw / 2, y: y + kw * 0.4, width: sw, height: kh - kw * 0.8, rx: sw / 2, class: "slit" }, g);
-    if (name === "wide" && KEYCAP[k]) el("text", { x: cx, y: y + kh - 5, "text-anchor": "middle", class: "hint" }, g).textContent = KEYCAP[k];
-    el("rect", { x: cx - pitch / 2, y: cy - h * 0.24, width: pitch, height: h * 0.48, fill: "transparent" }, g);   // its target
+    if ((name === "wide" || L.tablet) && KEYCAP[k]) el("text", { x: cx, y: y + kh - 5, "text-anchor": "middle", class: "hint" }, g).textContent = L.tablet ? keyName(k) : KEYCAP[k];
+    el("rect", { x: cx - pitch / 2, y: cy - (L.compactKeys ? h*.1225 : h * 0.24), width: pitch, height: L.compactKeys ? h*.245 : h * 0.48, fill: "transparent" }, g);   // its target
     keys[k] = { g, name: keyName(k) };
   };
-  WHITE.forEach((k, i) => key(x0 + 12 + (i + 0.5) * pitch, y0 + h * 0.75, k));
-  BLACK_AFTER.forEach((a, j) => key(x0 + 12 + (a + 1) * pitch, y0 + h * 0.25, BLACK[j]));
+  if(L.compactKeys){
+    WHITE.forEach((k,i)=>key(x0+12+(i%8+.5)*pitch,y0+h*(i<8?.375:.875),k));
+    BLACK_AFTER.forEach((a,j)=>key(Math.min(x0+w-12-kw/2,x0+12+(a%8+1)*pitch),y0+h*(a<8?.125:.625),BLACK[j]));
+  }else{
+    WHITE.forEach((k, i) => key(x0 + 12 + (i + 0.5) * pitch, y0 + h * 0.75, k));
+    BLACK_AFTER.forEach((a, j) => key(x0 + 12 + (a + 1) * pitch, y0 + h * 0.25, BLACK[j]));
+  }
   // HTML targets over the drawing (pointer-events: none): touch-action and pointer capture work on them everywhere
   const hit = (c, cls, role) => {
     const b = c.g.getBBox(), d = document.createElement("div");
@@ -260,8 +269,8 @@ function bindKnob(k) {
   });
 }
 const tall = matchMedia("(orientation: portrait) and (max-width: 700px)");
-build(tall.matches ? "tall" : "wide");
-tall.addEventListener("change", () => { releaseAll(); build(tall.matches ? "tall" : "wide"); });
+build(tabletMode ? "tablet" : tall.matches ? "tall" : "wide");
+tall.addEventListener("change", () => { if(!tabletMode){releaseAll(); build(tall.matches ? "tall" : "wide");} });
 document.fonts?.load("16px Clayborn").then(() => build(layout), () => {});   // the labels' width: the hit areas
 
 const ARROWS = { ArrowUp: [EN.SELECT, 1], ArrowDown: [EN.SELECT, -1], ArrowRight: [EN.ALGORITHM, 1], ArrowLeft: [EN.ALGORITHM, -1] };
@@ -350,7 +359,7 @@ function saveFlash(data) {
   }catch{document.getElementById("tool-status").textContent="Browser storage is unavailable; saves last for this session only.";}
 }
 let output=null,muted=false;
-const toolSay=t=>{document.getElementById("tool-status").textContent=t;};
+const toolSay=t=>{document.getElementById("tool-status").textContent=t;document.getElementById("tablet-message").textContent=t;};
 const go=document.getElementById("go"),status=document.getElementById("status");
 function enablePanel(on){device.querySelectorAll(".hit").forEach(d=>{d.inert=!on;});}
 enablePanel(false);
@@ -378,7 +387,9 @@ async function switchOn() {
         }else if(m.type==="error"){reject(new Error(m.message));toolSay("Audio error: "+m.message);}
         else if(m.type==="frame"){
           if(m.fb)drawScreen(m.fb);
-          if(m.state){lastLeds=[m.buttons||0,m.state.keyLights||0,0,0,0];drawLights(lastLeds);const text=m.state.page+" · "+(m.sceneName||"NightClaw")+(m.state.dirty?" · Unsaved edits":"");const s=document.getElementById("screen-status");if(s.textContent!==text)s.textContent=text;}
+          if(m.state){
+            if(tabletMode)knobs.forEach(k=>{if(typeof k.role==="number"&&k.role>=3){const text=m.state.controls[k.role-3].name;k.caption.textContent=text.toUpperCase();k.hit.setAttribute("aria-label",k.name+": "+text);}});
+            lastLeds=[m.buttons||0,m.state.keyLights||0,0,0,0];drawLights(lastLeds);const text=m.state.page+" · "+(m.sceneName||"NightClaw")+(m.state.dirty?" · Unsaved edits":"");const s=document.getElementById("screen-status");if(s.textContent!==text)s.textContent=text;}
           if(m.store)saveFlash(m.store);
         }
       };
@@ -408,3 +419,40 @@ const toggleFocus=()=>focusMode(!document.body.classList.contains("focus-mode"))
 canvas.addEventListener("click",toggleFocus);canvas.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleFocus();}});
 document.getElementById("focus-mode").addEventListener("click",toggleFocus);
 addEventListener("keydown",e=>{if(e.key==="Escape")focusMode(false);});
+
+// Tablet view shares the running instrument and physical input handlers.
+function setTablet(on,updateUrl=true){
+  if(tabletMode!==on){releaseAll();focusMode(false);}
+  tabletMode=on;document.body.classList.toggle("tablet-mode",on);
+  if(updateUrl){const url=new URL(location.href);if(on)url.searchParams.set("view","tablet");else url.searchParams.delete("view");history.pushState(null,"",url);}
+  build(on?"tablet":tall.matches?"tall":"wide");
+  if(!on&&(document.fullscreenElement||document.webkitFullscreenElement)){const exit=document.exitFullscreen||document.webkitExitFullscreen;Promise.resolve(exit?.call(document)).catch(()=>{});}
+}
+document.getElementById("tablet-mode").addEventListener("click",e=>{e.preventDefault();setTablet(true);});
+document.getElementById("panel-mode").addEventListener("click",()=>setTablet(false));
+addEventListener("popstate",()=>setTablet(new URLSearchParams(location.search).get("view")==="tablet",false));
+const fullButton=document.getElementById("fullscreen");
+fullButton.addEventListener("click",async()=>{
+  releaseAll();
+  try{
+    if(document.fullscreenElement||document.webkitFullscreenElement){const exit=document.exitFullscreen||document.webkitExitFullscreen;await exit.call(document);return;}
+    const request=document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen;
+    if(request)await request.call(document.documentElement);
+    else toolSay("Tablet view fills this window. This browser does not offer fullscreen; use Add to Home Screen to hide its bars.");
+  }catch{toolSay("Fullscreen was unavailable. Tablet view still fills this window.");}
+});
+function fullscreenChanged(){
+  releaseAll();fullButton.textContent=(document.fullscreenElement||document.webkitFullscreenElement)?"Exit fullscreen":"Fullscreen";
+}
+document.addEventListener("fullscreenchange",fullscreenChanged);
+document.addEventListener("webkitfullscreenchange",fullscreenChanged);
+let tabletResizeFrame=0,lastTabletSize="";
+const tabletObserver=new ResizeObserver(()=>{
+  if(!tabletMode)return;
+  cancelAnimationFrame(tabletResizeFrame);
+  tabletResizeFrame=requestAnimationFrame(()=>{
+    const r=device.getBoundingClientRect(),size=Math.round(r.width)+"x"+Math.round(r.height);
+    if(size!==lastTabletSize){lastTabletSize=size;releaseAll();build("tablet");}
+  });
+});
+tabletObserver.observe(device);
