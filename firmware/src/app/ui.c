@@ -197,31 +197,30 @@ static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, 
     {"The creature calls level", "Darker or brighter calls", "How often a creature calls", "Which creature answers"},
 };
 
-/* (BERLIN) the screen's colours: Cosmic, on black (spec 15): lavender text, a cyan accent; the layers in their own
- * colours, the Drone violet, the Sequence pink, the Lead gold, Sequence 2 cyan, the Atmosphere dim lavender; each with a
- * dark tint for the shapes at rest. (The names stay DUB-1's: K_PAD the Drone, K_BELL the Sequence, K_BASS the Lead,
- * K_PULSE Sequence 2, K_NOISE the Atmosphere.) */
-#define K_BG RGB(0, 0, 0)
-#define K_PANEL RGB(26, 23, 38)
-#define K_LINE RGB(46, 41, 66)
-#define K_DIM RGB(141, 127, 184)
-#define K_TEXT RGB(239, 231, 255)
-#define K_ACC RGB(127, 216, 255)         /* the accent: the page, the knob being turned, a message's word */
-#define K_BELL RGB(255, 106, 213)
-#define K_BELL_T RGB(96, 36, 82)
-#define K_PAD RGB(180, 140, 255)
-#define K_PAD_T RGB(58, 44, 96)
-#define K_PULSE RGB(127, 216, 255)
-#define K_PULSE_T RGB(36, 66, 84)
-#define K_BASS RGB(255, 210, 127)
-#define K_BASS_T RGB(98, 80, 44)
-#define K_FROST RGB(232, 92, 84)         /* dub hold */
-#define K_FROST_T RGB(128, 56, 52)
-#define K_RIM RGB(214, 124, 176)         /* the rim */
-#define K_RIM_T RGB(108, 58, 86)
-#define K_CLAP RGB(232, 206, 98)         /* the clap */
-#define K_CLAP_T RGB(108, 98, 48)
-#define K_NOISE RGB(186, 174, 156)       /* the noise (its level ring) */
+/* NightClaw: charcoal, bone, weathered copper, storm blue and heather.
+ * The four control columns keep stable colors across pages. Legacy layer
+ * tokens use the same palette, including their inactive tints. */
+#define K_BG RGB(8, 9, 11)
+#define K_PANEL RGB(35, 30, 27)
+#define K_LINE RGB(75, 69, 65)
+#define K_DIM RGB(155, 148, 137)
+#define K_TEXT RGB(230, 220, 194)
+#define K_ACC RGB(220, 149, 101)         /* the accent: the page, the knob being turned, a message's word */
+#define K_BELL RGB(220, 149, 101)
+#define K_BELL_T RGB(77, 48, 32)
+#define K_PAD RGB(230, 220, 194)
+#define K_PAD_T RGB(66, 62, 51)
+#define K_PULSE RGB(181, 154, 200)
+#define K_PULSE_T RGB(58, 45, 68)
+#define K_BASS RGB(142, 170, 194)
+#define K_BASS_T RGB(40, 51, 64)
+#define K_FROST RGB(212, 118, 105)         /* dub hold */
+#define K_FROST_T RGB(77, 36, 32)
+#define K_RIM RGB(199, 177, 141)         /* the rim */
+#define K_RIM_T RGB(65, 54, 37)
+#define K_CLAP RGB(197, 189, 169)         /* the clap */
+#define K_CLAP_T RGB(60, 56, 46)
+#define K_NOISE RGB(159, 167, 167)       /* the noise (its level ring) */
 
 static struct {
     uint8_t view;
@@ -2384,7 +2383,7 @@ static void draw_main(void)
  * knob being turned is drawn on a tint. Only redrawn when what it shows changes (the rings cost a
  * square root and an arctangent per pixel). */
 static const uint16_t CONTROL_COL[4] = {
-    RGB(255, 180, 48), RGB(80, 220, 255), RGB(255, 120, 210), RGB(140, 240, 100)
+    K_PAD, K_BELL, K_BASS, K_PULSE
 };
 static int control_ratio(int k);
 static void control_indicator(int32_t cx, int32_t cy, int32_t r, int32_t ratio, uint16_t color);
