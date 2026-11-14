@@ -6,6 +6,10 @@ A generative dinosaur synth with resonant taiko drums, western/tribal scenes, se
 
 **[Quick start](docs/TWRECKS-QUICKSTART.md)** · **[Current features](TWRECKS.md)** · **[Completion checks](docs/TWRECKS-COMPLETION-CHECKLIST.md)** · **[Development PR](https://github.com/fantasmoslam/Paleotone/pull/41)**
 
+## Windows PC development
+
+A separate [standalone Windows application](desktop/README.md) is being developed on the nightclaw-pc branch. It reuses the sound engine and adds mouse controls, project files and a 32-bar Lead planner. MIDI and remote integration follow the PC composition work. The FM-1 and browser versions remain on their existing branch.
+
 ## Play in your browser
 
 The [NightClaw browser player](https://fantasmoslam.github.io/Paleotone/nightclaw/) is a clickable physical FM-1 panel, following Paleotone’s emulator: knobs, buttons, touch keys and the live firmware screen. Its [separate visual guide](https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html) covers the instrument in nine illustrated chapters. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The project page is published on GitHub Pages.

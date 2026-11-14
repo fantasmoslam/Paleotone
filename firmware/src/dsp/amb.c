@@ -3353,9 +3353,16 @@ static void lead_release(int id)
         cp_off();
     }
 }
+#ifdef EN_DESKTOP
+static int desktop_auto=1;
+void en_lead_auto(int on){desktop_auto=!!on;if(!on)lead_off();}
+#endif
 static void lead_tick(void)                      /* a sixteenth: the phrase goes on, or the breath */
 {
     int planned = 0;
+#ifdef EN_DESKTOP
+    if(!desktop_auto)return;
+#endif
     if (ar_cue) {                                /* the arc's moment for the theme (dropped, not kept, before Lead in; under
                                                   * Memory 20, the wandering end: a fresh motif every pair, but for a
                                                   * theme the player played; and while the theme is playing, its answer
