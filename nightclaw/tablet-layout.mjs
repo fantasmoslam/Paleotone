@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Positions are CSS pixels: the fullscreen layout grows with its actual viewport.
 export function tabletLayout(width, height) {
-  const w=Math.max(376,width),wide=w>=900&&w>height;
-  const h=Math.max(wide?480:w<720?720:800,height),gap=w<720?6:12;
-  const compactKeys=w<720;
-  const keyH=Math.min(280,Math.max(compactKeys?224:160,h*.32));
-  const top=h-keyH-gap,landscape=w>=900&&w>h;
+  const w=Math.max(736,width),wide=w>=900&&w>height,gap=12;
+  const compactKeys=false;
+  const minTop=wide?312:540;
+  const keyW=Math.max(736,Math.min(w,(height-minTop-gap)*928/256));
+  const keyH=fm1Keybed(keyW).height;
+  const h=Math.max(height,minTop+gap+keyH);
+  const top=h-keyH-gap,landscape=wide;
   let screen,knobs,grid,oct;
   if(landscape){
     const left=w*.22,side=Math.min(top-2*gap,w*.31),sx=w*.23,right=sx+side+gap,rw=w-right-gap;
@@ -25,11 +27,11 @@ export function tabletLayout(width, height) {
     grid=[gap,gy,bw,bh,bw+gap,bh+gap];
     oct=[[gap,gy+2*(bh+gap),(w-3*gap)/2,bh],[2*gap+(w-3*gap)/2,gy+2*(bh+gap),(w-3*gap)/2,bh]];
   }
-  return {w,h,screen,knobs,grid,oct,trays:[],keybed:[0,top+gap,w,keyH],compactKeys,tablet:true};
+  return {w,h,screen,knobs,grid,oct,trays:[],keybed:[(w-keyW)/2,top+gap,keyW,keyH],compactKeys,tablet:true};
 }
 
-// Preserve the original FM-1 pad proportions (928 x 256 keybed) as it scales.
-export function tabletKeyWidth(pitch,height){
-  const originalRatio=((928-24)/16*.78)/(256*.425);
-  return Math.min(pitch*.78,height*originalRatio);
+// One uniform scale for the entire original FM-1 keypad, including its gaps.
+export function fm1Keybed(width){
+  const scale=width/928;
+  return {height:256*scale,padding:12*scale,pitch:(928-24)/16*scale,keyWidth:(928-24)/16*.78*scale,keyHeight:256*.425*scale};
 }

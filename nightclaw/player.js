@@ -1,4 +1,4 @@
-import { tabletLayout, tabletKeyWidth } from "./tablet-layout.mjs?v=tablet-keys-2";
+import { tabletLayout, fm1Keybed } from "./tablet-layout.mjs?v=keypad-layout-3";
 // SPDX-License-Identifier: GPL-3.0-only
 // Physical FM-1 drawing/input adapted from Paleotone main 6f027f0, after X0X.
 // Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments.
@@ -76,12 +76,13 @@ const btnBy = new Map(), keyBy = new Map();                   // pointer / key c
 const send = (m) => { if (node) node.port.postMessage(m); };
 
 function build(name) {
-  const bounds=device.getBoundingClientRect();
-  const L = name === "tablet" ? tabletLayout(bounds.width,bounds.height) : LAYOUTS[name];
+  const bounds=device.getBoundingClientRect(),stage=device.parentElement.getBoundingClientRect();
+  const L = name === "tablet" ? tabletLayout(bounds.width,stage.height) : LAYOUTS[name];
   layout = name;
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${L.w} ${L.h}`);
   device.style.aspectRatio = name === "tablet" ? "auto" : `${L.w} / ${L.h}`;
+  device.style.height = L.tablet ? L.h+"px" : "";
   for (const d of device.querySelectorAll(".hit")) d.remove();
   knobs.length = buttons.length = keys.length = 0;
   if (!L.tablet) el("rect", { x: 4, y: 4, width: L.w - 8, height: L.h - 8, rx: 40, fill: "var(--body)" });
@@ -121,23 +122,19 @@ function build(name) {
   const [x0, y0, w, h] = L.keybed;
   if (!L.tablet) el("rect", { x: x0, y: y0, width: w, height: h, rx: 18, fill: "var(--tray)" });
   // the keys: two rows of the same black keys, each with a slit down its middle that lights
-  const pitch = (w - 24) / (L.compactKeys ? 8 : 16), kh = L.compactKeys ? h*.215 : h * 0.425;
-  const kw = L.tablet ? tabletKeyWidth(pitch,kh) : pitch*.78, sw = Math.max(3, kw * 0.14);
+  const pad=L.tablet ? fm1Keybed(w) : null;
+  const pitch=pad ? pad.pitch : (w-24)/16,kh=pad ? pad.keyHeight : h*.425;
+  const kw=pad ? pad.keyWidth : pitch*.78,padding=pad ? pad.padding : 12,sw=Math.max(3,kw*.14);
   const key = (cx, cy, k) => {
     const g = el("g", {}), y = cy - kh / 2;
     el("rect", { x: cx - kw / 2, y, width: kw, height: kh, rx: kw / 2, class: "face key" }, g);
     el("rect", { x: cx - sw / 2, y: y + kw * 0.4, width: sw, height: kh - kw * 0.8, rx: sw / 2, class: "slit" }, g);
     if ((name === "wide" || L.tablet) && KEYCAP[k]) el("text", { x: cx, y: y + kh - 5, "text-anchor": "middle", class: "hint" }, g).textContent = L.tablet ? keyName(k) : KEYCAP[k];
-    el("rect", { x: cx - pitch / 2, y: cy - (L.compactKeys ? h*.1225 : h * 0.24), width: pitch, height: L.compactKeys ? h*.245 : h * 0.48, fill: "transparent" }, g);   // its target
+    el("rect", { x: cx - pitch / 2, y: cy - h * 0.24, width: pitch, height: h * 0.48, fill: "transparent" }, g);   // its target
     keys[k] = { g, name: keyName(k) };
   };
-  if(L.compactKeys){
-    WHITE.forEach((k,i)=>key(x0+12+(i%8+.5)*pitch,y0+h*(i<8?.375:.875),k));
-    BLACK_AFTER.forEach((a,j)=>key(Math.min(x0+w-12-kw/2,x0+12+(a%8+1)*pitch),y0+h*(a<8?.125:.625),BLACK[j]));
-  }else{
-    WHITE.forEach((k, i) => key(x0 + 12 + (i + 0.5) * pitch, y0 + h * 0.75, k));
-    BLACK_AFTER.forEach((a, j) => key(x0 + 12 + (a + 1) * pitch, y0 + h * 0.25, BLACK[j]));
-  }
+  WHITE.forEach((k, i) => key(x0 + padding + (i + 0.5) * pitch, y0 + h * 0.75, k));
+  BLACK_AFTER.forEach((a, j) => key(x0 + padding + (a + 1) * pitch, y0 + h * 0.25, BLACK[j]));
   // HTML targets over the drawing (pointer-events: none): touch-action and pointer capture work on them everywhere
   const hit = (c, cls, role) => {
     const b = c.g.getBBox(), d = document.createElement("div");
@@ -452,8 +449,9 @@ const tabletObserver=new ResizeObserver(()=>{
   if(!tabletMode)return;
   cancelAnimationFrame(tabletResizeFrame);
   tabletResizeFrame=requestAnimationFrame(()=>{
-    const r=device.getBoundingClientRect(),size=Math.round(r.width)+"x"+Math.round(r.height);
+    const r=device.getBoundingClientRect(),s=device.parentElement.getBoundingClientRect(),size=Math.round(r.width)+"x"+Math.round(s.height);
     if(size!==lastTabletSize){lastTabletSize=size;releaseAll();build("tablet");}
   });
 });
 tabletObserver.observe(device);
+tabletObserver.observe(device.parentElement);
