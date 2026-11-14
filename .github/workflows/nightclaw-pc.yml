@@ -1,0 +1,52 @@
+name: NightClaw PC
+on:
+  push:
+    branches: [nightclaw-pc]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engine:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows cross compiler
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64-posix
+      - name: Build native engine
+        run: sh desktop/build-engine.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nightclaw-engine
+          path: build/nightclaw-pc/nightclaw-engine.dll
+  windows:
+    needs: engine
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: nightclaw-engine
+          path: build/nightclaw-pc
+      - name: Build Windows interface
+        shell: pwsh
+        run: |
+          & "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x64 /optimize+ /out:build\nightclaw-pc\NightClaw.exe /win32manifest:desktop\app.manifest /reference:System.Windows.Forms.dll /reference:System.Drawing.dll desktop\Native.cs desktop\NightClaw.cs desktop\Tests.cs
+          if ($LASTEXITCODE) { throw "C# build failed" }
+          Copy-Item desktop/NightClaw.exe.config build/nightclaw-pc/
+      - name: Native Windows tests
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath build/nightclaw-pc/NightClaw.exe -ArgumentList @("--self-test", "$env:RUNNER_TEMP\nightclaw-qa") -WindowStyle Hidden -Wait -PassThru
+          Get-Content "$env:RUNNER_TEMP\nightclaw-qa\self-test.log"
+          if ($p.ExitCode) { throw "Native tests failed" }
+      - name: Package development build
+        shell: pwsh
+        run: |
+          Copy-Item desktop/README.md build/nightclaw-pc/README.md
+          Copy-Item LICENSE build/nightclaw-pc/LICENSE.txt
+          Copy-Item tools/research/taiko-bank-05/ATTRIBUTION.md build/nightclaw-pc/TAIKO-ATTRIBUTION.md
+          "Source: https://github.com/$env:GITHUB_REPOSITORY/tree/$env:GITHUB_SHA" | Set-Content build/nightclaw-pc/SOURCE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NightClaw-PC-Windows-x64
+          path: build/nightclaw-pc/
