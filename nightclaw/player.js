@@ -366,7 +366,7 @@ async function switchOn() {
   try{
     const ac=new AudioContext({sampleRate:44100,latencyHint:"interactive"});audioContext=ac;
     const unlocked=ac.resume();
-    const [r]=await Promise.all([fetch("nightclaw.wasm"),ac.audioWorklet.addModule("worklet.js?v=fm1-panel-1"),unlocked]);
+    const [r]=await Promise.all([fetch("nightclaw.wasm?v=envelope-1"),ac.audioWorklet.addModule("worklet.js?v=envelope-1"),unlocked]);
     if(!r.ok)throw new Error("Instrument download: HTTP "+r.status);
     const wasm=await r.arrayBuffer(),store=loadFlash();
     node=new AudioWorkletNode(ac,"nightclaw",{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
@@ -380,7 +380,7 @@ async function switchOn() {
           const params=new URLSearchParams(location.search),track=Number(params.get("track")),page=Number(params.get("page"));
           if(!Object.keys(store).length&&!params.has("track")){const i=m.scenes.indexOf("RAPTOR NIGHT");if(i>=0)send({type:"scene",value:i});}
           if(params.has("track")&&Number.isInteger(track)&&track>=0&&track<7)send({type:"track",value:track});
-          if(params.has("page")&&Number.isInteger(page)&&page>0&&page<28)send({type:"page",value:page});
+          if(params.has("page")&&Number.isInteger(page)&&page>0&&page<m.pages.length)send({type:"page",value:page});
           clearTimeout(timer);resolve();
         }else if(m.type==="error"){reject(new Error(m.message));toolSay("Audio error: "+m.message);}
         else if(m.type==="frame"){
