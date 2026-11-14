@@ -12,7 +12,7 @@ static inline uint32_t cents_inc(int32_t pitch16, int32_t ct, int32_t fine)
     return inc + (uint32_t)((int32_t)(inc >> 12) * (rem * 2367 / 16000 + fine));
 }
 
-static const char *const N_ANALOG_WAVE[] = {"SAW", "SQR", "TRI", "SIN", "PWM", "SYNC", "SUB"};
+static const char *const N_ANALOG_WAVE[] = {"SAW", "SQR", "TRI", "SIN", "PWM", "SYNC", "SUB", "BOW"};
 enum { AW_SYNC = 5, AW_SUB = 6 };
 static const param_desc_t ANALOG_SYNC = {"SYNC", F_INT, 0, 127, 10, 0, 0};   /* DTN's range and default */
 static const param_desc_t ANALOG_SUB = {"SUB", F_PCT, 0, 127, 64, 0, 0};      /* MIX's */
@@ -34,6 +34,11 @@ static void analog_note_on(track_t *t, voice_t *v)
     if (!v->s[2])
         v->s[2] = 0x1234567 + (int32_t)v->age;        /* noise state */
     v->s[3] = 0;                                      /* SYNC: no restart pending */
+    if (t->p[P_E0] == 7) {
+        uint32_t j;
+        for (j = 0; j < 8u; j++) v->s[j] = 0;
+        v->s[6] = 0x1234567 + (int32_t)v->age;
+    }
 }
 
 /* WAVE SYNC / SUB: OSC 1 a saw, OSC 2 the synced saw / the sub square; then noise, drive and the filter as
@@ -266,9 +271,45 @@ static __attribute__((noinline)) void analog_render_f(track_t *t, voice_t *v, in
 {
     analog_body(t, v, out, n, m, t->p[P_FTYPE] == 1 ? 1u : 2u);
 }
+/* Synthesized bowed cello: coherent harmonics, restrained bow noise and two fixed
+ * body resonances (~200 and 470 Hz). Existing voice state; no extra arena.
+ * A modeled synth voice, not a sampled acoustic cello. */
+static int32_t cello_body(const tsvf_t *c, int32_t in, int32_t *a, int32_t *b)
+{
+    int32_t v3 = in - *b;
+    int32_t bp = (c->a1 * *a + c->a2 * v3) >> 13;
+    int32_t lp = *b + ((c->a2 * *a + c->a3 * v3) >> 13);
+    *a = clamp(2 * bp - *a, -150000, 150000);
+    *b = clamp(2 * lp - *b, -150000, 150000);
+    return bp;
+}
+static void analog_cello(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+{
+    uint32_t i, ph = v->ph[0], inc = m->inc;
+    tsvf_t body0, body1, tone;
+    tsvf_coef(&body0, 39 << 8, 70);
+    tsvf_coef(&body1, 56 << 8, 60);
+    tsvf_coef(&tone, (t->p[P_E4] << 8) + m->cutoff, t->p[P_E5]);
+    for (i = 0; i < n; i++) {
+        int32_t nz = ((int32_t)(noise32(&v->s[6]) >> 17) - 16384);
+        int32_t x, y;
+        v->s[7] += (nz - v->s[7]) >> 3;
+        x = (osc_saw(ph, inc) * 3 + osc_pulse(ph, inc, 0x60000000u)) >> 3;
+        x += ((nz - v->s[7]) * t->p[P_E3]) >> 8;
+        y = x + (cello_body(&body0, x, &v->s[0], &v->s[1]) >> 1);
+        y += cello_body(&body1, x, &v->s[2], &v->s[3]) >> 1;
+        y = tsvf_lp(&tone, y, &v->s[4], &v->s[5]);
+        out[i] += voice_amp(soft_knee(y, 24000), m, i) << 1;
+        ph += inc;
+    }
+    v->ph[0] = ph;
+}
+
 static void analog_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
-    if (t->p[P_FTYPE])                                  /* BP / HP (SLOOP 2.6) */
+    if (t->p[P_E0] == 7)
+        analog_cello(t, v, out, n, m);
+    else if (t->p[P_FTYPE])                                  /* BP / HP (SLOOP 2.6) */
         analog_render_f(t, v, out, n, m);
     else
         analog_render_lp(t, v, out, n, m);              /* Paleotone's */
@@ -298,6 +339,11 @@ static const preset_t ANALOG_PRESETS[] = {
     {"FERN SWELL", {3, 18, 64, 22, 34, 10, 0, 60}, {110, 90, 120, 115}, 0, 0, FX(0, 70, 30, 118), PAT(5)},
     {"STAR SKY", {2, 40, 90, 0, 70, 15, 0, 70}, {95, 100, 120, 120}, 0, 0, FX(0, 110, 40, 127), PAT(5)},
     {"ICE AGE PAD", {4, 50, 70, 30, 38, 25, 8, 50}, {120, 100, 124, 120}, -10, 0, FX(0, 100, 20, 127), PAT(17)},
+    /* T-WRECKS instrument additions: append to preserve all existing preset IDs. */
+    {"CONCERT CELLO", {7, 0, 0, 4, 86, 10, 0, 40}, {20, 65, 112, 58}, 6, 0, FX(0, 0, 0, 0), PAT(5)},
+    {"DARK CELLO", {7, 0, 0, 2, 72, 8, 0, 32}, {36, 75, 120, 70}, 2, 0, FX(0, 0, 0, 0), PAT(5)},
+    {"DEEP SUB PAD", {3, 3, 28, 0, 58, 0, 0, 0}, {42, 90, 124, 76}, 0, 0, FX(0, 0, 0, 0), PAT(5)},
+    {"FAT BASS PAD", {6, 3, 78, 0, 46, 5, 0, 32}, {36, 85, 120, 70}, 4, 0, FX(0, 0, 0, 0), PAT(5)},
     /* DINOBOX's end */
 };
 
@@ -312,7 +358,7 @@ static void analog_spread(track_t *t, voice_t *v, uint32_t r)
 static const engine_t ENG_ANALOG = {
     "ANALOG", {"OSC", "FLT"},
     {
-        {"WAVE", F_ENUM, 0, 6, 0, N_ANALOG_WAVE, 0},
+        {"WAVE", F_ENUM, 0, 7, 0, N_ANALOG_WAVE, 0},
         {"DTN", F_INT, 0, 127, 10, 0, "ct"},
         {"MIX", F_PCT, 0, 127, 64, 0, 0},
         {"NOIS", F_PCT, 0, 127, 0, 0, 0},

@@ -104,6 +104,21 @@ int main(void)
         }
         bad += check("objects in data regions, clear of the sample slots", (int)ok);
     }
+    {   /* Every full-sized new bank keeps its own A/B history. */
+        unsigned int o; uint8_t x[ST_PAYLOAD_MAX], y[ST_PAYLOAD_MAX], z[ST_PAYLOAD_MAX];
+        memset(nor,0xFF,sizeof nor); memset(x,0x31,sizeof x); memset(y,0x72,sizeof y);
+        memset(nor+0xA0000,0x5A,0x3C000);
+        for(o=OBJ_BANK0;o<OBJ_NOBJ;o++) {
+            bad+=check("full preset bank save",st_save(o,x,sizeof x)==0);
+            fail_after=5;st_save(o,y,sizeof y);fail_after=-1;
+            bad+=check("torn bank keeps prior data",st_load(o,z,sizeof z)==(int)sizeof z && !memcmp(x,z,sizeof x));
+            bad+=check("next bank save",st_save(o,y,sizeof y)==0);
+        }
+        for(o=OBJ_BANK0;o<OBJ_NOBJ;o++)
+            bad+=check("banks stay independent",st_load(o,z,sizeof z)==(int)sizeof z && !memcmp(y,z,sizeof y));
+        {unsigned int i; int ok=1;for(i=0xA0000;i<0xDC000;i++)if(nor[i]!=0x5A)ok=0;
+         bad+=check("sample flash remains untouched",ok);}
+    }
     printf("%s\n", bad ? "STORAGE TEST FAILED" : "storage test passed");
     return bad != 0;
 }

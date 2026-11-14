@@ -136,6 +136,11 @@ int main(int argc, char **argv)
         for (k = 0; k < 16; k++)                 /* (the Lead's last key let go: the keys hold nothing) */
             en_lead_midi(60 + k, 0);
         run(3.0f);
+        /* Imported FM bells own their release envelopes. A legitimate tail can
+         * outlast the six seconds above; allow at most four more, retaining a
+         * strict bound so a held/stuck note still fails. Do not cut the sound. */
+        for (k = 0; k < 8 && l != PT_DRONE && pt_voices(); k++)
+            run(0.5f);
         for (i = 0; i < 4; i++)
             CHECK(held_on(i) == 0, "%s: stopped, %d notes still on MIDI channel %d", L[l].name, held_on(i), i + 1);
         CHECK(pt_voices() == 0 || l == PT_DRONE, "%s: stopped, %d Paleotone voices still sounding", L[l].name, pt_voices());

@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Physical FM-1 panel adapted from Paleotone main 6f027f0, after X0X/Felucca.
+     Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments. -->
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050508">
+<title>NightClaw · FM-1 emulator</title>
+<meta name="description" content="Play NightClaw on a clickable M-VAVE FM-1 panel: the actual knobs, buttons, keys and firmware screen.">
+<link rel="stylesheet" href="panel.css?v=keypad-layout-3">
+</head><body>
+<a class="skip" href="#device">Skip to the FM-1</a>
+<main>
+<header class="crest"><img src="assets/jungle.png" alt="" width="160" height="100"><h1>NIGHTCLAW</h1></header>
+<p class="tagline">Prehistoric western synth for the FM-1 · play it in your browser</p>
+<nav class="calls" aria-label="NightClaw"><a class="slab bone" id="tablet-mode" href="?view=tablet">Tablet view</a><a class="slab" href="guide.html">Visual guide</a><a class="slab bone" href="https://github.com/fantasmoslam/Paleotone/raw/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc">Download firmware</a><a href="https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion">Source</a></nav>
+<div class="tablet-bar" aria-label="Tablet view controls"><strong>NIGHTCLAW</strong><button type="button" id="fullscreen">Fullscreen</button><button type="button" id="panel-mode">FM-1 view</button><a href="guide.html" target="_blank" rel="noopener">Guide</a><span id="tablet-message" role="status"></span></div>
+<div class="stage">
+<div class="device" id="device" role="group" aria-label="NightClaw FM-1 instrument" tabindex="-1">
+<svg id="panel" viewBox="0 0 1000 624" aria-hidden="true"></svg>
+<canvas id="screen" width="240" height="240" role="button" tabindex="0" aria-label="Live FM-1 screen; activate to enlarge"></canvas>
+<div class="start" id="start"><button id="go" type="button">Switch on</button><p id="status" role="status">Sound starts when you switch on.</p></div>
+</div></div>
+<p class="screen-status" id="screen-status" role="status"></p>
+<div class="keys help"><p>Play with the mouse, touch, or the computer keys printed on the panel.</p><p>Drag or scroll a knob to turn it. Arrow keys turn a focused knob one detent.</p><p><kbd>Shift</kbd>-click or right-click a button to keep it held; click again to release. Hold <b>GLO</b> for about ½ second, then release to save.</p><p>Click the screen to enlarge it. <kbd>Esc</kbd> returns to the panel.</p></div>
+<details class="utility"><summary>Keyboard, audio & display</summary><div class="utility-grid">
+<label><input type="checkbox" id="shortcuts" checked> Computer keyboard</label>
+<button id="mute" disabled aria-pressed="false">Mute</button><button id="release" disabled>Release all controls</button><button id="focus-mode">Enlarge screen</button>
+</div><p id="tool-status" role="status"></p><p class="note">GLO saves scene edits in this browser, separately from your physical FM-1. Holding GLO to about 1.5 seconds resets the current scene. The button printed SAVE opens sound pages.</p></details>
+<footer><nav><a href="guide.html">Visual guide</a> · <a href="https://github.com/fantasmoslam/Paleotone/tree/twrecks-completion">Source</a> · <a href="LICENSE.txt">GPL-3.0</a> · <a href="TAIKO-ATTRIBUTION.txt">Taiko credits</a></nav><p>NightClaw’s firmware UI and sound engine, running locally. FM-1 panel adapted from Paleotone, after X0X and Felucca. <a href="assets/Clayborn-LICENSE.txt">Clayborn by Frank Baranowski</a>.</p></footer>
+</main><script type="module" src="player.js?v=envelope-1"></script></body></html>

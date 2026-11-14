@@ -1,94 +1,71 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* hal/fm1_input.h's quadrature decoder (fm1__frame) on simulated turns: encoder 0, a full
- * quadrature cycle per detent. A turn must count every detent whether the matrix scan sees each
- * state for 4 scans, 2 or 1, or skips every other state (a fast flick); a one-scan glitch at rest
- * must count nothing. (The scan runs every 1.1 ms: one scan a state is ~225 detents a second.) */
+/* Exercise the physical matrix decoder for every FM-1 encoder and resting
+ * phase: full detents, slow turns, mid-click pauses, reversal and bounce. */
 #include <stdio.h>
 #include <string.h>
 #include "fm1_input.h"
-
 static int fails;
-static void frame(uint32_t st)                       /* encoder 0: A = col 0 bit 0, B = col 1 bit 0 */
+static unsigned enc,phase;
+#define CHECK(c,...) do{if(!(c)){printf("FAIL encoder %u phase %u: ",enc,phase);printf(__VA_ARGS__);puts("");fails++;}}while(0)
+static const unsigned cw[4]={0,1,3,2};
+static void frame(unsigned state)
 {
-    fm1_in.raw[0] = (uint8_t)((st >> 1) & 1u);
-    fm1_in.raw[1] = (uint8_t)(st & 1u);
+    const uint8_t *m=FM1_ENC[enc];
+    fm1_in.raw[m[0]]=(uint8_t)((fm1_in.raw[m[0]]&~(1u<<m[1]))|(((state>>1)&1u)<<m[1]));
+    fm1_in.raw[m[2]]=(uint8_t)((fm1_in.raw[m[2]]&~(1u<<m[3]))|((state&1u)<<m[3]));
     fm1__frame();
 }
-static const uint32_t CW[4] = {1, 3, 2, 0};          /* 0 -> 1 -> 3 -> 2 -> 0: one detent clockwise */
-
-static void reset(void)
+static void hold(unsigned state,unsigned frames){while(frames--)frame(state);}
+static void reset(unsigned rest)
 {
-    int i;
-    memset((void *)&fm1_in, 0, sizeof fm1_in);
-    for (i = 0; i < (int)FM1_NENC; i++)
-        fm1_in.enc_prev[i] = fm1_in.enc_last[i] = 0xFF;
-    for (i = 0; i < 60; i++)                         /* at rest on state 0: learned as the detent */
-        frame(0);
+    memset((void*)&fm1_in,0,sizeof fm1_in);
+    for(unsigned e=0;e<FM1_NENC;e++)fm1_in.enc_prev[e]=fm1_in.enc_last[e]=0xff;
+    hold(rest,60);
 }
-
-/* `det` detents, `per` scans on each state; skip = 1: only every other state is ever scanned */
-static int turn(int det, int per, int skip, int dir)
+static unsigned at(int offset){return cw[(phase+offset+16)%4];}
+static void clicks(int dir,int count,int scans)
 {
-    int d, k, p, steps;
-    fm1_in.enc_steps[0] = 0;
-    for (d = 0; d < det; d++)
-        for (k = skip ? 1 : 0; k < 4; k += skip ? 2 : 1)
-            for (p = 0; p < per; p++)
-                frame(dir > 0 ? CW[k] : CW[(5 - k) & 3] ^ 0);
-    for (k = 0; k < 60; k++)
-        frame(0);
-    steps = fm1_in.enc_steps[0];
-    fm1_in.enc_steps[0] = 0;
-    return steps;
+    for(int d=0;d<count;d++)for(int k=1;k<=4;k++)hold(at(dir*k),(unsigned)scans);
 }
-
-#define CHECK(c, ...) do { if (!(c)) { printf("FAIL " __VA_ARGS__); printf("\n"); fails++; } } while (0)
 int main(void)
 {
-    int per, got;
-    static const uint32_t CCW[4] = {2, 3, 1, 0};
-    for (per = 4; per >= 1; per /= 2) {
-        reset();
-        got = turn(10, per, 0, 1);
-        CHECK(got == 10, "10 detents clockwise, %d scans a state: %d", per, got);
+    for(enc=0;enc<FM1_NENC;enc++)for(phase=0;phase<4;phase++){
+        for(int scans=1;scans<=4;scans*=2){
+            reset(at(0));clicks(1,10,scans);
+            CHECK(fm1_in.enc_steps[enc]==10,"10 clockwise, %d scans/state: %d",scans,fm1_in.enc_steps[enc]);
+            clicks(-1,10,scans);
+            CHECK(fm1_in.enc_steps[enc]==0,"reverse 10 clicks: %d",fm1_in.enc_steps[enc]);
+        }
+        /* Human slow turns must not teach the halfway states as detents. */
+        reset(at(0));clicks(1,5,80);
+        CHECK(fm1_in.enc_steps[enc]==5,"five slow clicks: %d",fm1_in.enc_steps[enc]);
+        reset(at(0));
+        for(int d=0;d<5;d++){frame(at(1));hold(at(2),60);frame(at(3));frame(at(4));}
+        CHECK(fm1_in.enc_steps[enc]==5,"mid-click pause doubled/lost steps: %d",fm1_in.enc_steps[enc]);
+        /* An immediately reversed fast click starts without the previous direction. */
+        reset(at(0));clicks(1,1,1);fm1_in.enc_steps[enc]=0;
+        frame(at(-2));frame(at(-3));frame(at(-4));
+        CHECK(fm1_in.enc_steps[enc]==-1,"reversed click with skipped state: %d",fm1_in.enc_steps[enc]);
+        /* A skipped phase is recoverable once this click supplies direction. */
+        reset(at(0));
+        for(int d=0;d<10;d++){frame(at(1));frame(at(3));frame(at(4));}
+        CHECK(fm1_in.enc_steps[enc]==10,"observable fast skipped phase: %d",fm1_in.enc_steps[enc]);
+        for(int d=0;d<10;d++){frame(at(-1));frame(at(-3));frame(at(-4));}
+        CHECK(fm1_in.enc_steps[enc]==0,"observable reversed skipped phase: %d",fm1_in.enc_steps[enc]);
+        /* Two opposite sampled states alone contain no direction information.
+         * A preceding click must not make them invent continued movement. */
+        reset(at(0));clicks(1,1,1);fm1_in.enc_steps[enc]=0;
+        for(int d=0;d<9;d++){frame(at(2));frame(at(4));}
+        CHECK(fm1_in.enc_steps[enc]==0,"stale direction invented %d steps",fm1_in.enc_steps[enc]);
+        /* Bounce and a partially reversed click must not create an item. */
+        reset(at(0));frame(at(1));frame(at(0));
+        frame(at(1));frame(at(2));frame(at(1));frame(at(0));
+        CHECK(fm1_in.enc_steps[enc]==0,"bounce/partial reversal produced %d",fm1_in.enc_steps[enc]);
+        /* Booting between detents recovers only after a long stationary park. */
+        reset(at(1));hold(at(0),FM1_REST_FRAMES+1);fm1_in.enc_steps[enc]=0;
+        clicks(1,5,1);
+        CHECK(fm1_in.enc_steps[enc]==5,"parked recovery: %d",fm1_in.enc_steps[enc]);
     }
-    /* a flick: it starts like any turn (one detent seen whole), then skips every other state;
-     * from a standstill straight into skipping, the direction is unknowable and nothing counts */
-    {
-        int k, d;
-        reset();
-        for (k = 0; k < 4; k++)
-            frame(CW[k]);
-        for (d = 0; d < 9; d++)
-            for (k = 1; k < 4; k += 2)
-                frame(CW[k]);
-        for (k = 0; k < 60; k++)
-            frame(0);
-        got = fm1_in.enc_steps[0];
-        CHECK(got == 10, "a flick (1 detent whole, then 9 with every other state skipped): %d", got);
-    }
-    /* counter-clockwise, one scan a state */
-    {
-        int d, k;
-        reset();
-        for (d = 0; d < 10; d++)
-            for (k = 0; k < 4; k++)
-                frame(CCW[k]);
-        for (k = 0; k < 60; k++)
-            frame(0);
-        got = fm1_in.enc_steps[0];
-        CHECK(got == -10, "10 detents counter-clockwise, one scan a state: %d", got);
-    }
-    /* a bounce at rest: one scan of state 1, back to 0 */
-    reset();
-    frame(1);
-    frame(0);
-    {
-        int k;
-        for (k = 0; k < 60; k++)
-            frame(0);
-    }
-    CHECK(fm1_in.enc_steps[0] == 0, "a one-scan glitch at rest counted %d", fm1_in.enc_steps[0]);
-    printf(fails ? "encoder: %d FAILED\n" : "encoder: ok\n", fails);
-    return fails != 0;
+    printf("encoder: all seven controls/four phases, %d failures\n",fails);
+    return fails!=0;
 }

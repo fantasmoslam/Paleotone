@@ -32,7 +32,7 @@ static void wav(const char *path, const float *x, uint32_t n)
 }
 int main(int argc, char **argv)
 {
-    static float all[PT_NLAYER][44100 * 2 * 34];
+    static float all[PT_NLAYER][44100 * 2 * PT_NSEQ2];
     static const char *const LN[PT_NLAYER] = {"drone", "seq", "lead", "seq2"};
     int l, k, fails = 0;
     pt_init();

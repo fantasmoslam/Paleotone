@@ -1,0 +1,60 @@
+# Home SAVE opens per-track ADSR; existing detents stay literal.
+wait 300
+spin SELECT 2
+tap SAVE
+wait 200
+expect view 28
+expect envlayer 2
+shot envelope-lead.png
+spin K1 -200
+wait 200
+expect env20 -1
+spin K1 1
+wait 200
+# Default Theremin attack is inherited until explicitly changed.
+expect env20 >0
+spin K2 -200
+spin K2 1
+wait 200
+expect env21 >0
+spin K3 -200
+spin K3 1
+wait 200
+expect env22 127
+spin K4 -200
+spin K4 1
+wait 200
+expect env23 >0
+turn ALGO 1
+wait 200
+expect env22 127
+spin SELECT 2
+wait 200
+expect envlayer 4
+shot envelope-calls.png
+tapkey w0
+wait 200
+expect calls 1
+spin SELECT 1
+wait 200
+expect envlayer 5
+shot envelope-atmos.png
+spin K1 1
+wait 200
+expect env50 >0
+tap SAVE
+wait 200
+expect view 21
+tap HOME
+tap SAVE
+wait 200
+expect envlayer 2
+press GLO
+wait 700
+release GLO
+wait 200
+expect dirty 0
+reboot
+wait 300
+expect env22 127
+expect env50 >0

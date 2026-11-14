@@ -216,8 +216,9 @@ def build_app():
     units = [("cc", "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
              ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
              ("cc", "-c", FW / "hal" / "fm1_isr.S", "-o", OUT / "fm1_isr.o"),
+             ("cc", "-c", FW / "hal" / "fm1_cpu1.S", "-o", OUT / "fm1_cpu1.o"),
              ("cc", *flags, "-c", FW / "src" / "main.c", "-o", OUT / "main.o")]
-    objs = [OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o", OUT / "main.o"]
+    objs = [OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o", OUT / "fm1_cpu1.o", OUT / "main.o"]
     (OUT / "o2").mkdir(parents=True, exist_ok=True)
     for u in O2_UNITS:
         o = OUT / "o2" / (u.replace("/", "_")[:-2] + ".o")
@@ -232,11 +233,12 @@ def build_app():
     # unreferenced functions (each in its own section: -ffunction-sections) are dropped: the DSP keeps
     # mono reference paths for the host tests that the firmware no longer calls
     tc("pi32v2/bin/ld", "--gc-sections", "-e", "_start", "-T", FW / "app.ld", *objs, "-o", elf)
-    for sect in ("text.bin", "data.bin", "ramtext.bin"):
+    for sect in ("text.bin", "data.bin", "ramtext.bin", "cpu1text.bin"):
         (OUT / sect).unlink(missing_ok=True)
     *_, syms, dis, rt = tc_all(("common/bin/objcopy", "-O", "binary", "-j", ".text", elf, OUT / "text.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".data", elf, OUT / "data.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".ram_text", elf, OUT / "ramtext.bin"),
+                               ("common/bin/objcopy", "-O", "binary", "-j", ".c1_text", elf, OUT / "cpu1text.bin"),
                                ("common/bin/objdump", "-t", elf),
                                ("common/bin/objdump", "-d", elf),
                                ("common/bin/objdump", "-d", "-j", ".ram_text", elf))
@@ -246,7 +248,7 @@ def build_app():
         return int(re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M).group(1), 16)
     img = bytearray((OUT / "text.bin").read_bytes())
     # .ram_text and .data follow .text at their load addresses; crt0 copies them by words
-    for sect, lname in (("ramtext.bin", "_rt_load"), ("data.bin", "_data_load")):
+    for sect, lname in (("ramtext.bin", "_rt_load"), ("cpu1text.bin", "_c1_load"), ("data.bin", "_data_load")):
         load = symv(lname)
         if load % 4:
             raise SystemExit(f"{lname} {load:#x} is not word aligned")
@@ -293,6 +295,15 @@ def check(img, syms, dis, rt):
     def sym(name):
         mm = re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M)
         return int(mm.group(1), 16) if mm else 0
+    # Boot copies the flash-only code and worker loop as one contiguous RAM image.
+    ram_blob=(OUT / "ramtext.bin").read_bytes()
+    c1_blob=(OUT / "cpu1text.bin").read_bytes()
+    if sym("_c1_load") != sym("_rt_load") + len(ram_blob):
+        errors.append("worker RAM load image is not contiguous with the flash driver")
+    if sym("_rt_end")-sym("_rt_start") != len(ram_blob)+len(c1_blob):
+        errors.append("worker boot-copy bounds do not match packaged RAM code")
+    else:
+        notes.append(f"worker RAM loop: {len(c1_blob)} B, boot-copy/package bounds match")
     bss = sym("_bss_end") - 0x01C08000
     pool = sym("_pool_end") - sym("_pool_start")
     notes.append(f"image {len(img)} B; RAM .data+.bss {bss} B of 98304; pool {pool} B of {0x54000}")

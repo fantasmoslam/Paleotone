@@ -1,0 +1,3084 @@
+{
+  "scope": "11 public Bandcamp streams plus current candidate renders. Signal analysis, not human critical listening or verified score transcription.",
+  "candidate_commit": "91dcc8801912ab4ba1b0c90fb93146cba631f60b",
+  "reference_audio_minutes": 48.172666666666665,
+  "analysis": [
+    {
+      "id": "01-diplodocus",
+      "title": "Prowl of the Concavenator",
+      "album": "diplodocus",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy",
+      "track_url": "https://diplodocus.bandcamp.com/track/prowl-of-the-concavenator",
+      "duration": 260.308,
+      "bytes": 4165798,
+      "analyzed_seconds": 260.31,
+      "sha256": "cb936ab222110740a46cfaec07bb858baffc53c1607113650b4fd46ad55d3be7",
+      "bands_pct": {
+        "20_60": 0.04,
+        "60_120": 44.25,
+        "120_250": 14.57,
+        "250_1000": 34.91,
+        "1000_10000": 6.22
+      },
+      "power_centroid_hz": 401,
+      "active_rms_p95_p10_db": 13.2,
+      "low_energy_occupancy_pct": 42.7,
+      "pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.631
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.478
+        },
+        {
+          "bpm": 129.2,
+          "correlation": 0.412
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.306
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.811
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.762
+        },
+        {
+          "bpm": 129.2,
+          "correlation": 0.148
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.144
+        }
+      ],
+      "chroma_change_candidates_s": [
+        7,
+        78,
+        96,
+        182,
+        201,
+        221,
+        251
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 7,
+          "correlation": 0.314
+        },
+        {
+          "lag_s": 8,
+          "correlation": 0.245
+        },
+        {
+          "lag_s": 15,
+          "correlation": 0.236
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 48.13,
+          "rms_dbfs": -15.7
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 41.2,
+          "rms_dbfs": -14
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 45.03,
+          "rms_dbfs": -13.6
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 50.43,
+          "rms_dbfs": -13.3
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 43.57,
+          "rms_dbfs": -14.2
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 34.39,
+          "rms_dbfs": -13.4
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 51.52,
+          "rms_dbfs": -16.3
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 45.53,
+          "rms_dbfs": -15.4
+        },
+        {
+          "start_s": 240,
+          "low_20_120_pct": 40.68,
+          "rms_dbfs": -20.7
+        }
+      ]
+    },
+    {
+      "id": "02-diplodocus",
+      "title": "Tanystropheus' Reign",
+      "album": "diplodocus",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy",
+      "track_url": "https://diplodocus.bandcamp.com/track/tanystropheus-reign",
+      "duration": 171.692,
+      "bytes": 2748080,
+      "analyzed_seconds": 171.69,
+      "sha256": "fe4038ecddbab4b24ca64b157c7e5a93a489509da93bdd3495cf6e6af51d5a85",
+      "bands_pct": {
+        "20_60": 0.02,
+        "60_120": 25.93,
+        "120_250": 11.83,
+        "250_1000": 57.75,
+        "1000_10000": 4.47
+      },
+      "power_centroid_hz": 449,
+      "active_rms_p95_p10_db": 10.3,
+      "low_energy_occupancy_pct": 44,
+      "pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.732
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.622
+        },
+        {
+          "bpm": 129.2,
+          "correlation": 0.397
+        },
+        {
+          "bpm": 43.1,
+          "correlation": 0.297
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.853
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.815
+        },
+        {
+          "bpm": 57.4,
+          "correlation": 0.073
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.073
+        }
+      ],
+      "chroma_change_candidates_s": [
+        21,
+        36,
+        51,
+        80,
+        95,
+        110,
+        127
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 15,
+          "correlation": 0.634
+        },
+        {
+          "lag_s": 14,
+          "correlation": 0.457
+        },
+        {
+          "lag_s": 30,
+          "correlation": 0.447
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 24.16,
+          "rms_dbfs": -14.7
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 20.59,
+          "rms_dbfs": -12.8
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 25.18,
+          "rms_dbfs": -12.3
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 24.2,
+          "rms_dbfs": -12.8
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 34.95,
+          "rms_dbfs": -13
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 27.57,
+          "rms_dbfs": -16.7
+        }
+      ]
+    },
+    {
+      "id": "03-diplodocus-b",
+      "title": "Return of the Thunder Lizard",
+      "album": "diplodocus-b",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy-b-side",
+      "track_url": "https://diplodocus.bandcamp.com/track/return-of-the-thunder-lizard",
+      "duration": 223.038,
+      "bytes": 3569788,
+      "analyzed_seconds": 223.04,
+      "sha256": "99b8ddb1958b41869157a14ebdf94126cd11801d77cd31cdfb33b37bda8a557c",
+      "bands_pct": {
+        "20_60": 4.2,
+        "60_120": 20.24,
+        "120_250": 8.14,
+        "250_1000": 55.51,
+        "1000_10000": 11.92
+      },
+      "power_centroid_hz": 569,
+      "active_rms_p95_p10_db": 5.5,
+      "low_energy_occupancy_pct": 62.8,
+      "pulse_candidates": [
+        {
+          "bpm": 76,
+          "correlation": 0.669
+        },
+        {
+          "bpm": 37.4,
+          "correlation": 0.616
+        },
+        {
+          "bpm": 152,
+          "correlation": 0.612
+        },
+        {
+          "bpm": 49.7,
+          "correlation": 0.487
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 37.4,
+          "correlation": 0.678
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.672
+        },
+        {
+          "bpm": 152,
+          "correlation": 0.381
+        },
+        {
+          "bpm": 49.7,
+          "correlation": 0.341
+        }
+      ],
+      "chroma_change_candidates_s": [
+        32,
+        59,
+        86,
+        137,
+        168,
+        199,
+        215
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 26,
+          "correlation": 0.252
+        },
+        {
+          "lag_s": 25,
+          "correlation": 0.22
+        },
+        {
+          "lag_s": 13,
+          "correlation": 0.131
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 23.61,
+          "rms_dbfs": -14.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 15.52,
+          "rms_dbfs": -13.2
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 31.1,
+          "rms_dbfs": -11.5
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 30.34,
+          "rms_dbfs": -11.5
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 25.67,
+          "rms_dbfs": -12.1
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 25.52,
+          "rms_dbfs": -11.6
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 18.35,
+          "rms_dbfs": -12.6
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 2.62,
+          "rms_dbfs": -15.5
+        }
+      ]
+    },
+    {
+      "id": "04-diplodocus-b",
+      "title": "Primal Rage",
+      "album": "diplodocus-b",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy-b-side",
+      "track_url": "https://diplodocus.bandcamp.com/track/primal-rage",
+      "duration": 239.454,
+      "bytes": 3832266,
+      "analyzed_seconds": 239.45,
+      "sha256": "4cf1e35338c582148a22fabffd46e5dfd70c22f489078747124b9e8f3c0e0444",
+      "bands_pct": {
+        "20_60": 2.09,
+        "60_120": 25.24,
+        "120_250": 6.98,
+        "250_1000": 52.06,
+        "1000_10000": 13.63
+      },
+      "power_centroid_hz": 564,
+      "active_rms_p95_p10_db": 4.9,
+      "low_energy_occupancy_pct": 74.5,
+      "pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.474
+        },
+        {
+          "bpm": 123,
+          "correlation": 0.456
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.371
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.333
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.734
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.332
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.327
+        },
+        {
+          "bpm": 33.1,
+          "correlation": 0.269
+        }
+      ],
+      "chroma_change_candidates_s": [
+        8,
+        72,
+        103,
+        132,
+        168,
+        200,
+        232
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 16,
+          "correlation": 0.481
+        },
+        {
+          "lag_s": 8,
+          "correlation": 0.455
+        },
+        {
+          "lag_s": 24,
+          "correlation": 0.3
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 24,
+          "rms_dbfs": -15
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 38.34,
+          "rms_dbfs": -11.7
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 36.12,
+          "rms_dbfs": -11.2
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 27.19,
+          "rms_dbfs": -10.7
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 21.01,
+          "rms_dbfs": -10.9
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 23.52,
+          "rms_dbfs": -11.1
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 28.62,
+          "rms_dbfs": -11.4
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 15.46,
+          "rms_dbfs": -13.1
+        }
+      ]
+    },
+    {
+      "id": "05-thagomizer",
+      "title": "Largest To Live",
+      "album": "thagomizer",
+      "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+      "track_url": "https://thagomizer.bandcamp.com/track/largest-to-live",
+      "duration": 217.752,
+      "bytes": 3484942,
+      "analyzed_seconds": 217.75,
+      "sha256": "0e2ce60837c3dbcbeaf42feaabe5970e39aceeaf528875e04c667a402e0b8dd2",
+      "bands_pct": {
+        "20_60": 22.51,
+        "60_120": 9.14,
+        "120_250": 17.27,
+        "250_1000": 47.61,
+        "1000_10000": 3.47
+      },
+      "power_centroid_hz": 313,
+      "active_rms_p95_p10_db": 7.1,
+      "low_energy_occupancy_pct": 29.5,
+      "pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.529
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.406
+        },
+        {
+          "bpm": 123,
+          "correlation": 0.391
+        },
+        {
+          "bpm": 55,
+          "correlation": 0.24
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.569
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.407
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.38
+        },
+        {
+          "bpm": 55,
+          "correlation": 0.151
+        }
+      ],
+      "chroma_change_candidates_s": [
+        8,
+        40,
+        87,
+        137,
+        163,
+        192,
+        210
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 8,
+          "correlation": 0.523
+        },
+        {
+          "lag_s": 16,
+          "correlation": 0.503
+        },
+        {
+          "lag_s": 24,
+          "correlation": 0.446
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 37.67,
+          "rms_dbfs": -17.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 36.28,
+          "rms_dbfs": -15.6
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 41.56,
+          "rms_dbfs": -14.8
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 33.63,
+          "rms_dbfs": -15.3
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 30.8,
+          "rms_dbfs": -15.4
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 25.36,
+          "rms_dbfs": -15.2
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 21.32,
+          "rms_dbfs": -15.3
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 10.06,
+          "rms_dbfs": -16.9
+        }
+      ]
+    },
+    {
+      "id": "06-thagomizer",
+      "title": "Migration Of The Camarasaurus",
+      "album": "thagomizer",
+      "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+      "track_url": "https://thagomizer.bandcamp.com/track/migration-of-the-camarasaurus",
+      "duration": 271.515,
+      "bytes": 4345102,
+      "analyzed_seconds": 271.52,
+      "sha256": "59a8a2f65c60aaab6cd753ac0955df03af2ff92416dfebedd43b06ec0dc4904f",
+      "bands_pct": {
+        "20_60": 17.65,
+        "60_120": 3.48,
+        "120_250": 28.22,
+        "250_1000": 47.73,
+        "1000_10000": 2.92
+      },
+      "power_centroid_hz": 380,
+      "active_rms_p95_p10_db": 11.4,
+      "low_energy_occupancy_pct": 26.2,
+      "pulse_candidates": [
+        {
+          "bpm": 55,
+          "correlation": 0.804
+        },
+        {
+          "bpm": 73.8,
+          "correlation": 0.054
+        },
+        {
+          "bpm": 43.8,
+          "correlation": 0.015
+        },
+        {
+          "bpm": 112.3,
+          "correlation": -0.013
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 55,
+          "correlation": 0.953
+        },
+        {
+          "bpm": 63,
+          "correlation": 0.077
+        },
+        {
+          "bpm": 48.8,
+          "correlation": 0.072
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.002
+        }
+      ],
+      "chroma_change_candidates_s": [
+        110,
+        128,
+        145,
+        206,
+        224,
+        241,
+        259
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 17,
+          "correlation": 0.498
+        },
+        {
+          "lag_s": 18,
+          "correlation": 0.452
+        },
+        {
+          "lag_s": 35,
+          "correlation": 0.378
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 24.03,
+          "rms_dbfs": -15.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 23.78,
+          "rms_dbfs": -14.9
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 22.24,
+          "rms_dbfs": -14.8
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 20.37,
+          "rms_dbfs": -14.3
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 22.63,
+          "rms_dbfs": -14.9
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 23.87,
+          "rms_dbfs": -15
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 18.95,
+          "rms_dbfs": -14
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 17.11,
+          "rms_dbfs": -13.4
+        },
+        {
+          "start_s": 240,
+          "low_20_120_pct": 20.19,
+          "rms_dbfs": -14.5
+        },
+        {
+          "start_s": 270,
+          "low_20_120_pct": 1.23,
+          "rms_dbfs": -51.4
+        }
+      ]
+    },
+    {
+      "id": "07-thagomizer",
+      "title": "Impact Winter",
+      "album": "thagomizer",
+      "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+      "track_url": "https://thagomizer.bandcamp.com/track/impact-winter",
+      "duration": 420.8,
+      "bytes": 6733739,
+      "analyzed_seconds": 420.8,
+      "sha256": "75aad8be0e6ceeafd356abce2778078abffa1afdeafadf2eb38327200f547b9f",
+      "bands_pct": {
+        "20_60": 16.95,
+        "60_120": 8,
+        "120_250": 28.55,
+        "250_1000": 43.82,
+        "1000_10000": 2.68
+      },
+      "power_centroid_hz": 320,
+      "active_rms_p95_p10_db": 7,
+      "low_energy_occupancy_pct": 34.7,
+      "pulse_candidates": [
+        {
+          "bpm": 37.4,
+          "correlation": 0.901
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.847
+        },
+        {
+          "bpm": 86.1,
+          "correlation": 0.077
+        },
+        {
+          "bpm": 66.3,
+          "correlation": 0.072
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 37.4,
+          "correlation": 0.96
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.885
+        },
+        {
+          "bpm": 40.4,
+          "correlation": 0.01
+        },
+        {
+          "bpm": 34.9,
+          "correlation": 0.009
+        }
+      ],
+      "chroma_change_candidates_s": [
+        8,
+        84,
+        215,
+        235,
+        261,
+        290,
+        392
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 13,
+          "correlation": 0.826
+        },
+        {
+          "lag_s": 19,
+          "correlation": 0.731
+        },
+        {
+          "lag_s": 32,
+          "correlation": 0.71
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 21.96,
+          "rms_dbfs": -17.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 23.45,
+          "rms_dbfs": -17.1
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 33.67,
+          "rms_dbfs": -16.1
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 22.69,
+          "rms_dbfs": -17
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 22.07,
+          "rms_dbfs": -16.7
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 21.91,
+          "rms_dbfs": -16.8
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 22.42,
+          "rms_dbfs": -16.8
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 39.7,
+          "rms_dbfs": -16.6
+        },
+        {
+          "start_s": 240,
+          "low_20_120_pct": 30.83,
+          "rms_dbfs": -16.9
+        },
+        {
+          "start_s": 270,
+          "low_20_120_pct": 29.56,
+          "rms_dbfs": -16.9
+        },
+        {
+          "start_s": 300,
+          "low_20_120_pct": 21.79,
+          "rms_dbfs": -16.7
+        },
+        {
+          "start_s": 330,
+          "low_20_120_pct": 21.55,
+          "rms_dbfs": -16.7
+        },
+        {
+          "start_s": 360,
+          "low_20_120_pct": 22.73,
+          "rms_dbfs": -16.8
+        },
+        {
+          "start_s": 390,
+          "low_20_120_pct": 3,
+          "rms_dbfs": -19.3
+        }
+      ]
+    },
+    {
+      "id": "08-synthosaurus",
+      "title": "Tears of Flasmosaurus",
+      "album": "synthosaurus",
+      "source": "https://synthosaurus.bandcamp.com/album/metalosauric-crush",
+      "track_url": "https://synthosaurus.bandcamp.com/track/tears-of-flasmosaurus",
+      "duration": 324.001,
+      "bytes": 5185200,
+      "analyzed_seconds": 324,
+      "sha256": "07c04b648af25bf5fa9eeecc23466746cc7bee814eafec034aa07cf92fc5330e",
+      "bands_pct": {
+        "20_60": 10.25,
+        "60_120": 38.13,
+        "120_250": 19.48,
+        "250_1000": 28.41,
+        "1000_10000": 3.73
+      },
+      "power_centroid_hz": 273,
+      "active_rms_p95_p10_db": 9.1,
+      "low_energy_occupancy_pct": 63.1,
+      "pulse_candidates": [
+        {
+          "bpm": 123,
+          "correlation": 0.531
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.498
+        },
+        {
+          "bpm": 60.1,
+          "correlation": 0.486
+        },
+        {
+          "bpm": 172.3,
+          "correlation": 0.453
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 123,
+          "correlation": 0.16
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.151
+        },
+        {
+          "bpm": 60.1,
+          "correlation": 0.125
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.094
+        }
+      ],
+      "chroma_change_candidates_s": [
+        24,
+        68,
+        128,
+        152,
+        184,
+        220,
+        304
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 32,
+          "correlation": 0.394
+        },
+        {
+          "lag_s": 16,
+          "correlation": 0.289
+        },
+        {
+          "lag_s": 33,
+          "correlation": 0.228
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 39.35,
+          "rms_dbfs": -12.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 53.08,
+          "rms_dbfs": -11.4
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 57.08,
+          "rms_dbfs": -8.2
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 48.78,
+          "rms_dbfs": -8.3
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 48.9,
+          "rms_dbfs": -9.9
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 57.26,
+          "rms_dbfs": -11
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 34.56,
+          "rms_dbfs": -11.8
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 49.35,
+          "rms_dbfs": -9.8
+        },
+        {
+          "start_s": 240,
+          "low_20_120_pct": 48.62,
+          "rms_dbfs": -8.3
+        },
+        {
+          "start_s": 270,
+          "low_20_120_pct": 42.58,
+          "rms_dbfs": -10.1
+        },
+        {
+          "start_s": 300,
+          "low_20_120_pct": 18.91,
+          "rms_dbfs": -16.1
+        }
+      ]
+    },
+    {
+      "id": "09-synthosaurus",
+      "title": "Million Years of Terror (Alternative Version)",
+      "album": "synthosaurus",
+      "source": "https://synthosaurus.bandcamp.com/album/metalosauric-crush",
+      "track_url": "https://synthosaurus.bandcamp.com/track/million-years-of-terror-alternative-version",
+      "duration": 172.002,
+      "bytes": 2753096,
+      "analyzed_seconds": 172,
+      "sha256": "cb5ca0ad41342f1e30c3f7fa710cd345b71993cb777feeeb96a88070fa6197f5",
+      "bands_pct": {
+        "20_60": 8.63,
+        "60_120": 30.55,
+        "120_250": 24.39,
+        "250_1000": 31.03,
+        "1000_10000": 5.39
+      },
+      "power_centroid_hz": 343,
+      "active_rms_p95_p10_db": 4.5,
+      "low_energy_occupancy_pct": 81.8,
+      "pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.546
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.545
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.406
+        },
+        {
+          "bpm": 80.7,
+          "correlation": 0.361
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.514
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.202
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.173
+        },
+        {
+          "bpm": 80.7,
+          "correlation": 0.069
+        }
+      ],
+      "chroma_change_candidates_s": [
+        9,
+        56,
+        72,
+        88,
+        120,
+        138,
+        154
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 16,
+          "correlation": 0.336
+        },
+        {
+          "lag_s": 15,
+          "correlation": 0.108
+        },
+        {
+          "lag_s": 17,
+          "correlation": 0.085
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 37.54,
+          "rms_dbfs": -13.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 44.3,
+          "rms_dbfs": -12.2
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 37.4,
+          "rms_dbfs": -11
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 39.53,
+          "rms_dbfs": -12.8
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 38.63,
+          "rms_dbfs": -11.2
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 37.51,
+          "rms_dbfs": -12.1
+        }
+      ]
+    },
+    {
+      "id": "10-synthosaurus-war",
+      "title": "Dinopocalypse",
+      "album": "synthosaurus-war",
+      "source": "https://synthosaurus.bandcamp.com/album/dino-war",
+      "track_url": "https://synthosaurus.bandcamp.com/track/dinopocalypse",
+      "duration": 276.008,
+      "bytes": 4416991,
+      "analyzed_seconds": 276.01,
+      "sha256": "1a097a5c2b4bb0110e23af05da80fc1a7a666ba09a407b5351c73185aa155261",
+      "bands_pct": {
+        "20_60": 26.64,
+        "60_120": 21.42,
+        "120_250": 16.41,
+        "250_1000": 30.65,
+        "1000_10000": 4.89
+      },
+      "power_centroid_hz": 302,
+      "active_rms_p95_p10_db": 6.4,
+      "low_energy_occupancy_pct": 64.3,
+      "pulse_candidates": [
+        {
+          "bpm": 172.3,
+          "correlation": 0.431
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.421
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.351
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.35
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 117.5,
+          "correlation": 0.252
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.251
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.135
+        },
+        {
+          "bpm": 35.9,
+          "correlation": 0.092
+        }
+      ],
+      "chroma_change_candidates_s": [
+        36,
+        108,
+        145,
+        160,
+        186,
+        232,
+        269
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 36,
+          "correlation": 0.395
+        },
+        {
+          "lag_s": 8,
+          "correlation": 0.246
+        },
+        {
+          "lag_s": 14,
+          "correlation": 0.156
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 35.58,
+          "rms_dbfs": -12.5
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 27.5,
+          "rms_dbfs": -11.8
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 47.73,
+          "rms_dbfs": -10.4
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 48.81,
+          "rms_dbfs": -10.4
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 53.24,
+          "rms_dbfs": -10.1
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 64.93,
+          "rms_dbfs": -10.7
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 50.25,
+          "rms_dbfs": -11
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 53.6,
+          "rms_dbfs": -10.1
+        },
+        {
+          "start_s": 240,
+          "low_20_120_pct": 40.77,
+          "rms_dbfs": -10.6
+        },
+        {
+          "start_s": 270,
+          "low_20_120_pct": 84.64,
+          "rms_dbfs": -57
+        }
+      ]
+    },
+    {
+      "id": "11-thagomizer-titans",
+      "title": "Thunder Lizard",
+      "album": "thagomizer-titans",
+      "source": "https://thagomizer.bandcamp.com/album/time-of-the-titans",
+      "track_url": "https://thagomizer.bandcamp.com/track/thunder-lizard",
+      "duration": 313.787,
+      "bytes": 5021778,
+      "analyzed_seconds": 313.79,
+      "sha256": "0a75f346e0717075d5e69a59339635c2e898ac38a87b64c8ee43cda33933eacd",
+      "bands_pct": {
+        "20_60": 4.77,
+        "60_120": 6.13,
+        "120_250": 21.41,
+        "250_1000": 60.88,
+        "1000_10000": 6.81
+      },
+      "power_centroid_hz": 425,
+      "active_rms_p95_p10_db": 4.3,
+      "low_energy_occupancy_pct": 48.1,
+      "pulse_candidates": [
+        {
+          "bpm": 45.3,
+          "correlation": 0.655
+        },
+        {
+          "bpm": 69.8,
+          "correlation": -0.029
+        },
+        {
+          "bpm": 33.6,
+          "correlation": -0.095
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 45.3,
+          "correlation": 0.85
+        },
+        {
+          "bpm": 58.7,
+          "correlation": -0.049
+        },
+        {
+          "bpm": 36.4,
+          "correlation": -0.053
+        },
+        {
+          "bpm": 129.2,
+          "correlation": -0.077
+        }
+      ],
+      "chroma_change_candidates_s": [
+        6,
+        45,
+        148,
+        182,
+        199,
+        223,
+        247
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 11,
+          "correlation": 0.538
+        },
+        {
+          "lag_s": 32,
+          "correlation": 0.458
+        },
+        {
+          "lag_s": 21,
+          "correlation": 0.449
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 10.95,
+          "rms_dbfs": -11.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 14.55,
+          "rms_dbfs": -13.2
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 13,
+          "rms_dbfs": -11.9
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 12.18,
+          "rms_dbfs": -11.7
+        },
+        {
+          "start_s": 120,
+          "low_20_120_pct": 10.65,
+          "rms_dbfs": -11.2
+        },
+        {
+          "start_s": 150,
+          "low_20_120_pct": 9.83,
+          "rms_dbfs": -10.9
+        },
+        {
+          "start_s": 180,
+          "low_20_120_pct": 10.52,
+          "rms_dbfs": -11.2
+        },
+        {
+          "start_s": 210,
+          "low_20_120_pct": 9.18,
+          "rms_dbfs": -11.3
+        },
+        {
+          "start_s": 240,
+          "low_20_120_pct": 9.96,
+          "rms_dbfs": -11.5
+        },
+        {
+          "start_s": 270,
+          "low_20_120_pct": 10.63,
+          "rms_dbfs": -11.2
+        },
+        {
+          "start_s": 300,
+          "low_20_120_pct": 9.37,
+          "rms_dbfs": -11.6
+        }
+      ]
+    },
+    {
+      "id": "twrecks-stampede",
+      "title": "T-WRECKS stampede",
+      "source": "installed recipe 91dcc88",
+      "diagnostic": "Full mix, manual calls off",
+      "analyzed_seconds": 120,
+      "sha256": "7616a378464ad6799e31ef5b15274372b171f64310a5201a628d30f1f7bfd553",
+      "bands_pct": {
+        "20_60": 56.64,
+        "60_120": 3.53,
+        "120_250": 33.78,
+        "250_1000": 5.65,
+        "1000_10000": 0.4
+      },
+      "power_centroid_hz": 130,
+      "active_rms_p95_p10_db": 16.7,
+      "low_energy_occupancy_pct": 33.7,
+      "pulse_candidates": [
+        {
+          "bpm": 47.9,
+          "correlation": 0.734
+        },
+        {
+          "bpm": 31.9,
+          "correlation": 0.658
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.641
+        },
+        {
+          "bpm": 64.6,
+          "correlation": 0.546
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 47.9,
+          "correlation": 0.648
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.548
+        },
+        {
+          "bpm": 31.9,
+          "correlation": 0.54
+        },
+        {
+          "bpm": 64.6,
+          "correlation": 0.347
+        }
+      ],
+      "chroma_change_candidates_s": [
+        20,
+        48,
+        79,
+        105
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 10,
+          "correlation": 0.373
+        },
+        {
+          "lag_s": 5,
+          "correlation": 0.3
+        },
+        {
+          "lag_s": 4,
+          "correlation": 0.3
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 69.53,
+          "rms_dbfs": -23.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 64.77,
+          "rms_dbfs": -23.3
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 61.19,
+          "rms_dbfs": -24.5
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 33.78,
+          "rms_dbfs": -26.1
+        }
+      ]
+    },
+    {
+      "id": "twrecks-bass",
+      "title": "T-WRECKS bass",
+      "source": "installed recipe 91dcc88",
+      "diagnostic": "Bass-only dry render",
+      "analyzed_seconds": 120,
+      "sha256": "90c1202eebcbd7d92a73d8cbd04788fc974a0956df178b18279bdd902311f7f3",
+      "bands_pct": {
+        "20_60": 3.55,
+        "60_120": 23.79,
+        "120_250": 44.25,
+        "250_1000": 27.98,
+        "1000_10000": 0.43
+      },
+      "power_centroid_hz": 215,
+      "active_rms_p95_p10_db": 19.6,
+      "low_energy_occupancy_pct": 20.8,
+      "pulse_candidates": [
+        {
+          "bpm": 31.9,
+          "correlation": 0.554
+        },
+        {
+          "bpm": 64.6,
+          "correlation": 0.48
+        },
+        {
+          "bpm": 47.9,
+          "correlation": 0.466
+        },
+        {
+          "bpm": 38.6,
+          "correlation": 0.444
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 31.9,
+          "correlation": 0.362
+        },
+        {
+          "bpm": 64.6,
+          "correlation": 0.303
+        },
+        {
+          "bpm": 47.9,
+          "correlation": 0.294
+        },
+        {
+          "bpm": 38.6,
+          "correlation": 0.256
+        }
+      ],
+      "chroma_change_candidates_s": [
+        39,
+        65,
+        80,
+        110
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 4,
+          "correlation": 0.61
+        },
+        {
+          "lag_s": 11,
+          "correlation": 0.518
+        },
+        {
+          "lag_s": 9,
+          "correlation": 0.487
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 41.8,
+          "rms_dbfs": -34
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 38.7,
+          "rms_dbfs": -32.4
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 22.59,
+          "rms_dbfs": -32.8
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 5.91,
+          "rms_dbfs": -33.3
+        }
+      ]
+    },
+    {
+      "id": "twrecks-extinction",
+      "title": "T-WRECKS extinction",
+      "source": "installed recipe 91dcc88",
+      "diagnostic": "Full mix, manual calls off",
+      "analyzed_seconds": 120,
+      "sha256": "65edfbe8777828c9961e79cfe1b184140be77e58db930c3880b61d67aef26687",
+      "bands_pct": {
+        "20_60": 0,
+        "60_120": 3.06,
+        "120_250": 45,
+        "250_1000": 25.12,
+        "1000_10000": 26.81
+      },
+      "power_centroid_hz": 606,
+      "active_rms_p95_p10_db": 7.4,
+      "low_energy_occupancy_pct": 97.9,
+      "pulse_candidates": [
+        {
+          "bpm": 117.5,
+          "correlation": 0.699
+        },
+        {
+          "bpm": 60.1,
+          "correlation": 0.619
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.503
+        },
+        {
+          "bpm": 80.7,
+          "correlation": 0.267
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 42.4,
+          "correlation": 0.06
+        },
+        {
+          "bpm": 68,
+          "correlation": 0.038
+        },
+        {
+          "bpm": 45.3,
+          "correlation": 0.026
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.023
+        }
+      ],
+      "chroma_change_candidates_s": [
+        6,
+        44,
+        75,
+        92
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 4,
+          "correlation": 0.518
+        },
+        {
+          "lag_s": 5,
+          "correlation": 0.487
+        },
+        {
+          "lag_s": 6,
+          "correlation": 0.272
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 4.61,
+          "rms_dbfs": -32.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 2.74,
+          "rms_dbfs": -30
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 3.62,
+          "rms_dbfs": -31.2
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 2.28,
+          "rms_dbfs": -29.3
+        }
+      ]
+    },
+    {
+      "id": "twrecks-drums",
+      "title": "T-WRECKS drums",
+      "source": "installed recipe 91dcc88",
+      "diagnostic": "Drums-only diagnostic; other layers zeroed",
+      "analyzed_seconds": 120,
+      "sha256": "fcc45dbcca519af56e0348761f15da6804a5a22e01de742e11a1c51bb35e8403",
+      "bands_pct": {
+        "20_60": 66.98,
+        "60_120": 0.28,
+        "120_250": 31.88,
+        "250_1000": 0.55,
+        "1000_10000": 0.31
+      },
+      "power_centroid_hz": 110,
+      "active_rms_p95_p10_db": 24.6,
+      "low_energy_occupancy_pct": 32.9,
+      "pulse_candidates": [
+        {
+          "bpm": 47.9,
+          "correlation": 0.673
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.448
+        },
+        {
+          "bpm": 31.9,
+          "correlation": 0.434
+        },
+        {
+          "bpm": 38.6,
+          "correlation": 0.197
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 47.9,
+          "correlation": 0.663
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.525
+        },
+        {
+          "bpm": 31.9,
+          "correlation": 0.507
+        },
+        {
+          "bpm": 64.6,
+          "correlation": 0.221
+        }
+      ],
+      "chroma_change_candidates_s": [
+        20,
+        48,
+        95
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 40,
+          "correlation": 0.521
+        },
+        {
+          "lag_s": 10,
+          "correlation": 0.493
+        },
+        {
+          "lag_s": 15,
+          "correlation": 0.36
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 74.58,
+          "rms_dbfs": -24.2
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 69.76,
+          "rms_dbfs": -23.9
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 70.13,
+          "rms_dbfs": -25.3
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 42.68,
+          "rms_dbfs": -27.2
+        }
+      ]
+    },
+    {
+      "id": "twrecks-drone",
+      "title": "T-WRECKS drone",
+      "source": "installed recipe 91dcc88",
+      "diagnostic": "Drone-only diagnostic; other layers zeroed",
+      "analyzed_seconds": 120,
+      "sha256": "713b50728e27b6dc9d0c625b5e1892e457f455a97e7f4007367dde25e42b6eac",
+      "bands_pct": {
+        "20_60": 0.01,
+        "60_120": 5.6,
+        "120_250": 65.83,
+        "250_1000": 25.73,
+        "1000_10000": 2.82
+      },
+      "power_centroid_hz": 241,
+      "active_rms_p95_p10_db": 2.2,
+      "low_energy_occupancy_pct": 99.3,
+      "pulse_candidates": [
+        {
+          "bpm": 136,
+          "correlation": 0.217
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.139
+        },
+        {
+          "bpm": 73.8,
+          "correlation": 0.131
+        },
+        {
+          "bpm": 69.8,
+          "correlation": 0.129
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 95.7,
+          "correlation": 0.413
+        },
+        {
+          "bpm": 136,
+          "correlation": 0.334
+        },
+        {
+          "bpm": 73.8,
+          "correlation": 0.322
+        },
+        {
+          "bpm": 41.7,
+          "correlation": 0.311
+        }
+      ],
+      "chroma_change_candidates_s": [
+        9,
+        27,
+        51,
+        80
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 4,
+          "correlation": 0.877
+        },
+        {
+          "lag_s": 5,
+          "correlation": 0.846
+        },
+        {
+          "lag_s": 9,
+          "correlation": 0.758
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 6.13,
+          "rms_dbfs": -43.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 6.15,
+          "rms_dbfs": -42.9
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 5.57,
+          "rms_dbfs": -43
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 4.6,
+          "rms_dbfs": -43
+        }
+      ]
+    }
+  ],
+  "tone_tests": [
+    {
+      "voice": 1,
+      "midi_note": 24,
+      "commanded_fundamental_hz": 32.7,
+      "strongest_component_hz": 32.67,
+      "fundamental_band_pct": 99.28,
+      "20_60_pct": 99.29
+    },
+    {
+      "voice": 1,
+      "midi_note": 36,
+      "commanded_fundamental_hz": 65.41,
+      "strongest_component_hz": 65.33,
+      "fundamental_band_pct": 99.01,
+      "20_60_pct": 0
+    },
+    {
+      "voice": 2,
+      "midi_note": 24,
+      "commanded_fundamental_hz": 32.7,
+      "strongest_component_hz": 32.67,
+      "fundamental_band_pct": 99.28,
+      "20_60_pct": 99.28
+    },
+    {
+      "voice": 2,
+      "midi_note": 36,
+      "commanded_fundamental_hz": 65.41,
+      "strongest_component_hz": 65.33,
+      "fundamental_band_pct": 99.64,
+      "20_60_pct": 0
+    },
+    {
+      "voice": 5,
+      "midi_note": 24,
+      "commanded_fundamental_hz": 32.7,
+      "strongest_component_hz": 32.67,
+      "fundamental_band_pct": 53.42,
+      "20_60_pct": 53.42
+    },
+    {
+      "voice": 5,
+      "midi_note": 36,
+      "commanded_fundamental_hz": 65.41,
+      "strongest_component_hz": 65.33,
+      "fundamental_band_pct": 36.76,
+      "20_60_pct": 31.2
+    },
+    {
+      "voice": 8,
+      "midi_note": 24,
+      "commanded_fundamental_hz": 32.7,
+      "strongest_component_hz": 32.67,
+      "fundamental_band_pct": 44.93,
+      "20_60_pct": 48.7
+    },
+    {
+      "voice": 8,
+      "midi_note": 36,
+      "commanded_fundamental_hz": 65.41,
+      "strongest_component_hz": 65.33,
+      "fundamental_band_pct": 47.66,
+      "20_60_pct": 20.95
+    }
+  ],
+  "bass_events": {
+    "count": 246,
+    "note_histogram": {
+      "36": 33,
+      "41": 14,
+      "43": 75,
+      "48": 82,
+      "53": 23,
+      "55": 19
+    },
+    "median_onset_spacing_s": 0.31347000000000236
+  },
+  "equal_duration_reference_analysis": [
+    {
+      "id": "01-diplodocus",
+      "title": "Prowl of the Concavenator",
+      "album": "diplodocus",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy",
+      "track_url": "https://diplodocus.bandcamp.com/track/prowl-of-the-concavenator",
+      "duration": 120,
+      "bytes": 4165798,
+      "original_duration": 260.308,
+      "analyzed_seconds": 120,
+      "sha256": "cb936ab222110740a46cfaec07bb858baffc53c1607113650b4fd46ad55d3be7",
+      "bands_pct": {
+        "20_60": 0.04,
+        "60_120": 46.15,
+        "120_250": 15.9,
+        "250_1000": 32.01,
+        "1000_10000": 5.9
+      },
+      "power_centroid_hz": 384,
+      "active_rms_p95_p10_db": 9.1,
+      "low_energy_occupancy_pct": 50.1,
+      "pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.625
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.47
+        },
+        {
+          "bpm": 129.2,
+          "correlation": 0.282
+        },
+        {
+          "bpm": 95.7,
+          "correlation": 0.161
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.837
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.784
+        },
+        {
+          "bpm": 129.2,
+          "correlation": 0.091
+        },
+        {
+          "bpm": 43.1,
+          "correlation": 0.064
+        }
+      ],
+      "chroma_change_candidates_s": [
+        7,
+        37,
+        52,
+        78,
+        96,
+        113
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 29,
+          "correlation": 0.31
+        },
+        {
+          "lag_s": 30,
+          "correlation": 0.288
+        },
+        {
+          "lag_s": 7,
+          "correlation": 0.283
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 48.13,
+          "rms_dbfs": -15.7
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 41.2,
+          "rms_dbfs": -14
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 45.03,
+          "rms_dbfs": -13.6
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 50.43,
+          "rms_dbfs": -13.3
+        }
+      ]
+    },
+    {
+      "id": "02-diplodocus",
+      "title": "Tanystropheus' Reign",
+      "album": "diplodocus",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy",
+      "track_url": "https://diplodocus.bandcamp.com/track/tanystropheus-reign",
+      "duration": 120,
+      "bytes": 2748080,
+      "original_duration": 171.692,
+      "analyzed_seconds": 120,
+      "sha256": "fe4038ecddbab4b24ca64b157c7e5a93a489509da93bdd3495cf6e6af51d5a85",
+      "bands_pct": {
+        "20_60": 0.02,
+        "60_120": 23.51,
+        "120_250": 11.07,
+        "250_1000": 60.28,
+        "1000_10000": 5.12
+      },
+      "power_centroid_hz": 477,
+      "active_rms_p95_p10_db": 6.8,
+      "low_energy_occupancy_pct": 44.4,
+      "pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.715
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.606
+        },
+        {
+          "bpm": 129.2,
+          "correlation": 0.285
+        },
+        {
+          "bpm": 99.4,
+          "correlation": 0.177
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 64.6,
+          "correlation": 0.877
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.841
+        },
+        {
+          "bpm": 57.4,
+          "correlation": 0.032
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.031
+        }
+      ],
+      "chroma_change_candidates_s": [
+        21,
+        36,
+        51,
+        80,
+        95,
+        110
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 15,
+          "correlation": 0.662
+        },
+        {
+          "lag_s": 30,
+          "correlation": 0.557
+        },
+        {
+          "lag_s": 29,
+          "correlation": 0.536
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 24.16,
+          "rms_dbfs": -14.7
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 20.59,
+          "rms_dbfs": -12.8
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 25.18,
+          "rms_dbfs": -12.3
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 24.2,
+          "rms_dbfs": -12.8
+        }
+      ]
+    },
+    {
+      "id": "03-diplodocus-b",
+      "title": "Return of the Thunder Lizard",
+      "album": "diplodocus-b",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy-b-side",
+      "track_url": "https://diplodocus.bandcamp.com/track/return-of-the-thunder-lizard",
+      "duration": 120,
+      "bytes": 3569788,
+      "original_duration": 223.038,
+      "analyzed_seconds": 120,
+      "sha256": "99b8ddb1958b41869157a14ebdf94126cd11801d77cd31cdfb33b37bda8a557c",
+      "bands_pct": {
+        "20_60": 4.86,
+        "60_120": 21.57,
+        "120_250": 9.63,
+        "250_1000": 54.26,
+        "1000_10000": 9.68
+      },
+      "power_centroid_hz": 530,
+      "active_rms_p95_p10_db": 5.6,
+      "low_energy_occupancy_pct": 67.8,
+      "pulse_candidates": [
+        {
+          "bpm": 76,
+          "correlation": 0.585
+        },
+        {
+          "bpm": 152,
+          "correlation": 0.536
+        },
+        {
+          "bpm": 37.4,
+          "correlation": 0.519
+        },
+        {
+          "bpm": 112.3,
+          "correlation": 0.394
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 37.4,
+          "correlation": 0.637
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.613
+        },
+        {
+          "bpm": 152,
+          "correlation": 0.285
+        },
+        {
+          "bpm": 49.7,
+          "correlation": 0.244
+        }
+      ],
+      "chroma_change_candidates_s": [
+        9,
+        32,
+        59,
+        86,
+        104
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 26,
+          "correlation": 0.317
+        },
+        {
+          "lag_s": 25,
+          "correlation": 0.276
+        },
+        {
+          "lag_s": 13,
+          "correlation": 0.205
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 23.61,
+          "rms_dbfs": -14.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 15.52,
+          "rms_dbfs": -13.2
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 31.1,
+          "rms_dbfs": -11.5
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 30.34,
+          "rms_dbfs": -11.5
+        }
+      ]
+    },
+    {
+      "id": "04-diplodocus-b",
+      "title": "Primal Rage",
+      "album": "diplodocus-b",
+      "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy-b-side",
+      "track_url": "https://diplodocus.bandcamp.com/track/primal-rage",
+      "duration": 120,
+      "bytes": 3832266,
+      "original_duration": 239.454,
+      "analyzed_seconds": 120,
+      "sha256": "4cf1e35338c582148a22fabffd46e5dfd70c22f489078747124b9e8f3c0e0444",
+      "bands_pct": {
+        "20_60": 1.49,
+        "60_120": 30.81,
+        "120_250": 5.95,
+        "250_1000": 51.45,
+        "1000_10000": 10.3
+      },
+      "power_centroid_hz": 504,
+      "active_rms_p95_p10_db": 6.9,
+      "low_energy_occupancy_pct": 74.8,
+      "pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.677
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.583
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.541
+        },
+        {
+          "bpm": 73.8,
+          "correlation": 0.407
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.779
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.384
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.361
+        },
+        {
+          "bpm": 49.7,
+          "correlation": 0.291
+        }
+      ],
+      "chroma_change_candidates_s": [
+        8,
+        33,
+        52,
+        72,
+        103
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 8,
+          "correlation": 0.527
+        },
+        {
+          "lag_s": 16,
+          "correlation": 0.512
+        },
+        {
+          "lag_s": 32,
+          "correlation": 0.438
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 24,
+          "rms_dbfs": -15
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 38.34,
+          "rms_dbfs": -11.7
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 36.12,
+          "rms_dbfs": -11.2
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 27.19,
+          "rms_dbfs": -10.7
+        }
+      ]
+    },
+    {
+      "id": "05-thagomizer",
+      "title": "Largest To Live",
+      "album": "thagomizer",
+      "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+      "track_url": "https://thagomizer.bandcamp.com/track/largest-to-live",
+      "duration": 120,
+      "bytes": 3484942,
+      "original_duration": 217.752,
+      "analyzed_seconds": 120,
+      "sha256": "0e2ce60837c3dbcbeaf42feaabe5970e39aceeaf528875e04c667a402e0b8dd2",
+      "bands_pct": {
+        "20_60": 24.78,
+        "60_120": 12.62,
+        "120_250": 19.42,
+        "250_1000": 39.79,
+        "1000_10000": 3.38
+      },
+      "power_centroid_hz": 283,
+      "active_rms_p95_p10_db": 7.6,
+      "low_energy_occupancy_pct": 31.8,
+      "pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.733
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.638
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.601
+        },
+        {
+          "bpm": 68,
+          "correlation": 0.044
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.895
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.675
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.673
+        },
+        {
+          "bpm": 86.1,
+          "correlation": -0.047
+        }
+      ],
+      "chroma_change_candidates_s": [
+        8,
+        40,
+        72,
+        87,
+        102
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 8,
+          "correlation": 0.795
+        },
+        {
+          "lag_s": 16,
+          "correlation": 0.779
+        },
+        {
+          "lag_s": 24,
+          "correlation": 0.708
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 37.67,
+          "rms_dbfs": -17.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 36.28,
+          "rms_dbfs": -15.6
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 41.56,
+          "rms_dbfs": -14.8
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 33.63,
+          "rms_dbfs": -15.3
+        }
+      ]
+    },
+    {
+      "id": "06-thagomizer",
+      "title": "Migration Of The Camarasaurus",
+      "album": "thagomizer",
+      "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+      "track_url": "https://thagomizer.bandcamp.com/track/migration-of-the-camarasaurus",
+      "duration": 120,
+      "bytes": 4345102,
+      "original_duration": 271.515,
+      "analyzed_seconds": 120,
+      "sha256": "59a8a2f65c60aaab6cd753ac0955df03af2ff92416dfebedd43b06ec0dc4904f",
+      "bands_pct": {
+        "20_60": 18.85,
+        "60_120": 3.6,
+        "120_250": 26.69,
+        "250_1000": 47.89,
+        "1000_10000": 2.97
+      },
+      "power_centroid_hz": 368,
+      "active_rms_p95_p10_db": 9.3,
+      "low_energy_occupancy_pct": 26.2,
+      "pulse_candidates": [
+        {
+          "bpm": 55,
+          "correlation": 0.814
+        },
+        {
+          "bpm": 112.3,
+          "correlation": -0.015
+        },
+        {
+          "bpm": 136,
+          "correlation": -0.022
+        },
+        {
+          "bpm": 92.3,
+          "correlation": -0.046
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 55,
+          "correlation": 0.945
+        },
+        {
+          "bpm": 63,
+          "correlation": 0.079
+        },
+        {
+          "bpm": 48.8,
+          "correlation": 0.071
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.002
+        }
+      ],
+      "chroma_change_candidates_s": [
+        6,
+        23,
+        38,
+        55,
+        73,
+        91,
+        110
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 9,
+          "correlation": 0.459
+        },
+        {
+          "lag_s": 26,
+          "correlation": 0.427
+        },
+        {
+          "lag_s": 17,
+          "correlation": 0.41
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 24.03,
+          "rms_dbfs": -15.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 23.78,
+          "rms_dbfs": -14.9
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 22.24,
+          "rms_dbfs": -14.8
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 20.36,
+          "rms_dbfs": -14.3
+        }
+      ]
+    },
+    {
+      "id": "07-thagomizer",
+      "title": "Impact Winter",
+      "album": "thagomizer",
+      "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+      "track_url": "https://thagomizer.bandcamp.com/track/impact-winter",
+      "duration": 120,
+      "bytes": 6733739,
+      "original_duration": 420.8,
+      "analyzed_seconds": 120,
+      "sha256": "75aad8be0e6ceeafd356abce2778078abffa1afdeafadf2eb38327200f547b9f",
+      "bands_pct": {
+        "20_60": 16.83,
+        "60_120": 9.1,
+        "120_250": 29.78,
+        "250_1000": 43.1,
+        "1000_10000": 1.19
+      },
+      "power_centroid_hz": 286,
+      "active_rms_p95_p10_db": 7.1,
+      "low_energy_occupancy_pct": 35.4,
+      "pulse_candidates": [
+        {
+          "bpm": 37.4,
+          "correlation": 0.882
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.855
+        },
+        {
+          "bpm": 89.1,
+          "correlation": 0.081
+        },
+        {
+          "bpm": 66.3,
+          "correlation": 0.069
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 37.4,
+          "correlation": 0.949
+        },
+        {
+          "bpm": 76,
+          "correlation": 0.88
+        },
+        {
+          "bpm": 34.9,
+          "correlation": -0.014
+        },
+        {
+          "bpm": 40.4,
+          "correlation": -0.015
+        }
+      ],
+      "chroma_change_candidates_s": [
+        8,
+        84
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 32,
+          "correlation": 0.84
+        },
+        {
+          "lag_s": 13,
+          "correlation": 0.821
+        },
+        {
+          "lag_s": 19,
+          "correlation": 0.814
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 21.96,
+          "rms_dbfs": -17.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 23.45,
+          "rms_dbfs": -17.1
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 33.67,
+          "rms_dbfs": -16.1
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 22.69,
+          "rms_dbfs": -17
+        }
+      ]
+    },
+    {
+      "id": "08-synthosaurus",
+      "title": "Tears of Flasmosaurus",
+      "album": "synthosaurus",
+      "source": "https://synthosaurus.bandcamp.com/album/metalosauric-crush",
+      "track_url": "https://synthosaurus.bandcamp.com/track/tears-of-flasmosaurus",
+      "duration": 120,
+      "bytes": 5185200,
+      "original_duration": 324.001,
+      "analyzed_seconds": 120,
+      "sha256": "07c04b648af25bf5fa9eeecc23466746cc7bee814eafec034aa07cf92fc5330e",
+      "bands_pct": {
+        "20_60": 10.65,
+        "60_120": 40.39,
+        "120_250": 18.91,
+        "250_1000": 26.46,
+        "1000_10000": 3.58
+      },
+      "power_centroid_hz": 263,
+      "active_rms_p95_p10_db": 7.4,
+      "low_energy_occupancy_pct": 74,
+      "pulse_candidates": [
+        {
+          "bpm": 123,
+          "correlation": 0.45
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.419
+        },
+        {
+          "bpm": 172.3,
+          "correlation": 0.39
+        },
+        {
+          "bpm": 60.1,
+          "correlation": 0.388
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 123,
+          "correlation": 0.123
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.114
+        },
+        {
+          "bpm": 60.1,
+          "correlation": 0.104
+        },
+        {
+          "bpm": 33.6,
+          "correlation": 0.054
+        }
+      ],
+      "chroma_change_candidates_s": [
+        24,
+        48,
+        68,
+        92,
+        108
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 32,
+          "correlation": 0.513
+        },
+        {
+          "lag_s": 31,
+          "correlation": 0.289
+        },
+        {
+          "lag_s": 33,
+          "correlation": 0.278
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 39.35,
+          "rms_dbfs": -12.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 53.08,
+          "rms_dbfs": -11.4
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 57.08,
+          "rms_dbfs": -8.2
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 48.77,
+          "rms_dbfs": -8.3
+        }
+      ]
+    },
+    {
+      "id": "09-synthosaurus",
+      "title": "Million Years of Terror (Alternative Version)",
+      "album": "synthosaurus",
+      "source": "https://synthosaurus.bandcamp.com/album/metalosauric-crush",
+      "track_url": "https://synthosaurus.bandcamp.com/track/million-years-of-terror-alternative-version",
+      "duration": 120,
+      "bytes": 2753096,
+      "original_duration": 172.002,
+      "analyzed_seconds": 120,
+      "sha256": "cb5ca0ad41342f1e30c3f7fa710cd345b71993cb777feeeb96a88070fa6197f5",
+      "bands_pct": {
+        "20_60": 8.03,
+        "60_120": 31.66,
+        "120_250": 24.16,
+        "250_1000": 30.58,
+        "1000_10000": 5.56
+      },
+      "power_centroid_hz": 345,
+      "active_rms_p95_p10_db": 4.8,
+      "low_energy_occupancy_pct": 80.1,
+      "pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.561
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.527
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.422
+        },
+        {
+          "bpm": 80.7,
+          "correlation": 0.348
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 60.1,
+          "correlation": 0.56
+        },
+        {
+          "bpm": 117.5,
+          "correlation": 0.164
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.153
+        },
+        {
+          "bpm": 47.9,
+          "correlation": 0.053
+        }
+      ],
+      "chroma_change_candidates_s": [
+        9,
+        41,
+        56,
+        72,
+        88,
+        112
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 16,
+          "correlation": 0.334
+        },
+        {
+          "lag_s": 15,
+          "correlation": 0.072
+        },
+        {
+          "lag_s": 6,
+          "correlation": 0.067
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 37.54,
+          "rms_dbfs": -13.8
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 44.3,
+          "rms_dbfs": -12.2
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 37.4,
+          "rms_dbfs": -11
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 39.54,
+          "rms_dbfs": -12.8
+        }
+      ]
+    },
+    {
+      "id": "10-synthosaurus-war",
+      "title": "Dinopocalypse",
+      "album": "synthosaurus-war",
+      "source": "https://synthosaurus.bandcamp.com/album/dino-war",
+      "track_url": "https://synthosaurus.bandcamp.com/track/dinopocalypse",
+      "duration": 120,
+      "bytes": 4416991,
+      "original_duration": 276.008,
+      "analyzed_seconds": 120,
+      "sha256": "1a097a5c2b4bb0110e23af05da80fc1a7a666ba09a407b5351c73185aa155261",
+      "bands_pct": {
+        "20_60": 26.34,
+        "60_120": 15.06,
+        "120_250": 15.8,
+        "250_1000": 38.28,
+        "1000_10000": 4.52
+      },
+      "power_centroid_hz": 323,
+      "active_rms_p95_p10_db": 5.6,
+      "low_energy_occupancy_pct": 77.7,
+      "pulse_candidates": [
+        {
+          "bpm": 123,
+          "correlation": 0.297
+        },
+        {
+          "bpm": 89.1,
+          "correlation": 0.172
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.155
+        },
+        {
+          "bpm": 35.9,
+          "correlation": 0.117
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 123,
+          "correlation": 0.236
+        },
+        {
+          "bpm": 39.8,
+          "correlation": 0.226
+        },
+        {
+          "bpm": 32.3,
+          "correlation": 0.15
+        },
+        {
+          "bpm": 35.4,
+          "correlation": 0.096
+        }
+      ],
+      "chroma_change_candidates_s": [
+        20,
+        36,
+        56,
+        73,
+        92,
+        108
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 36,
+          "correlation": 0.639
+        },
+        {
+          "lag_s": 22,
+          "correlation": 0.197
+        },
+        {
+          "lag_s": 8,
+          "correlation": 0.176
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 35.58,
+          "rms_dbfs": -12.5
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 27.5,
+          "rms_dbfs": -11.8
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 47.73,
+          "rms_dbfs": -10.4
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 48.81,
+          "rms_dbfs": -10.4
+        }
+      ]
+    },
+    {
+      "id": "11-thagomizer-titans",
+      "title": "Thunder Lizard",
+      "album": "thagomizer-titans",
+      "source": "https://thagomizer.bandcamp.com/album/time-of-the-titans",
+      "track_url": "https://thagomizer.bandcamp.com/track/thunder-lizard",
+      "duration": 120,
+      "bytes": 5021778,
+      "original_duration": 313.787,
+      "analyzed_seconds": 120,
+      "sha256": "0a75f346e0717075d5e69a59339635c2e898ac38a87b64c8ee43cda33933eacd",
+      "bands_pct": {
+        "20_60": 5.4,
+        "60_120": 7.06,
+        "120_250": 24.04,
+        "250_1000": 61.27,
+        "1000_10000": 2.23
+      },
+      "power_centroid_hz": 333,
+      "active_rms_p95_p10_db": 5.2,
+      "low_energy_occupancy_pct": 49,
+      "pulse_candidates": [
+        {
+          "bpm": 45.3,
+          "correlation": 0.595
+        },
+        {
+          "bpm": 69.8,
+          "correlation": -0.044
+        },
+        {
+          "bpm": 83.4,
+          "correlation": -0.052
+        },
+        {
+          "bpm": 33.6,
+          "correlation": -0.077
+        }
+      ],
+      "low_pulse_candidates": [
+        {
+          "bpm": 45.3,
+          "correlation": 0.839
+        },
+        {
+          "bpm": 58.7,
+          "correlation": -0.04
+        },
+        {
+          "bpm": 36.4,
+          "correlation": -0.046
+        },
+        {
+          "bpm": 129.2,
+          "correlation": -0.062
+        }
+      ],
+      "chroma_change_candidates_s": [
+        6,
+        21,
+        45,
+        74,
+        91,
+        110
+      ],
+      "recurrence_candidates_s": [
+        {
+          "lag_s": 32,
+          "correlation": 0.637
+        },
+        {
+          "lag_s": 21,
+          "correlation": 0.469
+        },
+        {
+          "lag_s": 11,
+          "correlation": 0.458
+        }
+      ],
+      "segments": [
+        {
+          "start_s": 0,
+          "low_20_120_pct": 10.95,
+          "rms_dbfs": -11.1
+        },
+        {
+          "start_s": 30,
+          "low_20_120_pct": 14.55,
+          "rms_dbfs": -13.2
+        },
+        {
+          "start_s": 60,
+          "low_20_120_pct": 13,
+          "rms_dbfs": -11.9
+        },
+        {
+          "start_s": 90,
+          "low_20_120_pct": 12.19,
+          "rms_dbfs": -11.7
+        }
+      ]
+    }
+  ]
+}

@@ -10,10 +10,7 @@
 #define EN_VERSION "DEV"
 #endif
 #define PROJ_MAGIC 0x314C5242u           /* "BRL1": DUB-1's ("DUB1") and AMB-1's ("ENO1") projects give the recipes */
-#define PROJ_FORMAT 10u                  /* (10: a tenth piece, Umeda, the last slot of the sector: saves reset; 9: a ninth piece, Sakura Rain (first Umeda, then Ryokuu): its slot appended, saves reset (the user: "saves -
-                                          * reset", 2026-10-30); 8: the Lead's Memory (P_LMEM) appended; 7: the filter motion: the Move pages' and Bridge's slots, no Emerge, Seq2 in, Ending; 6: BERLIN's eight pieces; 5: the arc: Emerge, Arc, Ending; 4: an Atmosphere in half the pieces; 3: Sequence 2 heard by default; 2: the pages' new parameters, the Lead's sends; while BERLIN is built, a
-                                         * slot that changes meaning moves the format on, so a save from before gives the
-                                         * recipes) */
+#define PROJ_FORMAT 11u                  /* clean dinosynth bank; prior formats reset */
 #define NPIECES EN_NPIECES
 
 typedef struct {
@@ -33,11 +30,14 @@ typedef struct {
     uint8_t screen;                      /* the Dub page's middle: 0 ripples, 1 scope, 2 spectrum (HOME again) */
     uint8_t rsv0;
     slot_t slot[NPIECES];                /* every piece as it was left (Tune and MIDI out are global) */
+    uint8_t envelope[NPIECES][EN_ENV_LAYERS][4]; /* 0: instrument, 1..128: manual */
     uint8_t rsv[16];                     /* room to grow */
 } project_t;
 
 extern project_t proj;
 
+int project_drum_pattern(void);
+void project_drum_pattern_set(int i);
 void project_defaults(void);
 int project_load(void);                  /* 0 = loaded; else defaults are in place */
 int project_save(void);                  /* 0 = saved and verified */
@@ -51,5 +51,9 @@ void ui_frame(void);
 void ui_input_only(void);
 int ui_dirty(void);
 void ui_say(const char *a, const char *b);
-#define UI_SPLASH_N 26                   /* the launch screen's frames (~1.4 s at 55 ms) */
+#define UI_SPLASH_HOLD_MS 3000u
+#define UI_SPLASH_N 1                    /* static title: only frame zero is drawn */
 void ui_splash(int f);                   /* frame f of the launch screen (the last: as it stays) */
+
+int project_envelope(int layer,int stage);
+void project_envelope_set(int layer,int stage,int value);

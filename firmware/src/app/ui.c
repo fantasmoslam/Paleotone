@@ -18,24 +18,25 @@
  *   GLO held       saves (it also saves by itself a few seconds after a change, while resting);
  *                  held on 1.5 s: the piece back to its recipe */
 #include "../dsp/fastmath.h"
+#include "../pt/pt.h"
 
 /* the pages, one a layer (a button each, NPAGES; the Noise page, V_NSND, SAVE's); the header's dots show them in the
  * panel's order, PAGE_ORDER below (the view numbers stay as they were: the tests use them) */
 /* (past NPAGES, on no button of their own: V_MIX, PERFORM's knobs, the four layers' levels; the layers' sound
  * pages, the layer's button pressed again) */
 enum { V_DUB, V_CHORD, V_TEXTURE, V_BASS, V_DRUMS, V_SPACE, V_SETUP, NPAGES, V_MIX = NPAGES, V_CSND, V_PSND, V_BSND,
-       V_DSND, V_CFM, V_PFM, V_BFM, V_CHORDS, V_PAT, V_PERF, V_KEY, V_NSND, V_ESND, V_NSND2, V_ARC, V_SMOVE, V_S2MOVE, V_AMOVE, NVIEWS };
+       V_DSND, V_CFM, V_PFM, V_BFM, V_CHORDS, V_PAT, V_PERF, V_KEY, V_NSND, V_ESND, V_NSND2, V_ARC, V_SMOVE, V_S2MOVE, V_AMOVE, V_SKIN, V_CALLS, V_ENV, NVIEWS };
 /* (V_PERF: PERFORM's knobs, the master actions; V_MIX while white 6 is held. V_KEY: HOME again, the key and the
  * tempo, the Dub page's second) */
 static const char *const VIEW_NAME[NVIEWS] = {"Nachtfahrt", "Drone", "Sequence", "Lead", "Sequence 2", "Space", "Setup",
                                               "Mix", "Drone sound", "Seq sound", "Lead sound", "Seq2 sound",
                                               "Drone move", "Repeats", "Lead move", "Chords", "Pattern", "Perform", "Key",
                                               "Atmosphere", "Echo", "Atmos sound", "Arc", "Seq move", "Seq2 move",
-                                              "Atmos move"};
+                                              "Atmos move", "Skin drums", "Creature calls", "Envelope"};
 #define B_NONE 0xFFu
 static const uint8_t VIEW_BTN[NVIEWS] = {B_HOME, B_ENV, B_ARP, B_LFO, B_SEQ, B_FX, B_GLO, B_NONE, B_NONE, B_NONE, B_NONE,
                                          B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_SAVE, B_NONE, B_NONE,
-                                         B_NONE, B_NONE, B_NONE, B_NONE};
+                                         B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE};
 static int sound_of(int v) { return v == V_CHORD ? V_CSND : v == V_TEXTURE ? V_PSND : v == V_BASS ? V_BSND : v == V_DRUMS ? V_DSND : -1; }
 static int fm_of(int v) { return v == V_TEXTURE ? V_PFM : -1; }   /* (BERLIN: no FM pages; the Sequence's third, its
                                                                    * Repeats, in the Ping FM page's place) */
@@ -60,7 +61,7 @@ static int next_page(int v)                      /* (BERLIN) a layer's button ag
 static int atm_view(int v) { return v == V_NSND || v == V_NSND2 || v == V_AMOVE; }   /* (the Atmosphere's pages) */
 static int page_of(int v)                        /* a sound page: its layer's; the Echo page: Space's */
 {
-    return v == V_KEY || v == V_MIX ? V_DUB : v == V_ESND ? V_SPACE : v == V_NSND2 || v == V_AMOVE ? V_NSND : v == V_ARC ? V_SETUP
+    return v == V_SKIN || v == V_CALLS ? V_NSND : v == V_KEY || v == V_MIX ? V_DUB : v == V_ESND ? V_SPACE : v == V_NSND2 || v == V_AMOVE ? V_NSND : v == V_ARC ? V_SETUP
          : parent_of(v) >= 0 ? parent_of(v) : v;
 }
 /* the header's dots, as the buttons sit on the panel: FX ENV LFO GLO, then HOME SAVE ARP SEQ (SELECT's round once) */
@@ -84,7 +85,7 @@ enum { K_LEDS = 200, K_CPU, K_NONE, K_SLOT, K_CQ, K_CX,    /* (the Chords page: 
 static const char *const LANE_NAME[EN_NDRUM] = {"Steps", "Steps 2", "Octaves", "Octaves 2", "Skips"};   /* (BERLIN:
                                                   * the Sequence's and Sequence 2's) */
 static int lane_seq(int d) { return d == 1 || d == 3; }   /* (a lane's sequence: its accents, its chance) */
-_Static_assert(P_NPARAMS <= K_LEDS, "the knobs' own codes must come after the parameters");
+_Static_assert(EN_ENV_BASE>=P_NPARAMS && EN_ENV_BASE+EN_ENV_LAYERS*4<=K_LEDS, "the knobs' own codes must come after the parameters");
 static const uint16_t VIEW_KNOB[NVIEWS][4] = {
     {K_FILTER, P_EVOLVE, P_MOTION, P_DRIFT},
     {P_PEDAL, P_CRES, P_PHASER, P_CATT},          /* (BERLIN) the Drone */
@@ -113,7 +114,25 @@ static const uint16_t VIEW_KNOB[NVIEWS][4] = {
     {P_MW1, P_MT1, P_MR1, P_MI1},                /* the Sequence's Move (ARP, a fourth time; its Width is Sweep) */
     {P_MW3, P_MT3, P_MR3, P_MI3},                /* Sequence 2's Move (SEQ, a fourth time) */
     {P_MW4, P_MT4, P_MR4, P_MI4},                /* the Atmosphere's Move (SAVE, a third time) */
+    {P_SKLEVEL, P_SKTONE, P_SKDENS, P_SKDECAY},
+    {P_CLLEVEL, P_CLTONE, P_CLCHANCE, P_CLVOICE},
+    {EN_ENV_BASE,EN_ENV_BASE+1,EN_ENV_BASE+2,EN_ENV_BASE+3},
 };
+/* Home: selected track, four physical knobs, no new DSP state. */
+static const uint16_t TRACK_KNOB[7][4] = {
+    {P_CHORD, P_CCOL, P_MW0, P_DRREV},
+    {P_SEQ, P_CUTOFF, P_MW1, P_SQREV},
+    {P_LEAD, P_LTONE, P_MW2, P_LDREV},
+    {P_SEQ2, P_S2CUT, P_MW3, P_S2REV},
+    {P_CRACKLE, P_NCOL, P_MW4, P_NPLATE},
+    {P_SKLEVEL, P_SKTONE, P_SKDENS, P_SKVERB},
+    {P_CLLEVEL, P_CLTONE, P_CLCHANCE, P_CLVERB},
+};
+static const char *const HOME_NAME[7] = {"DRONE", "SEQ", "LEAD", "SEQ 2", "ATMOS", "SKIN", "CALLS"};
+#define HOME_TRACKS 7
+static const char *track_label(int col);
+static const char *const TRACK_LABEL[4] = {"Level", "Filter", "LFO", "Reverb"};
+static int control_knob(int view, int col);
 static const char *const KNOB_LABEL[NVIEWS][4] = {
     {"Filter", "Evolve", "Motion", "Drift"},
     {"Pedal", "Reso", "Phaser", "Attack"},
@@ -141,10 +160,13 @@ static const char *const KNOB_LABEL[NVIEWS][4] = {
     {"Width", "Time", "Rate", "Intro"},
     {"Width", "Time", "Rate", "Intro"},
     {"Width", "Time", "Rate", "Intro"},
+    {"Level", "Tone", "Ghosts", "Decay"},
+    {"Level", "Filter", "Chance", "Voice"},
+    {"Attack","Decay","Sustain","Release"},
 };
 /* what each knob does, a line: on the rule above the knobs while it's being turned (in capitals; each fits the
  * rule's 228 px, and every view has its row: the host's expect helpfit) */
-_Static_assert(NVIEWS == 26, "a view added: its KNOB_HELP row too");
+_Static_assert(NVIEWS == 29, "a view added: its KNOB_HELP row too");
 static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, V_DUB .. V_ARC) */
     {"Down shuts, up opens; Off mid", "How often a step changes", "How much, and the sections' pace", "Bars before the chord moves on"},
     {"The root an octave under", "The filter's resonance", "The slow phaser's depth", "How slowly the chord swells in"},
@@ -172,36 +194,40 @@ static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, 
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
+    {"The skin drums level", "Darker or brighter skins", "How often the sparse hits play", "How long the skins ring"},
+    {"The creature calls level", "Darker or brighter calls", "How often a creature calls", "Which creature answers"},
+    {"Time to rise", "Time to sustain", "Held level", "Time after note-off"},
 };
 
-/* (BERLIN) the screen's colours: Cosmic, on black (spec 15): lavender text, a cyan accent; the layers in their own
- * colours, the Drone violet, the Sequence pink, the Lead gold, Sequence 2 cyan, the Atmosphere dim lavender; each with a
- * dark tint for the shapes at rest. (The names stay DUB-1's: K_PAD the Drone, K_BELL the Sequence, K_BASS the Lead,
- * K_PULSE Sequence 2, K_NOISE the Atmosphere.) */
-#define K_BG RGB(0, 0, 0)
-#define K_PANEL RGB(26, 23, 38)
-#define K_LINE RGB(46, 41, 66)
-#define K_DIM RGB(141, 127, 184)
-#define K_TEXT RGB(239, 231, 255)
-#define K_ACC RGB(127, 216, 255)         /* the accent: the page, the knob being turned, a message's word */
-#define K_BELL RGB(255, 106, 213)
-#define K_BELL_T RGB(96, 36, 82)
-#define K_PAD RGB(180, 140, 255)
-#define K_PAD_T RGB(58, 44, 96)
-#define K_PULSE RGB(127, 216, 255)
-#define K_PULSE_T RGB(36, 66, 84)
-#define K_BASS RGB(255, 210, 127)
-#define K_BASS_T RGB(98, 80, 44)
-#define K_FROST RGB(232, 92, 84)         /* dub hold */
-#define K_FROST_T RGB(128, 56, 52)
-#define K_RIM RGB(214, 124, 176)         /* the rim */
-#define K_RIM_T RGB(108, 58, 86)
-#define K_CLAP RGB(232, 206, 98)         /* the clap */
-#define K_CLAP_T RGB(108, 98, 48)
-#define K_NOISE RGB(186, 174, 156)       /* the noise (its level ring) */
+/* NightClaw: near-black, bone, saturated crimson, sulfur and electric violet.
+ * The four control columns keep stable colors across pages. Legacy layer
+ * tokens use the same palette, including their inactive tints. */
+#define K_BG RGB(5, 5, 8)
+#define K_PANEL RGB(27, 18, 24)
+#define K_LINE RGB(83, 69, 86)
+#define K_DIM RGB(166, 160, 166)
+#define K_TEXT RGB(230, 220, 194)
+#define K_ACC RGB(255, 40, 78)         /* the accent: the page, the knob being turned, a message's word */
+#define K_BELL RGB(255, 40, 78)
+#define K_BELL_T RGB(92, 8, 25)
+#define K_PAD RGB(230, 220, 194)
+#define K_PAD_T RGB(66, 62, 51)
+#define K_PULSE RGB(166, 58, 255)
+#define K_PULSE_T RGB(47, 12, 83)
+#define K_BASS RGB(234, 255, 0)
+#define K_BASS_T RGB(72, 78, 0)
+#define K_FROST RGB(255, 40, 78)         /* dub hold */
+#define K_FROST_T RGB(92, 8, 25)
+#define K_RIM RGB(234, 255, 0)         /* the rim */
+#define K_RIM_T RGB(72, 78, 0)
+#define K_CLAP RGB(166, 58, 255)         /* the clap */
+#define K_CLAP_T RGB(47, 12, 83)
+#define K_NOISE RGB(180, 180, 190)       /* the noise (its level ring) */
 
 static struct {
     uint8_t view;
+    uint8_t env_layer;
+    uint8_t track;                   /* Home selected layer, including Atmosphere. */
     uint8_t perf, perf_from;           /* PERFORM (SEL): the keys play the mutes and the moves, the knobs
                                         * the mix; the page it was started from */
     uint32_t mutes, moves;             /* the layers muted (EN_M_*), the moves held (EN_PF_*) */
@@ -228,8 +254,6 @@ static struct {
     uint8_t lane;                      /* the Pattern page: the lane edited */
     uint8_t grid_said;
     uint32_t btn, keys, btn_used;
-    uint32_t enc_t[NE];
-    uint8_t enc_run[NE];               /* detents in the current quick run, per knob (accel) */
     uint32_t down_t[NB];               /* when each button went down */
     uint32_t turn_t;                   /* the last knob turn */
     uint8_t reset_done;                /* SAVE held: the piece went back to its recipe this hold */
@@ -248,6 +272,14 @@ static struct {
 static uint8_t sp_said;
 static char sp_buf[ANN_MAX + 1];                 /* (the screen reader's text, built below) */
 static uint32_t sp_n;
+static const char *track_label(int col)
+{
+    return col==2 && ui.track==5 ? "Ghosts" : ui.track>=NLAYER && col==2 ? "Chance" : TRACK_LABEL[col];
+}
+static int control_knob(int view, int col)
+{
+    return view==V_ENV ? EN_ENV_BASE+ui.env_layer*4+col : view == V_MIX && !ui.perf ? TRACK_KNOB[ui.track][col] : VIEW_KNOB[view][col];
+}
 static void sp_cat(const char *s);
 static struct {
     uint8_t playing;
@@ -389,6 +421,7 @@ static void slot_write(int i)                    /* a walk slot about to be edit
 static int s2_shift(void) { return ui.s2_hand ? 0 : en_s2oct_shift; }   /* (Motion's move of Sequence 2's octave) */
 static int knob_get(int k)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4)return en_envelope_value((k-EN_ENV_BASE)/4,(k-EN_ENV_BASE)%4);
     if (k < P_NPARAMS)                           /* (Sequence 2's Octave: its home and Motion's shift, as it plays;
                                                   * the project keeps home) */
         return proj.par[k] + (k == P_SEQ2OCT ? s2_shift() : 0);
@@ -422,6 +455,7 @@ static int knob_get(int k)
 }
 static void knob_range(int k, int *lo, int *hi)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4){*lo=-1;*hi=127;return;}
     if (k < P_NPARAMS) {
         *lo = en_param_info(k)->lo;
         *hi = en_param_info(k)->hi;
@@ -436,6 +470,7 @@ static void knob_range(int k, int *lo, int *hi)
 }
 static const char *knob_name(int k)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4)return KNOB_LABEL[V_ENV][(k-EN_ENV_BASE)%4];
     if (k < P_NPARAMS)
         return en_param_info(k)->name;
     return k == K_LEDS ? "Lights" : k == K_CPU ? "CPU" : k == K_SLOT ? "Slot" : k == K_CQ ? "Chord" : k == K_CX ? "Type"
@@ -445,6 +480,10 @@ static const char *knob_name(int k)
 static void knob_text(int k, char *b)
 {
     int v = knob_get(k);
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4){
+        int stage=(k-EN_ENV_BASE)%4;if(stage==2){itoa_u((uint32_t)v*100u/127u,b);while(*b)b++;*b++='%';*b=0;}
+        else{uint32_t ms=(pt_envelope_ms10(v)+5u)/10u;itoa_u(ms,b);while(*b)b++;*b++='m';*b++='s';*b=0;}return;
+    }
     if (k < P_NPARAMS) {
         en_param_text(k, v, b);
     } else if (k == K_LEDS) {                    /* On: the keys, and the unlit buttons glow; Keys: no glow */
@@ -515,6 +554,7 @@ static void do_save(void)                       /* GLO held, or Setup's KNOB 4 t
 }
 static void knob_set(int k, int v)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4){int l=(k-EN_ENV_BASE)/4,s=(k-EN_ENV_BASE)%4;v=v<-1?-1:v>127?127:v;if(v==project_envelope(l,s))return;project_envelope_set(l,s,v);mark_dirty();return;}
     int lo, hi;
     if (k == K_CPU || k == K_NONE)
         return;
@@ -529,6 +569,13 @@ static void knob_set(int k, int v)
             ui.s2_hand = 1;
         proj.par[k] = (int16_t)v;
         en_set(k, v);
+        if(k==P_CATT||k==P_DREL||k==P_LATT||k==P_DECAY||k==P_S2DEC){
+            int l=k==P_CATT||k==P_DREL?PT_DRONE:k==P_LATT?PT_LEAD:k==P_DECAY?PT_SEQ:PT_SEQ2;
+            int s=k==P_DREL?3:k==P_DECAY||k==P_S2DEC?1:0,j=0;
+            float ms10=k==P_CATT?5000.0f*fm_exp2f(v*.0458f):k==P_DREL?10000.0f*fm_exp2f(v*.039f):k==P_LATT?50.0f*fm_exp2f(v*.0645f):1200.0f*fm_exp2f(v*.0164f);
+            while(j<127&&pt_envelope_ms10(j)<(uint32_t)ms10)j++;
+            project_envelope_set(l,s,j);
+        }
         if (k == P_PMODE && (was & EN_PLOOP) && !(v & EN_PLOOP))
             en_prog_rotate();                    /* (from Loop, by hand: the slot playing up to slot 1) */
     } else if (k == K_LEDS) {
@@ -564,59 +611,13 @@ static void knob_set(int k, int v)
     mark_dirty();
 }
 
-/* knob acceleration by speed (X0X's): a few clicks are one step each however quick, so small
- * corrections stay exact; a longer quick turn speeds up to 8 a detent, so half a turn sweeps 0-100.
- * Small ranges never accelerate. */
-static uint8_t accel_off;              /* the host simulator's "spin": exact steps */
-static int32_t accel(int role, int32_t s, int range)
-{
-    uint32_t now = plat_ms(), dt = now - ui.enc_t[role], a = (uint32_t)(s < 0 ? -s : s), m;
-    ui.enc_t[role] = now;
-    if (!a)
-        return s;
-    if (a > 1)
-        dt /= a;                                      /* per detent */
-    ui.enc_run[role] = (uint8_t)(dt < 60u ? (ui.enc_run[role] + a > 255u ? 255u : ui.enc_run[role] + a) : a);
-    if (range <= 24 || accel_off || ui.enc_run[role] < 4u)
-        return s;
-    m = dt < 12u ? 8u : dt < 25u ? 5u : dt < 45u ? 3u : 1u;
-    if (range < 100 && m > 3u)
-        m = 3u;
-    return s * (int32_t)m;
-}
-
+/* Physical detents are literal steps: no velocity scaling or centre dead zone. */
 static void turn(int role, int k, int32_t e)
 {
-    int lo, hi;
-    if (!e || k == K_NONE || k == K_CPU)
-        return;
-    if (k == K_SAVE) {                           /* a turn, either way: saved */
-        do_save();
-        return;
-    }
-    knob_range(k, &lo, &hi);
-    if (lo < 0 && hi > 0 && hi - lo >= 10) {     /* (1.3.0) a centred knob: a notch at 0, three clicks to leave it */
-#define NOTCH 2                                  /* (the clicks out of 0 held back) */
-        static int8_t held[16];
-        static uint32_t held_t[16];
-        int v = knob_get(k), n, r = role & 15;
-        if (v == 0) {                            /* (clicks out of 0 held back, NOTCH of them, one way, close together) */
-            int32_t a = e > 0 ? e : -e, dir = e > 0 ? 1 : -1;
-            if (plat_ms() - held_t[r] > 700u || (held[r] > 0) != (dir > 0))
-                held[r] = 0;
-            held_t[r] = plat_ms();
-            while (a > 0 && (held[r] > 0 ? held[r] : -held[r]) < NOTCH)
-                held[r] = (int8_t)(held[r] + dir), a--;
-            if (!a)
-                return;
-            e = dir * a;
-            held[r] = 0;
-        }
-        n = v + accel(role, e, hi - lo);
-        knob_set(k, (v > 0 && n < 0) || (v < 0 && n > 0) ? 0 : n);   /* (and it stops at 0 on the way through) */
-        return;
-    }
-    knob_set(k, knob_get(k) + accel(role, e, hi - lo));
+    (void)role;
+    if(!e || k==K_NONE || k==K_CPU)return;
+    if(k==K_SAVE){do_save();return;}
+    knob_set(k,knob_get(k)+(int)e);
 }
 
 /* ------------------------------------------------------------- the pool --- */
@@ -714,6 +715,16 @@ static void set_voice(int p, int v)
     mark_dirty();
 }
 
+static int envelope_voice(void){static const uint8_t ids[EN_ENV_LAYERS]={P_CVOICE,P_SVOICE,P_LVOICE,P_S2VOICE,P_CLVOICE,P_NCHAR};return ids[ui.env_layer];}
+static int home_voice(void)
+{
+    static const uint8_t voice[5]={P_CVOICE,P_SVOICE,P_LVOICE,P_S2VOICE,P_NCHAR};
+    return ui.track<5 ? voice[ui.track] : ui.track==6 ? P_CLVOICE : -1;
+}
+static int calls_context(void)
+{
+    return !ui.perf && ((ui.view==V_ENV&&ui.env_layer==PT_CALLS) || ui.view==V_CALLS || (ui.view==V_MIX && ui.track==6));
+}
 static void mac_home(void)                       /* (the user, 2026-10-28) a piece from the master actions at 0 (the
                                                   * engine's own, at its regrow) */
 {
@@ -753,7 +764,7 @@ static const char *const PERF_NAME[PERF_N] = {"DRONE", "SEQ", "LEAD", "SEQ 2", "
                                               "DROP", "ECHO", "DRONE", "SEQ", "LEAD", "SEQ 2", "ATMOS"};
 /* each layer's mute (EN_M_*), in the meters' order: Sequence 2 is two of the engine's bits (DUB-1's kick and hats) */
 static const uint32_t LAYER_MUTE[NLAYER] = {EN_M_CHORD, EN_M_PINGS, EN_M_BASS, EN_M_KICK | EN_M_HATS, EN_M_NOISE};
-#define ALL_MUTE (EN_M_CHORD | EN_M_PINGS | EN_M_BASS | EN_M_KICK | EN_M_HATS | EN_M_NOISE)
+#define ALL_MUTE (EN_M_CHORD | EN_M_PINGS | EN_M_BASS | EN_M_KICK | EN_M_HATS | EN_M_NOISE | EN_M_WILD)
 static void perf_mutes(void)                     /* to the engine: the mutes, and with a solo, all but it */
 {
     en_mute(ui.mutes | (ui.solo ? ALL_MUTE & ~ui.solo : 0u));
@@ -765,6 +776,7 @@ static int perf_sounds(int i)                    /* layer i (0..4) heard: not mu
     return (ui.mutes & LAYER_MUTE[i]) != LAYER_MUTE[i];
 }
 static void set_view(int v);
+static void keys_release_mode(void);
 #define PERF_SHIFT 9u                            /* white 6 (D4), held: the knobs the mix */
 #define PERF_FORGET 26u                          /* white 16 (G5), the top key: the Lead's memory erased */
 static void lock_toggle(void)                    /* SEL held: Lock, on or off: the phrases keep their kick, groove and plan,
@@ -842,6 +854,7 @@ static void set_view(int v);
 static void perf_set(int on)                     /* on: the mixer on the knobs; off: back to the page */
 {
     const int was = ui.perf;
+    if (on && calls_context()) keys_release_mode();
     ui.perf = (uint8_t)on;
     if (on) {
         if (!was)                                /* (T-WRECKS: the Mix page is HOME's too, so where it came from) */
@@ -1032,9 +1045,18 @@ static void pattern_key(uint32_t key, uint32_t keys)
 }
 
 /* ------------------------------------------------------------ buttons --- */
+static void keys_release_mode(void)
+{
+    int k;
+    for (k=0;k<16;k++) if (ui.keys >> STEP_KEY[k] & 1u) en_lead_key(k,0);
+    for (k=0;k<11;k++) black_set(k,0);
+}
 static void set_view(int v)
 {
+    const int was_calls=calls_context();
     ui.view = (uint8_t)v;
+    if (was_calls!=calls_context()) keys_release_mode();
+    ui.sig[0] = ui.sig[1] = ui.sig[2] = 0;
     ui.touched = -1;
 }
 
@@ -1108,8 +1130,12 @@ static void button(int b)
         break;
     case B_SAVE:                                 /* the Noise page (one page: again stays; saving: GLO held, Setup's
                                                   * KNOB 4) */
-        if (atm_view(ui.view)) {                 /* (SAVE again steps through: its sound, its Move page, back) */
-            set_view(ui.view == V_NSND ? V_NSND2 : ui.view == V_NSND2 ? V_AMOVE : V_NSND);
+        if(ui.view==V_ENV){static const uint8_t sound[EN_ENV_LAYERS]={V_CSND,V_PSND,V_BSND,V_DSND,V_CALLS,V_NSND2};set_view(sound[ui.env_layer]);}
+        else if(ui.view==V_MIX&&ui.track!=5){ui.env_layer=ui.track==6?PT_CALLS:ui.track==4?EN_ENV_ATMOS:ui.track;set_view(V_ENV);}
+        else if (ui.view==V_MIX && ui.track>=5) {
+            set_view(ui.track==6 ? V_CALLS : V_SKIN);
+        } else if (atm_view(ui.view) || ui.view==V_SKIN || ui.view==V_CALLS) { /* (SAVE again steps through: its sound, its Move page, back) */
+            set_view(ui.view == V_NSND ? V_NSND2 : ui.view == V_NSND2 ? V_AMOVE : ui.view == V_AMOVE ? V_SKIN : ui.view == V_SKIN ? V_CALLS : V_NSND);
         } else {
             ui.noise_from = (uint8_t)ui.view;
             set_view(V_NSND);
@@ -1155,16 +1181,15 @@ static int oct_ring_on(uint32_t now)             /* the ring's layer + 1, while 
         return 0;
     return ui.oct_ring;
 }
-static void level_turn(int l, int32_t e)         /* SELECT on a layer's page: its level, 1 a detent */
+static void level_turn(int l, int32_t e)         /* SELECT on a layer's page: same response as its Level knob */
 {
     char t[8];
-    knob_set(LAYER_LEVEL[l], proj.par[LAYER_LEVEL[l]] + (int)e);
+    turn(EN_SELECT, LAYER_LEVEL[l], e);
     itoa_u((uint32_t)proj.par[LAYER_LEVEL[l]], t);
     say(LAYER_NAME[l], t);
     oct_show(l);
 }
-static void energy_turn(int32_t e)               /* (the user, 2026-10-28) SELECT on HOME: Energy, PERFORM's, 1 a
-                                                  * detent (the keys still the Lead's); held as a turn of its knob */
+static void energy_turn(int32_t e)               /* SELECT on HOME: Energy, with the same response as its knob. */
 {
     char t[8];
     knob_set(K_ENERGY, knob_get(K_ENERGY) + (int)e);
@@ -1460,6 +1485,24 @@ static void input(void)
                     continue;                    /* REC held: the effects (and their keys let go) */
             if (btn >> B_REC & 1u)
                 continue;                        /* (REC held: the other keys do nothing) */
+            if (calls_context()) {
+                if (down) {
+                    int st, black=black_of(i);
+                    for (st=0; st<PT_NCALL && STEP_KEY[st]!=i; st++) ;
+                    if (st<PT_NCALL) {
+                        knob_set(P_CLVOICE,st);
+                        en_call(st);
+                        say("CALL",pt_name(PT_CALLS,st));
+                    } else if (black==0) {
+                        en_calls_auto(!en_call_auto);
+                        say("CALLS",en_call_auto ? "MANUAL" : "AUTO");
+                    } else if (black==1) {
+                        en_call(-1);
+                        say("CALLS","STOP");
+                    }
+                }
+                continue;
+            }
             if (ui.view == V_PAT && !ui.perf) {  /* the Pattern page: the white keys, the lane's steps */
                 if (down)
                     pattern_key(i, keys);
@@ -1489,17 +1532,35 @@ static void input(void)
     midi_in();
     if ((e = plat_enc(EN_SELECT)) != 0) {        /* (the user, 2026-10-28) a layer's pages: its level; HOME: Energy;
                                                   * elsewhere nothing (no pages, no tempo: one knob, one job) */
-        if (oct_layer(ui.view) >= 0)
+        if(ui.view==V_ENV){int was_calls=calls_context();ui.env_layer=(uint8_t)(((int)ui.env_layer+(int)(e%EN_ENV_LAYERS)+EN_ENV_LAYERS)%EN_ENV_LAYERS);if(was_calls!=calls_context())keys_release_mode();ui.sig[0]=0;say("ENVELOPE",HOME_NAME[ui.env_layer==PT_CALLS?6:ui.env_layer==EN_ENV_ATMOS?4:ui.env_layer]);}
+        else if (oct_layer(ui.view) >= 0)
             level_turn(oct_layer(ui.view), e);
-        else if (ui.view == V_MIX)               /* (T-WRECKS) the Mix page: the Atmosphere's level */
-            level_turn(NLAYER - 1, e);
+        else if (ui.view == V_MIX && !ui.perf)   /* Home: SELECT chooses the track. */
+            {
+            const int was_calls=calls_context();
+            int t = (int)ui.track + (int)(e % HOME_TRACKS);
+            ui.track = (uint8_t)((t % HOME_TRACKS + HOME_TRACKS) % HOME_TRACKS);
+            if (was_calls!=calls_context()) keys_release_mode();
+            ui.sig[0] = ui.sig[1] = ui.sig[2] = 0;
+            ui.touched = -1;
+            say("TRACK", HOME_NAME[ui.track]);
+        }
         else if (ui.view == V_DUB)               /* (HOME: Energy, the user's: to play the keys and push it at once) */
             energy_turn(e);
         ui.turn_t = plat_ms();
     }
     if ((e = plat_enc(EN_ALGO)) != 0) {         /* a layer's page: its voice; the Chords page: the walk */
-        int vp = view_voice(ui.view);
-        if (atm_view(ui.view)) {   /* the Noise pages: its character */
+        int vp = ui.view==V_ENV ? envelope_voice() : ui.view==V_MIX && !ui.perf ? home_voice() : view_voice(ui.view);
+        if (!ui.perf && ((ui.view==V_MIX && ui.track==5) || ui.view==V_SKIN)) {
+            project_drum_pattern_set(project_drum_pattern()+(int)e);
+            en_drum_pattern(project_drum_pattern());
+            say("BEAT",en_beat_name(project_drum_pattern()));
+            mark_dirty();
+        } else if ((ui.view==V_MIX && ui.track==6) || ui.view==V_CALLS) {
+            int voice=(proj.par[P_CLVOICE]+(int)(e%PT_NCALL)+PT_NCALL)%PT_NCALL;
+            knob_set(P_CLVOICE,voice);
+            say("CALL",pt_name(PT_CALLS,voice));
+        } else if (atm_view(ui.view) || (ui.view==V_MIX && !ui.perf && ui.track==4)) {   /* Atmosphere character */
             int c = ((proj.par[P_NCHAR] + (int)(e % EN_NNCHAR)) % EN_NNCHAR + EN_NNCHAR) % EN_NNCHAR;
             knob_set(P_NCHAR, c);
             say("NOISE", EN_NCHAR_NAME[c]);
@@ -1537,7 +1598,7 @@ static void input(void)
         if ((e = plat_enc(EN_K1 + (int)i)) != 0) {
             if (grid_up())
                 continue;                        /* (the grid on the screen: the knobs rest) */
-            turn(EN_K1 + (int)i, VIEW_KNOB[ui.view][i], e);
+            turn(EN_K1 + (int)i, control_knob(ui.view, (int)i), e);
             ui.touched = (int8_t)i;
             ui.touch_until = plat_ms() + 1200u;
             ui.act_t = ui.turn_t = plat_ms();
@@ -1744,100 +1805,25 @@ static void draw_battery(int32_t bx)
         cv_rect(bx + 2 + k * 4, 11, 3, 5, c);
 }
 
-/* the header: the piece in a tag, its root and mode; on the right, the tempo with a slow beat light
- * (a play triangle while resting) and a dot while there is something unsaved. Messages take its place
- * for a moment. */
+static void control_text(int x, int y, int width, const felucca_font_t *font, const char *value, uint16_t color);
+/* Edit and Pattern use the same large UI family as the control tables. */
 static void draw_header(void)
 {
-    char t[24];
-    int msg = plat_ms() < ui.msg_until;
-    uint32_t h = hash(hash(hash(2166136261u, proj.piece | (uint32_t)proj.par[P_ROOT] << 8 | (uint32_t)proj.pool << 12),
-                           en_playing | ui.dirty << 4 | (uint32_t)msg << 5 | (uint32_t)en_ext << 6 | (uint32_t)proj.par[P_MODE] << 8),
-                      (uint32_t)proj.par[P_TEMPO] | (uint32_t)(ui.view == V_SETUP ? batt_pct() : 0) << 22 | (uint32_t)batt_bars() << 29 | (uint32_t)plat_usb_power() << 31 |
-                      (plat_usb_power() ? (plat_ms() / 600u) % 3u << 7 : 0u) | (ui.view == V_SETUP ? plat_cpu_pct() << 8 | plat_cpu_peak() << 15 |
-                                                                           (plat_xruns() & 0x1FFu) << 22 : 0u));
-    if (msg)
-        h = hash(hash(h, (uint32_t)ui.msg[0][0] << 8 | ui.msg[0][1]), ui.msg_until);
-    if (en_playing)
-        h = hash(h, (en_bars / 4u) & 1u);
-    if (h == ui.sig[0])
-        return;
-    ui.sig[0] = h;
-    cv_begin(240, HDR_H, K_BG);
-    if (msg) {
-        int32_t x = cv_text(10, 6, &FONT_B, ui.msg[0], K_TEXT);
-        cv_text(x + 8, 6, &FONT_B, ui.msg[1], K_ACC);
-    } else {
-        int32_t x = 232, w;
-        if (plat_battery() >= 0 || plat_usb_power()) {   /* the battery, at the right edge */
-            draw_battery(219);
-            x = 213;
-        }
-        if (ui.view == V_SETUP && (plat_battery() >= 0 || plat_usb_power())) {   /* Setup: the charge, by the icon */
-            char c[8];
-            if (plat_usb_power()) {
-                c[0] = 'U', c[1] = 'S', c[2] = 'B', c[3] = 0;
-            } else {
-                uint32_t k;
-                itoa_u((uint32_t)batt_pct(), c);
-                for (k = 0; c[k]; k++)
-                    ;
-                c[k++] = '%', c[k] = 0;
-            }
-            x -= text_w(&FONT_XS, c);
-            cv_text(x, 8, &FONT_XS, c, K_TEXT);
-            x -= 8;
-        }
-        if (ui.dirty) {                            /* unsaved */
-            cv_round(x - 5, 12, 5, 5, 2, K_DIM);
-            x -= 11;
-        }
-        if (en_ext) {
-            t[0] = 'E';
-            t[1] = 'X';
-            t[2] = 'T';
-            t[3] = 0;
-        } else {
-            itoa_u((uint32_t)proj.par[P_TEMPO], t);
-        }
-        if (ui.view == V_SETUP) {                 /* Setup: the audio load (now/peak), and any dropouts ("!n") */
-            char c[24] = "CPU ";
-            uint32_t k;
-            itoa_u(plat_cpu_pct(), c + 4);
-            for (k = 0; c[k]; k++)
-                ;
-            c[k++] = '/';
-            itoa_u(plat_cpu_peak(), c + k);
-            if (plat_xruns()) {
-                for (; c[k]; k++)
-                    ;
-                c[k++] = ' ', c[k++] = '!';
-                itoa_u(plat_xruns() > 999u ? 999u : plat_xruns(), c + k);
-            }
-            x -= text_w(&FONT_XS, c);
-            cv_text(x, 8, &FONT_XS, c, K_DIM);   /* (the leftmost on the right: its changing width moves nothing) */
-        } else {                                 /* elsewhere: the tempo and the beat light */
-        x -= text_w(&FONT_S, t);
-        cv_text(x, 6, &FONT_S, t, en_playing ? K_TEXT : K_DIM);
-        x -= 16;
-        if (en_playing) {                         /* a slow beat light */
-            int on = ((en_bars / 4u) & 1u) == 0u;
-            cv_round(x, 9, 10, 10, 5, on ? K_PAD : K_PAD_T);
-        } else {
-            int32_t j;                            /* resting: a play triangle */
-            for (j = 0; j < 5; j++)
-                cv_rect(x + 2 + j, 9 + j, 1, 11 - 2 * j, K_DIM);
-        }
-        }
-        w = text_w(&FONT_B, piece_name(proj.piece)) + 12;   /* the piece, in a coral tag */
-        cv_round(4, 4, w, 20, 6, K_TEXT);
-        cv_text(10, 6, &FONT_B, piece_name(proj.piece), K_BG);
-        if (ui.view != V_SETUP) {                /* (Setup: the room is the CPU's; the root is its first knob) */
-            w = cv_text(w + 10, 8, &FONT_XS, EN_NOTE_NAME[proj.par[P_ROOT]], K_TEXT);
-            cv_text(w + 3, 8, &FONT_XS, mode_name(), K_DIM);
-        }
+    const int msg=plat_ms()<ui.msg_until;
+    uint32_t h=hash(hash(hash(2166136261u,ui.view),en_playing | ui.dirty<<4 | en_frozen<<5),msg?ui.msg_until:0);
+    if(h==ui.sig[0])return;
+    ui.sig[0]=h;
+    cv_begin(240,HDR_H,K_BG);
+    if(msg){
+        char text[48];
+        msg_text(ui.msg[0],ui.msg[1],text);
+        control_text(4,0,232,&FONT_UM,text,K_ACC);
+    }else{
+        control_text(4,-4,172,&FONT_UL,ui.view==V_CHORDS?"CHORDS":"PATTERN",K_TEXT);
+        control_text(188,2,50,&FONT_UM,en_frozen?"HOLD":en_playing?"PLAY":"STOP",K_ACC);
+        if(ui.dirty)cv_rect(177,10,4,4,K_ACC);
     }
-    cv_blit(0, 0);
+    cv_blit(0,0);
 }
 
 /* (BERLIN) the main screen, Cosmic: a slow starfield; the chord a glowing body in the middle; each sequence note a
@@ -2108,7 +2094,7 @@ static void grid_band(int32_t oy)                 /* the whole screen, in two ba
     static const char *const GROUP[4] = {"ECHO", "FILTER", "SPACE", "MOVES"};   /* (BERLIN's) */
     int r, c;
     cv_begin(240, 120, K_BG);
-    text_c(120, 2 - oy, &FONT_S, "EFFECTS", K_ACC);
+    text_c(120, 0 - oy, &FONT_UM, "EFFECTS", K_ACC);
     text_c(120, 20 - oy, &FONT_XS, "HOLD A WHITE KEY    TAP REC: HOLD", K_DIM);
     for (r = 0; r < 4; r++) {
         int32_t yr = 38 + r * 50;
@@ -2121,7 +2107,7 @@ static void grid_band(int32_t oy)                 /* the whole screen, in two ba
             if (c == 0 && !on)                   /* (the first of a group: its key is lit) */
                 cv_rect(x + 4, y + 29, 47, 2, K_ACC);
             caps(t, GRID_CELL[e], sizeof t);
-            text_c(x + 28, y + 8, &FONT_S, t, on ? K_BG : K_TEXT);
+            text_c(x + 28, y + 4, &FONT_UN, t, on ? K_BG : K_TEXT);
         }
     }
     cv_blit(0, (uint32_t)oy);
@@ -2180,28 +2166,27 @@ static void draw_pattern(void)
  * progression shows that the chord before it goes on */
 static void draw_slots(void)
 {
-    static const char *const HEAD[4] = {"HOME: THE WALK WRITES SLOT 8", "WANDER: THE WALK WRITES SLOT 8",
-                                        "FREE: THE WALK WRITES SLOT 8", "LOOP: THE SLOTS IN TURN"};
+    static const char *const HEAD[4] = {"HOME: NEW SLOT 8", "WANDER: NEW SLOT 8",
+                                        "FREE: NEW SLOT 8", "LOOP: SLOTS IN TURN"};
     int i, loop = (proj.par[P_PMODE] & EN_PLOOP) != 0, n = loop ? prog_count() : EN_NPROG;
     char nm[16];
-    text_c(120, -1, &FONT_XS, HEAD[loop ? 3 : (proj.par[P_PMODE] & 3) % EN_NWALK], K_ACC);
+    control_text(6,0,228,&FONT_US,HEAD[loop ? 3 : (proj.par[P_PMODE] & 3) % EN_NWALK],K_ACC);
     for (i = 0; i < EN_NPROG; i++) {
-        int32_t x = 12 + (i & 3) * 55, y = 30 + (i >> 2) * 46;   /* (the two rows in the middle) */
+        int32_t x = 4 + (i & 3) * 59, y = 24 + (i >> 2) * 54;   /* (the two rows in the middle) */
         int filled = !slot_is_gap(i), now = en_playing && i == en_prog_pos && n, sel = i == ui.slot;
         if (sel)
-            cv_round(x - 2, y - 2, 54, 38, 5, K_ACC);
-        cv_round(x, y, 50, 34, 4, now ? K_PAD : filled ? K_PANEL : mix(K_BG, K_PANEL, 6));
+            cv_round(x - 1, y - 1, 57, 48, 5, K_ACC);
+        cv_round(x, y, 55, 46, 4, now ? K_PAD : filled ? K_PANEL : mix(K_BG, K_PANEL, 6));
         {
             char d[2];
             d[0] = (char)('1' + i), d[1] = 0;
-            cv_text(x + 3, y + 1, &FONT_XS, d, now ? K_BG : K_DIM);
+            control_text(x+3,y+1,14,&FONT_US,d,now?K_BG:K_DIM);
         }
         if (filled) {                            /* (yours in white; the walk's in the scale's teal) */
             const char *t = slot_label(i, nm);
-            text_c(x + 25, y + 11, text_w(&FONT_B, t) <= 46 ? &FONT_B : &FONT_XS, t,
-                   now ? K_BG : slot_is_walk(i) ? K_PAD : K_TEXT);
+            control_text(x+3,y+19,49,&FONT_UM,t,now?K_BG:slot_is_walk(i)?K_PAD:K_TEXT);
         } else if (i < n) {
-            text_c(x + 25, y + 13, &FONT_XS, "(HOLDS)", now ? K_BG : K_DIM);
+            control_text(x+3,y+19,49,&FONT_UM,"HOLD",now?K_BG:K_DIM);
         }
     }
 }
@@ -2270,13 +2255,10 @@ static void draw_card(uint32_t now)
     text_c(CX, y + 28, &FONT_XS, ui.card_text, tc);
 }
 
-#define BERLIN_BY "T-WRECKS"                     /* (T-WRECKS: its name over the main page) */
+#define BERLIN_BY "NIGHTCLAW"                     /* (T-WRECKS: its name over the main page) */
 static void draw_main(void)
 {
     uint32_t now = plat_ms(), h = hash(2166136261u, (uint32_t)en_frozen << 16 | proj.piece << 24 | (uint32_t)en_playing << 17), i;
-    static uint8_t moving;
-    echo_take(now);                              /* (the ECHO meter: each frame) */
-    orbits_take();
     if (ui.frame % 3u)                           /* 20 frames a second is plenty */
         return;
     if (grid_up()) {                             /* REC held: the effects grid (ui_frame draws it, whole;
@@ -2322,270 +2304,31 @@ static void draw_main(void)
         }
         return;
     }
-    for (i = 0; i < EN_NPAD; i++)
-        h = hash(h, en_chord[i]);
-    for (i = 0; i < 6; i++)
-        h = hash(h, en_lane[i] | (uint32_t)proj.par[i < 4 ? i : 0] << 16);
-    h = hash(h, en_drum_pos[0] | (uint32_t)q16(en_duck) << 4 | (uint32_t)q16(en_pad_level) << 9 | (uint32_t)q16(en_bass_level) << 14);
-    h = hash(h, (uint32_t)(en_prog_pos + 1) << 12);
-    {
-        int rl, rn = ring_dots(&rl);
-        h = hash(h, (uint32_t)(rn + 1) | (uint32_t)rl << 7);
-    }
-    h = hash(h, (uint32_t)(en_drift * 40.0f) | en_section << 8 | (uint32_t)en_phrase_bar << 12 | (uint32_t)ui.perf << 16 | ui.solo << 20 |
-                (uint32_t)ui.lock << 28);
-    for (i = 0; i < EN_NLOOP; i++)
-        h = hash(h, (uint32_t)q16(en_loop_glow[i]) | (uint32_t)en_loop_pos[i] << 8);
-    for (i = 0; i < EN_NDRUM; i++)
-        h = hash(h, (uint32_t)q16(en_drum_glow[i]));
-    h = hash(h, ui.view | (uint32_t)oct_ring_on(now) << 8);
-    if (parent_of(ui.view) >= 0) {               /* a sound or FM page: redrawn as its values move */
-        for (i = 0; i < 4; i++)
-            h = hash(h, (uint32_t)(proj.par[VIEW_KNOB[ui.view][i]] + 64));
-        h = hash(h, (uint32_t)proj.par[view_voice(ui.view)] | (uint32_t)proj.par[P_DECAY] << 8 | (uint32_t)proj.par[P_SEQGRID] << 16);
-    }
-    h = hash(h, (uint32_t)card_on(now));
-    if (h == ui.sig[1] && !moving && !oct_ring_on(now) && !card_on(now))
-        return;
-    ui.sig[1] = h;
-    cv_begin(240, MAIN_H, K_BG);
-    draw_stars();
-    moving = (uint8_t)(draw_orbits() | en_playing);
-    draw_ring();                                 /* (the chord's progress, round it: over the orbits, under its name) */
-    const int named = parent_of(ui.view) < 0 || scr_layer(ui.view) >= 0;   /* (a sound page: as its layer's) */
-    static char ch_last[16];
-    static uint32_t ch_t;
-    char nm[16];
-    uint32_t ch_age;
-    uint16_t ch_c;
-    chord_now(nm);
-    if (!str_begins(nm, ch_last) || !str_begins(ch_last, nm)) {                   /* (1.3.0) a new chord: it comes in big and teal, then settles */
-        if (ch_last[0])
-            ch_t = now | 1u;
-        if (card_on(now) && str_begins(ui.card_head, "NEXT CHORD") && now < ui.card_until)
-            ui.card_until = now - CARD_FADE;     /* (the next chord's card gone at once, for it) */
-        memcpy(ch_last, nm, sizeof ch_last);
-    }
-    ch_age = ch_t ? now - ch_t : 1000u;
-    ch_c = en_frozen ? K_FROST : ch_age < 900u ? mix(K_ACC, K_TEXT, (int)(ch_age * 16u / 900u)) : K_TEXT;   /* (white over
-                                                  * the orbits, the user; a new chord: cyan, settling) */
-    if (ch_age < 900u)
-        moving = 1;
-    if (named) {                                 /* the chord, in the middle */
-        if ((ch_age < 200u || (ch_age >= 400u && ch_age < 600u)) && text_w(&FONT_L, nm) <= 96) {   /* (big, small, big,
-                                                                                         * small: a ping-pong) */
-            text_c(CX, CY - 16, &FONT_L, nm, ch_c);
-        } else if (text_w(&FONT_C, nm) <= 66) {  /* (the bigger face, the rings behind it; a long name, smaller) */
-            text_c(CX, CY - 11, &FONT_C, nm, ch_c);
-        } else if (text_w(&FONT_B, nm) <= 72) {
-            text_c(CX, CY - 8, &FONT_B, nm, ch_c);
-        }
-        else
-            text_c(CX, CY - 6, &FONT_XS, nm, ch_c);
-        if ((proj.par[P_PMODE] & EN_PLOOP) && en_prog_pos >= 0 && prog_count()) {   /* Loop: where it is ("2/4") */
-            char t[8];
-            t[0] = (char)('1' + en_prog_pos), t[1] = '/', t[2] = (char)('0' + prog_count()), t[3] = 0;
-            text_c(CX, CY + 11, &FONT_XS, t, K_DIM);
-        }
-    }
-    {   /* top left: the phrase's section and its eight bars; under it, the mode the keys are in */
-        char t[12];
-        int b;
-        caps(t, EN_SEC_NAME[en_section], sizeof t);
-        cv_text(8, 2, &FONT_XS, t, en_section == EN_SEC_FLOW ? K_DIM : K_ACC);
-        for (b = 0; b < 8; b++) {                /* (1.3.0: bars 4 and 8, the B bars, whiter) */
-            const int bb = (b == 3 || b == 7) && !ui.lock, lit = en_playing && b <= en_phrase_bar;   /* (Lock: all alike) */
-            uint16_t c = lit ? (bb ? K_TEXT : K_DIM) : (bb ? K_DIM : K_LINE);   /* (B bars: ahead, as bright as one played) */
-            cv_round(9 + b * 5, 22, 3, 3, 1, c);
-        }
-    }
-    {   /* (1.3.0) top right: the page's name (PERFORM's too); to its left, LOCK and SOLO while on */
-        char pn[16];
-        int32_t x;
-        int k;
-        caps(pn, VIEW_NAME[ui.view], sizeof pn);
-        x = 232 - text_w(&FONT_B, pn);
-        cv_text(x, 12, &FONT_B, pn, K_ACC);
-        for (k = 0; k < NROUND; k++)             /* (under it, the round's dots, in the panel's order: FX ENV LFO GLO
-                                                  * HOME SAVE ARP SEQ) */
-            cv_round(212 - NROUND * 6 + 2 + k * 6, 31, 4, 4, 2, PAGE_ORDER[k] == page_of(ui.view) ? K_ACC : K_LINE);
-        if (ui.solo) {                           /* (a solo on, in PERFORM or kept after it) */
-            x -= 6 + text_w(&FONT_XS, "SOLO");
-            cv_text(x, 14, &FONT_XS, "SOLO", K_CLAP);
-        }
-    }
-    cv_text(232 - text_w(&FONT_XS, BERLIN_BY), -2, &FONT_XS, BERLIN_BY, K_DIM);   /* (the user's: over the page) */
-    {   /* hold and Lock, in red, after the section's name (top left) */
-        char t[12];
-        int32_t x;
-        caps(t, EN_SEC_NAME[en_section], sizeof t);
-        x = 8 + text_w(&FONT_XS, t) + 6;
-        if (en_frozen) {
-            cv_text(x, 2, &FONT_XS, "hold", K_FROST);
-            x += text_w(&FONT_XS, "hold") + 6;
-        }
-        if (ui.lock)
-            cv_text(x, 2, &FONT_XS, "lock", K_FROST);
-    }
-    draw_meters();
-    draw_duck();
-    draw_lanes();
-    {   /* (BERLIN) a sound page: its brightness knob's filter, moved by the filter motion, said under the lanes */
-        int layer;
-        float per;
-        if (bright_of(ui.view, &layer, &per) >= 0 && fm_fabsf(en_fo[layer]) >= 0.1f) {
-            char t[32], *q = t;
-            const char *w = en_fo[layer] < 0.0f ? "MOVING DARKER, -" : "MOVING BRIGHTER, +";
-            const int tenths = (int)(fm_fabsf(en_fo[layer]) * 10.0f + 0.5f);
-            while (*w)
-                *q++ = *w++;
-            *q++ = (char)('0' + tenths / 10 % 10), *q++ = '.', *q++ = (char)('0' + tenths % 10);
-            w = " OCT";
-            while (*w)
-                *q++ = *w++;
-            *q = 0;
-            text_c(120, 130, &FONT_XS, t, K_ACC);
-        }
-        if (dens_knob(ui.view) >= 0 && (en_dd_shift >= 3 || en_dd_shift <= -3)) {   /* (the Sequence's page: its Density's drift) */
-            char t[32], *q = t;
-            const char *w = en_dd_shift < 0 ? "MOVING SPARSER, -" : "MOVING DENSER, +";
-            const int n = en_dd_shift < 0 ? -en_dd_shift : en_dd_shift;
-            while (*w)
-                *q++ = *w++;
-            if (n >= 100)
-                *q++ = '1';
-            if (n >= 10)
-                *q++ = (char)('0' + n / 10 % 10);
-            *q++ = (char)('0' + n % 10), *q = 0;
-            text_c(120, 130, &FONT_XS, t, K_BELL);
-        }
-    }
-    draw_oct(now);
-    draw_card(now);
-    cv_blit(0, MAIN_Y);
+
 }
 
 /* the knob strip (X0X's): a rule with the page's name and five page dots at its right end; under
  * it a cell a knob: its name, a ring (or pips, for a switch of a few positions), the value. The
  * knob being turned is drawn on a tint. Only redrawn when what it shows changes (the rings cost a
  * square root and an arctangent per pixel). */
+static const uint16_t CONTROL_COL[4] = {
+    K_PAD, K_BELL, K_BASS, K_PULSE
+};
+static int control_ratio(int k);
+static void control_indicator(int32_t cx, int32_t cy, int32_t r, int32_t ratio, uint16_t color);
+static const char *control_label(int view, int col);
+static void control_text(int x, int y, int width, const felucca_font_t *font, const char *value, uint16_t color);
 static void draw_knobs(void)
 {
-    uint32_t h = hash(2166136261u, ui.view | (uint32_t)ui.touched << 8), i;
-    if (view_voice(ui.view) >= 0)
-        h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
-    if (ui.view == V_CHORDS)
-        h = hash(h, (uint32_t)proj.par[P_PMODE]);
-    if (atm_view(ui.view))
-        h = hash(h, (uint32_t)proj.par[P_NCHAR]);
-    if (ui.view == V_MIX)
-        h = hash(h, ui.mutes);
-    int now_touch = plat_ms() < ui.touch_until, sel_on = ui.view == V_DUB && plat_ms() < ui.sel_until;
-    for (i = 0; i < 4; i++)
-        h = hash(h, (uint32_t)knob_get(VIEW_KNOB[ui.view][i]));
-    if (sel_on)
-        h = hash(h, 0x53454Cu ^ (uint32_t)(knob_get(K_ENERGY) + 64) << 24);
-    h = hash(h, (uint32_t)now_touch | (uint32_t)(knob_dot(ui.view) + 1000) << 1);   /* (the filter's dot moving) */
-    if (dens_knob(ui.view) >= 0)
-        h = hash(h, (uint32_t)(dens_dot() + 1000));   /* (Density's dot moving) */
-    if (h == ui.sig[2])
-        return;
-    ui.sig[2] = h;
+    uint32_t h = hash(0x50494553u, ui.view);
+    int c;
+    for (c=0; c<4; c++) h=hash(h, (uint32_t)knob_get(VIEW_KNOB[ui.view][c]));
+    if (h == ui.sig[2]) return;
+    ui.sig[2]=h;
     cv_begin(240, KNB_H, K_BG);
-    {   /* the rule; at its right end, where you are: the page, then the dots */
-        char t[12];
-        int k;
-        int32_t xd = 237 - NROUND * 6, xt;
-        int32_t x0 = 4;
-        if (view_voice(ui.view) >= 0 || ui.view == V_CHORDS || atm_view(ui.view)) {   /* a layer's page: its voice, at the rule's start;
-                                                                   * the Chords page: the walk's; Noise: its character */
-            char vn[12];
-            if (ui.view == V_CHORDS || atm_view(ui.view)) {
-                const char *w = ui.view != V_CHORDS ? EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR]
-                                                  : EN_WALK_NAME[(proj.par[P_PMODE] & 3) % EN_NWALK];
-                int j;
-                for (j = 0; j < 11 && w[j]; j++)
-                    vn[j] = w[j];
-                vn[j] = 0;
-            } else {
-                en_param_text(view_voice(ui.view), proj.par[view_voice(ui.view)], vn);
-            }
-            caps(t, vn, sizeof t);
-            x0 = cv_text(6, -1, &FONT_XS, t, K_DIM) + 5;
-        }
-        if (sel_on) {                            /* (HOME) SELECT turning: Energy, its value and a bar from the
-                                                  * middle (as PERFORM's knob, -50..50), the rule's whole width */
-            char v[8];
-            const int en = knob_get(K_ENERGY);
-            knob_text(K_ENERGY, v);
-            cv_rect(0, 0, 240, 12, K_BG);
-            xt = cv_text(6, -1, &FONT_XS, "ENERGY", K_TEXT) + 5;
-            xt = cv_text(xt, -1, &FONT_XS, v + (v[0] == '+'), K_ACC) + 6;
-            cv_round(xt, 3, 50, 5, 2, K_LINE);
-            if (en)
-                cv_round(en > 0 ? xt + 25 : xt + 25 + en / 2, 3, (en > 0 ? en : -en) / 2 + 1, 5, 2, K_ACC);
-            cv_rect(xt + 25, 2, 1, 7, K_TEXT);
-            xt += 56;
-            if (xt < 234)
-                cv_rect(xt, 5, 234 - xt, 1, K_LINE);
-        } else if (now_touch && ui.touched >= 0 && ui.touched < 4) {   /* a knob turning: what it does, the rule's
-                                                                          * whole width */
-            char hp[48];
-            caps(hp, KNOB_HELP[ui.view][ui.touched], sizeof hp);
-            cv_rect(0, 0, 240, 12, K_BG);
-            xt = cv_text(6, -1, &FONT_XS, hp, K_TEXT) + 5;
-            if (xt < 234)
-                cv_rect(xt, 5, 234 - xt, 1, K_LINE);
-        } else {
-            xt = 234;                            /* (1.3.0: the page's name and its dots top right now; here the rule) */
-            cv_rect(x0, 5, xt - x0, 1, K_LINE);
-            (void)xd, (void)k;
-        }
-    }
-    for (i = 0; i < 4; i++) {
-        const int moff = ui.view == V_MIX && (ui.mutes & LAYER_MUTE[i]) == LAYER_MUTE[i];   /* (the mix: a muted
-                                                                                       * layer grey, its level kept) */
-        int k = VIEW_KNOB[ui.view][i], lo, hi, v, hot = now_touch && ui.touched == (int)i;
-        int32_t x = (int32_t)i * 60, cx = x + 30;
-        char t[16];
-        static const uint16_t MIXC[4] = {K_PAD, K_BELL, K_BASS, K_PULSE};   /* (the Mix page: the layers' colours) */
-        uint16_t bg = hot ? K_PANEL : K_BG, fill = moff ? K_LINE : ui.view == V_MIX ? MIXC[i] : hot ? K_ACC : K_PAD;
-        if (k == K_NONE)
-            continue;
-        if (i)
-            cv_rect(x, 16, 1, 46, K_LINE);
-        if (hot)
-            cv_round(x + 3, 11, 54, 57, 6, K_PANEL);
-        knob_range(k, &lo, &hi);
-        v = knob_get(k);
-        caps(t, KNOB_LABEL[ui.view][i], sizeof t);
-        text_c(cx, 12, &FONT_XS, t, hot ? K_TEXT : K_DIM);
-        if (k == K_SAVE) {                       /* (Save: a dot, lit while there's something to save) */
-            cv_disc(cx, 37, 5, v ? K_ACC : K_LINE);
-        } else if (k != K_CPU && hi - lo < 10) { /* a switch: its positions as pips (up to ten) */
-            int n = hi - lo + 1, j, pw = n > 6 ? 3 : n > 4 ? 6 : 9, gap = n > 6 ? 2 : 3, w0 = n * (pw + gap) - gap;
-            for (j = 0; j < n; j++)
-                cv_round(cx - w0 / 2 + j * (pw + gap), 33, pw, 8, 2, j == v - lo ? fill : K_LINE);
-        } else if (k != K_CPU) {
-            arc(cx, 37, 12, hi > lo ? (float)(v - lo) / (float)(hi - lo) : 0.0f, K_LINE, fill, bg, lo < 0);
-            if (knob_dot(ui.view) > -999 && (int)i == bright_of(ui.view, &(int){0}, &(float){0.0f}) && hi > lo) {
-                /* (BERLIN) the filter motion: where the filter is now, a cyan dot on the ring */
-                const float a = (0.375f + 0.75f * (float)(knob_dot(ui.view) - lo) / (float)(hi - lo)) * FM_TWO_PI;
-                cv_disc(cx + (int32_t)(fm_cosf(a) * 12.0f + 0.5f), 37 + (int32_t)(fm_sinf(a) * 12.0f + 0.5f), 2, K_ACC);
-            }
-            if (k == P_DENSITY && en_dd_shift != 0 && hi > lo) {
-                /* (2026-11-01) Density's drift: where it is now, a dot in the Sequence's colour on the ring */
-                const float a = (0.375f + 0.75f * (float)(dens_dot() - lo) / (float)(hi - lo)) * FM_TWO_PI;
-                cv_disc(cx + (int32_t)(fm_cosf(a) * 12.0f + 0.5f), 37 + (int32_t)(fm_sinf(a) * 12.0f + 0.5f), 2, K_BELL);
-            }
-            if (k == P_MOTION) {                 /* (Motion's three regions: the loop held, variations, Breaks) */
-                arc_mark(cx, 37, 12, 0.4f, K_TEXT);
-                arc_mark(cx, 37, 12, 0.7f, K_TEXT);
-            }
-        }
-        knob_text(k, t);
-        text_c(cx, 50, &FONT_B, t + (t[0] == '+'), moff ? K_DIM : hot ? K_ACC : K_TEXT);   /* (the user: no plus, "1";
-                                                  * the font's thin plus read as a minus; the reader still says it) */
+    for (c=0; c<4; c++) {
+        control_text(c*60+4, 0, 56, &FONT_UM, control_label(ui.view, c), CONTROL_COL[c]);
+        control_indicator(c*60+30, 38, 18, control_ratio(VIEW_KNOB[ui.view][c]), CONTROL_COL[c]);
     }
     cv_blit(0, KNB_Y);
 }
@@ -2737,9 +2480,9 @@ static void sp_value(int k)
 }
 static void sp_knob(int view, int i)           /* "Stabs 30": the name the page gives it, then its value */
 {
-    sp_cat(KNOB_LABEL[view][i]);
+    sp_cat(view == V_MIX && !ui.perf ? track_label(i) : KNOB_LABEL[view][i]);
     sp_cat(" ");
-    sp_value(VIEW_KNOB[view][i]);
+    sp_value(control_knob(view, i));
 }
 
 static void sp_chord_q(int root, const char *q)   /* "E minor 7" */
@@ -2771,6 +2514,14 @@ static void sp_page(int all)
     sp_buf[0] = 0;
     sp_cat(VIEW_NAME[ui.view]);
     sp_cat(" page");
+    if (ui.view == V_MIX && !ui.perf) {
+        sp_cat(", track ");
+        sp_cat(HOME_NAME[ui.track]);
+    }
+    if(ui.view==V_ENV){
+        sp_cat(", track ");sp_cat(HOME_NAME[ui.env_layer==PT_CALLS?6:ui.env_layer==EN_ENV_ATMOS?4:ui.env_layer]);
+        sp_cat(", voice ");{char vn[48];en_param_text(envelope_voice(),proj.par[envelope_voice()],vn);sp_cat(vn);}
+    }
     if (atm_view(ui.view)) {
         sp_cat(", character ");
         sp_cat(EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR]);
@@ -2813,6 +2564,8 @@ static void sp_page(int all)
         sp_cat("%, peak ");
         sp_int(plat_cpu_peak());
         sp_cat("%");
+        if(en_worker_on)sp_cat(", 2 cores");
+        if(en_worker_faults){sp_cat(", worker fallback ");sp_int(en_worker_faults);}
         if (plat_usb_power()) {
             sp_cat(", on USB power");
         } else if (plat_battery() >= 0) {
@@ -2919,7 +2672,7 @@ static void sp_snap(void)
 {
     int i;
     for (i = 0; i < 4; i++)
-        sp.val[i] = (int16_t)knob_get(VIEW_KNOB[ui.view][i]);
+        sp.val[i] = (int16_t)knob_get(control_knob(ui.view, (int)i));
     sp.view = ui.view;
     sp.ext = en_ext;
     sp.chord = sp_chord_sig();
@@ -2970,7 +2723,7 @@ static void speak(void)
         return;
     }
     for (i = 0; i < 4; i++) {                         /* a knob turning */
-        int v = knob_get(VIEW_KNOB[ui.view][i]);
+        int v = knob_get(control_knob(ui.view, (int)i));
         if (v != sp.val[i]) {
             sp.val[i] = (int16_t)v;
             if (changed < 0)
@@ -3127,6 +2880,207 @@ static void speak_dump(void)
 }
 #endif
 
+/* (T-WRECKS) Plain control tables. Each 44px row has four labels and four
+ * values; band rendering reuses the existing canvas, with no extra RAM. */
+static void control_text(int x, int y, int width, const felucca_font_t *font,
+                         const char *value, uint16_t color)
+{
+    char b[48];
+    int n = 0, height = font->h;
+    if (font == &FONT_UL && text_w(font, value) > width) font = &FONT_UM;
+    if (font == &FONT_UM && text_w(font, value) > width) font = &FONT_UN;
+    if (font == &FONT_UN && text_w(font, value) > width) font = &FONT_US;
+    if (text_w(font, value) > width) font = &FONT_B;
+    if (text_w(font, value) > width) font = &FONT_XS;
+    while (value[n] && n < (int)sizeof(b) - 1) { b[n] = value[n]>='a' && value[n]<='z' ? (char)(value[n]-32) : value[n]; n++; }
+    b[n] = 0;
+    while (n && text_w(font, b) > width) b[--n] = 0;
+    cv_text(x, y + (height-font->h)/2, font, b, color);
+}
+static int control_rows(uint8_t *rows)
+{
+    if (ui.view==V_SKIN || ui.view==V_CALLS) { rows[0]=V_SKIN; rows[1]=V_CALLS; return 2; }
+    int p = parent_of(ui.view) >= 0 ? parent_of(ui.view) : ui.view;
+    if (p == V_CHORD) { rows[0]=V_CHORD; rows[1]=V_CSND; rows[2]=V_CFM; return 3; }
+    if (p == V_TEXTURE) { rows[0]=V_TEXTURE; rows[1]=V_PSND; rows[2]=V_PFM; rows[3]=V_SMOVE; return 4; }
+    if (p == V_BASS) { rows[0]=V_BASS; rows[1]=V_BSND; rows[2]=V_BFM; return 3; }
+    if (p == V_DRUMS) { rows[0]=V_DRUMS; rows[1]=V_DSND; rows[2]=V_PAT; rows[3]=V_S2MOVE; return 4; }
+    if (atm_view(ui.view)) { rows[0]=V_NSND; rows[1]=V_NSND2; rows[2]=V_AMOVE; return 3; }
+    if (ui.view == V_SPACE || ui.view == V_ESND) { rows[0]=V_SPACE; rows[1]=V_ESND; return 2; }
+    if (ui.view == V_SETUP || ui.view == V_ARC) { rows[0]=V_SETUP; rows[1]=V_ARC; return 2; }
+    if (ui.view == V_DUB || ui.view == V_KEY) { rows[0]=V_DUB; rows[1]=V_KEY; return 2; }
+    rows[0] = ui.view;
+    return 1;
+}
+static const char *control_label(int view, int col)
+{
+    const char *s = KNOB_LABEL[view][col];
+    if (str_begins(s, "Phrases")) return "Phrase";
+    if (str_begins(s, "Vibrato")) return "Vib";
+    if (str_begins(s, "Repeat A")) return "Rpt A";
+    if (str_begins(s, "Repeat B")) return "Rpt B";
+    if (str_begins(s, "Feedback")) return "Feedbk";
+    if (str_begins(s, "Echo time")) return "Time";
+    if (str_begins(s, "Transpose")) return "Transp";
+    if (str_begins(s, "MIDI out")) return "MIDI";
+    return s;
+}
+/* Paleotone ui_studio.c te_pie: a filled value indicator whose missing
+ * wedge opens symmetrically from twelve o'clock. No knob body or pointer.
+ * Adapted to the existing RGB565 canvas (Paleotone uses indexed pixels). */
+
+static int control_ratio(int k)
+{
+    int lo, hi, v = knob_get(k);
+    knob_range(k, &lo, &hi);
+    if (hi <= lo) return -1;
+    v = v < lo ? lo : v > hi ? hi : v;
+    return (v - lo) * 1000 / (hi - lo);
+}
+static void control_indicator(int32_t cx, int32_t cy, int32_t r, int32_t ratio, uint16_t color)
+{
+    int32_t dx, dy, cq = 256;
+    if (ratio >= 0) {
+        const float half = (float)(1000 - (ratio > 1000 ? 1000 : ratio)) * (0.5f * FM_TWO_PI / 1000.0f);
+        cq = (int32_t)(fm_cosf(half) * 256.0f);
+    }
+    for (dy = -r; dy <= r; dy++)
+        for (dx = -r; dx <= r; dx++) {
+            const int32_t d2 = dx*dx + dy*dy, n = -dy;
+            int on;
+            if (d2 > r*r+r) continue;
+            if (ratio < 0 || ratio >= 1000) on = 1;
+            else if (ratio <= 0) on = 0;
+            else if (cq >= 0) on = n <= 0 || n*n*65536 <= d2*cq*cq;
+            else on = n < 0 && n*n*65536 >= d2*cq*cq;
+            if (on) cv_pset(cx+dx, cy+dy, color);
+            else if (d2 >= (r-1)*(r-1)) cv_pset(cx+dx, cy+dy, K_LINE);
+        }
+}
+
+static void draw_controls(void)
+{
+    uint8_t rows[4];
+    const int home = ui.view == V_MIX && !ui.perf, env=ui.view==V_ENV, table=home||env;
+    const int n = table ? 4 : control_rows(rows);
+    const int header = table ? 40 : 48;
+    const int fixed = ui.view==V_CALLS || ui.view==V_PERF;
+    const int row_h = table ? 46 : fixed ? 44 : n > 1 ? 176/n : 88;
+    const int slots = table || fixed ? 4 : n;
+    const int radius = table ? 18 : row_h > 70 ? 26 : row_h > 50 ? 18 : row_h >= 46 ? 12 : 11;
+    const int first = env ? (ui.env_layer>=4?(int)ui.env_layer-3:0) : home && ui.track >= 4 ? (int)ui.track - 3 : 0;
+    uint32_t h = hash(0x54575243u, ui.view | (uint32_t)ui.track << 8);
+    int r, c;
+    char b[48];
+    h = hash(hash(hash(h, ui.mutes), ui.solo), ui.dirty | (uint32_t)en_playing << 1 | (uint32_t)en_frozen << 2);
+    h = hash(h, (uint32_t)proj.piece | (uint32_t)proj.par[P_TEMPO] << 8);
+    h = hash(h, plat_ms() < ui.msg_until ? ui.msg_until : 0);
+    if (ui.view == V_SETUP) h = hash(hash(h, plat_cpu_pct()), plat_cpu_peak());
+    for (r=0; r<n; r++) for (c=0; c<4; c++)
+        h = hash(h, (uint32_t)knob_get(env ? EN_ENV_BASE+(first+r)*4+c : home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c]));
+    if(env){h=hash(h,ui.env_layer);for(r=0;r<EN_ENV_LAYERS;r++)for(c=0;c<4;c++)h=hash(h,(uint32_t)(project_envelope(r,c)+1));}
+    if ((home && ui.track==5) || ui.view==V_SKIN) h=hash(h,(uint32_t)project_drum_pattern());
+    if (view_voice(ui.view) >= 0) h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
+    if (home && home_voice()>=0) h=hash(h,(uint32_t)proj.par[home_voice()]);
+    if (calls_context()) h=hash(hash(h,(uint32_t)proj.par[P_CLVOICE]),en_call_auto);
+    if (atm_view(ui.view)) h = hash(h, (uint32_t)proj.par[P_NCHAR]);
+    if (h == ui.sig[0]) return;
+    ui.sig[0] = h;
+    cv_begin(240, header, K_BG);
+    if(env){control_text(4,-4,180,&FONT_UL,"Envelope",K_TEXT);}
+    else if (home) {
+        const int voice=home_voice();
+        if (voice>=0) en_param_text(voice,proj.par[voice],b);
+        else { const char *s=en_beat_name(project_drum_pattern()); int j=0; while ((b[j]=s[j])!=0) j++; }
+        control_text(4,-4,180,&FONT_UL,b,K_TEXT);
+    } else control_text(4, -4, 180, &FONT_UL, VIEW_NAME[ui.view], K_TEXT);
+    control_text(188, 2, 50, &FONT_UM, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
+    if (table) {
+        for (c=0; c<4; c++) control_text(60+c*45, 20, 45, &FONT_UM, env ? KNOB_LABEL[V_ENV][c] : track_label(c), CONTROL_COL[c]);
+    } else {
+        const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
+        if(ui.view==V_SKIN) {
+            control_text(4,28,232,&FONT_UM,en_beat_name(project_drum_pattern()),K_ACC);
+        } else if (voice >= 0) {
+            en_param_text(voice, proj.par[voice], b);
+            control_text(4, 28, 232, &FONT_UM, b, K_ACC);
+        } else if (atm_view(ui.view)) {
+            control_text(4, 28, 232, &FONT_UM, EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR], K_ACC);
+        } else {
+            control_text(4, 28, 232, &FONT_UM, piece_name(proj.piece), K_ACC);
+        }
+    }
+    cv_blit(0, 0);
+    for (r=0; r<slots; r++) {
+        const int height = !fixed && !table && r==n-1 ? 224-header-r*row_h : row_h;
+        const int active = r<n && (table ? first+r == (env?ui.env_layer:ui.track) : rows[r] == ui.view);
+        cv_begin(240, height, active ? K_PANEL : K_BG);
+        if (r<n) {
+            if (table) {
+                const int track=env&&first+r==PT_CALLS?6:env&&first+r==EN_ENV_ATMOS?4:first+r;
+                const int muted = !env && first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r];
+                const felucca_font_t *name_font = text_w(&FONT_L, HOME_NAME[track])<=56 ? &FONT_L : &FONT_UH;
+                control_text(4, muted ? -2 : 7, 56, name_font, HOME_NAME[track], active ? K_ACC : K_TEXT);
+                if (muted) control_text(4,28,56,&FONT_US,"MUTED",K_TEXT);
+            }
+            for (c=0; c<4; c++) {
+                const int k = env ? EN_ENV_BASE+(first+r)*4+c : home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
+                if (!table) control_text(c*60+3, 0, 56, &FONT_UM, control_label(rows[r], c), CONTROL_COL[c]);
+                control_indicator(table ? 82+c*45 : c*60+30, table ? height/2 : (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
+            }
+            if (active) cv_rect(0, 0, 3, height-1, K_ACC);
+            cv_line(0, height-1, 239, height-1, K_LINE);
+        }
+        cv_blit(0, header+r*row_h);
+    }
+    if (ui.view==V_CALLS) {
+        cv_begin(240,88,K_BG);
+        for (r=0; r<4; r++) for (c=0; c<2; c++) {
+            const int creature=r+c*4;
+            char key[4]={'W',(char)('1'+creature),' ',0};
+            control_text(c*120+4,r*21,24,&FONT_UM,key,CONTROL_COL[c]);
+            control_text(c*120+30,r*21,88,&FONT_UM,pt_name(PT_CALLS,creature),K_TEXT);
+        }
+        cv_blit(0,136);
+    }
+    if (ui.view == V_PERF) {
+        cv_begin(240, 132, K_BG);
+        for (r=0; r<NLAYER; r++) {
+            char key[4] = {'W', (char)('1'+r), ' ', 0};
+            const int muted = (ui.mutes & LAYER_MUTE[r]) == LAYER_MUTE[r];
+            control_text(4, r*24, 24, &FONT_UM, key, K_ACC);
+            control_text(32, r*24, 72, &FONT_UM, LAYER_NAME[r], K_TEXT);
+            control_text(108, r*24, 40, &FONT_UM, muted ? "OFF" : "ON", K_TEXT);
+            key[0]='B';
+            control_text(152, r*24, 24, &FONT_UM, key, K_ACC);
+            control_text(180, r*24, 56, &FONT_UM, ui.solo & LAYER_MUTE[r] ? "SOLO*" : "SOLO", K_TEXT);
+        }
+        cv_blit(0, 92);
+    }
+    cv_begin(240, 16, K_BG);
+    if (plat_ms() < ui.msg_until) {
+        msg_text(ui.msg[0], ui.msg[1], b);
+        control_text(4, 0, 232, &FONT_US, b, K_ACC);
+    } else if(env){
+        control_text(4,0,232,&FONT_US,en_envelope_custom(ui.env_layer)?"CUSTOM  Below zero: Voice":"VOICE ENV  SAVE: sound",K_TEXT);
+    } else if (calls_context()) {
+        control_text(4,0,232,&FONT_S,en_call_auto ? "AUTO  B1: mode B2: stop" : "MANUAL B1: auto B2: stop",K_TEXT);
+    } else if (ui.view == V_SETUP) {
+        char a[12];
+        char *out = b;
+        const char *s = "CPU ";
+        while (*s) *out++ = *s++;
+        itoa_u(plat_cpu_pct(), a); s=a; while (*s) *out++=*s++;
+        s="% PEAK "; while (*s) *out++=*s++;
+        itoa_u(plat_cpu_peak(), a); s=a; while (*s) *out++=*s++;
+        *out++='%'; *out=0;
+        control_text(4, 0, 232, &FONT_US, b, K_TEXT);
+    } else {
+        control_text(4, 0, 232, &FONT_US, home ? piece_name(proj.piece) : ui.view == V_PERF ? "W6: mix  W7-11: moves" : "Lit row: K1-4   Button: row", K_TEXT);
+    }
+    cv_blit(0, 224);
+}
+
 void ui_init(void)
 {
     memset(&ui, 0, sizeof ui);
@@ -3154,9 +3108,13 @@ void ui_frame(void)
             draw_grid();
         draw_main();                             /* (it says the grid to a screen reader) */
     } else {
-        draw_header();
-        draw_main();
-        draw_knobs();
+        if (ui.view == V_PAT || ui.view == V_CHORDS) {
+            draw_header();
+            draw_main();
+            draw_knobs();
+        } else {
+            draw_controls();
+        }
     }
     leds();
     speak();
@@ -3166,28 +3124,40 @@ void ui_frame(void)
 
 void ui_input_only(void) { input(); }
 
-/* (BERLIN) the launch screen, the user's: NACHTFAHRT large (BERLIN's new name, the user's), "by CRANKY MAN" under
- * it, on black among a few stars, fading in; the version small at the foot. Frame f of UI_SPLASH_N, drawn whole (two
- * bands of 240 x 120) */
-static void splash_band(int f, int32_t oy)
+/* Static landscape splash: packed monochrome pixels, no audio-time animation. */
+#include "nightclaw_splash.inc"
+static void nightclaw_splash_band(int oy)
 {
-    static const uint8_t SX[14] = {18, 51, 77, 103, 139, 171, 205, 226, 33, 66, 121, 158, 190, 214},
-                         SY[14] = {22, 61, 15, 190, 31, 205, 48, 120, 150, 218, 230, 92, 168, 9};
-    int k;
-    cv_begin(240, 120, K_BG);
-    for (k = 0; k < 14; k++)
-        cv_rect(SX[k], SY[k] - oy, 1, 1, mix(K_BG, K_DIM, 3 + (k & 3)));
-    if (f >= 1)
-        text_c(120, 92 - oy, &FONT_L, "T-WRECKS", mix(K_BG, K_TEXT, f >= 8 ? 16 : 2 * f));
-    if (f >= 8)
-        text_c(120, 132 - oy, &FONT_S, "after NACHTFAHRT", mix(K_BG, K_BELL, f >= 16 ? 16 : 2 * (f - 7)));
-    if (f >= 16)
-        text_c(120, 224 - oy, &FONT_XS, EN_VERSION, K_DIM);
-    cv_blit(0, (uint32_t)oy);
+    unsigned p=0,count=0,col=0,row=0;
+    cv_begin(240,120,0);
+    while(count<NC_SPLASH_BYTES){
+        unsigned token=NC_SPLASH_RLE[p++],n=(token&127u)+1u,k;
+        uint8_t repeat=(token&128u)?NC_SPLASH_RLE[p++]:0;
+        for(k=0;k<n;k++){
+            uint8_t v=(token&128u)?repeat:NC_SPLASH_RLE[p++];
+            int y=(int)(row*240u/NC_SPLASH_N)-oy;
+            if(y<120 && y+(240/NC_SPLASH_N+1)>0){
+                unsigned b;
+                for(b=0;b<8;b++)if(v&(128u>>b)){
+                    int x=(int)((col*8u+b)*240u/NC_SPLASH_N);
+                    int x1=(int)((col*8u+b+1u)*240u/NC_SPLASH_N);
+                    int y1=(int)((row+1u)*240u/NC_SPLASH_N)-oy;
+                    cv_rect(x,y,x1-x,y1-y,C_WHITE);
+                }
+            }
+            count++;
+            if(++col==NC_SPLASH_N/8u){col=0;row++;}
+        }
+    }
+    cv_rect(0,-oy,240,40,0);
+    cv_rect(0,214-oy,240,26,0);
+    text_c(120,4-oy,&FONT_L,"NIGHTCLAW",C_WHITE);
+    text_c(120,218-oy,&FONT_S,"GENERATIVE DINOSYNTH",C_WHITE);
+    cv_blit(0,(uint32_t)oy);
 }
-
 void ui_splash(int f)
 {
-    splash_band(f, 0);
-    splash_band(f, 120);
+    if(f)return;
+    nightclaw_splash_band(0);
+    nightclaw_splash_band(120);
 }

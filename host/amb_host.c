@@ -25,7 +25,7 @@
  *                                Both print the film's time there, "@ mm:ss.s  bar N  LABEL" (the edit's cue)
  *   storefile PATH               a saved project from a file (tests/host/proj-*.bin)
  *   pingmark                     remember the ping loops (expect pingsame 1: they are as they were)
- *   splashrun                    the launch screen played out as the device does at power-on (55 ms a frame,
+ *   splashrun                    the static launch screen held for at least 3000 ms (
  *                                the music running, the UI not), then the UI started again
  *   film FILE | filmstop         record the device, 30 frames a second of simulated time, to FILE: each frame
  *                                a header (FILM_HDR words: ms, buttons held, keys held, buttons lit, keys lit,
@@ -46,6 +46,12 @@
 #include <stdint.h>
 #include <math.h>
 #include <time.h>
+#ifndef EN_WEB
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
+/* Load system headers before suppressing device-only section attributes.
+ * Stripping libc inline attributes can emit a recursive fortified read(). */
 #define __attribute__(x)
 
 /* ------------------------------------------------------------ screen --- */
@@ -209,8 +215,6 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
  * chord every 2 bars, Sequence 2 on): the energy and the high energy (first differences: brighter, higher) in eight
  * stretches, and the MIDI out as a hash */
 #ifndef EN_WEB
-#include <unistd.h>
-#include <sys/wait.h>
 #define ORPH_B (40 * 44100 / 256)
 static void orph_run(int p, int v, float *e, uint32_t *mh)
 {
@@ -551,6 +555,14 @@ static int expect(const char *what, const char *val)
         got = last_note[(atoi(what + 11) + 15) % 16];
     else if (!strncmp(what, "act", 3) && what[3] >= '0' && what[3] <= '4')   /* (BERLIN) actN: layer N's activity x100 */
         got = (int)(en_layer_act[what[3] - '0'] * 100.0f);
+    else if (!strncmp(what,"env",3) && what[3]>='0' && what[3]<='5' && what[4]>='0' && what[4]<='3' && !what[5])
+        got=project_envelope(what[3]-'0',what[4]-'0');
+    else if (!strcmp(what, "envlayer")) got=ui.env_layer;
+    else if (!strcmp(what, "beat")) got=project_drum_pattern();
+    else if (!strcmp(what, "enginebeat")) got=en_beat;
+    else if (!strcmp(what, "skins")) got=(int)en_skin_hits;
+    else if (!strcmp(what, "calls")) got=(int)en_call_hits;
+    else if (!strcmp(what, "callauto")) got=en_call_auto;
     else if (!strcmp(what, "bfx"))                /* (BERLIN) the black keys' effects and moves held (0: none) */
         got = (int)(ui.bfx | ui.mv << 16);
     else if (!strncmp(what, "fo", 2) && what[2] >= '0' && what[2] <= '4' && !what[3])   /* foN: layer N's offset x100 */
@@ -649,14 +661,14 @@ static int expect(const char *what, const char *val)
             }
     }
     else if (!strcmp(what, "gridfit")) {          /* (the voices batch) the effects grid's cells whose name is wider
-                                                  * than the cell (55 px; TWITTER fills it) (0: all fit) */
+                                                  * than the cell (56 px inside its 60 px width) (0: all fit) */
         int e;
         char t[12];
         got = 0;
         for (e = 0; e < EN_NFX; e++) {
             caps(t, GRID_CELL[e], sizeof t);
-            if (text_w(&FONT_S, t) > 55)
-                printf("  too wide: %s (%d px)\n", t, (int)text_w(&FONT_S, t)), got++;
+            if (text_w(&FONT_UN, t) > 56)
+                printf("  too wide: %s (%d px)\n", t, (int)text_w(&FONT_UN, t)), got++;
         }
     }
     else if (!strcmp(what, "nev"))                /* the noise's events that show, so far */
@@ -841,9 +853,7 @@ int main(int argc, char **argv)
             }
             enc_acc[e] += atoi(b);
             film_enc[e] += atoi(b);
-            accel_off = 1;
             run_ms(1);
-            accel_off = 0;
         } else if (!strcmp(cmd, "master"))
             master = (uint32_t)atoi(a);
         else if (!strcmp(cmd, "midi")) {
@@ -952,13 +962,10 @@ int main(int argc, char **argv)
         } else if (!strcmp(cmd, "pingmark")) {
             ping_mark = ping_hash();
         } else if (!strcmp(cmd, "splashrun")) {
-            int f;
-            ui_off = 1;
-            for (f = 1; f < UI_SPLASH_N; f++) {
-                ui_splash(f);
-                run_ms(55);
-            }
-            ui_off = 0;
+            ui_off=1;
+            ui_splash(0);
+            run_ms(UI_SPLASH_HOLD_MS);
+            ui_off=0;
             ui_init();
         } else if (!strcmp(cmd, "splash"))           /* splash N: the launch screen's frame N (shot it after) */
             ui_splash(atoi(a));

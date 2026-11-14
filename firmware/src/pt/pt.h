@@ -6,14 +6,17 @@
 #include <stdint.h>
 
 enum { PT_DRONE, PT_SEQ, PT_LEAD, PT_SEQ2, PT_NLAYER };
+enum { PT_CALLS = PT_NLAYER, PT_NPART };
+#define PT_NCALL 8
 /* the sounds each layer offers (pt.c PT_LIST's); a layer's voice knob has them after its own voices */
-#define PT_NDRONE 26
-#define PT_NSEQ 22
-#define PT_NLEAD 18
-#define PT_NSEQ2 34
-extern const uint8_t PT_N[PT_NLAYER];
+#define PT_NDRONE 30
+#define PT_NSEQ 26
+#define PT_NLEAD 22
+#define PT_NSEQ2 38
+extern const uint8_t PT_N[PT_NPART];
 
 void pt_init(void);
+void pt_clean_organ(int on); /* clean Temple support in the approved taiko scene */
 const char *pt_name(int layer, int k);          /* its name as the screen shows it (9 characters at most) */
 int pt_mono(int layer, int k);                  /* 1: a mono sound (one note at a time) */
 void pt_sound(int layer, int k);                /* the layer plays sound k of its list; k < 0: none (its own voice) */
@@ -26,3 +29,12 @@ void pt_quiet(int layer);                       /* everything it plays, now (a v
 /* the next n samples of the layer into out (written, not added); 0: nothing sounds (out left as it was) */
 int pt_render(int layer, float *out, uint32_t n);
 int pt_voices(void);                            /* Paleotone's voices sounding now, every layer's (of 8) */
+
+/* Original TRIBE kit's BOOM, SKIN and LOG models, independent of melodic voices. */
+void pt_skin_hit(int lane, int velocity, int tone, int decay);
+int pt_skin_render(float *out, uint32_t n);
+void pt_skin_quiet(void);
+
+void pt_envelope(int layer,int stage,int value);
+int pt_envelope_value(int layer,int stage);
+uint32_t pt_envelope_ms10(int value);

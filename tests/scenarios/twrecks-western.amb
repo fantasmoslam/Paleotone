@@ -1,0 +1,53 @@
+# Six western scene replacements use independently selectable drum patterns.
+wait 300
+turn PRESET 3
+wait 300
+expect piece 3
+expect par18 124
+expect par34 3
+expect par113 0
+expect beat 11
+expect enginebeat 11
+shot bone-rider.png
+turn PRESET 2
+wait 300
+expect piece 5
+expect par18 112
+expect beat 1
+turn PRESET 3
+wait 300
+expect piece 8
+expect par18 128
+expect beat 12
+turn PRESET 4
+wait 300
+expect piece 12
+expect par18 104
+expect beat 5
+turn PRESET 3
+wait 300
+expect piece 15
+expect par18 116
+expect beat 0
+turn PRESET 2
+wait 300
+expect piece 17
+expect par18 136
+expect beat 13
+spin SELECT 5
+turn ALGO -1
+wait 300
+expect beat 12
+press GLO
+wait 700
+release GLO
+wait 300
+reboot
+wait 400
+expect piece 17
+expect beat 12
+turn PRESET -15
+wait 300
+expect piece 2
+expect par18 68
+expect beat 0

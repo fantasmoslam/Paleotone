@@ -1,0 +1,20 @@
+{
+  "audio_library_id": "libfile_5b7d08364a44819198bd49833be8c453",
+  "seconds": 77.11111111111111,
+  "bpm": 54,
+  "drum_note_events": 137,
+  "simultaneous_drum_limit": 6,
+  "peak_drum_voices": 5,
+  "tail_steals_25ms_fade": 0,
+  "drum_gain": 1.2279137039395462,
+  "master_gain": 0.6036892758783655,
+  "peak_dbfs": -1.5000012507616982,
+  "rms_dbfs": -17.398770829509033,
+  "decoded_mp3_peak": 0.8180389404296875,
+  "bank_bytes": 40312,
+  "instrument_source": "Recorded taiko, compact 16 kHz mono IMA ADPCM, decoded for this desktop audition",
+  "license": "CC BY-SA 4.0",
+  "credit": "Taiko: Subaqueous, SCC Taiko Drums by S. Christian Collins, Floe port. Adapted: mono, trim, resample, IMA ADPCM, sequencing and mix. Preview CC BY-SA 4.0. Sources and credits: https://github.com/floe-audio/Taiko-Drums",
+  "intro_drums_exposed_s": 3.2,
+  "desktop_peak_control": "2.5 dB input, 5 ms lookahead, 100 ms release, -1.5 dBFS ceiling"
+}

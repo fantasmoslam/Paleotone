@@ -40,6 +40,7 @@ static uint32_t cpu1_ticks(void) { return 0; }
 #include "engines.c"
 #include "drums.c"
 #include "params.c"
+static uint8_t pt_env_custom[PT_NPART],pt_env_base[PT_NPART][4],pt_env_override[PT_NPART][4];
 #include "voice.c"
 
 /* ---- the lists: each layer's sounds, in the order its knob turns through them (dark first: pads and drones for the
@@ -60,6 +61,8 @@ static const pt_snd_t DRONE_SND[PT_NDRONE] = {
     {0, "STAR SKY", "Star Sky", 0.806f}, {2, "RESIN PAD", "Resin Pad", 1.019f}, {6, "PANGAEA PAD", "Pangaea", 1.149f},
     {6, "SKY STRINGS", "Sky Str", 0.877f}, {6, "SPORE CLOUD", "Spores", 1.271f}, {6, "AURORA PAD", "Aurora", 0.974f},
     {9, "GLACIER PAD", "Glacier", 2.556f}, {7, "TEMPLE ORGAN", "Temple", 1.327f},
+    {0, "CONCERT CELLO", "Cello", 1.0f}, {0, "DARK CELLO", "Cello Low", 1.0f},
+    {0, "DEEP SUB PAD", "Sub Pad", 0.65f}, {0, "FAT BASS PAD", "Fat Pad", 0.85f},
 };
 static const pt_snd_t SEQ_SND[PT_NSEQ] = {
     {10, "KALIMBA", "Kalimba", 1.975f}, {10, "LOG MARIMBA", "Log Bars", 2.848f}, {10, "MARIMBA", "Marimba", 3.886f},
@@ -69,6 +72,8 @@ static const pt_snd_t SEQ_SND[PT_NSEQ] = {
     {9, "AMBER BELLS", "Amber", 0.893f}, {9, "BELL", "FM Bell", 0.935f}, {9, "TINE EP", "Tine EP", 0.638f}, {2, "BELL", "Bell", 1.027f},
     {2, "WIRE", "Wire", 0.558f}, {2, "ICE CRYSTAL", "Crystal", 0.487f}, {3, "EGG ARP", "Egg Arp", 0.623f}, {6, "RING BELL", "Ring Bell", 2.323f},
     {6, "PRIMAL STAB", "Primal", 1.187f}, {0, "SINE KEY", "Sine Key", 0.815f},
+    {0, "CONCERT CELLO", "Cello", 1.0f}, {0, "DARK CELLO", "Cello Low", 1.0f},
+    {0, "DEEP SUB PAD", "Sub Pad", 0.65f}, {0, "FAT BASS PAD", "Fat Pad", 0.85f},
 };
 static const pt_snd_t LEAD_SND[PT_NLEAD] = {
     {9, "MAMMOTH", "Mammoth", 2.097f}, {9, "MAMMOTH CALL", "Mammoth 2", 1.822f}, {6, "BRONTO HORN", "Bronto", 2.084f},
@@ -77,6 +82,8 @@ static const pt_snd_t LEAD_SND[PT_NLEAD] = {
     {2, "TITAN BRASS", "Titan", 1.146f}, {6, "LAVA BRASS", "Lava", 0.685f}, {9, "BRASS", "FM Brass", 1.766f},
     {0, "AMBER LEAD", "Amber", 0.617f}, {0, "SAW LEAD", "Saw Lead", 1.014f}, {2, "RESO", "Reso", 3.451f}, {3, "WAVE LEAD", "Wave Lead", 2.075f},
     {6, "SYNC LEAD", "Sync Lead", 1.059f},
+    {0, "CONCERT CELLO", "Cello", 1.0f}, {0, "DARK CELLO", "Cello Low", 1.0f},
+    {0, "DEEP SUB PAD", "Sub Pad", 0.65f}, {0, "FAT BASS PAD", "Fat Pad", 0.85f},
 };
 static const pt_snd_t BASS_SND[PT_NSEQ2 - PT_NSEQ] = {   /* (Sequence 2's: these, then the Sequence's) */
     {9, "TAR PIT BASS", "Tar Bass", 0.977f}, {9, "TAR GROWL", "Tar Growl", 1.142f}, {0, "SUB BASS", "Sub Bass", 0.590f},
@@ -84,15 +91,22 @@ static const pt_snd_t BASS_SND[PT_NSEQ2 - PT_NSEQ] = {   /* (Sequence 2's: these
     {3, "WAVE BASS", "Wave Bass", 1.552f}, {5, "WOW BASS", "Wow Bass", 0.638f}, {6, "FAT BASS", "Fat Bass", 1.439f}, {9, "FM BASS", "FM Bass", 1.308f},
     {0, "SQR BASS", "Sqr Bass", 1.016f}, {0, "ACID", "Acid", 1.627f},
 };
-const uint8_t PT_N[PT_NLAYER] = {PT_NDRONE, PT_NSEQ, PT_NLEAD, PT_NSEQ2};
+static const pt_snd_t CALL_SND[PT_NCALL] = {
+    {12, "DISTANT HERD", "Herd", 0.455f}, {12, "RAPTOR CHAT", "Raptor", 1.027f},
+    {12, "CREST HOOT", "Hoot", 0.386f}, {12, "HERD MOAN", "Moan", 0.607f},
+    {12, "NEST CHIRPS", "Nest", 1.717f}, {12, "SWAMP CROAK", "Croak", 1.030f},
+    {12, "HADRO HORN", "Hadro", 0.366f}, {12, "SAURO SNORT", "Snort", 1.884f},
+};
+const uint8_t PT_N[PT_NPART] = {PT_NDRONE, PT_NSEQ, PT_NLEAD, PT_NSEQ2, PT_NCALL};
 static const pt_snd_t *snd_of(int layer, int k)
 {
-    if ((unsigned)layer >= PT_NLAYER || k < 0 || k >= PT_N[layer])
+    if ((unsigned)layer >= PT_NPART || k < 0 || k >= PT_N[layer])
         return 0;
     switch (layer) {
     case PT_DRONE: return &DRONE_SND[k];
     case PT_SEQ: return &SEQ_SND[k];
     case PT_LEAD: return &LEAD_SND[k];
+    case PT_CALLS: return &CALL_SND[k];
     default: return k < PT_NSEQ2 - PT_NSEQ ? &BASS_SND[k] : &SEQ_SND[k - (PT_NSEQ2 - PT_NSEQ)];
     }
 }
@@ -128,7 +142,7 @@ typedef struct {
     uint32_t gl[NGATE];
     float buf[CTL];
 } pt_layer_t;
-static pt_layer_t lay[PT_NLAYER];
+static pt_layer_t lay[PT_NPART];
 
 void pt_init(void)
 {
@@ -138,8 +152,9 @@ void pt_init(void)
     for (i = 0; i < NTRK; i++)
         for (k = 0; k < P_E0; k++)
             trk[i].p[k] = TP[k].def;
+    memset(pt_env_custom,0,sizeof pt_env_custom);memset(pt_env_override,0,sizeof pt_env_override);
     fm6_init();
-    for (i = 0; i < PT_NLAYER; i++) {
+    for (i = 0; i < PT_NPART; i++) {
         lay[i].snd = 0;
         lay[i].pos = CTL;
     }
@@ -185,11 +200,27 @@ static void load(track_t *t, uint32_t ei, uint32_t pi)
     fm6_poll();
 }
 
+static void pt_env_apply(int layer){
+    static const uint8_t ids[4]={P_ATK,P_DEC,P_SUS,P_REL};int s;
+    pt_env_custom[layer]=0;
+    for(s=0;s<4;s++){int v=pt_env_override[layer][s];trk[layer].p[ids[s]]=v?v-1:pt_env_base[layer][s];pt_env_custom[layer]|=v!=0;}
+    if(pt_env_custom[layer])trk[layer].p[P_ESYNC]=0;
+}
+void pt_envelope(int layer,int stage,int value){
+    if((unsigned)layer>=PT_NPART||(unsigned)stage>=4)return;
+    pt_env_override[layer][stage]=(uint8_t)(value<0?0:value>127?128:value+1);pt_env_apply(layer);
+}
+int pt_envelope_value(int layer,int stage){
+    if((unsigned)layer>=PT_NPART||(unsigned)stage>=4)return 0;
+    return pt_env_override[layer][stage]?pt_env_override[layer][stage]-1:pt_env_base[layer][stage];
+}
+uint32_t pt_envelope_ms10(int value){return TIME_MS_X10[(unsigned)value<128?value:0];}
+
 void pt_sound(int layer, int k)
 {
     const pt_snd_t *s;
     int pi;
-    if ((unsigned)layer >= PT_NLAYER)
+    if ((unsigned)layer >= PT_NPART)
         return;
     s = snd_of(layer, k);
     pi = s ? preset_of(s) : -1;
@@ -201,6 +232,9 @@ void pt_sound(int layer, int k)
     if (lay[layer].snd == k + 1)
         return;
     load(&trk[layer], s->e, (uint32_t)pi);
+    {static const uint8_t ids[4]={P_ATK,P_DEC,P_SUS,P_REL};int j;for(j=0;j<4;j++)pt_env_base[layer][j]=(uint8_t)trk[layer].p[ids[j]];pt_env_apply(layer);}
+    if (layer == PT_CALLS) trk[layer].p[P_VOICE] = V_MONO;
+    if (s->e == 0 && pi >= 21) trk[layer].p[P_ED_FX] = 0; /* new voices have explicit list gains */
     lay[layer].tg = s->g > 0.0f ? s->g : 1.0f;
     if (layer == PT_SEQ2 && k >= PT_NSEQ2 - PT_NSEQ)
         lay[layer].tg *= 1.62f;                     /* (the Sequence's sounds on Sequence 2, lower: +4.2 dB, their median
@@ -208,14 +242,31 @@ void pt_sound(int layer, int k)
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
     lay[layer].snd = (uint8_t)(k + 1);
 }
-int pt_is(int layer) { return (unsigned)layer < PT_NLAYER ? lay[layer].snd : 0; }
+void pt_clean_organ(int on)
+{
+    track_t *t=&trk[PT_DRONE];
+    if(lay[PT_DRONE].snd!=26u)return;
+    t->p[P_E1]=on?-8:6;t->p[P_E3]=on?-1:2;t->p[P_E5]=on?0:8;t->p[P_E6]=on?0:10;t->p[P_E7]=on?0:1;
+}
+int pt_is(int layer) { return (unsigned)layer < PT_NPART ? lay[layer].snd : 0; }
 
+/* Drone chords sit high in the composer: give the new lower instruments
+ * their intended register. Keyboard and sequence notes keep their written pitch. */
+static int instrument_note(int layer, int note)
+{
+    if (layer == PT_DRONE && lay[layer].snd >= 27u) {
+        int down = lay[layer].snd >= 29u ? 24 : 12;
+        return note >= down ? note - down : 0;
+    }
+    return note;
+}
 void pt_note_on(int layer, int note, int vel, uint32_t gate)
 {
     pt_layer_t *L;
     int i, f = -1;
-    if ((unsigned)layer >= PT_NLAYER || !lay[layer].snd || note < 0 || note > 127)
+    if ((unsigned)layer >= PT_NPART || !lay[layer].snd || note < 0 || note > 127)
         return;
+    note = instrument_note(layer, note);
     L = &lay[layer];
     for (i = 0; i < NGATE; i++)                     /* (the same note again: its old gate gone) */
         if (L->gl[i] && L->gn[i] == note)
@@ -239,8 +290,9 @@ void pt_note_on(int layer, int note, int vel, uint32_t gate)
 void pt_note_off(int layer, int note)
 {
     int i;
-    if ((unsigned)layer >= PT_NLAYER || !lay[layer].snd)
+    if ((unsigned)layer >= PT_NPART || !lay[layer].snd)
         return;
+    note = instrument_note(layer, note);
     for (i = 0; i < NGATE; i++)
         if (lay[layer].gl[i] && lay[layer].gn[i] == note)
             lay[layer].gl[i] = 0;
@@ -250,7 +302,7 @@ void pt_notes_off(int layer)
 {
     track_t *t;
     uint32_t i;
-    if ((unsigned)layer >= PT_NLAYER)
+    if ((unsigned)layer >= PT_NPART)
         return;
     t = &trk[layer];
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
@@ -263,7 +315,7 @@ void pt_quiet(int layer)
 {
     track_t *t;
     uint32_t i;
-    if ((unsigned)layer >= PT_NLAYER)
+    if ((unsigned)layer >= PT_NPART)
         return;
     t = &trk[layer];
     memset(lay[layer].gl, 0, sizeof lay[layer].gl);
@@ -311,7 +363,7 @@ int pt_render(int layer, float *out, uint32_t n)
     pt_layer_t *L;
     int any = 0;
     uint32_t j = 0;
-    if ((unsigned)layer >= PT_NLAYER || !lay[layer].snd)
+    if ((unsigned)layer >= PT_NPART || !lay[layer].snd)
         return 0;
     L = &lay[layer];
     while (j < n) {
@@ -331,6 +383,57 @@ int pt_render(int layer, float *out, uint32_t n)
             k = n - j;
         while (k--)
             out[j++] = L->buf[L->pos++];
+    }
+    return any;
+}
+
+/* Reuse Paleotone's exact TRIBE lane models without allocating a fifth
+ * general-purpose synth arena or consuming the eight melodic voices. */
+static struct {
+    dv_coef_t coef;
+    dv_voice_t voice;
+    float gain;
+} skin[3];
+static float skin_buf[CTL];
+static uint32_t skin_pos = CTL;
+void pt_skin_quiet(void)
+{
+    memset(skin, 0, sizeof skin);
+    memset(skin_buf, 0, sizeof skin_buf);
+    skin_pos = CTL;
+}
+void pt_skin_hit(int lane, int velocity, int tone, int decay)
+{
+    static const uint8_t role[3] = {DV_KICK, DV_SNARE, DV_TOM};
+    dv_param_t p;
+    uint32_t type;
+    if ((unsigned)lane >= 3u) return;
+    type = DV_KTYPE(DV_NKIT, role[lane]);
+    dv_default(&p, type);
+    p.tone = (uint8_t)clamp(tone * 127 / 100, 0, 127);
+    p.decay = (uint8_t)clamp(decay * 127 / 100, 0, 127);
+    dv_setup(&skin[lane].coef, &p);
+    skin[lane].gain = (float)clamp(velocity, 1, 127) * (1.0f / (127.0f * 32768.0f));
+    dv_trigger(&skin[lane].voice);
+}
+int pt_skin_render(float *out, uint32_t n)
+{
+    uint32_t j=0, i, l;
+    int any=0;
+    while (j<n) {
+        if (skin_pos >= CTL) {
+            int32_t y[CTL];
+            for (i=0; i<CTL; i++) skin_buf[i]=0.0f;
+            for (l=0; l<3; l++) {
+                if (!skin[l].voice.live && !skin[l].voice.trig) continue;
+                dv_run(&skin[l].coef, &skin[l].voice, 0, y, CTL);
+                for (i=0; i<CTL; i++) skin_buf[i]+=(float)y[i]*skin[l].gain;
+            }
+            skin_pos=0;
+        }
+        out[j]=skin_buf[skin_pos++];
+        if (out[j] != 0.0f) any=1;
+        j++;
     }
     return any;
 }

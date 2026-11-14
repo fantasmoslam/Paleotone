@@ -1,0 +1,51 @@
+{
+  "description": "Original fixed-score desktop audition. Same Paleotone voice DSP, offline balance and desktop room; not generative firmware or a hardware CPU test.",
+  "audio_library_id": "libfile_a65ed02322f08191950d1a7044a1dd49",
+  "voices": {
+    "bass": "Fat Bass / MIDI 24 and 25",
+    "body": "Temple Organ / bare fifths and selected minor thirds",
+    "horn": "Titan Brass",
+    "drums": "TRIBE BOOM/LOG"
+  },
+  "max_melodic_voices": 6,
+  "render_events": 49,
+  "seconds": 77.11111111111111,
+  "bpm": 54,
+  "peak_dbfs": -2,
+  "rms_dbfs": -17.45,
+  "static_master_gain": 0.8552106689027956,
+  "stems": [
+    {
+      "role": "bass",
+      "raw_active_rms_dbfs": -15.41,
+      "gain": 0.5892,
+      "target_active_dbfs": -20
+    },
+    {
+      "role": "body",
+      "raw_active_rms_dbfs": -8.52,
+      "gain": 0.3169,
+      "target_active_dbfs": -18.5
+    },
+    {
+      "role": "horn",
+      "raw_active_rms_dbfs": -14.11,
+      "gain": 0.4032,
+      "target_active_dbfs": -22
+    },
+    {
+      "role": "drums",
+      "raw_active_rms_dbfs": -18.98,
+      "gain": 0.5608,
+      "target_active_dbfs": -24
+    }
+  ],
+  "sections_s": [
+    0,
+    17.77777777777778,
+    35.55555555555556,
+    44.44444444444444,
+    62.22222222222222,
+    71.11111111111111
+  ]
+}

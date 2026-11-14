@@ -1,0 +1,57 @@
+# New bank and both auxiliary Home rows survive saving and rebooting.
+wait 300
+expect piece 0
+expect par131 0
+expect par136 40
+spin SELECT 6
+wait 250
+spin K1 4
+wait 250
+expect par136 44
+shot calls-home.png
+turn ALGO 1
+wait 250
+expect par138 1
+turn PRESET 1
+wait 250
+expect piece 1
+expect par131 90
+expect par18 54
+wait 6000
+expect skins >8
+spin SELECT -1
+wait 250
+spin K1 -10
+wait 250
+expect par131 80
+shot skin-home.png
+tap SAVE
+wait 250
+expect view 26
+shot skin-controls.png
+tap SAVE
+wait 250
+expect view 27
+shot call-controls.png
+turn PRESET 18
+wait 250
+expect piece 19
+press GLO
+wait 700
+release GLO
+wait 300
+expect dirty 0
+reboot
+wait 500
+expect piece 19
+turn PRESET -19
+wait 300
+expect piece 0
+expect par136 44
+expect par138 1
+turn PRESET 1
+wait 300
+expect par131 80
+turn PRESET 19
+wait 300
+expect piece 0

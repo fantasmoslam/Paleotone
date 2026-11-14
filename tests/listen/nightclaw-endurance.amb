@@ -1,0 +1,343 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Extended production-bank coverage: 60 minutes across all twenty scenes,
+# followed by 12 minutes with the four appended Lead instruments.
+# Host simulation checks output headroom and continued output; it does not
+# measure physical FM-1 deadlines, USB stability or audible sound quality.
+wait 300
+expect piece 0
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 1
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 2
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 3
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 4
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 5
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 6
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 7
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 8
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 9
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 10
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 11
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 12
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 13
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 14
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 15
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 16
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 17
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 18
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+spin PRESET 1
+wait 300
+expect piece 19
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 60000
+key w0 up
+key w4 up
+key w7 up
+wait 120000
+expect peak_db_max -0.1
+expect peak_db_min -50
+reboot
+wait 300
+spin SELECT 2
+turn ALGO 18
+wait 300
+expect par34 28
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 120000
+key w0 up
+key w4 up
+key w7 up
+wait 60000
+expect peak_db_max -0.1
+expect peak_db_min -50
+turn ALGO 1
+wait 300
+expect par34 29
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 120000
+key w0 up
+key w4 up
+key w7 up
+wait 60000
+expect peak_db_max -0.1
+expect peak_db_min -50
+turn ALGO 1
+wait 300
+expect par34 30
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 120000
+key w0 up
+key w4 up
+key w7 up
+wait 60000
+expect peak_db_max -0.1
+expect peak_db_min -50
+turn ALGO 1
+wait 300
+expect par34 31
+peakreset
+key w0 down
+key w4 down
+key w7 down
+wait 120000
+key w0 up
+key w4 up
+key w7 up
+wait 60000
+expect peak_db_max -0.1
+expect peak_db_min -50

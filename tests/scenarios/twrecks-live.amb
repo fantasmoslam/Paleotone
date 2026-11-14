@@ -1,0 +1,62 @@
+# Home voice edits target each selected instrument and survive reboot.
+wait 300
+expect callauto 0
+turn ALGO 1
+wait 200
+expect par22 7
+spin SELECT 1
+turn ALGO 1
+wait 200
+expect par33 22
+spin SELECT 1
+turn ALGO 1
+wait 200
+expect par34 11
+spin SELECT 1
+turn ALGO 1
+wait 200
+expect par35 19
+spin SELECT 1
+turn ALGO 1
+wait 200
+expect par110 1
+spin SELECT 2
+wait 200
+expect calls 0
+tapkey w0
+wait 200
+expect calls 1
+expect par138 0
+expect bfx 0
+tapkey w7
+wait 200
+expect calls 2
+expect par138 7
+tap SAVE
+wait 200
+expect view 28
+shot creature-keys.png
+tapkey b0
+wait 200
+expect callauto 1
+expect bfx 0
+tapkey b0
+wait 200
+expect callauto 0
+tapkey b1
+wait 200
+expect bfx 0
+press GLO
+wait 700
+release GLO
+wait 300
+expect dirty 0
+reboot
+wait 500
+expect callauto 0
+expect par22 7
+expect par33 22
+expect par34 11
+expect par35 19
+expect par110 1
+expect par138 7

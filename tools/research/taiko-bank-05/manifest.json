@@ -1,0 +1,46 @@
+[
+  {
+    "file": "taiko-0.wav",
+    "source": "Taiko Drum Hit 1-27.flac",
+    "bytes": 10078,
+    "decoded_seconds": 1.230952380952381,
+    "source_trim_start_s": 0,
+    "sha256": "94624097def49d82f004ec8bbd0bdcc4a0df426bc201526a3a44717657a3d586",
+    "source_url": "https://github.com/floe-audio/Taiko-Drums/blob/main/library/Samples/Taiko%20Drum%20Hit%201-27.flac",
+    "source_blob_sha": "68200e9df4899d443c03cf96789d204b484a4607",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "file": "taiko-1.wav",
+    "source": "Taiko Drum Hit 1-28.flac",
+    "bytes": 10078,
+    "decoded_seconds": 1.230952380952381,
+    "source_trim_start_s": 0,
+    "sha256": "d8b8b11ee5fb8dba0f068e63a28d803e4eea05008bc69a52639389cdac47bb15",
+    "source_url": "https://github.com/floe-audio/Taiko-Drums/blob/main/library/Samples/Taiko%20Drum%20Hit%201-28.flac",
+    "source_blob_sha": "0f3549e61d25d32221694bbf0d4ce61c6297184c",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "file": "taiko-2.wav",
+    "source": "Taiko Drum Hit 1-18.flac",
+    "bytes": 10078,
+    "decoded_seconds": 1.230952380952381,
+    "source_trim_start_s": 0,
+    "sha256": "f6e9ee78cdd6f881f9e9d75945e931bb40a5df36f0cd19c27d7cae68c2004cd7",
+    "source_url": "https://github.com/floe-audio/Taiko-Drums/blob/main/library/Samples/Taiko%20Drum%20Hit%201-18.flac",
+    "source_blob_sha": "205d9092ffaae18480e4885f7fb2fb9c36471058",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "file": "taiko-3.wav",
+    "source": "Taiko Drum Hit 2-7.flac",
+    "bytes": 10078,
+    "decoded_seconds": 1.230952380952381,
+    "source_trim_start_s": 0,
+    "sha256": "80c3ce58e0c2c9345d86169a7c20ab1a31fc6b1f3fe2e0b45f6d993fb9f43791",
+    "source_url": "https://github.com/floe-audio/Taiko-Drums/blob/main/library/Samples/Taiko%20Drum%20Hit%202-7.flac",
+    "source_blob_sha": "748a906e8198487d71153aa181621491273d9fb9",
+    "license": "CC BY-SA 4.0"
+  }
+]

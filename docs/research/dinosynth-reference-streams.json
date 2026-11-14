@@ -1,0 +1,101 @@
+[
+  {
+    "id": "01-diplodocus",
+    "title": "Prowl of the Concavenator",
+    "album": "diplodocus",
+    "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy",
+    "track_url": "https://diplodocus.bandcamp.com/track/prowl-of-the-concavenator",
+    "duration": 260.308,
+    "bytes": 4165798
+  },
+  {
+    "id": "02-diplodocus",
+    "title": "Tanystropheus' Reign",
+    "album": "diplodocus",
+    "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy",
+    "track_url": "https://diplodocus.bandcamp.com/track/tanystropheus-reign",
+    "duration": 171.692,
+    "bytes": 2748080
+  },
+  {
+    "id": "03-diplodocus-b",
+    "title": "Return of the Thunder Lizard",
+    "album": "diplodocus-b",
+    "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy-b-side",
+    "track_url": "https://diplodocus.bandcamp.com/track/return-of-the-thunder-lizard",
+    "duration": 223.038,
+    "bytes": 3569788
+  },
+  {
+    "id": "04-diplodocus-b",
+    "title": "Primal Rage",
+    "album": "diplodocus-b",
+    "source": "https://diplodocus.bandcamp.com/album/slow-and-heavy-b-side",
+    "track_url": "https://diplodocus.bandcamp.com/track/primal-rage",
+    "duration": 239.454,
+    "bytes": 3832266
+  },
+  {
+    "id": "05-thagomizer",
+    "title": "Largest To Live",
+    "album": "thagomizer",
+    "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+    "track_url": "https://thagomizer.bandcamp.com/track/largest-to-live",
+    "duration": 217.752,
+    "bytes": 3484942
+  },
+  {
+    "id": "06-thagomizer",
+    "title": "Migration Of The Camarasaurus",
+    "album": "thagomizer",
+    "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+    "track_url": "https://thagomizer.bandcamp.com/track/migration-of-the-camarasaurus",
+    "duration": 271.515,
+    "bytes": 4345102
+  },
+  {
+    "id": "07-thagomizer",
+    "title": "Impact Winter",
+    "album": "thagomizer",
+    "source": "https://thagomizer.bandcamp.com/album/mesozoic-mood-music",
+    "track_url": "https://thagomizer.bandcamp.com/track/impact-winter",
+    "duration": 420.8,
+    "bytes": 6733739
+  },
+  {
+    "id": "08-synthosaurus",
+    "title": "Tears of Flasmosaurus",
+    "album": "synthosaurus",
+    "source": "https://synthosaurus.bandcamp.com/album/metalosauric-crush",
+    "track_url": "https://synthosaurus.bandcamp.com/track/tears-of-flasmosaurus",
+    "duration": 324.001,
+    "bytes": 5185200
+  },
+  {
+    "id": "09-synthosaurus",
+    "title": "Million Years of Terror (Alternative Version)",
+    "album": "synthosaurus",
+    "source": "https://synthosaurus.bandcamp.com/album/metalosauric-crush",
+    "track_url": "https://synthosaurus.bandcamp.com/track/million-years-of-terror-alternative-version",
+    "duration": 172.002,
+    "bytes": 2753096
+  },
+  {
+    "id": "10-synthosaurus-war",
+    "title": "Dinopocalypse",
+    "album": "synthosaurus-war",
+    "source": "https://synthosaurus.bandcamp.com/album/dino-war",
+    "track_url": "https://synthosaurus.bandcamp.com/track/dinopocalypse",
+    "duration": 276.008,
+    "bytes": 4416991
+  },
+  {
+    "id": "11-thagomizer-titans",
+    "title": "Thunder Lizard",
+    "album": "thagomizer-titans",
+    "source": "https://thagomizer.bandcamp.com/album/time-of-the-titans",
+    "track_url": "https://thagomizer.bandcamp.com/track/thunder-lizard",
+    "duration": 313.787,
+    "bytes": 5021778
+  }
+]

@@ -1,139 +1,39 @@
-# NACHTFAHRT for the M-VAVE FM-1
+# NightClaw for the M-VAVE FM-1
 
-![NACHTFAHRT](docs/img/site/banner.jpg)
+![NightClaw — a raptor within a moonlit prehistoric jungle](docs/assets/nightclaw-jungle.png)
 
-**[Install](https://fartypants.github.io/fm1-nachtfahrt/install/)** (Chrome or Edge, also Chrome on Android or Chromebook; the FM-1
-on USB) · **[Try it in the browser](https://fartypants.github.io/fm1-nachtfahrt/emu/)** ·
-**[Manual](https://fartypants.github.io/fm1-nachtfahrt/manual/)** ·
-**[Website](https://fartypants.github.io/fm1-nachtfahrt/)**
+A generative dinosaur synth with resonant taiko drums, western/tribal scenes, selectable instruments and playable creature calls. RAPTOR NIGHT and six western scenes are the approved musical reference. The guarded two-core audio candidate plays the previously overloading Lead test cleanly on the tested FM-1.
 
-## What the fahrt?
-NACHTFAHRT turns the M-VAVE FM-1 into a generative Berlin School machine, after the 1970s music of
-Tangerine Dream, Klaus Schulze and Ashra: long, hypnotic pieces, repeating synthesizer sequences,
-slowly evolving hypnotic textures, a strong sense of space. It plays itself from the moment it's switched on, but you
-can play with it: the white keys give you the melody, always in the piece's key.
-It was called BERLIN while it was being built; but NACHTFAHRT (however you want to pronounce it) is just the right name.
+**[Quick start](docs/TWRECKS-QUICKSTART.md)** · **[Current features](TWRECKS.md)** · **[Completion checks](docs/TWRECKS-COMPLETION-CHECKLIST.md)** · **[Development PR](https://github.com/fantasmoslam/Paleotone/pull/41)**
 
-## VIDEO (click to play)
+## Play in your browser
 
-[![NACHTFAHRT on the FM-1 — watch on YouTube](docs/img/site/video.jpg)](https://youtu.be/OLXYHRydniw)
+The [NightClaw browser player](https://fantasmoslam.github.io/Paleotone/nightclaw/) is a clickable physical FM-1 panel, following Paleotone’s emulator: knobs, buttons, touch keys and the live firmware screen. Its [separate visual guide](https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html) covers the instrument in nine illustrated chapters. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The project page is published on GitHub Pages.
 
-## Why?
-Cranky Man loves this "Berlin School" thing, with all its repetition and echoing, evolving plucks and drones and whatnots, because it puts him to sleep, and if there is one thing that a Cranky Man needs, it is sleep. Lots of it. Usually around 15 hours per week. And now it can put you to sleep, too!
+The [tablet / fullscreen view](https://fantasmoslam.github.io/Paleotone/nightclaw/?view=tablet) fills the viewport with larger controls and the live screen, without the FM-1 casing.
 
-<img width="1102" height="709" alt="image" src="https://github.com/user-attachments/assets/f64bdf21-ec1d-4225-835f-0af762f5a676" />
+## Play
 
-The whole idea behind this music generator is that IF you are NOT put to sleep by the lead sound (which invents its own melody), then when you start playing, it will listen, and then respond to your musical "call" with its own version of the musical phrase.
+Turn PRESETS to choose a scene. On Home, SELECT chooses a track; ALGORITHM chooses its instrument, or the beat when Skin is selected. The four right encoders edit that row. Play the Lead on the white keys, or select Calls for manual creatures.
 
-## What it does?
-- a **Sequence** of up to 16 steps on a plucked analog-style voice (2600, Moog, Synthi, Pulse, Glass), a
-  plucked string (Pluck) or one of ten FM voices (fm1_open's recipes: FM Keys, FMMarimba, FM Vibes and more),
-  its filter wandering slowly, its notes **repeated** at the echo's times (a dotted eighth by default, the
-  classic Berlin School echo), so sparse notes fill in the spaces;
-- **Sequence 2**, often a step shorter, so the two drift apart and meet again, and with Motion an octave up or
-  down now and then, for a section;
-- a **Drone**: a chord on two banks of voices (Organ, Strings, Horn, Saws, Glass, or a Choir whose vowel moves
-  with the Drone's filter) with a pedal under it, a
-  phaser and a slow walk from chord to chord;
-- a **Lead**: one gliding voice (Odyssey, Mini, Flute, Theremin, Synthi, three FM voices, or a Choir) playing dreamy calls and answers deep in
-  the reverb and the echo; it remembers its motifs and returns to the piece's theme (how much it keeps: **Memory**).
-  You can also play it on the white keys, in the scale: three notes or more and a pause become its theme, and its
-  next ideas grow out of yours, straying further until they are its own again;
-- an **Atmosphere**: Wind, Surf, Space, Air, Tape, Drops, Hail, Stereo Rain (a recording of rain) or Water (a recording of the water at Umeda) (or none);
-- an **arc**: a piece opens from the drone (each layer's filter rising from closed), flows, lets the Lead take
-  over and crosses a bridge in the middle, where the layers' filters part and come together. It never ends by
-  itself: it repeats for ever;
-- **filter motion**: every layer's filter moves on its own clock, always relative to where you've set its
-  Cutoff, so the layers diverge and converge, and you can turn the knob at any moment. The screen shows it.
+The twenty-scene bank includes BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER. Fourteen drum patterns and the melodic voices are independently selectable and saved per scene. Cello, Cello Low, Sub Pad and Fat Pad are the last four instruments on each melodic track.
 
-Listen, and play: let it run for hours, or join in. Play the melody on the white keys over the sequences and the
-drone, sweep the filters on the black keys, pick a piece, change its key and tempo, thin or fill the sequences,
-push the echo, mute and solo the layers.
+**Envelope editing:** on Home select a track and tap SAVE. SELECT chooses the row; the four right encoders edit Attack, Decay, Sustain and Release. Overrides save per scene and work on native and imported voices. [Envelope behavior and validation](docs/NIGHTCLAW-ENVELOPE-AUDIT.md).
 
-NACHTFAHRT is a fork of [DUB-1](https://github.com/sbegueria/fm1-dub), itself a fork of
-[AMB-1](https://github.com/charlesvestal/fm1-amb), Charles Vestal's generative ambient firmware for the FM-1. It
-keeps their platform, panel, echo, plate and much of the engine.
+**Saving:** hold GLO for about half a second and release. A short GLO tap opens Setup; holding about 1.5 seconds resets the current scene. The physical SAVE button opens sound pages.
 
-**Status: version 1.0** (see [the releases](https://github.com/FartyPants/fm1-nachtfahrt/releases)). It
-runs on the FM-1, installed from the [web installer](https://fartypants.github.io/fm1-nachtfahrt/install/), and in the
-[browser emulator](https://fartypants.github.io/fm1-nachtfahrt/emu/), from the same code.
+## Candidate installation and build
 
-## The pieces
+Installed source **f9b11d6** passed [full CI](https://github.com/fantasmoslam/Paleotone/actions/runs/43139217653). The [published candidate](https://github.com/fantasmoslam/Paleotone/blob/1086a04d6dbda6ca95f6b8cc07ec67a75ca310f2/nightclaw-FM-1_942.fwsc) matches the installed package by SHA-256; its fixed output commit and checksum are recorded in the [completion checklist](docs/TWRECKS-COMPLETION-CHECKLIST.md). Product identity remains FM-1_942.
 
-| # | Piece | After | Key, tempo | |
-|---|---|---|---|---|
-| 1 | Timewind | Schulze, *Bayreuth Return* | D minor, 96 | Two sequences of 16 and 15, an organ through the phaser, a long opening (the Sequence's filter takes 32 bars to open), a wider reverb |
-| 2 | Wahnfried | Schulze, *Wahnfried 1883* | B♭ Dorian, 80 | Strings drifting, the roots walking with no home, a faint heartbeat of sequences under them, a theremin lead; the Drone's filter is the main movement |
-| 3 | Phaedra | Tangerine Dream, *Phaedra* | D minor, 149 | A Moog bass line of 16 over a second line of 15, a choir, flutes, much filter movement; the Sequence opens over 16 bars, Sequence 2 is straight in |
-| 4 | Rubycon | Tangerine Dream, *Rubycon* | F minor, 144 | Dark organ, two sequences of 8 (the 2600, two octaves down) and 7 rising out of the drone, the Synthi lead: the Sequence opens over 16 bars, Sequence 2 after it, over 32 |
-| 5 | Stratosfear | Tangerine Dream, *Stratosfear* | E minor, 138 | Brighter and driving, two sequences interlocking, straight in, the Lead forward |
-| 6 | Sunrain | Ashra, *New Age of Earth* | D major, 130 | The most hopeful: sequences of 8 and 7, both echo repeats at full, bright strings, surf; straight in |
-| 7 | Mirage | Schulze, *Mirage* | F♯ minor, 95 | Icy glass sequences of 12 and 11 opening slowly (16 and 24 bars), a deep phaser, a long reverb, sparse |
-| 8 | Cyborg | Schulze, *Cyborg* | C Phrygian, 70 | Early and raw: deep organ drones beating, a quiet sequence (level 20), no Sequence 2; the theremin Lead up front (level 70); the Drone's filter moves widely |
-| 9 | Sakura Rain | After the spring in Osaka. Added in v. 0.9.8 | B♭ Dorian, 80 | Long evolving ambient piece. Leave it play to discover the hidden melody. Calm arpeggios from the 2600 and Sub, strings that wander through the Dorian scale and Japanese favorite Royal Road progression. A low pitched theremin glides above it all, singing like a human voice. Made by Cranky Man as a reminder of the numerous springs he spent in Osaka. The rain and wind cause delicate pink petals to fall rapidly from trees, turning streets into a pink carpet. The blossoms peak and fall within a week or two. This brevity reminds Cranky Man to appreciate the present moment, finding a bittersweet beauty in the knowledge that nothing lasts forever |
-| 10 | Umeda | Nod to the environmental sound of the plaza of Umeda. Added in v. 1.0 | F♯ major pentatonic, 50, Yo C# scale lead piano. | Kankyō Ongaku, after the soundscape of the plaza of Umeda: a grand piano plays a slow motive and wanders from it within the scale, over a quiet organ; the arpeggios are piano too, and swell and thin slowly. Made by Cranky Man as a nod to architect Mr. Tadao Ando and inspired by the sound one can constantly hear when walking under Grant Front, at “Umekita Square,” adjacent to the North Exit of JR Osaka Station. Cranky Man walked that road hundreds of times on his way to the City Bakery for his morning coffee, at super-early hours around 11 a.m.-ish (kind of his morning record). If you want the real Cranky Man Umeda experience, press Save and select with Algorithm knob "Water" which is an exact recreation of the white noise the cascading water at the plaza makes, heard when you are sitting down in the Umekita cellar. Derived from his own audio recordings.|
+The [physical-detent correction](docs/NIGHTCLAW-DETENT-FIX.md) is installed and user-approved: one click is one item or parameter step, with no velocity acceleration. Home names use 24–32 px cuts and retain 36 px gauges. Every generated font role uses the NightClaw family, without the original-font fallback. The approved palette is bone white, saturated crimson, sulfur yellow and electric violet on near-black.
 
-NACHTFAHRT is not connected with any of these artists, architects, or anybody like that. Don't get your hopes up. 
+The static jungle title is visible for at least three seconds. Twenty approved audio baselines and the guarded two-core worker are retained. The [completion plan](docs/TWRECKS-NEXT-PLAN.md) separates completed checks from longer physical-device sessions and broader readability feedback still needed.
 
-## In short
+Install nightclaw-FM-1_942.fwsc using tools/fm1_install.py, the project's USB-MIDI installer. A reinstall is unnecessary if the current candidate is already installed. [BUILDING.md](BUILDING.md) describes the compiler and SDK setup.
 
-| | |
-|---|---|
-| White keys | Play the Lead, in the piece's scale (the key it sounds is lit) |
-| Black keys | Eleven effects, each while held (lit; dark while held): Take-off, Supernova, Twitter, Repeat, Shimmer, Freeze, Octave, Return, then Rise, Close, Transpose (in PERFORM: the solos) |
-| PLAY · REC · EDIT | Play / rest · a tap: hold (the echo repeats what it holds), held: the effects grid (16 effects on the white keys) · a tap: the Chords page, held: the next chord |
-| SEL | PERFORM: the knobs Filter, Wet, Energy, Sweep; white 1–5 mute the Drone, Sequence, Lead, Sequence 2, Atmosphere; black 1–5 solo them; white 6 held: the levels; white 7–11 held: Sweep, Open, Shut, Drop (both sequences out), Echo; the top key (G): the Lead forgets its ideas and its theme. Held: Lock |
-| HOME | The Nachtfahrt page (Filter, Evolve, Motion, Drift); again, the Key page (Tempo, Root, Mode, Transpose) |
-| ENV | The Drone (Pedal, Reso, Phaser, Attack); again, its sound (Colour, Release, Reverb, Echo); again, its Move page (Width, Time, Rate, Intro) |
-| ARP | The Sequence (Density, Octave, Length, Grid); again, its sound (Cutoff, Decay, Reverb, Echo); again, its Repeats (Repeat A, A time, Repeat B, B time); again, its Move page |
-| LFO | The Lead (Phrases, Octave, Glide, Vibrato); again, its sound (Tone, Attack, Reverb, Echo); again, its Move page |
-| SEQ | Sequence 2 (Chance, Octave, Length, Level); again, its sound; again, the Pattern page (write the steps on the keys); again, its Move page |
-| SAVE | The Atmosphere (Density, Width, Drift, Air); again, its sound (Colour, Ring, Reverb, Echo); again, its Move page |
-| FX | Space (Echo, Echo time, Feedback, Reverb); again, the Echo page (Blur, Tone, Width, Size) |
-| GLO | Setup (Tune, MIDI out, Lights, Save); again, the Arc (Lead in, Bridge, Arc, Memory). Held: save; held on: the piece back to its recipe |
-| ALGORITHM | On a layer's page, its voice (the Atmosphere: its character) |
-| PRESETS | The piece |
-| SELECT | On a layer's pages, its level; on the Nachtfahrt page, Energy (elsewhere nothing) |
-| OCT− / OCT+ | On the Sequence's, the Lead's and Sequence 2's pages, its octave (lit while it's above or below where the piece was loaded) |
+## Source and credits
 
-The [manual](docs/MANUAL.md) has the rest.
+NightClaw builds on NACHTFAHRT/Felucca and Paleotone's synthesis work. The Paleotone/X0X/Melodee-derived guarded worker and original copyright notices remain in their source files. Firmware code follows the repository's GPL notices; the recorded taiko assets have separate [CC BY-SA 4.0 attribution](tools/research/taiko-bank-05/ATTRIBUTION.md).
 
-## Building and testing
-
-The toolchain is the same as DUB-1's (see [BUILDING.md](BUILDING.md) and [EMULATOR.md](EMULATOR.md)):
-
-```
-tests/run_tests.sh      # the engine, the platform pieces, the app in a simulator, the web builds
-web/emu/build.sh        # the browser emulator: build/emu (serve it, open index.html)
-./build.sh              # build/amb.fwsc, for the FM-1
-python3 tools/fm1_install.py build/amb.fwsc     # install it over USB
-```
-
-`build/host/amb_host SCRIPT OUTDIR` runs the whole app on a computer from a script
-(`tests/scenarios/*.amb`), with audio and screenshots coming out; `build/host/en_render OUT.wav SECS piece=N`
-renders the engine alone.
-
-## Credits
-
-NACHTFAHRT is a fork of [DUB-1](https://github.com/sbegueria/fm1-dub), a fork of
-[AMB-1](https://github.com/charlesvestal/fm1-amb) by Charles Vestal (GPL-3.0-only): the echo chain, the plate,
-the pieces system, the chord walk, the UI and the platform come from there. The reverb is Jon Dattorro's plate
-("Effect Design, Part 1", JAES 1997), as in [FoMni-1](https://github.com/charlesvestal/fm1-fomni); Shimmer's
-octave shifter follows OCT UP and its SHIMMER in [Felucca](https://github.com/hugelton/Felucca)'s performance layer
-(Leo Kuroshita, Hügelton Instruments; also in [Skiff](https://github.com/illuminus5/skiff)); the Drone's Choir
-follows VOICE in Felucca (`eng_formant.c`, GPL-3.0; Klatt's cascade; its vowel table, after Hillenbrand et al.); the granular
-cloud (Freeze) follows the design of CLOUD in [JIANT](https://github.com/juanjiant-bit/JIANT) (GPL-3.0); Pluck's
-string follows `pluck.c` in M-VAVE's [fm1_open](https://github.com/m-vave/fm1_open) (after DaisySP's String,
-Electrosmith and Emilie Gillet; MIT); the FM voices play the demo recipes of `app/presets.c` in fm1_open (M-VAVE;
-GPL-3.0), their envelopes after MSFA (Google's DX7 model; Apache-2.0); Wind's pink and Surf's brown noise and Drops' drops follow NOISE in
-[Skiff](https://github.com/illuminus5/skiff) (`eng_noise.c`, Leo Kuroshita, Hügelton Instruments; GPL-3.0; Paul Kellet's
-pink filter); the Tape
-atmosphere is DUB-1's crackle, after Bahadirhan Kocer's "Using Resonators in Live". The way the sequence is
-played (a root accented, sparse notes, a dotted-eighth repeat as loud as the note, two delays) owes much to
-Synth Seeker's videos on Berlin School sequencing. (The Bob Ross of Berlin School) The platform (hardware layer, USB, update loader, storage,
-installer) is [Felucca](https://github.com/hugelton/Felucca)'s by Leo Kuroshita (Hügelton Instruments), by way
-of [X0X](https://github.com/charlesvestal/fm1-x0x), FoMni-1, AMB-1 and DUB-1. The idea of running FM-1 firmware
-in the browser comes from [Groove OS](https://www.groove-os.com/). GPL-3.0-only; see [LICENSING.md](LICENSING.md).
-The concept, compositions and snoring you hear in your head is Cranky Man himself.
-
-M-VAVE and FM-1 are trademarks of their owners. NACHTFAHRT is not affiliated with M-VAVE or Hügelton Instruments.
+The [upstream README](UPSTREAM-NACHTFAHRT-README.md) is retained as a historical reference; its installer, website and musical description describe NACHTFAHRT.
