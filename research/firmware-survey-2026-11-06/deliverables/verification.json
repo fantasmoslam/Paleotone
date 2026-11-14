@@ -1,0 +1,8 @@
+{
+  "result": "passed",
+  "repository_records": 1215,
+  "source_references": 37598,
+  "unique_source_blobs_verified": 11619,
+  "missing_or_corrupt": 0,
+  "scope": "Collection integrity and coverage accounting; no firmware execution or hardware tests."
+}

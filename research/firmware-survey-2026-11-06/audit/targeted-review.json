@@ -1,0 +1,247 @@
+[
+  {
+    "path": "firmware/src/energy.c",
+    "size": 6883,
+    "sha": "6fc9d16d24479c1b2824fd2870eeb9a3e622f25c",
+    "repo": "Rastapopolix/tessera",
+    "ref": "5ce3580fd749b198b8688229d87cdaa4110923d0"
+  },
+  {
+    "path": "firmware/src/form_chain.c",
+    "size": 12499,
+    "sha": "35f3cf9b82621a306e737e663340d86f93b6d9c1",
+    "repo": "Rastapopolix/tessera",
+    "ref": "5ce3580fd749b198b8688229d87cdaa4110923d0"
+  },
+  {
+    "path": "firmware/src/gen.c",
+    "size": 54473,
+    "sha": "29bd0b40c052b49c5c827064794ac4a2eb0342dd",
+    "repo": "Rastapopolix/tessera",
+    "ref": "5ce3580fd749b198b8688229d87cdaa4110923d0"
+  },
+  {
+    "path": "app/dsp/amb.c",
+    "size": 64618,
+    "sha": "d457e0df4bb1c1514af5a0a9d36b36ee34398f11",
+    "repo": "charlesvestal/fm1-amb",
+    "ref": "e642bf1efb618768ba2f3bb5ff716f465db94457"
+  },
+  {
+    "path": "firmware/src/dsp/amb.c",
+    "size": 331090,
+    "sha": "167321a0f83c04e233f0f2fc936915d59da832bd",
+    "repo": "FartyPants/fm1-nachtfahrt",
+    "ref": "ba0728378f9a9aa5ef1f69027c42d03319f7ef8e"
+  },
+  {
+    "path": "firmware/src/dsp/seq.c",
+    "size": 7495,
+    "sha": "60bba7d11f82da67ba1f35e83218829fa45894bd",
+    "repo": "FartyPants/fm1-nachtfahrt",
+    "ref": "ba0728378f9a9aa5ef1f69027c42d03319f7ef8e"
+  },
+  {
+    "path": "firmware/src/app/scene_hotaru.c",
+    "size": 109318,
+    "sha": "60f8136f6a08ed89e4c9a563365af6cd7c3b2267",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "firmware/src/app/scene_koi.c",
+    "size": 139770,
+    "sha": "a29186e371e7bd457cf5e4baa4b3799a273d3190",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "firmware/src/app/scene_sakura.c",
+    "size": 141223,
+    "sha": "1333a9344e5516bb7aa8228f741886169c0646bb",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "firmware/src/dsp/fumi.c",
+    "size": 41881,
+    "sha": "56e6aaa5702572a3299c46557b735290bf6fc691",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "host/zen_host.c",
+    "size": 46216,
+    "sha": "1a0e0eace603ea388bce8a9ac4d359ce1137780a",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "tests/host/zen_test.c",
+    "size": 25438,
+    "sha": "d4b075add7be2ea5cb892a304c9cec7e7ec1a23f",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "tools/zen_voicing.c",
+    "size": 4929,
+    "sha": "73f57f5626aeadc18613370690855405d4447562",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "web/emu/zen_web.c",
+    "size": 6506,
+    "sha": "fb937fef9f10771d149e9bf854796aea862f61bb",
+    "repo": "aceyprime/zen-1",
+    "ref": "ec9295233ea64ddac224b58b4d07216706c1b8ee"
+  },
+  {
+    "path": "firmware/src/dsp/min.c",
+    "size": 107438,
+    "sha": "68f6e2b1e9b72d7af18cfbb899309eae9a1486ef",
+    "repo": "Reytian/fm1-min1",
+    "ref": "85c26d3055c22e43c88c6605144e4cd9f1d03b9b"
+  },
+  {
+    "path": "LICENSE",
+    "size": 1108,
+    "sha": "97fdd446292ca836be6b882863f542fd1bfd57b7",
+    "repo": "hugelton/Felucca-Engines",
+    "ref": "d0260074ce100a47675814b7f38d61f11176c926"
+  },
+  {
+    "path": "README.md",
+    "size": 6324,
+    "sha": "091f9515842eb44ca1d1e578e6f94a51f32009e9",
+    "repo": "hugelton/Felucca-Engines",
+    "ref": "d0260074ce100a47675814b7f38d61f11176c926"
+  },
+  {
+    "path": "LICENSE",
+    "size": 16726,
+    "sha": "14e2f777f6c395e7e04ab4aa306bbcc4b0c1120e",
+    "repo": "hugelton/felucca-bsp",
+    "ref": "5b0879bfadc69a17dbebb917fb6b86d516f19c44"
+  },
+  {
+    "path": "README.md",
+    "size": 7544,
+    "sha": "681c71849d7a1d6e7c2d879669b8d6ee8c729bcb",
+    "repo": "hugelton/felucca-bsp",
+    "ref": "5b0879bfadc69a17dbebb917fb6b86d516f19c44"
+  },
+  {
+    "path": "examples/hwtest/README.md",
+    "size": 3760,
+    "sha": "5db53e08bc5f497e676a0e1c201b3bfb074fc653",
+    "repo": "hugelton/felucca-bsp",
+    "ref": "5b0879bfadc69a17dbebb917fb6b86d516f19c44"
+  },
+  {
+    "path": "README.md",
+    "size": 17947,
+    "sha": "77e812fe0374360b0d666e96b452d82fbc571601",
+    "repo": "TonalPAK/FM1-DECK",
+    "ref": "ffb17001512b461920ec2bae53bbd46f284f4aee"
+  },
+  {
+    "path": "app/src/main/cpp/fw/FirmwareHost.cpp",
+    "size": 5550,
+    "sha": "b0b907dae727e931a9643044762ba9282d6577e7",
+    "repo": "TonalPAK/FM1-DECK",
+    "ref": "ffb17001512b461920ec2bae53bbd46f284f4aee"
+  },
+  {
+    "path": "app/src/main/cpp/fw/FirmwareSlot.h",
+    "size": 22812,
+    "sha": "8ec8b1f14915b100f282a3bfebac97937fbec559",
+    "repo": "TonalPAK/FM1-DECK",
+    "ref": "ffb17001512b461920ec2bae53bbd46f284f4aee"
+  },
+  {
+    "path": "app/src/main/cpp/fw/NativeFirmware.h",
+    "size": 3302,
+    "sha": "faaf13f566870b2dd2b2eda805cdd46f28f25c0e",
+    "repo": "TonalPAK/FM1-DECK",
+    "ref": "ffb17001512b461920ec2bae53bbd46f284f4aee"
+  },
+  {
+    "path": "docs/README.md",
+    "size": 1606,
+    "sha": "7beef5b501e0f0e10e93985d4641d0148ce47b97",
+    "repo": "TonalPAK/FM1-DECK",
+    "ref": "ffb17001512b461920ec2bae53bbd46f284f4aee"
+  },
+  {
+    "path": "fwbuild/README.md",
+    "size": 3090,
+    "sha": "81ddd6a980d2b9d0a7e642a7f3dc8a6101cc7051",
+    "repo": "TonalPAK/FM1-DECK",
+    "ref": "ffb17001512b461920ec2bae53bbd46f284f4aee"
+  },
+  {
+    "path": "README.md",
+    "size": 28333,
+    "sha": "b7ac30fb106a64a3a5334b9a1537b6ebb1025cb7",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "design/standalone-mockup/README.md",
+    "size": 1135,
+    "sha": "667b9442045cc1eac9ff8d3733dcbd4d5ad6cd91",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "firmware/app.c",
+    "size": 2042,
+    "sha": "fd7685c296bf611aed8775a362ea00dd9e08a5d5",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "firmware/sa/sa_remote.c",
+    "size": 13130,
+    "sha": "23ba07e3b6067f59dc1ec035535aaf4fc78fc619",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "firmware/src/rfm_app.c",
+    "size": 22451,
+    "sha": "6f17f71b96ee0e89a655aab34eb10e0f66686f63",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "host/README.md",
+    "size": 3256,
+    "sha": "93ba852d20b5022d8ac249222470d3a18d235257",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "tools/rfm1/README.md",
+    "size": 3705,
+    "sha": "319872486304890b937629fbec3f5e04024ad614",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "tools/rfm1/fizz/skin/README.md",
+    "size": 390,
+    "sha": "a17d7a4d2f9bcb5956d97b77266d3d596655ee8e",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  },
+  {
+    "path": "web/remote/README.md",
+    "size": 14182,
+    "sha": "a723ca472104d2ad00a2c4dc4ad2e021eda47260",
+    "repo": "Quixotic7/RemoteFM1",
+    "ref": "ed06aa502c7b75a3414c9c1976d0a5abd4350f57"
+  }
+]
