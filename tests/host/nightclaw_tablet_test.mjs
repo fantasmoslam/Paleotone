@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import assert from "node:assert/strict";
-import { tabletLayout } from "../../web/nightclaw/tablet-layout.mjs";
-const sizes=[[1366,650],[1280,700],[1024,660],[900,480],[900,1120],[800,1160],[768,920],[768,800],[600,800],[390,740],[320,720]];
+import { tabletLayout, tabletKeyWidth } from "../../web/nightclaw/tablet-layout.mjs";
+const sizes=[[2560,1300],[1920,960],[1366,650],[1280,700],[1024,660],[900,480],[900,1120],[800,1160],[768,920],[768,800],[600,800],[390,740],[320,720]];
 function within(x,y,w,h,L,label){assert([x,y,w,h].every(Number.isFinite),label+" finite");assert(x>=-.01&&y>=-.01&&x+w<=L.w+.01&&y+h<=L.h+.01,label+" inside viewport at "+L.w+"x"+L.h);}
 for(const [w,h] of sizes){
  const L=tabletLayout(w,h),[sx,sy,ss]=L.screen;
@@ -20,5 +20,8 @@ for(const [w,h] of sizes){
  const keyColumns=L.compactKeys?8:16,keyRows=L.compactKeys?4:2;
  assert((kw-24)/keyColumns>=44,"key targets at least 44px wide");assert(kh/keyRows*.98>=44,"key targets at least 44px tall");
  assert(ky>=sy+ss,"keys do not cover screen");
+ const keyHeight=kh*(L.compactKeys?.215:.425),faceWidth=tabletKeyWidth((kw-24)/keyColumns,keyHeight);
+ assert(keyHeight/faceWidth>=108.8/44.07-1e-8,"original elongated FM-1 key proportions; never circles");
+ assert(faceWidth<=(kw-24)/keyColumns*.78,"pad stays inside its original touch cell");
  console.log("Tablet layout: "+w+"x"+h+" passes bounds, target size, screen separation and button spacing.");
 }

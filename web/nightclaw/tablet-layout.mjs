@@ -27,3 +27,9 @@ export function tabletLayout(width, height) {
   }
   return {w,h,screen,knobs,grid,oct,trays:[],keybed:[0,top+gap,w,keyH],compactKeys,tablet:true};
 }
+
+// Preserve the original FM-1 pad proportions (928 x 256 keybed) as it scales.
+export function tabletKeyWidth(pitch,height){
+  const originalRatio=((928-24)/16*.78)/(256*.425);
+  return Math.min(pitch*.78,height*originalRatio);
+}

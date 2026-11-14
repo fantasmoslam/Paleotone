@@ -12,7 +12,9 @@ Tablet view removes the hardware casing, site header and margins, using the view
 
 Fullscreen requests browser fullscreen from a tap. Unsupported or denied fullscreen leaves the viewport layout usable and reports the limitation; Add to Home Screen can hide browser bars on devices without the API. FM-1 view returns to the physical panel without reloading audio. Window/size/fullscreen changes release held inputs before rebuilding. Existing browser saves are shared between both views.
 
-Automated layout checks cover eleven sizes, including 768/1024-class tablets, checking bounds, screen separation, button spacing and at least 44 px touch targets. This is geometry validation, not a physical-tablet visual or multitouch test.
+Tablet keys retain the original elongated FM-1 pad proportions as the viewport scales; the full rectangular cell around each pad remains touch-active.
+
+Automated layout checks cover thirteen sizes, including 768/1024-class tablets, checking bounds, screen separation, button spacing and at least 44 px touch targets. This is geometry validation, not a physical-tablet visual or multitouch test.
 
 ## Physical-panel player
 

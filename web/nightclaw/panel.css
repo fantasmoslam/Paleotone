@@ -29,3 +29,6 @@ body.tablet-mode .start button{min-height:56px;padding:18px 36px}
 @media(max-width:600px){.tablet-bar strong{font-size:18px}.tablet-bar button,.tablet-bar a{font-size:16px;padding:10px}.tablet-bar{gap:6px}}
 
 @media(max-width:719px){body.tablet-mode .device{min-height:720px}}
+
+/* Each key keeps its full rectangular touch cell, beyond the rounded pad. */
+body.tablet-mode .hit.key{border-radius:0}

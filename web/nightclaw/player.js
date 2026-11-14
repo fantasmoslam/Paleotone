@@ -1,4 +1,4 @@
-import { tabletLayout } from "./tablet-layout.mjs?v=tablet-1";
+import { tabletLayout, tabletKeyWidth } from "./tablet-layout.mjs?v=tablet-keys-2";
 // SPDX-License-Identifier: GPL-3.0-only
 // Physical FM-1 drawing/input adapted from Paleotone main 6f027f0, after X0X.
 // Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments.
@@ -121,7 +121,8 @@ function build(name) {
   const [x0, y0, w, h] = L.keybed;
   if (!L.tablet) el("rect", { x: x0, y: y0, width: w, height: h, rx: 18, fill: "var(--tray)" });
   // the keys: two rows of the same black keys, each with a slit down its middle that lights
-  const pitch = (w - 24) / (L.compactKeys ? 8 : 16), kw = pitch * 0.78, kh = L.compactKeys ? h*.215 : h * 0.425, sw = Math.max(3, kw * 0.14);
+  const pitch = (w - 24) / (L.compactKeys ? 8 : 16), kh = L.compactKeys ? h*.215 : h * 0.425;
+  const kw = L.tablet ? tabletKeyWidth(pitch,kh) : pitch*.78, sw = Math.max(3, kw * 0.14);
   const key = (cx, cy, k) => {
     const g = el("g", {}), y = cy - kh / 2;
     el("rect", { x: cx - kw / 2, y, width: kw, height: kh, rx: kw / 2, class: "face key" }, g);
@@ -159,7 +160,7 @@ function build(name) {
     bindKnob(k); drawKnob(k);
   });
   buttons.forEach((b) => { hit(b, "", "button"); bindButton(b); });
-  keys.forEach((k, i) => { hit(k, "", "button"); bindKey(k, i); });
+  keys.forEach((k, i) => { hit(k, "key", "button"); bindKey(k, i); });
   syncButtons(true);
   syncKeys(true);
   drawLights(lastLeds);
