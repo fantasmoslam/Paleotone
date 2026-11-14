@@ -1,0 +1,23 @@
+loader: image 7864 B at 0x1c0a800, bss end 0x1c0f488
+loader: ota.bin 6603 B
+font XS: NightClaw UI 12px, cell 12, 1002 bytes
+font S: NightClaw UI 16px, cell 16, 1538 bytes
+font B: NightClaw UI 16px, cell 16, 1538 bytes
+font M: NightClaw UI 20px, cell 24, 2673 bytes
+font L: NightClaw UI 32px, cell 32, 4972 bytes
+font C: NightClaw UI 20px, cell 24, 2673 bytes
+font US: NightClaw UI 16px, cell 16, 1538 bytes
+font UM: NightClaw UI 20px, cell 24, 2673 bytes
+font UL: NightClaw UI 24px, cell 32, 4020 bytes
+font UN: NightClaw UI 20px, cell 24, 2067 bytes
+font UH: NightClaw UI 24px, cell 32, 3452 bytes
+NightClaw UI: 28146 bitmap bytes; no legacy fallback
+words: 41 own + 51 common -> /__w/Paleotone/Paleotone/web/words/6b89770e6b.json (2091 B)
+  ok    .ram_text: 909 insns, no calls
+  ok    no soft-double routines (single-precision FPU only)
+  ok    worker RAM loop: 160 B, boot-copy/package bounds match
+  ok    image 551376 B; RAM .data+.bss 96468 B of 98304; pool 334472 B of 344064
+  ok    register access: hal/ only (src/, loader/ clean)
+app      /__w/Paleotone/Paleotone/build/amb.bin  551376 B
+loader   /__w/Paleotone/Paleotone/build/loader/ota.bin  6603 B
+package  /__w/Paleotone/Paleotone/build/amb.fwsc  609759 B, identity FM-1_942
