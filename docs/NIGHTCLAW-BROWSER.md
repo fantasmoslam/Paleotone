@@ -8,11 +8,11 @@ Visual guide: https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html
 
 https://fantasmoslam.github.io/Paleotone/nightclaw/?view=tablet
 
-Tablet view removes the hardware casing, site header and margins, using the viewport for the same running instrument. Screen, knobs, buttons and keys reflow for portrait/landscape; the four sound controls show their current parameter names. Narrow screens use two key banks to retain at least 44 px key targets. Short windows can scroll the instrument rather than shrink its controls.
+Tablet view removes the hardware casing, site header and margins, using the viewport for the same running instrument. Screen, knobs, buttons and keys reflow for portrait/landscape; the four sound controls show their current parameter names. The keypad retains the FM-1’s original two staggered rows: all sixteen lower pads and eleven upper pads. The whole keypad scales uniformly, including pad width, height, gaps and outer padding. Narrow windows scroll instead of splitting the keypad into banks. Short windows can scroll the instrument rather than shrink its controls.
 
 Fullscreen requests browser fullscreen from a tap. Unsupported or denied fullscreen leaves the viewport layout usable and reports the limitation; Add to Home Screen can hide browser bars on devices without the API. FM-1 view returns to the physical panel without reloading audio. Window/size/fullscreen changes release held inputs before rebuilding. Existing browser saves are shared between both views.
 
-Tablet keys retain the original elongated FM-1 pad proportions as the viewport scales; the full rectangular cell around each pad remains touch-active.
+Tablet keys and their spacing use one uniform scale from the original 928 × 256 FM-1 keypad. The full rectangular cell around each pad remains touch-active. The keypad fits the available width and height as one unit, rather than spreading small pads across a wider grid.
 
 Automated layout checks cover thirteen sizes, including 768/1024-class tablets, checking bounds, screen separation, button spacing and at least 44 px touch targets. This is geometry validation, not a physical-tablet visual or multitouch test.
 

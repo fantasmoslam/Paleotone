@@ -20,15 +20,15 @@ body.tablet-mode:not(.focus-mode) .tablet-bar{display:flex;flex-wrap:wrap;align-
 #tablet-message{order:5;flex-basis:100%;font-size:16px;line-height:1.3}
 #tablet-message:empty{display:none}
 body.tablet-mode .stage{width:100%;height:100%;max-width:none;margin:0;overflow:auto;overscroll-behavior:contain}
-body.tablet-mode .device{width:100%;height:100%;min-height:800px;min-width:376px;aspect-ratio:auto}
+body.tablet-mode .device{width:100%;height:100%;min-height:0;min-width:736px;aspect-ratio:auto}
 body.tablet-mode .screen-status{margin:0;max-width:none;font-size:17px;line-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.tablet-mode .hint{font-size:16px;fill:var(--bone)}
 body.tablet-mode .start{border-radius:0}
 body.tablet-mode .start button{min-height:56px;padding:18px 36px}
-@media(orientation:landscape) and (min-width:900px){body.tablet-mode .device{min-height:480px}}
+
 @media(max-width:600px){.tablet-bar strong{font-size:18px}.tablet-bar button,.tablet-bar a{font-size:16px;padding:10px}.tablet-bar{gap:6px}}
 
-@media(max-width:719px){body.tablet-mode .device{min-height:720px}}
+
 
 /* Each key keeps its full rectangular touch cell, beyond the rounded pad. */
 body.tablet-mode .hit.key{border-radius:0}
