@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../firmware/src/app/app.h"
+#include "../../firmware/src/pt/pt.h"
 #include "../../firmware/src/app/project.c"
 static uint8_t saved[OBJ_NOBJ][3840];static int lens[OBJ_NOBJ], fail_obj=-1, fails;
 int plat_store_load(uint32_t o,void *p,uint32_t n){int k=lens[o];if(k<=0)return -1;if(k>(int)n)k=(int)n;memcpy(p,saved[o],(size_t)k);return k;}
@@ -50,5 +51,19 @@ int main(void){
     for(i=0;i<NPIECES;i++)if(en_piece_replaced(i)){en_piece(i,par,&pool);CHECK(!memcmp(proj.slot[i].par,par,sizeof par));}
     proj.par[P_TEMPO]=125;project_drum_pattern_set(13);CHECK(project_save()==0);
     CHECK(project_load()==0);CHECK(proj.par[P_TEMPO]==125);CHECK(project_drum_pattern()==13);
+    /* Envelope overrides are independent per scene, survive reboot, and reset locally. */
+    project_defaults();project_piece(2);project_envelope_set(PT_LEAD,0,110);project_envelope_set(EN_ENV_ATMOS,3,95);
+    project_piece(3);CHECK(project_envelope(PT_LEAD,0)==-1);project_envelope_set(PT_LEAD,2,87);
+    CHECK(project_save()==0);memset(&proj,0,sizeof proj);CHECK(project_load()==0);
+    CHECK(proj.piece==3);CHECK(project_envelope(PT_LEAD,2)==87);
+    project_piece(2);CHECK(project_envelope(PT_LEAD,0)==110);CHECK(project_envelope(EN_ENV_ATMOS,3)==95);
+    project_piece_reset();CHECK(project_envelope(PT_LEAD,0)==-1);project_piece(3);CHECK(project_envelope(PT_LEAD,2)==87);
+    CHECK(project_save()==0);
+    /* The installed 28-byte globals keep all existing parameter/beat edits. */
+    lens[OBJ_PROJ]=28;CHECK(project_load()==0);CHECK(proj.piece==3);CHECK(project_envelope(PT_LEAD,2)==-1);
+    for(i=0;i<NPIECES;i++)for(k=0;k<EN_ENV_LAYERS;k++)CHECK(proj.envelope[i][k][0]==0);
+    CHECK(project_save()==0);
+    {saved_head_t ext;memcpy(&ext,saved[OBJ_PROJ],sizeof ext);ext.envelope[3][PT_LEAD][2]=255;
+     memcpy(saved[OBJ_PROJ],&ext,sizeof ext);CHECK(project_load()==0);CHECK(project_envelope(PT_LEAD,2)==-1);}
     printf("clean bank and saved-data recovery: %s\n",fails?"FAIL":"all passed");return fails!=0;
 }

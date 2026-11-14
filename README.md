@@ -8,7 +8,7 @@ A generative dinosaur synth with resonant taiko drums, western/tribal scenes, se
 
 ## Play in your browser
 
-The [NightClaw browser player](https://fantasmoslam.github.io/Paleotone/nightclaw/) is a clickable physical FM-1 panel, following Paleotone’s emulator: knobs, buttons, touch keys and the live firmware screen. Its [separate visual guide](https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html) covers the instrument in eight illustrated chapters. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The project page is published on GitHub Pages.
+The [NightClaw browser player](https://fantasmoslam.github.io/Paleotone/nightclaw/) is a clickable physical FM-1 panel, following Paleotone’s emulator: knobs, buttons, touch keys and the live firmware screen. Its [separate visual guide](https://fantasmoslam.github.io/Paleotone/nightclaw/guide.html) covers the instrument in nine illustrated chapters. See [browser build and validation](docs/NIGHTCLAW-BROWSER.md). The project page is published on GitHub Pages.
 
 The [tablet / fullscreen view](https://fantasmoslam.github.io/Paleotone/nightclaw/?view=tablet) fills the viewport with larger controls and the live screen, without the FM-1 casing.
 
@@ -17,6 +17,8 @@ The [tablet / fullscreen view](https://fantasmoslam.github.io/Paleotone/nightcla
 Turn PRESETS to choose a scene. On Home, SELECT chooses a track; ALGORITHM chooses its instrument, or the beat when Skin is selected. The four right encoders edit that row. Play the Lead on the white keys, or select Calls for manual creatures.
 
 The twenty-scene bank includes BONE RIDER, DUST TRAIL, RED MESA, FOSSIL PASS, HIGH FRONTIER and NIGHT RIDER. Fourteen drum patterns and the melodic voices are independently selectable and saved per scene. Cello, Cello Low, Sub Pad and Fat Pad are the last four instruments on each melodic track.
+
+**Envelope editing:** on Home select a track and tap SAVE. SELECT chooses the row; the four right encoders edit Attack, Decay, Sustain and Release. Overrides save per scene and work on native and imported voices. [Envelope behavior and validation](docs/NIGHTCLAW-ENVELOPE-AUDIT.md).
 
 **Saving:** hold GLO for about half a second and release. A short GLO tap opens Setup; holding about 1.5 seconds resets the current scene. The physical SAVE button opens sound pages.
 

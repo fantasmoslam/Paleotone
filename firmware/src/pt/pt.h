@@ -34,3 +34,7 @@ int pt_voices(void);                            /* Paleotone's voices sounding n
 void pt_skin_hit(int lane, int velocity, int tone, int decay);
 int pt_skin_render(float *out, uint32_t n);
 void pt_skin_quiet(void);
+
+void pt_envelope(int layer,int stage,int value);
+int pt_envelope_value(int layer,int stage);
+uint32_t pt_envelope_ms10(int value);

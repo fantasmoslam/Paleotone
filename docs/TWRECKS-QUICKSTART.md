@@ -25,9 +25,19 @@ The final four instruments on every melodic track are **Cello, Cello Low, Sub Pa
 
 Skin offers GALOP, TRES, WAR, RAIN, QUAKE, WAR2, TALK, SEVEN, PENTA, SPIRAL, CHAOS, TRAIL, OUTRIDER and HUNT. Ghosts adds optional accents; zero retains the main beat.
 
+## Shape the envelope
+
+On Home select a track, then tap SAVE for Envelope. SELECT chooses the row; K1–K4 edit **Attack, Decay, Sustain, Release**. Four rows are visible at once; the table scrolls to Calls and Atmosphere. ALGORITHM changes that row’s instrument. SAVE again opens its sound page.
+
+Attack is the rise to full level; Decay falls toward Sustain, the held level; Release fades after note-off. These controls shape native and imported instruments. Untouched stages inherit the instrument’s envelope. Turn a stage below zero to restore its inherited setting. Manual stages survive changing instruments and save with each scene using GLO.
+
+Sequences retain their separate note lengths and tone decay. Atmosphere uses Play/rest as its gate; creature calls retain their timed gates. Skin retains percussion Decay on its drum page rather than a held-note ADSR. Sampled and modeled instruments keep their natural duration and timbre decay: Sustain cannot extend a finite recording.
+
+![Envelope page](assets/nightclaw-envelopes/envelope-lead.png)
+
 ## Trigger creatures
 
-On Home select Calls, or press SAVE while Calls is selected to open its page. The first eight white keys, left to right, trigger **Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort**.
+On Home select Calls, or tap SAVE twice while Calls is selected to reach its sound page. The first eight white keys, left to right, trigger **Herd, Raptor, Hoot, Moan, Nest, Croak, Hadro and Snort**.
 
 - First black key: toggle Manual / Auto.
 - Second black key: stop the current call.

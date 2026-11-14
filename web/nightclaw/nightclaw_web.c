@@ -8,6 +8,7 @@ NC_API int nc_scene_count(void) { return NPIECES; }
 NC_API const char *nc_scene_name(int i) { return piece_name(i >= 0 && i < NPIECES ? i : 0); }
 NC_API const char *nc_track_name(int i) { return HOME_NAME[i >= 0 && i < HOME_TRACKS ? i : 0]; }
 static int nc_voice_param(void) {
+    if(ui.view==V_ENV)return envelope_voice();
     if (ui.view == V_MIX && !ui.perf) return home_voice();
     if (ui.view == V_CALLS) return P_CLVOICE;
     if (atm_view(ui.view)) return P_NCHAR;
@@ -55,6 +56,7 @@ NC_API void nc_page(int i) {
     /* Only ordinary sound/performance pages; never update/recovery modes. */
     if (i < 0 || i >= NVIEWS) return;
     keys_release_mode();
+    if(i==V_ENV && ui.view==V_MIX && ui.track!=5)ui.env_layer=ui.track==6?PT_CALLS:ui.track==4?EN_ENV_ATMOS:ui.track;
     if (i == V_PERF) { perf_set(1); return; }
     perf_set(0); set_view(i);
 }

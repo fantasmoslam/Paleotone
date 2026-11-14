@@ -30,6 +30,7 @@ typedef struct {
     uint8_t screen;                      /* the Dub page's middle: 0 ripples, 1 scope, 2 spectrum (HOME again) */
     uint8_t rsv0;
     slot_t slot[NPIECES];                /* every piece as it was left (Tune and MIDI out are global) */
+    uint8_t envelope[NPIECES][EN_ENV_LAYERS][4]; /* 0: instrument, 1..128: manual */
     uint8_t rsv[16];                     /* room to grow */
 } project_t;
 
@@ -53,3 +54,6 @@ void ui_say(const char *a, const char *b);
 #define UI_SPLASH_HOLD_MS 3000u
 #define UI_SPLASH_N 1                    /* static title: only frame zero is drawn */
 void ui_splash(int f);                   /* frame f of the launch screen (the last: as it stays) */
+
+int project_envelope(int layer,int stage);
+void project_envelope_set(int layer,int stage,int value);

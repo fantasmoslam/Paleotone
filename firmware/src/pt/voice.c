@@ -541,14 +541,14 @@ static void strum_cancel(const track_t *t, uint32_t note, int all)
 static void voice_release(track_t *t, voice_t *v)
 {
     v->gate = 0;
-    if (!gurdy_rings(t))
+    if (pt_env_custom[t-trk] || !gurdy_rings(t))
         v->stage = 3;
 }
 
 static void trk_note_off(track_t *t, uint32_t note)
 {
     uint32_t i, k = 0, mode = (uint32_t)t->p[P_VOICE];
-    if (is_drum(t))
+    if (is_drum(t) && !pt_env_custom[t-trk])
         return;                                         /* one-shots */
     strum_cancel(t, note, 0);
     for (i = 0; i < t->xp_n; i++)                       /* not sounding yet (engine switch): forget it */
@@ -842,7 +842,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             continue;
         {
             env = env_tick(t, v);
-            if (e->ownenv && v->active) {               /* the engine's envelopes (FM6): they end the voice */
+            if (e->ownenv && v->active && !pt_env_custom[t-trk]) {               /* the engine's envelopes (FM6): they end the voice */
                 if (e->done(t, v)) {
                     v->active = v->gate = 0;
                     v->stage = 0;
@@ -856,7 +856,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
                     env = 32767;
                 }
             }
-            if (e->amp)                                 /* the engine's own amplitude curve */
+            if (e->amp && !pt_env_custom[t-trk])         /* the engine's own amplitude curve */
                 env = e->amp(t, v, env);
             m.envq15 = e->ownenv ? 0 : env;
             m.amp1 = e->ownenv ? env : mulq15(env, v->vel * 258);

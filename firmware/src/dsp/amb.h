@@ -415,3 +415,11 @@ extern volatile uint8_t en_worker_on;
 extern volatile uint32_t en_worker_faults;
 int en_worker_start(void (*fn)(uint32_t), uint32_t arg);
 int en_worker_wait(void);
+
+/* Track amplitude envelopes: -1 inherits the selected instrument. */
+#define EN_ENV_LAYERS 6
+#define EN_ENV_ATMOS 5
+#define EN_ENV_BASE 160
+void en_envelope(int layer,int stage,int value);
+int en_envelope_value(int layer,int stage);
+int en_envelope_custom(int layer);

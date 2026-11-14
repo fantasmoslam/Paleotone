@@ -1,35 +1,42 @@
-# NightClaw envelope controls: current gap and next work
+# NightClaw per-track envelopes
 
-The existing firmware has partial envelope controls, not a unified per-track ADSR editor. This remains unfinished sound-editing work; the earlier feature-complete assessment was too broad.
+## Implemented behavior
 
-## Verified source behavior
+From Home select a track, then tap SAVE for **Envelope**. SELECT chooses the row; K1–K4 edit Attack, Decay, Sustain and Release. Four rows remain visible at once, with scrolling for Calls and Atmosphere. ALGORITHM changes the selected row’s instrument. SAVE again opens that track’s sound page.
 
-| Layer | Exposed controls and actual behavior |
+The page uses the accepted NightClaw font family, 24–32 px track names, 36 px indicators and saturated palette. Home controls and the accepted tablet keypad geometry are retained.
+
+| Track | Envelope behavior |
 |---|---|
-| Drone | Attack (P_CATT) and Release (P_DREL), on different rows/pages. They drive the native swell and an outer envelope around imported Drone voices. No user-editable decay/sustain pair completes ADSR. |
-| Sequence | Decay (P_DECAY). It sets the native pluck amplitude/filter decay; for imported voices it determines time until note-off. The imported voice retains its own amplitude envelope. |
-| Lead | Attack (P_LATT) controls the native Lead envelope. In the imported-voice branch, ld_att changes the meter envelope, while audio comes directly from pt_render. The exposed attack therefore does not shape imported Lead audio. Native Lead release is fixed in that path. |
-| Sequence 2 | Decay (P_S2DEC), with the same native-decay/imported-note-gate distinction as Sequence. |
-| Skin | Decay is passed into the taiko/skin models. These struck sounds are not currently a held-note ADSR track. |
-| Atmosphere / Calls | No common editable ADSR panel. Creature voices have internal voice envelopes and note/gate behavior. |
+| Drone | Native voices and imported instruments receive ADSR. Chord changes trigger the new bank/voices; outgoing notes release. |
+| Sequence / Sequence 2 | Per-note ADSR shapes native and imported voices. Existing Decay controls still determine tone decay and sequencer note length; the new envelope does not replace timing. |
+| Lead | Native oscillator, piano and imported voices receive amplitude ADSR. Imported FM6 retains its operator timbre envelopes underneath the editable amplitude envelope. |
+| Calls | ADSR shapes each timed creature voice. Manual trigger/Auto and stop controls remain available. |
+| Atmosphere | ADSR shapes the continuous bed with Play/rest as the gate, leaving individual natural events intact. |
+| Skin | Keeps the existing percussion Decay control on its drum page. Struck drums retain their transient and natural body rather than behaving as held notes. |
 
-Evidence: firmware/src/app/ui.c VIEW_KNOB; firmware/src/dsp/amb.c parameter handling, pt_pluck, render_plucks, render_drone and render_lead; firmware/src/pt/pt.h and pt.c.
+Attack, Decay and Release use the imported synth’s logarithmic 1 ms–10 s table; Sustain is a level from 0–127. Short sampled and modeled sounds retain their intrinsic duration/energy decay: Sustain cannot extend a finite recording or indefinitely replenish a plucked string.
 
-The imported Paleotone implementation already contains P_ATK/P_DEC/P_SUS/P_REL and env_tick in firmware/src/pt/voice.c, but NightClaw's public pt.h wrapper does not expose an envelope-edit API. pt_sound loads the engine preset and its internal envelope. Some engines, including FM6, use their own amplitude envelopes; their behavior needs explicit treatment rather than assuming one outer ADSR implementation covers all voices identically.
+## Defaults, instrument changes and saving
 
-## Next development priority
+Every stage initially inherits its instrument’s setting. No override is enabled until edited, preserving the approved factory sound. Turn a stage below zero to restore inheritance; the indicator then shows the effective voice value. Changing instruments keeps manual stages and updates inherited ones.
 
-1. Provide one Envelope page for the four melodic tracks: Drone, Sequence, Lead, Sequence 2. Four columns are Attack, Decay, Sustain, Release; SELECT chooses the row and K1–K4 edit it. Use the existing sound-page navigation pattern; preserve accepted Home controls, fonts, colors and keypad layout.
-2. Make each control affect audible output for both native and imported instruments. Separate amplitude-envelope stages from existing tone/filter-decay controls and sequencer note length. Test key release, retrigger, legato, sustained Drone chords, automatic phrases and voice stealing.
-3. Preserve the current preset/voice envelopes until edited. Define how a deliberate track override behaves when changing instruments, and save overrides with the scene. Existing approved scene sounds and saved voice/beat choices must survive the migration.
-4. Add suitable envelope/tail editing for Skin, Atmosphere and Calls according to each sound model. Keep percussion's natural transient/body rather than silently changing it into a held synth voice.
-5. Check parameter-code capacity (the current special-knob IDs start at 200), saved-object size/versioning, RAM/flash fit and CPU before device installation. Verify that longer release tails do not create excessive voice load.
-6. Cover native/Paleotone envelope response, save/reboot, unchanged default scene audio, firmware render/fit and browser parity. Then use short listening previews and device testing to validate the sound.
+The original sound-page Attack/Release/Decay controls also feed their matching amplitude stages when edited, including the previously ineffective imported Lead Attack. They retain their tone/note-length jobs where applicable.
 
-This audit adds work to the docket. It does not change DSP, instrument presets, saved settings or installed firmware.
+Overrides save per scene with GLO, survive voice and scene changes and reload after reboot. Scene reset clears only that scene’s overrides. Manual/Auto Calls remains a temporary performance choice.
 
-## Project checkpoint alongside this work
+Format-11 preset banks and parameter IDs remain unchanged. The original 28-byte globals header is a prefix of the extended 508-byte header; older saved beat/instrument/mix choices load with no envelope overrides. Envelopes use the existing A/B-protected globals object. Ten-slot banks remain within 3,840 bytes.
 
-The installed FM-1 remains the accepted f9b11d6 candidate. Approved music, twenty scenes, fourteen independent beats, manual calls, appended cello/pad voices, literal encoder response and readable firmware UI are retained. GitHub Pages hosts the physical-panel player, separate visual guide and tablet mode. Dylan accepted the restored two-row keypad at source 1398257; keep its geometry and uniform scaling.
+## Validation and limits
 
-The current browser CI passed for source 1398257 (run 43537466329). PR #41 remains open and unmerged. Longer physical-device endurance, wider voice combinations, page readability feedback and final release review remain open alongside this envelope work.
+Host audio tests compare all four Lead stages on native Theremin, imported analog and imported FM6, plus attack response on Drone, both sequences, Calls and Atmosphere. They check finite output and silence after stopping. Persistence tests cover independent scenes, reboot, local reset, old 28-byte headers and invalid saved envelope bytes.
+
+The physical-button simulator covers Home → Envelope → sound, literal detents, row selection, creature triggers and save/reboot. Shipped-WASM tests cover envelope editing, voice changes, reboot and physical panel messages at 44.1/48 kHz. Actual framebuffer renders are included in the guide.
+
+Native build: image 551,296 / 581,564 bytes before the additional spoken-track label; RAM 96,468 / 98,304; pool 334,472 / 344,064. The subsequent build records the final image size. All 40 control scenarios pass. Approved default-audio fixtures remain regression targets, including serial, concurrent and worker-fallback output.
+
+The candidate still needs physical listening and CPU/long-tail coverage before calling the new envelopes hardware-validated. The last installed/user-accepted firmware remains f9b11d6 unless a later installation is explicitly recorded. PR #41 remains open.
+
+## Original gap corrected
+
+Previously Drone Attack/Release and sequence Decay were scattered; Lead Attack shaped native audio but only the meter for imported voices. The imported synth’s internal ADSR had no public editing API. The implementation now exposes that API, handles engines with their own amplitude curves and adds native track envelopes without altering untouched recipes.

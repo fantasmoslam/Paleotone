@@ -40,6 +40,7 @@ static uint32_t cpu1_ticks(void) { return 0; }
 #include "engines.c"
 #include "drums.c"
 #include "params.c"
+static uint8_t pt_env_custom[PT_NPART],pt_env_base[PT_NPART][4],pt_env_override[PT_NPART][4];
 #include "voice.c"
 
 /* ---- the lists: each layer's sounds, in the order its knob turns through them (dark first: pads and drones for the
@@ -151,6 +152,7 @@ void pt_init(void)
     for (i = 0; i < NTRK; i++)
         for (k = 0; k < P_E0; k++)
             trk[i].p[k] = TP[k].def;
+    memset(pt_env_custom,0,sizeof pt_env_custom);memset(pt_env_override,0,sizeof pt_env_override);
     fm6_init();
     for (i = 0; i < PT_NPART; i++) {
         lay[i].snd = 0;
@@ -198,6 +200,22 @@ static void load(track_t *t, uint32_t ei, uint32_t pi)
     fm6_poll();
 }
 
+static void pt_env_apply(int layer){
+    static const uint8_t ids[4]={P_ATK,P_DEC,P_SUS,P_REL};int s;
+    pt_env_custom[layer]=0;
+    for(s=0;s<4;s++){int v=pt_env_override[layer][s];trk[layer].p[ids[s]]=v?v-1:pt_env_base[layer][s];pt_env_custom[layer]|=v!=0;}
+    if(pt_env_custom[layer])trk[layer].p[P_ESYNC]=0;
+}
+void pt_envelope(int layer,int stage,int value){
+    if((unsigned)layer>=PT_NPART||(unsigned)stage>=4)return;
+    pt_env_override[layer][stage]=(uint8_t)(value<0?0:value>127?128:value+1);pt_env_apply(layer);
+}
+int pt_envelope_value(int layer,int stage){
+    if((unsigned)layer>=PT_NPART||(unsigned)stage>=4)return 0;
+    return pt_env_override[layer][stage]?pt_env_override[layer][stage]-1:pt_env_base[layer][stage];
+}
+uint32_t pt_envelope_ms10(int value){return TIME_MS_X10[(unsigned)value<128?value:0];}
+
 void pt_sound(int layer, int k)
 {
     const pt_snd_t *s;
@@ -214,6 +232,7 @@ void pt_sound(int layer, int k)
     if (lay[layer].snd == k + 1)
         return;
     load(&trk[layer], s->e, (uint32_t)pi);
+    {static const uint8_t ids[4]={P_ATK,P_DEC,P_SUS,P_REL};int j;for(j=0;j<4;j++)pt_env_base[layer][j]=(uint8_t)trk[layer].p[ids[j]];pt_env_apply(layer);}
     if (layer == PT_CALLS) trk[layer].p[P_VOICE] = V_MONO;
     if (s->e == 0 && pi >= 21) trk[layer].p[P_ED_FX] = 0; /* new voices have explicit list gains */
     lay[layer].tg = s->g > 0.0f ? s->g : 1.0f;

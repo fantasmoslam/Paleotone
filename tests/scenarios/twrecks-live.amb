@@ -34,7 +34,7 @@ expect calls 2
 expect par138 7
 tap SAVE
 wait 200
-expect view 27
+expect view 28
 shot creature-keys.png
 tapkey b0
 wait 200

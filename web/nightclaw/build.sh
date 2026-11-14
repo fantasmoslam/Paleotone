@@ -13,6 +13,7 @@ emcc -O2 -ffp-contract=off -std=gnu99 -Wall -Wno-unused-function -Wno-unused-par
 cp web/nightclaw/index.html web/nightclaw/tablet-layout.mjs web/nightclaw/panel.css web/nightclaw/style.css web/nightclaw/player.js web/nightclaw/worklet.js web/nightclaw/guide.html web/nightclaw/guide.js build/nightclaw/
 cp docs/assets/nightclaw-jungle.png build/nightclaw/assets/jungle.png
 cp docs/assets/nightclaw-detents/home.png build/nightclaw/assets/home.png
+cp docs/assets/nightclaw-envelopes/envelope-lead.png build/nightclaw/assets/envelope.png
 cp docs/assets/nightclaw-typeface/edit.png build/nightclaw/assets/edit.png
 cp docs/assets/nightclaw-typeface/calls.png build/nightclaw/assets/calls.png
 cp assets/fonts/Clayborn.ttf assets/fonts/Clayborn-LICENSE.txt assets/fonts/BarlowSemiCondensed-Medium.ttf assets/fonts/BarlowSemiCondensed-Bold.ttf assets/fonts/Barlow-OFL.txt build/nightclaw/assets/

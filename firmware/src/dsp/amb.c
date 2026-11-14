@@ -541,7 +541,7 @@ const char *en_chord_name(const int *pcs, int n, char *buf)
 }
 
 /* ------------------------------------------------------------ commands --- */
-enum { C_SET, C_POOL, C_PLAY, C_NEXT, C_FREEZE, C_SEED, C_PANIC, C_CLOCK, C_REGROW, C_MUTE, C_PERF, C_FX, C_SEQ, C_MACRO, C_PROT, C_REWALK, C_LOCK, C_SEQSET, C_LKEY, C_MOVE, C_LFORGET, C_THEME, C_LMIDI, C_CALL, C_CALLAUTO, C_BEAT };
+enum { C_SET, C_POOL, C_PLAY, C_NEXT, C_FREEZE, C_SEED, C_PANIC, C_CLOCK, C_REGROW, C_MUTE, C_PERF, C_FX, C_SEQ, C_MACRO, C_PROT, C_REWALK, C_LOCK, C_SEQSET, C_LKEY, C_MOVE, C_LFORGET, C_THEME, C_LMIDI, C_CALL, C_CALLAUTO, C_BEAT, C_ENVELOPE };
 #define QN 512u                                 /* (a piece is every parameter at once: room for twice over and more) */
 _Static_assert(QN >= 2u * (P_NPARAMS + 8), "the command queue can't hold a piece's parameters twice over");
 static uint32_t q[QN];
@@ -556,6 +556,7 @@ static void post(uint32_t c, int a, int b)
     q_w = w + 1;
 }
 void en_set(int p, int v) { post(C_SET, p, v); }
+void en_envelope(int l,int s,int v){if((unsigned)l<EN_ENV_LAYERS&&(unsigned)s<4)post(C_ENVELOPE,l*4+s,v<-1?-1:v>127?127:v); }
 void en_pool(uint32_t pool) { post(C_POOL, 0, (int)(pool & 0xFFFu)); }
 void en_play(int on) { post(C_PLAY, on, 0); }
 void en_next(void) { post(C_NEXT, 0, 0); }
@@ -637,6 +638,45 @@ static uint32_t mutes, perf, fxm, fxm_was;      /* performance: the layers muted
 static float perf_sw, perf_echo, mb_c[4], mb_s[4];   /* (mb: Open's and Shut's filter on the music, the kick left out) */                /* the filter pushed open (+) or shut (-), the echo pushed */
 
 static int16_t par[P_NPARAMS];
+/* Saved overrides live outside the frozen parameter/preset layout. */
+#include "envelope.h"
+static int8_t env_override[EN_ENV_LAYERS][4];
+static nc_env_cfg_t env_cfg[EN_ENV_LAYERS];
+static nc_env_t drone_env[2],lead_env,atmos_env;
+static int env_time_value(float ms){
+    int i;uint32_t t=(uint32_t)(ms*10.0f);
+    for(i=0;i<127;i++)if(pt_envelope_ms10(i)>=t)break;
+    return i;
+}
+static int env_native_default(int l,int s){
+    if(l==EN_ENV_ATMOS)return s==2?127:env_time_value(s==1?100.0f:500.0f);
+    if(s==2)return l==PT_SEQ||l==PT_SEQ2?0:127;
+    if(l==PT_DRONE)return env_time_value(s==0?500.0f*fm_exp2f(par[P_CATT]*.0458f):s==3?1000.0f*fm_exp2f(par[P_DREL]*.039f):1.0f);
+    if(l==PT_LEAD)return env_time_value(s==0?5.0f*fm_exp2f(par[P_LATT]*.0645f):s==3?300.0f:80.0f);
+    return env_time_value(s==0?2.0f:s==3?40.0f:120.0f*fm_exp2f(par[l==PT_SEQ2?P_S2DEC:P_DECAY]*.0164f));
+}
+int en_envelope_custom(int l){
+    int s;if((unsigned)l>=EN_ENV_LAYERS)return 0;
+    for(s=0;s<4;s++)if(env_override[l][s]>=0)return 1;
+    return 0;
+}
+int en_envelope_value(int l,int s){
+    if((unsigned)l>=EN_ENV_LAYERS||(unsigned)s>=4)return 0;
+    return env_override[l][s]>=0?env_override[l][s]:pt_is(l)?pt_envelope_value(l,s):env_native_default(l,s);
+}
+static void envelope_wake(int l);
+static void envelope_refresh(void){
+    int l;for(l=0;l<EN_ENV_LAYERS;l++){
+        nc_env_cfg_t *c=&env_cfg[l];int was=c->enabled;c->enabled=(uint8_t)en_envelope_custom(l);
+        if(c->enabled&&!was)envelope_wake(l);
+        if(!c->enabled)continue;
+        c->a=1.0f/(pt_envelope_ms10(en_envelope_value(l,0))*.0001f*EN_SR);
+        c->d=1.0f-fm_expf(-4.6f/(pt_envelope_ms10(en_envelope_value(l,1))*.0001f*EN_SR));
+        c->s=en_envelope_value(l,2)*(1.0f/127.0f);
+        c->r=1.0f-fm_expf(-4.6f/(pt_envelope_ms10(en_envelope_value(l,3))*.0001f*EN_SR));
+    }
+}
+
 /* the noise's controls (P_NCOL .. P_NCHAR: render_crackle reads them) */
 typedef struct {
     float colour, grain, room, drift;           /* dark .. bright; smooth .. granular; dry .. roomy; steady .. restless */
@@ -861,6 +901,7 @@ static void drone_off(int b)                     /* a bank dies away: its notes 
     if (!dr_on[b])
         return;
     dr_on[b] = 0;
+    if(env_cfg[PT_DRONE].enabled&&pt_dheld){pt_notes_off(PT_DRONE);pt_dheld=0;}
     dr_midi_off(b);
     /* (T-WRECKS: a Paleotone sound's notes are let go once Release has faded it out, in render_drone) */
 }
@@ -888,7 +929,7 @@ static void drone_chord(void)                    /* the chord as voiced (stab[].
         if (dr_heard())
             midi(0x90, (uint32_t)n, 70);
     }
-    dr_on[nb] = 1;
+    dr_on[nb] = 1;nc_env_start(&drone_env[nb],1);
     dr_midi[nb] = (uint8_t)dr_heard();
     dr_bank = (uint8_t)nb;
     if (pt_is(PT_DRONE))
@@ -1501,6 +1542,7 @@ typedef struct {                                 /* (SEA read head, the Rain's a
 } rl_head_t;
 typedef struct {
     uint8_t on, note, layer, voice;
+    nc_env_t envelope;
     float ph, ph2, dt, dt2, amp, att, adec, env, edec, gl, gr, cut, c1[4], c2[4], s1[2], s2[2];
     float last;                                  /* (its last output sample, before the pan: a steal's step) */
     uint16_t ks_w, ks_r;                         /* (Pluck: its string, ks_line[its slot]) where it writes, where it
@@ -1802,6 +1844,7 @@ static void pluck_voice(int l, int n, int vel, int rep)   /* rep: a repeat, pann
     v->att = 0.0f;
     v->env = 1.0f;
     v->adec = l ? sq2_adec : sq_adec;
+    v->envelope.level=0;nc_env_start(&v->envelope,(uint32_t)(6.9f/fm_maxf(1.0f-v->adec,1e-5f))+1u);
     v->edec = l ? sq2_edec : sq_edec;
     if (v->voice == SV_PIANO)                    /* (the Piano rings: Decay's range, 0.12 .. 0.37 s to -60 dB, is a pluck's;
                                                   * its length 8 times that, ~1 .. 3 s: the user, "the pluck is very short") */
@@ -2182,10 +2225,12 @@ static int ld_audible(void) { return lead_vol > 0.0f && !(mutes & EN_M_BASS); }
 
 static uint8_t pt_ld_keep;                       /* (T-WRECKS) 1: lead_off from lead_note, the Paleotone note let go
                                                   * once the next has begun (a mono sound glides there) */
+static void pn_release(int note);
 static void lead_off(void)                       /* the note let go */
 {
     if (lead.on) {
         lead.on = 0;
+        if(env_cfg[PT_LEAD].enabled)pn_release(lead.note);
         midi(0x82, lead.note, 0);
         if (!pt_ld_keep)
             pt_note_off(PT_LEAD, lead.note);
@@ -3273,6 +3318,7 @@ static void lead_note(int n)                     /* the next note: legato (it gl
         pn_note(n, 1.0f);                        /* (a piano's note: its own voice, ringing on; not legato) */
     lead.note = (uint8_t)n;
     lead.on = 1;
+    if(!legato)nc_env_start(&lead_env,1);
     if (pt_is(PT_LEAD)) {                        /* (T-WRECKS) a Paleotone sound: the note, then the last let go */
         pt_note_on(PT_LEAD, n, 100, 0);
         if (legato && prev != n)
@@ -4277,6 +4323,8 @@ void en_init(void)
 {
     int i;
     pt_init();
+    memset(env_override,255,sizeof env_override);memset(env_cfg,0,sizeof env_cfg);
+    memset(drone_env,0,sizeof drone_env);memset(&lead_env,0,sizeof lead_env);memset(&atmos_env,0,sizeof atmos_env);
     pt_skin_quiet();
 #ifndef EN_LEGACY_TEST_BANK
     taiko_quiet();
@@ -4465,8 +4513,10 @@ static void drain(void)
         q_r++;
         switch (c >> 24) {
         case C_SET:
-            if (a < P_NPARAMS)
+            if (a < P_NPARAMS){
                 apply(a, b);
+                if(pt_layer_of(a)>=0||a==P_CATT||a==P_DREL||a==P_LATT||a==P_DECAY||a==P_S2DEC)envelope_refresh();
+            }
             break;
         case C_POOL: pool_set((uint32_t)b & 0xFFFu); break;
         case C_PLAY:
@@ -4566,6 +4616,7 @@ static void drain(void)
             lead_off();
             break;
         case C_BEAT: en_beat=(uint8_t)(a%EN_NBEAT); break;
+        case C_ENVELOPE: {int l=a/4,s=a%4;if(l<EN_ENV_LAYERS){env_override[l][s]=(int8_t)b;pt_envelope(l,s,b);envelope_refresh();}} break;
         case C_THEME:
             theme_pc = (int8_t)a;
             pt_clean_organ(heavy_profile());
@@ -5119,6 +5170,7 @@ typedef struct {
     uint32_t step;
     int32_t left;                                /* (output samples to the end of the note; 0: free) */
     float g, fade;                               /* (its gain; the factor it is fading out by each sample, 1: not fading) */
+    nc_env_t envelope;uint8_t note;
     uint32_t age;                                /* (notes struck since: the oldest steals first) */
 } pn_t;
 static pn_t pn[PN_SLOTS];
@@ -5168,7 +5220,7 @@ static void pn_note(int note, float vel)
     v->left = (int32_t)(((PN_N - 2u) << 12) / v->step);
     v->g = vel * (1.0f / 32768.0f);
     v->fade = 1.0f;
-    v->age = ++pn_age;
+    v->age = ++pn_age;v->note=(uint8_t)note;v->envelope.level=0;nc_env_start(&v->envelope,1);
 }
 /* the Piano as a Sequence's voice (SV_PIANO, either sequence's): each note its own read head in its pluck slot, the
  * nearer sample at the pitch asked (as the Lead's: a note far under the samples is slower and duller, down to 3
@@ -5192,6 +5244,7 @@ static float pn_seq_tick(pluck_t *v)
     v->pn_left--;
     return rl_read(&v->pn, v->pn_step) * (PN_SG / 32768.0f);
 }
+static void pn_release(int note){int k;for(k=0;k<PN_SLOTS;k++)if(pn[k].note==note)pn[k].envelope.left=0;}
 static float pn_mix[BLK];
 static int pn_render(uint32_t n)                 /* the voices ringing, into pn_mix; 0 if none */
 {
@@ -5206,13 +5259,20 @@ static int pn_render(uint32_t n)                 /* the voices ringing, into pn_
                 pn_mix[j] = 0.0f;
         any = 1;
         for (j = 0; j < n && v->left > 0; j++, v->left--) {
-            pn_mix[j] += rl_read(&v->h, v->step) * v->g;
+            const float envelope=env_cfg[PT_LEAD].enabled?nc_env_tick(&v->envelope,&env_cfg[PT_LEAD],v->envelope.left!=0):1.0f;
+            pn_mix[j] += rl_read(&v->h, v->step) * v->g * envelope;
+            if(env_cfg[PT_LEAD].enabled&&!v->envelope.stage)v->left=1;
             v->g *= v->fade;
         }
         if (v->g < 1e-7f)
             v->left = 0;
     }
     return any;
+}
+static void envelope_wake(int l){
+    int i;if(l==EN_ENV_ATMOS){atmos_env.level=atm_gate;atmos_env.stage=en_playing?2:atm_gate>0?3:0;}if(l==PT_DRONE){for(i=0;i<2;i++){drone_env[i].level=dr_lvl[i]*dr_lvl[i];drone_env[i].stage=dr_on[i]?2:dr_lvl[i]>0?3:0;}if(!pt_dheld)pt_dlvl=1.0f;}
+    if(l==PT_LEAD){lead_env.level=lead.env;lead_env.stage=lead.on?2:lead.env>0?3:0;for(i=0;i<PN_SLOTS;i++)if(pn[i].left>0){pn[i].envelope.level=1.0f;pn[i].envelope.stage=2;}}
+    if(l==PT_SEQ||l==PT_SEQ2)for(i=0;i<NPLUCK;i++)if(pluck[i].on&&pluck[i].layer==(l==PT_SEQ2)){pluck[i].envelope.level=pluck[i].att;pluck[i].envelope.stage=2;}
 }
 #ifdef EN_HOST
 uint32_t en_pn_hash(int k)
@@ -5253,7 +5313,10 @@ static void render_atmos(uint32_t n)
     const wn_rec_t *wq = &WN_REC[0];
     uint32_t j;
     int ch, k;
-    atm_gate += ((en_playing ? 1.0f : 0.0f) - atm_gate) * fm_minf((float)n / (0.5f * EN_SR), 1.0f);
+    if(env_cfg[EN_ENV_ATMOS].enabled){
+        uint32_t z;if(en_playing&&(atmos_env.stage==0||atmos_env.stage==3))nc_env_start(&atmos_env,1);
+        for(z=0;z<n;z++)atm_gate=nc_env_tick(&atmos_env,&env_cfg[EN_ENV_ATMOS],en_playing);
+    }else atm_gate += ((en_playing ? 1.0f : 0.0f) - atm_gate) * fm_minf((float)n / (0.5f * EN_SR), 1.0f);
     g = mutes & EN_M_NOISE || c == ATM_NONE ? 0.0f : crackle_vol * atm_gate;   /* (its level: nothing more) */
     atm_g_out = g;
     en_atm_gain = g;
@@ -5883,13 +5946,13 @@ static void render_ks(pluck_t *v, int16_t *line, uint32_t n, float g, float es, 
             w = 0;
         if (++r >= KS_N)
             r = 0;
+        if(env_cfg[v->layer?PT_SEQ2:PT_SEQ].enabled)att=nc_env_gated(&v->envelope,&env_cfg[v->layer?PT_SEQ2:PT_SEQ]);
         y = s * kg * att;
         mixl[j] += y * gl;
         mixr[j] += y * gr;
         rsend[j] += y * rv;
         esend[j] += y * es;
-        amp *= adec;
-        att += (1.0f - att) * 0.03f;
+        if(env_cfg[v->layer?PT_SEQ2:PT_SEQ].enabled){if(!v->envelope.stage)amp=0;}else{amp *= adec;att += (1.0f - att) * 0.03f;}
     }
     v->amp = amp, v->att = att, v->ks_a1 = a1, v->ks_x1 = x1, v->last = y;
     v->ks_w = (uint16_t)w, v->ks_r = (uint16_t)r;
@@ -5944,14 +6007,14 @@ static void render_plucks(uint32_t n)           /* (and Pluck's strings: render_
                 ph2 -= 1.0f;
             x = svf_lp(v->c1, v->s1, x, &bp);
             x = svf_lp(v->c2, v->s2, x, &bp);
+            if(env_cfg[v->layer?PT_SEQ2:PT_SEQ].enabled)att=nc_env_gated(&v->envelope,&env_cfg[v->layer?PT_SEQ2:PT_SEQ]);
             y = x *= amp * att * g;
             mixl[j] += x * v->gl;
             mixr[j] += x * v->gr;
             rsend[j] += x * 0.35f * sq_rev[v->layer];
             esend[j] += x * es;
-            amp *= adec;
+            if(env_cfg[v->layer?PT_SEQ2:PT_SEQ].enabled){if(!v->envelope.stage)amp=0;}else{amp *= adec;att += (1.0f - att) * 0.03f;}
             env *= edec;
-            att += (1.0f - att) * 0.03f;
         }
         v->amp = amp, v->env = env, v->att = att, v->ph = ph, v->ph2 = ph2, v->last = y;
         if (amp < 0.0008f) {
@@ -6146,8 +6209,8 @@ static void choir(uint32_t n, float g, const float *c)   /* both banks into drl/
         }
         for (j = 0; j < n; j++) {
             float a, l = 0.0f, r = 0.0f;
-            lvl = to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
-            a = lvl * lvl * g;
+            lvl = env_cfg[PT_DRONE].enabled ? nc_env_tick(&drone_env[b],&env_cfg[PT_DRONE],dr_on[b]) : to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
+            a = (env_cfg[PT_DRONE].enabled?lvl:lvl*lvl) * g;
             for (i = 0; i < NDR; i++) {
                 drv_t *v = &drv[b][i];
                 const float x = blep_saw(v->ph, d1[i]) + blep_saw(v->ph2, d2[i]);
@@ -6202,6 +6265,7 @@ static void render_drone(uint32_t n)
                                                   * phaser and the sends */
         const float to = dr_on[0] || dr_on[1] ? 1.0f : 0.0f, gg = g * PT_G_DRONE;
         float lvl = pt_dlvl, bp;
+
         ch_live = 0;
         if (!pt_render(PT_DRONE, drl, n)) {
             pt_dlvl = to > 0.0f ? pt_dlvl : 0.0f;
@@ -6209,7 +6273,7 @@ static void render_drone(uint32_t n)
         }
         svf_coefs(c, 2.0f * fc, k);
         for (j = 0; j < n; j++) {
-            lvl = to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
+            lvl = env_cfg[PT_DRONE].enabled ? lvl+(1.0f-lvl)*.001f : to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
             {float x=svf_lp(c,pt_dfs,drl[j],&bp);if(heavy_profile()){heavy_hp+=.01975f*(x-heavy_hp);x-=heavy_hp;}
             drr[j]=drl[j]=x*lvl*lvl*gg;}
         }
@@ -6240,8 +6304,8 @@ static void render_drone(uint32_t n)
             continue;
         for (j = 0; j < n; j++) {
             float a;
-            lvl = to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
-            a = lvl * lvl * g;
+            lvl = env_cfg[PT_DRONE].enabled ? nc_env_tick(&drone_env[b],&env_cfg[PT_DRONE],dr_on[b]) : to > lvl ? fm_minf(lvl + dr_up, 1.0f) : fm_maxf(lvl - dr_down, 0.0f);
+            a = (env_cfg[PT_DRONE].enabled?lvl:lvl*lvl) * g;
             for (i = 0; i < NDR; i++) {
                 drv_t *v = &drv[b][i];
                 float x, bp;
@@ -6465,7 +6529,8 @@ static void render_lead(uint32_t n)
             x = svf_lp(lead.c1, lead.s1, x, &bp);
             x = svf_lp(lead.c2, lead.s2, x, &bp);
         }
-        lead.env += ((lead.on ? 1.0f : 0.0f) - lead.env) * (lead.on ? ld_att : 0.00008f);   /* (Attack in, ~300 ms out) */
+        if(env_cfg[PT_LEAD].enabled)lead.env=nc_env_tick(&lead_env,&env_cfg[PT_LEAD],lead.on);
+        else lead.env += ((lead.on ? 1.0f : 0.0f) - lead.env) * (lead.on ? ld_att : 0.00008f);
         a = x * lead.env * g;
         mixl[j] += a * gl;
         mixr[j] += a * gr;

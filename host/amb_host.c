@@ -555,6 +555,9 @@ static int expect(const char *what, const char *val)
         got = last_note[(atoi(what + 11) + 15) % 16];
     else if (!strncmp(what, "act", 3) && what[3] >= '0' && what[3] <= '4')   /* (BERLIN) actN: layer N's activity x100 */
         got = (int)(en_layer_act[what[3] - '0'] * 100.0f);
+    else if (!strncmp(what,"env",3) && what[3]>='0' && what[3]<='5' && what[4]>='0' && what[4]<='3' && !what[5])
+        got=project_envelope(what[3]-'0',what[4]-'0');
+    else if (!strcmp(what, "envlayer")) got=ui.env_layer;
     else if (!strcmp(what, "beat")) got=project_drum_pattern();
     else if (!strcmp(what, "enginebeat")) got=en_beat;
     else if (!strcmp(what, "skins")) got=(int)en_skin_hits;

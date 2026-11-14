@@ -25,18 +25,18 @@
 /* (past NPAGES, on no button of their own: V_MIX, PERFORM's knobs, the four layers' levels; the layers' sound
  * pages, the layer's button pressed again) */
 enum { V_DUB, V_CHORD, V_TEXTURE, V_BASS, V_DRUMS, V_SPACE, V_SETUP, NPAGES, V_MIX = NPAGES, V_CSND, V_PSND, V_BSND,
-       V_DSND, V_CFM, V_PFM, V_BFM, V_CHORDS, V_PAT, V_PERF, V_KEY, V_NSND, V_ESND, V_NSND2, V_ARC, V_SMOVE, V_S2MOVE, V_AMOVE, V_SKIN, V_CALLS, NVIEWS };
+       V_DSND, V_CFM, V_PFM, V_BFM, V_CHORDS, V_PAT, V_PERF, V_KEY, V_NSND, V_ESND, V_NSND2, V_ARC, V_SMOVE, V_S2MOVE, V_AMOVE, V_SKIN, V_CALLS, V_ENV, NVIEWS };
 /* (V_PERF: PERFORM's knobs, the master actions; V_MIX while white 6 is held. V_KEY: HOME again, the key and the
  * tempo, the Dub page's second) */
 static const char *const VIEW_NAME[NVIEWS] = {"Nachtfahrt", "Drone", "Sequence", "Lead", "Sequence 2", "Space", "Setup",
                                               "Mix", "Drone sound", "Seq sound", "Lead sound", "Seq2 sound",
                                               "Drone move", "Repeats", "Lead move", "Chords", "Pattern", "Perform", "Key",
                                               "Atmosphere", "Echo", "Atmos sound", "Arc", "Seq move", "Seq2 move",
-                                              "Atmos move", "Skin drums", "Creature calls"};
+                                              "Atmos move", "Skin drums", "Creature calls", "Envelope"};
 #define B_NONE 0xFFu
 static const uint8_t VIEW_BTN[NVIEWS] = {B_HOME, B_ENV, B_ARP, B_LFO, B_SEQ, B_FX, B_GLO, B_NONE, B_NONE, B_NONE, B_NONE,
                                          B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_SAVE, B_NONE, B_NONE,
-                                         B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE};
+                                         B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE, B_NONE};
 static int sound_of(int v) { return v == V_CHORD ? V_CSND : v == V_TEXTURE ? V_PSND : v == V_BASS ? V_BSND : v == V_DRUMS ? V_DSND : -1; }
 static int fm_of(int v) { return v == V_TEXTURE ? V_PFM : -1; }   /* (BERLIN: no FM pages; the Sequence's third, its
                                                                    * Repeats, in the Ping FM page's place) */
@@ -85,7 +85,7 @@ enum { K_LEDS = 200, K_CPU, K_NONE, K_SLOT, K_CQ, K_CX,    /* (the Chords page: 
 static const char *const LANE_NAME[EN_NDRUM] = {"Steps", "Steps 2", "Octaves", "Octaves 2", "Skips"};   /* (BERLIN:
                                                   * the Sequence's and Sequence 2's) */
 static int lane_seq(int d) { return d == 1 || d == 3; }   /* (a lane's sequence: its accents, its chance) */
-_Static_assert(P_NPARAMS <= K_LEDS, "the knobs' own codes must come after the parameters");
+_Static_assert(EN_ENV_BASE>=P_NPARAMS && EN_ENV_BASE+EN_ENV_LAYERS*4<=K_LEDS, "the knobs' own codes must come after the parameters");
 static const uint16_t VIEW_KNOB[NVIEWS][4] = {
     {K_FILTER, P_EVOLVE, P_MOTION, P_DRIFT},
     {P_PEDAL, P_CRES, P_PHASER, P_CATT},          /* (BERLIN) the Drone */
@@ -116,6 +116,7 @@ static const uint16_t VIEW_KNOB[NVIEWS][4] = {
     {P_MW4, P_MT4, P_MR4, P_MI4},                /* the Atmosphere's Move (SAVE, a third time) */
     {P_SKLEVEL, P_SKTONE, P_SKDENS, P_SKDECAY},
     {P_CLLEVEL, P_CLTONE, P_CLCHANCE, P_CLVOICE},
+    {EN_ENV_BASE,EN_ENV_BASE+1,EN_ENV_BASE+2,EN_ENV_BASE+3},
 };
 /* Home: selected track, four physical knobs, no new DSP state. */
 static const uint16_t TRACK_KNOB[7][4] = {
@@ -161,10 +162,11 @@ static const char *const KNOB_LABEL[NVIEWS][4] = {
     {"Width", "Time", "Rate", "Intro"},
     {"Level", "Tone", "Ghosts", "Decay"},
     {"Level", "Filter", "Chance", "Voice"},
+    {"Attack","Decay","Sustain","Release"},
 };
 /* what each knob does, a line: on the rule above the knobs while it's being turned (in capitals; each fits the
  * rule's 228 px, and every view has its row: the host's expect helpfit) */
-_Static_assert(NVIEWS == 28, "a view added: its KNOB_HELP row too");
+_Static_assert(NVIEWS == 29, "a view added: its KNOB_HELP row too");
 static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, V_DUB .. V_ARC) */
     {"Down shuts, up opens; Off mid", "How often a step changes", "How much, and the sections' pace", "Bars before the chord moves on"},
     {"The root an octave under", "The filter's resonance", "The slow phaser's depth", "How slowly the chord swells in"},
@@ -194,6 +196,7 @@ static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, 
     {"How far its filter wanders", "How long one move takes", "How often a new move starts", "Bars its filter takes to open"},
     {"The skin drums level", "Darker or brighter skins", "How often the sparse hits play", "How long the skins ring"},
     {"The creature calls level", "Darker or brighter calls", "How often a creature calls", "Which creature answers"},
+    {"Time to rise", "Time to sustain", "Held level", "Time after note-off"},
 };
 
 /* NightClaw: near-black, bone, saturated crimson, sulfur and electric violet.
@@ -223,6 +226,7 @@ static const char *const KNOB_HELP[NVIEWS][4] = {   /* (BERLIN's, a row a view, 
 
 static struct {
     uint8_t view;
+    uint8_t env_layer;
     uint8_t track;                   /* Home selected layer, including Atmosphere. */
     uint8_t perf, perf_from;           /* PERFORM (SEL): the keys play the mutes and the moves, the knobs
                                         * the mix; the page it was started from */
@@ -274,7 +278,7 @@ static const char *track_label(int col)
 }
 static int control_knob(int view, int col)
 {
-    return view == V_MIX && !ui.perf ? TRACK_KNOB[ui.track][col] : VIEW_KNOB[view][col];
+    return view==V_ENV ? EN_ENV_BASE+ui.env_layer*4+col : view == V_MIX && !ui.perf ? TRACK_KNOB[ui.track][col] : VIEW_KNOB[view][col];
 }
 static void sp_cat(const char *s);
 static struct {
@@ -417,6 +421,7 @@ static void slot_write(int i)                    /* a walk slot about to be edit
 static int s2_shift(void) { return ui.s2_hand ? 0 : en_s2oct_shift; }   /* (Motion's move of Sequence 2's octave) */
 static int knob_get(int k)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4)return en_envelope_value((k-EN_ENV_BASE)/4,(k-EN_ENV_BASE)%4);
     if (k < P_NPARAMS)                           /* (Sequence 2's Octave: its home and Motion's shift, as it plays;
                                                   * the project keeps home) */
         return proj.par[k] + (k == P_SEQ2OCT ? s2_shift() : 0);
@@ -450,6 +455,7 @@ static int knob_get(int k)
 }
 static void knob_range(int k, int *lo, int *hi)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4){*lo=-1;*hi=127;return;}
     if (k < P_NPARAMS) {
         *lo = en_param_info(k)->lo;
         *hi = en_param_info(k)->hi;
@@ -464,6 +470,7 @@ static void knob_range(int k, int *lo, int *hi)
 }
 static const char *knob_name(int k)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4)return KNOB_LABEL[V_ENV][(k-EN_ENV_BASE)%4];
     if (k < P_NPARAMS)
         return en_param_info(k)->name;
     return k == K_LEDS ? "Lights" : k == K_CPU ? "CPU" : k == K_SLOT ? "Slot" : k == K_CQ ? "Chord" : k == K_CX ? "Type"
@@ -473,6 +480,10 @@ static const char *knob_name(int k)
 static void knob_text(int k, char *b)
 {
     int v = knob_get(k);
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4){
+        int stage=(k-EN_ENV_BASE)%4;if(stage==2){itoa_u((uint32_t)v*100u/127u,b);while(*b)b++;*b++='%';*b=0;}
+        else{uint32_t ms=(pt_envelope_ms10(v)+5u)/10u;itoa_u(ms,b);while(*b)b++;*b++='m';*b++='s';*b=0;}return;
+    }
     if (k < P_NPARAMS) {
         en_param_text(k, v, b);
     } else if (k == K_LEDS) {                    /* On: the keys, and the unlit buttons glow; Keys: no glow */
@@ -543,6 +554,7 @@ static void do_save(void)                       /* GLO held, or Setup's KNOB 4 t
 }
 static void knob_set(int k, int v)
 {
+    if(k>=EN_ENV_BASE&&k<EN_ENV_BASE+EN_ENV_LAYERS*4){int l=(k-EN_ENV_BASE)/4,s=(k-EN_ENV_BASE)%4;v=v<-1?-1:v>127?127:v;if(v==project_envelope(l,s))return;project_envelope_set(l,s,v);mark_dirty();return;}
     int lo, hi;
     if (k == K_CPU || k == K_NONE)
         return;
@@ -557,6 +569,13 @@ static void knob_set(int k, int v)
             ui.s2_hand = 1;
         proj.par[k] = (int16_t)v;
         en_set(k, v);
+        if(k==P_CATT||k==P_DREL||k==P_LATT||k==P_DECAY||k==P_S2DEC){
+            int l=k==P_CATT||k==P_DREL?PT_DRONE:k==P_LATT?PT_LEAD:k==P_DECAY?PT_SEQ:PT_SEQ2;
+            int s=k==P_DREL?3:k==P_DECAY||k==P_S2DEC?1:0,j=0;
+            float ms10=k==P_CATT?5000.0f*fm_exp2f(v*.0458f):k==P_DREL?10000.0f*fm_exp2f(v*.039f):k==P_LATT?50.0f*fm_exp2f(v*.0645f):1200.0f*fm_exp2f(v*.0164f);
+            while(j<127&&pt_envelope_ms10(j)<(uint32_t)ms10)j++;
+            project_envelope_set(l,s,j);
+        }
         if (k == P_PMODE && (was & EN_PLOOP) && !(v & EN_PLOOP))
             en_prog_rotate();                    /* (from Loop, by hand: the slot playing up to slot 1) */
     } else if (k == K_LEDS) {
@@ -696,6 +715,7 @@ static void set_voice(int p, int v)
     mark_dirty();
 }
 
+static int envelope_voice(void){static const uint8_t ids[EN_ENV_LAYERS]={P_CVOICE,P_SVOICE,P_LVOICE,P_S2VOICE,P_CLVOICE,P_NCHAR};return ids[ui.env_layer];}
 static int home_voice(void)
 {
     static const uint8_t voice[5]={P_CVOICE,P_SVOICE,P_LVOICE,P_S2VOICE,P_NCHAR};
@@ -703,7 +723,7 @@ static int home_voice(void)
 }
 static int calls_context(void)
 {
-    return !ui.perf && (ui.view==V_CALLS || (ui.view==V_MIX && ui.track==6));
+    return !ui.perf && ((ui.view==V_ENV&&ui.env_layer==PT_CALLS) || ui.view==V_CALLS || (ui.view==V_MIX && ui.track==6));
 }
 static void mac_home(void)                       /* (the user, 2026-10-28) a piece from the master actions at 0 (the
                                                   * engine's own, at its regrow) */
@@ -1110,7 +1130,9 @@ static void button(int b)
         break;
     case B_SAVE:                                 /* the Noise page (one page: again stays; saving: GLO held, Setup's
                                                   * KNOB 4) */
-        if (ui.view==V_MIX && ui.track>=5) {
+        if(ui.view==V_ENV){static const uint8_t sound[EN_ENV_LAYERS]={V_CSND,V_PSND,V_BSND,V_DSND,V_CALLS,V_NSND2};set_view(sound[ui.env_layer]);}
+        else if(ui.view==V_MIX&&ui.track!=5){ui.env_layer=ui.track==6?PT_CALLS:ui.track==4?EN_ENV_ATMOS:ui.track;set_view(V_ENV);}
+        else if (ui.view==V_MIX && ui.track>=5) {
             set_view(ui.track==6 ? V_CALLS : V_SKIN);
         } else if (atm_view(ui.view) || ui.view==V_SKIN || ui.view==V_CALLS) { /* (SAVE again steps through: its sound, its Move page, back) */
             set_view(ui.view == V_NSND ? V_NSND2 : ui.view == V_NSND2 ? V_AMOVE : ui.view == V_AMOVE ? V_SKIN : ui.view == V_SKIN ? V_CALLS : V_NSND);
@@ -1510,7 +1532,8 @@ static void input(void)
     midi_in();
     if ((e = plat_enc(EN_SELECT)) != 0) {        /* (the user, 2026-10-28) a layer's pages: its level; HOME: Energy;
                                                   * elsewhere nothing (no pages, no tempo: one knob, one job) */
-        if (oct_layer(ui.view) >= 0)
+        if(ui.view==V_ENV){int was_calls=calls_context();ui.env_layer=(uint8_t)(((int)ui.env_layer+(int)(e%EN_ENV_LAYERS)+EN_ENV_LAYERS)%EN_ENV_LAYERS);if(was_calls!=calls_context())keys_release_mode();ui.sig[0]=0;say("ENVELOPE",HOME_NAME[ui.env_layer==PT_CALLS?6:ui.env_layer==EN_ENV_ATMOS?4:ui.env_layer]);}
+        else if (oct_layer(ui.view) >= 0)
             level_turn(oct_layer(ui.view), e);
         else if (ui.view == V_MIX && !ui.perf)   /* Home: SELECT chooses the track. */
             {
@@ -1527,7 +1550,7 @@ static void input(void)
         ui.turn_t = plat_ms();
     }
     if ((e = plat_enc(EN_ALGO)) != 0) {         /* a layer's page: its voice; the Chords page: the walk */
-        int vp = ui.view==V_MIX && !ui.perf ? home_voice() : view_voice(ui.view);
+        int vp = ui.view==V_ENV ? envelope_voice() : ui.view==V_MIX && !ui.perf ? home_voice() : view_voice(ui.view);
         if (!ui.perf && ((ui.view==V_MIX && ui.track==5) || ui.view==V_SKIN)) {
             project_drum_pattern_set(project_drum_pattern()+(int)e);
             en_drum_pattern(project_drum_pattern());
@@ -2495,6 +2518,10 @@ static void sp_page(int all)
         sp_cat(", track ");
         sp_cat(HOME_NAME[ui.track]);
     }
+    if(ui.view==V_ENV){
+        sp_cat(", track ");sp_cat(HOME_NAME[ui.env_layer==PT_CALLS?6:ui.env_layer==EN_ENV_ATMOS?4:ui.env_layer]);
+        sp_cat(", voice ");{char vn[48];en_param_text(envelope_voice(),proj.par[envelope_voice()],vn);sp_cat(vn);}
+    }
     if (atm_view(ui.view)) {
         sp_cat(", character ");
         sp_cat(EN_NCHAR_NAME[proj.par[P_NCHAR] % EN_NNCHAR]);
@@ -2934,14 +2961,14 @@ static void control_indicator(int32_t cx, int32_t cy, int32_t r, int32_t ratio, 
 static void draw_controls(void)
 {
     uint8_t rows[4];
-    const int home = ui.view == V_MIX && !ui.perf;
-    const int n = home ? 4 : control_rows(rows);
-    const int header = home ? 40 : 48;
+    const int home = ui.view == V_MIX && !ui.perf, env=ui.view==V_ENV, table=home||env;
+    const int n = table ? 4 : control_rows(rows);
+    const int header = table ? 40 : 48;
     const int fixed = ui.view==V_CALLS || ui.view==V_PERF;
-    const int row_h = home ? 46 : fixed ? 44 : n > 1 ? 176/n : 88;
-    const int slots = home || fixed ? 4 : n;
-    const int radius = home ? 18 : row_h > 70 ? 26 : row_h > 50 ? 18 : row_h >= 46 ? 12 : 11;
-    const int first = home && ui.track >= 4 ? (int)ui.track - 3 : 0;
+    const int row_h = table ? 46 : fixed ? 44 : n > 1 ? 176/n : 88;
+    const int slots = table || fixed ? 4 : n;
+    const int radius = table ? 18 : row_h > 70 ? 26 : row_h > 50 ? 18 : row_h >= 46 ? 12 : 11;
+    const int first = env ? (ui.env_layer>=4?(int)ui.env_layer-3:0) : home && ui.track >= 4 ? (int)ui.track - 3 : 0;
     uint32_t h = hash(0x54575243u, ui.view | (uint32_t)ui.track << 8);
     int r, c;
     char b[48];
@@ -2950,7 +2977,8 @@ static void draw_controls(void)
     h = hash(h, plat_ms() < ui.msg_until ? ui.msg_until : 0);
     if (ui.view == V_SETUP) h = hash(hash(h, plat_cpu_pct()), plat_cpu_peak());
     for (r=0; r<n; r++) for (c=0; c<4; c++)
-        h = hash(h, (uint32_t)knob_get(home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c]));
+        h = hash(h, (uint32_t)knob_get(env ? EN_ENV_BASE+(first+r)*4+c : home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c]));
+    if(env){h=hash(h,ui.env_layer);for(r=0;r<EN_ENV_LAYERS;r++)for(c=0;c<4;c++)h=hash(h,(uint32_t)(project_envelope(r,c)+1));}
     if ((home && ui.track==5) || ui.view==V_SKIN) h=hash(h,(uint32_t)project_drum_pattern());
     if (view_voice(ui.view) >= 0) h = hash(h, (uint32_t)proj.par[view_voice(ui.view)]);
     if (home && home_voice()>=0) h=hash(h,(uint32_t)proj.par[home_voice()]);
@@ -2959,15 +2987,16 @@ static void draw_controls(void)
     if (h == ui.sig[0]) return;
     ui.sig[0] = h;
     cv_begin(240, header, K_BG);
-    if (home) {
+    if(env){control_text(4,-4,180,&FONT_UL,"Envelope",K_TEXT);}
+    else if (home) {
         const int voice=home_voice();
         if (voice>=0) en_param_text(voice,proj.par[voice],b);
         else { const char *s=en_beat_name(project_drum_pattern()); int j=0; while ((b[j]=s[j])!=0) j++; }
         control_text(4,-4,180,&FONT_UL,b,K_TEXT);
     } else control_text(4, -4, 180, &FONT_UL, VIEW_NAME[ui.view], K_TEXT);
     control_text(188, 2, 50, &FONT_UM, en_frozen ? "HOLD" : en_playing ? "PLAY" : "STOP", K_ACC);
-    if (home) {
-        for (c=0; c<4; c++) control_text(60+c*45, 20, 45, &FONT_UM, track_label(c), CONTROL_COL[c]);
+    if (table) {
+        for (c=0; c<4; c++) control_text(60+c*45, 20, 45, &FONT_UM, env ? KNOB_LABEL[V_ENV][c] : track_label(c), CONTROL_COL[c]);
     } else {
         const int voice = ui.view==V_CALLS ? P_CLVOICE : view_voice(ui.view);
         if(ui.view==V_SKIN) {
@@ -2983,20 +3012,21 @@ static void draw_controls(void)
     }
     cv_blit(0, 0);
     for (r=0; r<slots; r++) {
-        const int height = !fixed && !home && r==n-1 ? 224-header-r*row_h : row_h;
-        const int active = r<n && (home ? first+r == ui.track : rows[r] == ui.view);
+        const int height = !fixed && !table && r==n-1 ? 224-header-r*row_h : row_h;
+        const int active = r<n && (table ? first+r == (env?ui.env_layer:ui.track) : rows[r] == ui.view);
         cv_begin(240, height, active ? K_PANEL : K_BG);
         if (r<n) {
-            if (home) {
-                const int muted = first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r];
-                const felucca_font_t *name_font = text_w(&FONT_L, HOME_NAME[first+r])<=56 ? &FONT_L : &FONT_UH;
-                control_text(4, muted ? -2 : 7, 56, name_font, HOME_NAME[first+r], active ? K_ACC : K_TEXT);
+            if (table) {
+                const int track=env&&first+r==PT_CALLS?6:env&&first+r==EN_ENV_ATMOS?4:first+r;
+                const int muted = !env && first+r<NLAYER && (ui.mutes & LAYER_MUTE[first+r]) == LAYER_MUTE[first+r];
+                const felucca_font_t *name_font = text_w(&FONT_L, HOME_NAME[track])<=56 ? &FONT_L : &FONT_UH;
+                control_text(4, muted ? -2 : 7, 56, name_font, HOME_NAME[track], active ? K_ACC : K_TEXT);
                 if (muted) control_text(4,28,56,&FONT_US,"MUTED",K_TEXT);
             }
             for (c=0; c<4; c++) {
-                const int k = home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
-                if (!home) control_text(c*60+3, 0, 56, &FONT_UM, control_label(rows[r], c), CONTROL_COL[c]);
-                control_indicator(home ? 82+c*45 : c*60+30, home ? height/2 : (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
+                const int k = env ? EN_ENV_BASE+(first+r)*4+c : home ? TRACK_KNOB[first+r][c] : VIEW_KNOB[rows[r]][c];
+                if (!table) control_text(c*60+3, 0, 56, &FONT_UM, control_label(rows[r], c), CONTROL_COL[c]);
+                control_indicator(table ? 82+c*45 : c*60+30, table ? height/2 : (height+18)/2, radius, control_ratio(k), CONTROL_COL[c]);
             }
             if (active) cv_rect(0, 0, 3, height-1, K_ACC);
             cv_line(0, height-1, 239, height-1, K_LINE);
@@ -3031,6 +3061,8 @@ static void draw_controls(void)
     if (plat_ms() < ui.msg_until) {
         msg_text(ui.msg[0], ui.msg[1], b);
         control_text(4, 0, 232, &FONT_US, b, K_ACC);
+    } else if(env){
+        control_text(4,0,232,&FONT_US,en_envelope_custom(ui.env_layer)?"CUSTOM  Below zero: Voice":"VOICE ENV  SAVE: sound",K_TEXT);
     } else if (calls_context()) {
         control_text(4,0,232,&FONT_S,en_call_auto ? "AUTO  B1: mode B2: stop" : "MANUAL B1: auto B2: stop",K_TEXT);
     } else if (ui.view == V_SETUP) {

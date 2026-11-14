@@ -21,8 +21,10 @@ typedef struct { uint32_t magic, format; uint8_t piece, leds; int16_t tune, midi
 typedef struct { uint32_t magic, format; slot_t slot[10]; } saved_bank_t;
 /* Extended globals retain the original zero-padded header as a full prefix.
  * The ten packed rhythm bytes use project_t.rsv, leaving preset layouts intact. */
-typedef struct { project_head_t head; uint8_t beats[10], bank_rev, reserved; } saved_head_t;
-_Static_assert(sizeof(saved_head_t)==28, "factory revision reuses prior zero padding");
+typedef struct { project_head_t head; uint8_t beats[10], bank_rev, reserved; uint8_t envelope[NPIECES][EN_ENV_LAYERS][4]; } saved_head_t;
+_Static_assert(sizeof(saved_head_t)==28+NPIECES*EN_ENV_LAYERS*4, "envelopes extend the old globals prefix");
+int project_envelope(int l,int s){if((unsigned)l>=EN_ENV_LAYERS||(unsigned)s>=4)return -1;return proj.envelope[proj.piece][l][s]?(int)proj.envelope[proj.piece][l][s]-1:-1;}
+void project_envelope_set(int l,int s,int v){if((unsigned)l>=EN_ENV_LAYERS||(unsigned)s>=4)return;if(v>127)v=127;proj.envelope[proj.piece][l][s]=(uint8_t)(v<0?0:v+1);en_envelope(l,s,v);}
 static int project_save_objects(void);
 int project_drum_pattern(void){unsigned p=proj.piece,v=proj.rsv[p/2u]>>((p&1u)*4u)&15u;return v<EN_NBEAT?(int)v:0;}
 void project_drum_pattern_set(int i){unsigned p=proj.piece,s=(p&1u)*4u;int v=(i%EN_NBEAT+EN_NBEAT)%EN_NBEAT;proj.rsv[p/2u]=(uint8_t)((proj.rsv[p/2u]&~(15u<<s))|((unsigned)v<<s));}
@@ -125,8 +127,9 @@ int project_load(void)
     memset(&ext,0,sizeof ext);
     n=plat_store_load(OBJ_PROJ, &ext, sizeof ext);
     head=ext.head;
-    if ((n==(int)sizeof head || n==(int)sizeof ext) && head.magic==PROJ_MAGIC && head.format==PROJ_FORMAT) {
-        if(n==(int)sizeof ext) memcpy(proj.rsv,ext.beats,sizeof ext.beats);
+    if ((n==(int)sizeof head || n==28 || n==(int)sizeof ext) && head.magic==PROJ_MAGIC && head.format==PROJ_FORMAT) {
+        if(n>=28)memcpy(proj.rsv,ext.beats,sizeof ext.beats);
+        if(n==(int)sizeof ext){int l,s;for(i=0;i<NPIECES;i++)for(l=0;l<EN_ENV_LAYERS;l++)for(s=0;s<4;s++)if(ext.envelope[i][l][s]<=128)proj.envelope[i][l][s]=ext.envelope[i][l][s];}
         refresh = ext.bank_rev < 1;
         for (bank=0;bank<2;bank++) {
             n=plat_store_load(OBJ_BANK0+(uint32_t)bank,&saved,sizeof saved);
@@ -175,7 +178,7 @@ static int project_save_objects(void)
     head.magic=PROJ_MAGIC; head.format=PROJ_FORMAT;
     head.piece=proj.piece; head.leds=proj.leds;
     head.tune=proj.par[P_TUNE]; head.midi=proj.par[P_MIDI];
-    memset(&ext,0,sizeof ext);ext.head=head;memcpy(ext.beats,proj.rsv,sizeof ext.beats);ext.bank_rev=proj.rsv[10];
+    memset(&ext,0,sizeof ext);ext.head=head;memcpy(ext.beats,proj.rsv,sizeof ext.beats);ext.bank_rev=proj.rsv[10];memcpy(ext.envelope,proj.envelope,sizeof ext.envelope);
     return plat_store_save(OBJ_PROJ,&ext,sizeof ext);
 }
 
@@ -192,6 +195,7 @@ void project_piece_reset(void)
 {
     slot_t s;
     recipe(proj.piece, &s);
+    memset(proj.envelope[proj.piece],0,sizeof proj.envelope[proj.piece]);
     project_drum_pattern_set(en_piece_beat(proj.piece));
     s.screen = proj.screen;                      /* (the view stays as it is) */
     take(&s);
@@ -204,6 +208,7 @@ void project_apply(void)                         /* (then en_regrow keeps the pi
     const slot_t *s = &proj.slot[proj.piece];
     for (i = 0; i < P_NPARAMS; i++)
         en_set(i, proj.par[i]);
+    {int l,s;for(l=0;l<EN_ENV_LAYERS;l++)for(s=0;s<4;s++)en_envelope(l,s,project_envelope(l,s));}
     en_pool(proj.pool);
     en_drum_pattern(project_drum_pattern());
 #ifndef EN_LEGACY_TEST_BANK
