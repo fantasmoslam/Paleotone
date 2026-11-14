@@ -19,6 +19,8 @@ Current installed firmware source: **f9b11d61af8c05598089cea8ad5c6360470fe13a**.
 | Resource fit | Image 544,364 / 581,564 bytes; RAM 95,596 / 98,304; pool 334,472 / 344,064 |
 | Full CI | Source f9b11d6 passed run 43139217653 |
 | Extended host playback | 72 minutes, 24 selection/output-peak checks passed |
+| Envelope editing | Incomplete: no unified ADSR panel; partial controls differ between native/imported voices. [Audit and next work](NIGHTCLAW-ENVELOPE-AUDIT.md). |
+| Browser / tablet | Physical-panel player and guide published; source 1398257 keypad accepted; browser CI 43537466329 passed. |
 | Remaining device coverage | Longer sessions, wider voice/effect combinations and direct readability feedback across pages |
 
 ## Verified candidate publication

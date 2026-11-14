@@ -20,10 +20,19 @@ Dylan reports “Works much much better” after the physical-detent correction.
 
 The sound target remains consequential and apocalyptic: grandiose low percussion, distinct voices, restrained distortion and space for live Lead. No further rewrite of approved scenes is planned.
 
+## Next development priority: unified track envelopes
+
+Sound editing is incomplete: existing Attack/Release/Decay controls are scattered, there is no per-track ADSR panel, and the exposed Lead attack does not shape imported Lead audio. The imported synth has internal ADSR support which NightClaw has not exposed consistently. See the [source audit and implementation plan](NIGHTCLAW-ENVELOPE-AUDIT.md).
+
+Add one four-column Attack / Decay / Sustain / Release page for the four melodic tracks, with real audible behavior across native and imported voices and scene persistence. Preserve current voice envelopes and approved scene sounds until deliberately edited. Treat drum/creature/atmosphere envelopes according to their sound models. Check storage, parameter-code capacity, CPU and memory before installation. This work takes priority over final release closeout.
+
+The physical-panel browser player, visual guide and tablet view are published. Dylan accepted the restored two-row keypad at source 1398257; preserve its arrangement, proportions and uniform spacing.
+
 ## Remaining docket
 
 | Work | Current status / next evidence |
 |---|---|
+| Unified envelope editing | Next development work: native/imported amplitude controls, one ADSR page, scene persistence and sound tests; see audit. |
 | Release preparation | Published candidate and installed checksum agree; documentation and PR describe the current firmware. PR #41 remains open for review. |
 | Long physical-device playback | Short live-Lead overload reproduction is accepted. Longer sessions and wider instrument combinations remain unverified. |
 | Physical readability | Large Home labels and the single-family correction are installed and pass render/fit checks. Readability across all pages still needs direct user feedback. |
